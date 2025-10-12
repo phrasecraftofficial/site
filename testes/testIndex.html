@@ -11,6 +11,10 @@
     background: #000;
     color: #fff;
   }
+  
+.hidden {
+    display: none !important;
+}
 
   header, footer {
     position: fixed;
@@ -25,7 +29,10 @@
   header { top: 0; height: 56px; border-bottom: 1px solid #222; }
   footer { bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
 
-  .logo-area { display: flex; align-items: center; gap: 8px; }
+  .logo-area { display: flex; align-items: center; gap: 8px;}
+  
+  .logo-area img { background: #fff; color: #000;  border-radius: 15%;}
+
 
   .icons-right, footer a {
     display: flex;
@@ -164,11 +171,9 @@ footer svg {
 </head>
 <body>
   <header>
+  	<span id="btn-goBack" onclick="goBack()" class="hidden">← Voltar</span>
     <div class="logo-area">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 20L8 16M8 16L4 12M8 16H14C16 16 18 14 18 12C18 10 16 8 14 8H12M12 8L10 6M12 8L10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="19" cy="5" cx="1.5" fill="currentColor"/>
-        </svg>
+        <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div>PhraseCraft</div>
     </div>
     <div class="icons-right">
@@ -240,17 +245,15 @@ footer svg {
       <p>Use this section to create new content.</p>
         <div class="load-group">
           	<label for="videoUpload" class="upload-btn">Upload Vídeo</label>
-          	<input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
           	<input type="file" id="videoUpload" accept="video/*">
         </div>
         <div class="load-group">
           	<label for="srtUpload" class="upload-btn">Upload SRT</label>
-          	<input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
           	<input type="file" id="srtUpload" accept=".srt">
         </div>
                 
         <div class="botoes-container">
-        	<button id="btn-open" onclick="openContent()">Carregar</button>
+            <a href="#" onclick="showSection('postLesson')">Carregar</a>
         </div>
     </section>
     
@@ -258,22 +261,38 @@ footer svg {
     <section id="postLesson">
       <h2>Post</h2>
       <p>Use this section to post.</p>
-      
-      <div>Editar Srt</div>
-      
-      <div>
-          <p>Adicionar descrição</p>
-          <div>Input de texto</div>
+                      
+      <div class="botoes-container">
+          <a href="#" onclick="showSection('editSrt')">Editar Srt</a>
       </div>
       
-      <div>
-          <p>Adicionar à Playlist</p>
-          <div>Nome das Playlists com checkbox</div>
+      <!-- Título 1 -->
+      <h2>Adicionar descrição</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite uma descrição..." name="descricao" />
+
+      <!-- Título 2 -->
+      <h2>Adicionar à Playlist</h2>
+      <!-- Lista de checkboxes com nomes de playlists -->
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
+        <label for="playlist1">Playlist 1</label>
       </div>
+
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
+        <label for="playlist2">Playlist 2</label>
+      </div>
+
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
+        <label for="playlist3">Playlist 3</label>
+      </div>
+
       
     </section>
     
-    <section id="editarSrt">
+    <section id="editSrt">
       <h2>Editar SRT</h2>
       <p>Use this section to edit Srt.</p>
     </section>
@@ -307,24 +326,45 @@ footer svg {
   </footer>
 
   <script>
-    function showSection(targetId) {
-      const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create'];
-      sections.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (id === targetId) {
-          el.classList.add('active');
-        } else {
-          el.classList.remove('active');
-        }
-      });
+let sectionHistory = ['home'];
 
-      // Atualiza o footer ativo
-      const footerLinks = document.querySelectorAll('footer a');
-      footerLinks.forEach(link => link.classList.remove('active'));
-      const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
-      if (targetLink) targetLink.classList.add('active');
-    }
+function showSection(targetId) {
+  const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt'];
+
+  const current = sectionHistory[sectionHistory.length - 1];
+  if (targetId !== current) {
+    sectionHistory.push(targetId);
+  }
+
+  // Ativa/desativa seções
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('active', id === targetId);
+  });
+
+  // Atualiza botão "Voltar"
+  const goBackBtn = document.getElementById('btn-goBack');
+  if (goBackBtn) {
+    // Se targetId for 'home', adiciona a classe 'hidden' (ou 'd-none', 'oculto', etc.)
+    // Se targetId não for 'home', remove a classe 'hidden'
+    goBackBtn.classList.toggle('hidden', targetId === 'home');
+  }
+
+  // Atualiza footer
+  const footerLinks = document.querySelectorAll('footer a');
+  footerLinks.forEach(link => link.classList.remove('active'));
+  const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
+  if (targetLink) targetLink.classList.add('active');
+}
+
+function goBack() {
+  if (sectionHistory.length > 1) {
+    sectionHistory.pop(); // Remove a atual
+    const previous = sectionHistory[sectionHistory.length - 1];
+    showSection(previous);
+  }
+}
   </script>
 </body>
 </html>
