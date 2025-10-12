@@ -1,4 +1,4 @@
-<! edit Srt>
+<! pré-visualização>
 <!doctype html>
 <html lang="en">
 <head>
@@ -291,15 +291,19 @@ footer svg {
       <p>Use this section to post.</p>
                       
       <div class="botoes-container">
+          <a href="#" onclick="showSection('postPreview')">Pré-visualização</a>
+      </div>
+                      
+      <div class="botoes-container">
           <a href="#" onclick="showSection('editSrt')">Editar Srt</a>
       </div>
       
-      <!-- Título 1 -->
+      <!-- Título -->
       <h2>Adicionar descrição</h2>
       <!-- Input de texto -->
       <input type="text" placeholder="Digite uma descrição..." name="descricao" />
 
-      <!-- Título 2 -->
+      <!-- Título -->
       <h2>Adicionar à Playlist</h2>
       <!-- Lista de checkboxes com nomes de playlists -->
       <div class="playlist-item">
@@ -317,7 +321,11 @@ footer svg {
         <label for="playlist3">Playlist 3</label>
       </div>
 
-      
+    </section>
+    
+    <section id="postPreview">
+      <h2>Pré-visualização</h2>
+      <p>Use this section to see your post lesson before you post.</p>
     </section>
     
     <section id="editSrt">
@@ -427,7 +435,7 @@ footer svg {
 let sectionHistory = ['home'];
 
 function showSection(targetId) {
-  const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt', 'posts', 'profile'];
+  const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt', 'posts', 'profile', 'postPreview'];
 
   const current = sectionHistory[sectionHistory.length - 1];
   if (targetId !== current) {
