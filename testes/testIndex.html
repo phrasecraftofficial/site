@@ -1,3 +1,4 @@
+<! lista de sections para ocultar>
 <!doctype html>
 <html lang="en">
 <head>
@@ -343,12 +344,14 @@ function showSection(targetId) {
     el.classList.toggle('active', id === targetId);
   });
 
-  // Atualiza botão "Voltar"
+  // Lista de seções onde o botão "Voltar" deve ser ocultado
+  const sectionsToHideBackBtn = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create'];
+
+  // Atualiza botão "Voltar"
   const goBackBtn = document.getElementById('btn-goBack');
   if (goBackBtn) {
-    // Se targetId for 'home', adiciona a classe 'hidden' (ou 'd-none', 'oculto', etc.)
-    // Se targetId não for 'home', remove a classe 'hidden'
-    goBackBtn.classList.toggle('hidden', targetId === 'home');
+    // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
+    goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
   }
 
   // Atualiza footer
