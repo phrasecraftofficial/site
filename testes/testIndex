@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dark Page</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #000;
+    color: #fff;
+  }
+
+  header, footer {
+    position: fixed;
+    left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #000;
+    padding: 0 16px;
+  }
+
+  header { top: 0; height: 56px; border-bottom: 1px solid #222; }
+  footer { bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
+
+  .logo-area { display: flex; align-items: center; gap: 8px; }
+
+  .icons-right, footer a {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .icon, footer svg {
+    width: 24px; height: 24px; fill: currentColor;
+  }
+
+  main { padding: 70px 16px 90px; text-align: center; }
+
+.video-container {
+  widht: 100vw;
+  max-width: 600px;
+  height: 30vh
+  background: #1e1e1e;
+  overflow: hidden;
+}
+
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 2px 0 8px 0;
+  text-align: left;
+}
+
+.channel-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;;
+}
+
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+}
+
+.video-thumb {
+  position: relative;
+  widht: 100vw;
+  max-width: 600px;
+  height: 30vh
+}
+
+.video-thumb img {
+  width: 100%;
+  display: block;
+}
+
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+footer a {
+  /* 1. Transforma o link em um contêiner flexível */
+  display: flex;
+  
+  /* 2. Empilha os itens verticalmente (ícone em cima, texto embaixo) */
+  flex-direction: column; 
+  
+  /* 3. Centraliza os itens horizontalmente */
+  align-items: center; 
+  
+  /* 4. Esta é a propriedade principal para controlar a distância! */
+  gap: 4px; /* ✨ Altere este valor para aumentar ou diminuir o espaço */
+}
+
+/* Apenas para estilização do exemplo */
+footer {
+  display: flex;
+  justify-content: space-around;
+}
+
+footer a {
+  text-decoration: none;
+  font-family: sans-serif;
+  font-size: 12px;
+}
+
+footer svg {
+  width: 20px;
+  height: 20px;
+}
+
+.avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #6d28d9;
+    color: white;
+    display: grid;
+    place-content: center;
+    font-weight: bold;
+}
+
+
+  section { display: none; }           /* todas escondidas */
+  section.active { display: block; }   /* visível */
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo-area">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 20L8 16M8 16L4 12M8 16H14C16 16 18 14 18 12C18 10 16 8 14 8H12M12 8L10 6M12 8L10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="19" cy="5" cx="1.5" fill="currentColor"/>
+        </svg>
+      <div>PhraseCraft</div>
+    </div>
+    <div class="icons-right">
+      <!-- Create -->
+      <a href="#" onclick="showSection('create')">
+        <svg class="icon" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
+        </svg>
+      </a>
+      <!-- Search -->
+      <a href="#" onclick="showSection('search')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="active">
+      <h2>Home</h2>
+      <p>Welcome to the home section.</p>
+        <div class="video-container">
+            
+          <div class="video-thumb">
+            <img src="thumbnail.jpg" alt="Video thumbnail">
+            <span class="video-time">10:35</span>
+          </div>
+          
+          <div class="channel-info">
+            <div class="channel-pic">
+              <img src="canal.jpg" alt="Canal" class="channel-pic">
+            </div>
+            
+            <div class="video-text">
+              <h3 class="video-title">Título do Vídeo Aqui</h3>
+              
+              <div class="video-meta">
+                <span class="channel-name">Nome do Canal</span>
+                <span class="performance">95%</span>
+              </div>
+              
+            </div>
+          </div>
+          
+        </div>
+    </section>
+
+    <section id="search">
+      <h2>Search</h2>
+      <p>Use this section to search content.</p>
+    </section>
+
+    <section id="notifications">
+      <h2>Notifications</h2>
+      <p>Here are your notifications.</p>
+    </section>
+
+    <section id="you">
+      <h2>You</h2>
+      <p>This section is about your profile.</p>
+    </section>
+
+    <section id="subscriptions">
+      <h2>Subscriptions</h2>
+      <p>See all your subscriptions here.</p>
+    </section>
+
+    <section id="create">
+      <h2>Create</h2>
+      <p>Use this section to create new content.</p>
+        <div class="load-group">
+          	<label for="videoUpload" class="upload-btn">Upload Vídeo</label>
+          	<input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
+          	<input type="file" id="videoUpload" accept="video/*">
+        </div>
+        <div class="load-group">
+          	<label for="srtUpload" class="upload-btn">Upload SRT</label>
+          	<input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
+          	<input type="file" id="srtUpload" accept=".srt">
+        </div>
+                
+        <div class="botoes-container">
+        	<button id="btn-open" onclick="openContent()">Carregar</button>
+        </div>
+    </section>
+    
+    <!- Subsections ->
+    <section id="postLesson">
+      <h2>Post</h2>
+      <p>Use this section to post.</p>
+      
+      <div>Editar Srt</div>
+      
+      <div>
+          <p>Adicionar descrição</p>
+          <div>Input de texto</div>
+      </div>
+      
+      <div>
+          <p>Adicionar à Playlist</p>
+          <div>Nome das Playlists com checkbox</div>
+      </div>
+      
+    </section>
+    
+    <section id="editarSrt">
+      <h2>Editar SRT</h2>
+      <p>Use this section to edit Srt.</p>
+    </section>
+    
+    <section id="profile">
+      <h2>My Account</h2>
+      <p>Use this section to see and edit your profile.</p>
+    </section>
+    
+    <section id="posts">
+      <h2>My Lessons Posts</h2>
+      <p>Use this section to see your lessons posted.</p>
+    </section>
+    
+  </main>
+
+  <footer>
+    <a href="#" onclick="showSection('home')" class="active">
+      <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#" onclick="showSection('subscriptions')">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
+      <span>Subscriptions</span>
+    </a>
+    <a href="#" onclick="showSection('notifications')">
+      <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      <span>Notifications</span>
+    </a>
+    <a href="#" onclick="showSection('you')"><div class="avatar">C</div><span>You</span></a>
+  </footer>
+
+  <script>
+    function showSection(targetId) {
+      const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create'];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === targetId) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+
+      // Atualiza o footer ativo
+      const footerLinks = document.querySelectorAll('footer a');
+      footerLinks.forEach(link => link.classList.remove('active'));
+      const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
+      if (targetLink) targetLink.classList.add('active');
+    }
+  </script>
+</body>
+</html>
