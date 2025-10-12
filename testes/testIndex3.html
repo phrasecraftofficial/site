@@ -1,4 +1,4 @@
-<! carregar conteudo>
+<! thumbnail>
 <!doctype html>
 <html lang="en">
 <head>
@@ -302,7 +302,25 @@ video {
       <p>Use this section to post.</p>
                       
       <div class="botoes-container">
-          <a href="#" onclick="showSection('editSrt')">Editar Srt</a>
+          <button href="#" onclick="postLesson()">Postar Lição</a>
+      </div>
+                      
+      <div class="botoes-container">
+          <button href="#" onclick="showSection('editSrt')">Editar Srt</a>
+      </div>
+    
+      <div class="video-section">
+          <video id="lessonVideoPlayer" controls></video>
+      </div>
+
+      <div class="thumbnail-controls">
+          <button id="btn-captureThumbnail" onclick="showSection('editSrt')">Capturar Thumbnail do Momento Atual</button>
+        
+          <h2>Pré-visualização da Thumbnail</h2>
+          
+      	  <div id="thumbnailPreviewContainer">
+            <p>A thumbnail capturada aparecerá aqui.</p>
+      	  </div>
       </div>
       
       <!-- Título -->
@@ -332,11 +350,6 @@ video {
         <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
         <label for="playlist3">Playlist 3</label>
       </div>
-                      
-      <div class="botoes-container">
-          <a href="#" onclick="postLesson()">Postar Lição</a>
-      </div>
-
       
     </section>
     
