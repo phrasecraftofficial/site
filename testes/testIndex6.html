@@ -215,7 +215,7 @@ video {
     </div>
     <div class="icons-right">
       <!-- Create -->
-      <a href="#" onclick="showSection('create')">
+      <a href="#" id="icon-create" onclick="showSection('create')" hidden>
         <svg class="icon" viewBox="0 0 24 24">
         <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
         </svg>
@@ -477,7 +477,8 @@ video {
       <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
       <span>Notifications</span>
     </a>
-    <a href="#" onclick="showSection('you')"><div class="avatar">C</div><span>You</span></a>
+    <a href="#" onclick="showSection('you')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="22" height="22" /><span>You</span></a>
   </footer>
 
   <script>
@@ -573,6 +574,7 @@ const btnLoginHeader = document.getElementById('btnLogin');
 const loginForm = document.getElementById('login-form');
 const logoutButton = document.getElementById('logout-button');
 const userEmailDisplay = document.getElementById('user-email-display');
+const iconCreate = document.getElementById('icon-create');
 
 const loginMessage = document.getElementById('login-message');
 
@@ -581,10 +583,10 @@ async function checkAuthStatus() {
     try {
         const user = await account.get();
         renderUIForAuthState(true, user.email);
-        showSection('home');
+        showSection('myPosts');
     } catch (error) {
         renderUIForAuthState(false);
-        showSection('login-screen');
+        showSection('home');
     }
 }
     
@@ -616,29 +618,27 @@ function handleLogout() {
             console.error('Erro ao fazer logout:', error);
         });
 }
-
+    
 /* Função para renderizar a interface de
     ** acordo com o estado de autenticação */
 function renderUIForAuthState(isLoggedIn, userEmail = '') {
-    // Esconde tudo primeiro para evitar conflitos
-    // Certifique-se de que os botões estão sendo realmente ocultados/mostrados
-    btnLoginHeader.hidden = true; // Use .hidden para clareza
-    logoutButton.hidden = true; // Use .hidden para clareza
+    // Esconde tudo primeiro
+    iconCreate.style.display = 'none';
+    btnLoginHeader.style.display = 'none';
+    logoutButton.style.display = 'none';
     userEmailDisplay.style.display = 'none';
 
     if (isLoggedIn) {
-        // Se o usuário está logado, mostra o e-mail e o botão de sair
+        // Mostra email e botão sair
         userEmailDisplay.textContent = userEmail;
         userEmailDisplay.style.display = 'block';
-        // Note que se você não estiver usando .hidden no HTML, precisa usar o display
-        logoutButton.hidden = false;
+        logoutButton.style.display = 'block';
+    iconCreate.style.display = 'block';
     } else {
-        // Se o usuário NÃO está logado, mostra apenas o botão de entrar
-        btnLoginHeader.hidden = false;
+        // Mostra apenas botão entrar
+        btnLoginHeader.style.display = 'block';
     }
 }
-
-checkAuthStatus();
 
 // Função para mostrar perfil ou tela de login
 async function showProfile() {
@@ -651,6 +651,8 @@ async function showProfile() {
         showSection('login-screen');
     }
 }
+
+checkAuthStatus();
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // Bloco Edit Srt - Inicio
