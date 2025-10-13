@@ -274,7 +274,7 @@ video {
       <p>This section is about your profile.</p>
                       
       <div class="botoes-container">
-          <a href="#" onclick="showSection('profile')">Meu Perfil</a>
+          <a href="#" onclick="showProfile()">Meu Perfil</a>
           <a href="#" onclick="showSection('posts')">Minhas Postagens</a>
       </div>
     </section>
@@ -429,10 +429,15 @@ video {
       <h2>My Account</h2>
       <p>Use this section to see and edit your profile.</p>
       <div class="header-content"  id="header-content">
+      
         <div class="user-buttons">
             <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
-            <button id="btnLogin" class="btnLogin">Entrar</button><hr>
-            <button id="logout-button" class="">Sair</button>
+
+			<div class="botoes-container">
+				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
+            	<button id="logout-button" class="" hidden>Sair</button>
+            </div>
+            
         </div>
       </div>
     </section>
@@ -442,7 +447,7 @@ video {
       <p>Use this section to see your lessons posted.</p>
     </section>
 
-    <section id="login-screen" class="login-screen-container hidden">
+    <section id="login-screen" class="login-screen-container">
         <div class="login-card">
             <h2>Entrar</h2>
             <form id="login-form">
@@ -451,9 +456,6 @@ video {
                 <p id="login-message"></p>
                 <button type="submit" class="login-button">Entrar</button>
             </form>
-            <p>Esqueceu a senha? <a href="#" id="link-to-recover">Recuperar</a></p>
-            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 20px 0;">
-            <p>Não tem uma conta? <a href="#" id="link-to-signup">Cadastre-se</a></p>
         </div>
     </section>
 
@@ -550,14 +552,14 @@ function goBack() {
   }
 }
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// Bloco Login - Inicio
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Login ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
 // Configuração do Appwrite
 const client = new Appwrite.Client()
         .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-        .setProject('689f3d3a00095fde3112');
+        .setProject('68ebe8640000ca7c860b');
 
 const account = new Appwrite.Account(client);
 
@@ -592,14 +594,17 @@ async function checkAuthStatus() {
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email-login').value;
-        const password = document.getElementById('password-login').value;
+    const password = document.getElementById('password-login').value;
     loginMessage.textContent = '';
     try {
         await account.createEmailPasswordSession(email, password);
-        // Chama a função que reflete o novo estado na interface
-        checkAuthStatus();
+        // Atualiza a interface
+        const user = await account.get();
+        renderUIForAuthState(true, user.email);
+        // Mostra a seção de perfil após login bem-sucedido
+        showSection('profile');
     } catch (error) {
-            loginMessage.textContent = 'Erro no login: ' + error.message;
+        loginMessage.textContent = 'Erro no login: ' + error.message;
     }
 });
 
@@ -607,6 +612,7 @@ loginForm.addEventListener('submit', async (e) => {
     ** acordo com o estado de autenticação */
 function renderUIForAuthState(isLoggedIn, userEmail = '') {
     // Esconde tudo primeiro para evitar conflitos
+    btnLoginHeader.style.display = 'none';
     logoutButton.style.display = 'none';
     userEmailDisplay.style.display = 'none';
 
@@ -615,6 +621,21 @@ function renderUIForAuthState(isLoggedIn, userEmail = '') {
         userEmailDisplay.textContent = userEmail;
         userEmailDisplay.style.display = 'block';
         logoutButton.style.display = 'block';
+    } else {
+        // Se o usuário NÃO está logado, mostra apenas o botão de entrar
+        btnLoginHeader.style.display = 'block';
+    }
+}
+
+// Função para mostrar perfil ou tela de login
+async function showProfile() {
+    try {
+        const user = await account.get();
+        // Se conseguiu pegar o usuário, está logado
+        showSection('profile');
+    } catch (error) {
+        // Se deu erro, não está logado
+        showSection('login-screen');
     }
 }
 
@@ -1247,13 +1268,10 @@ function initSrtEditor() {
         openEditor(srtData[0].id);
     }
 }
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// Bloco Edit Srt - Fim
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// ----- Thumbnail -----
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+//  - Bloco Fx | Thumbnail -
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // Guarda a thumbnail capturada para ser usada depois. (Como no padrão anterior)
 let capturedThumbnailBlob = null;
 
