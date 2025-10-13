@@ -1,0 +1,1242 @@
+<! carregar conteudo>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dark Page</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #000;
+    color: #fff;
+  }
+  
+.hidden {
+    display: none !important;
+}
+
+h2 {
+  margin-top: 30px;
+}
+
+input[type="text"] {
+  width: 100%;
+  height: 50%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+  header, footer {
+    position: fixed;
+    left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #000;
+    padding: 0 16px;
+  }
+
+  header { top: 0; height: 56px; border-bottom: 1px solid #222; }
+  footer { bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
+
+  .logo-area { display: flex; align-items: center; gap: 8px;}
+  
+  .logo-area img { background: #fff; color: #000;  border-radius: 15%;}
+
+
+  .icons-right, footer a {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .icon, footer svg {
+    width: 24px; height: 24px; fill: currentColor;
+  }
+
+  main { padding: 70px 16px 90px; text-align: center; }
+
+.video-container {
+  widht: 100vw;
+  max-width: 600px;
+  height: 30vh
+  background: #1e1e1e;
+  overflow: hidden;
+}
+
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 2px 0 8px 0;
+  text-align: left;
+}
+
+.channel-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;;
+}
+
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+}
+
+.video-thumb {
+  position: relative;
+  widht: 100vw;
+  max-width: 600px;
+  height: 30vh
+}
+
+.video-thumb img {
+  width: 100%;
+  display: block;
+}
+
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+footer a {
+  /* 1. Transforma o link em um contêiner flexível */
+  display: flex;
+  
+  /* 2. Empilha os itens verticalmente (ícone em cima, texto embaixo) */
+  flex-direction: column; 
+  
+  /* 3. Centraliza os itens horizontalmente */
+  align-items: center; 
+  
+  /* 4. Esta é a propriedade principal para controlar a distância! */
+  gap: 4px; /* ✨ Altere este valor para aumentar ou diminuir o espaço */
+}
+
+/* Apenas para estilização do exemplo */
+footer {
+  display: flex;
+  justify-content: space-around;
+}
+
+footer a {
+  text-decoration: none;
+  font-family: sans-serif;
+  font-size: 12px;
+}
+
+footer svg {
+  width: 20px;
+  height: 20px;
+}
+
+.avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #6d28d9;
+    color: white;
+    display: grid;
+    place-content: center;
+    font-weight: bold;
+}
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.playlist-item input {
+  margin-right: 10px;
+}
+
+section { display: none; }           /* todas escondidas */
+section.active { display: block; }   /* visível */
+
+.video-section {
+    background: ;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+video {
+    width: 100%;
+    border-radius: 4px;
+}
+</style>
+</head>
+<body>
+  <header>
+  	<span id="btn-goBack" onclick="goBack()" class="hidden">← Voltar</span>
+    <div class="logo-area">
+        <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
+      <div>PhraseCraft</div>
+    </div>
+    <div class="icons-right">
+      <!-- Create -->
+      <a href="#" onclick="showSection('create')">
+        <svg class="icon" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
+        </svg>
+      </a>
+      <!-- Search -->
+      <a href="#" onclick="showSection('search')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main>
+  	<!-- Player Único de vídeo real em um lugar "neutro" -->
+    <div id="videoStorage" class="hidden">
+      <video id="mainVideoPlayer" controls></video>
+    </div>
+    
+    <section id="home" class="active">
+      <h2>Home</h2>
+      <p>Welcome to the home section.</p>
+        <div class="video-container">
+            
+          <div class="video-thumb">
+            <img src="thumbnail.jpg" alt="Video thumbnail">
+            <span class="video-time">10:35</span>
+          </div>
+          
+          <div class="channel-info">
+            <div class="channel-pic">
+              <img src="canal.jpg" alt="Canal" class="channel-pic">
+            </div>
+            
+            <div class="video-text">
+              <h3 class="video-title">Título do Vídeo Aqui</h3>
+              
+              <div class="video-meta">
+                <span class="channel-name">Nome do Canal</span>
+                <span class="performance">95%</span>
+              </div>
+              
+            </div>
+          </div>
+          
+        </div>
+    </section>
+
+    <section id="search">
+      <h2>Search</h2>
+      <p>Use this section to search content.</p>
+    </section>
+
+    <section id="notifications">
+      <h2>Notifications</h2>
+      <p>Here are your notifications.</p>
+    </section>
+
+    <section id="you">
+      <h2>You</h2>
+      <p>This section is about your profile.</p>
+                      
+      <div class="botoes-container">
+          <a href="#" onclick="showSection('profile')">Meu Perfil</a>
+          <a href="#" onclick="showSection('posts')">Minhas Postagens</a>
+      </div>
+    </section>
+
+    <section id="subscriptions">
+      <h2>Subscriptions</h2>
+      <p>See all your subscriptions here.</p>
+    </section>
+
+    <section id="create">
+        <h2>Create</h2>
+        <p>Use this section to create new content.</p>
+        <div class="load-group">
+            <label for="videoUpload" class="upload-btn">Upload Vídeo</label>
+            <input type="file" id="videoUpload" accept="video/*">
+        </div>
+        <div class="load-group">
+            <label for="srtUpload" class="upload-btn">Upload SRT</label>
+            <input type="file" id="srtUpload" accept=".srt">
+        </div>
+
+        <div class="botoes-container">
+            <a href="#" onclick="openContent()">Carregar</a>
+        </div>
+    </section>
+    
+    <!- Subsections ->
+    <section id="postLesson">
+      <h2>Post</h2>
+      <p>Use this section to post.</p>
+                      
+      <div class="botoes-container">
+          <button href="#" onclick="postLesson()">Postar Lição</button>
+      </div>
+                      
+      <div class="botoes-container">
+          <button onclick="showSection('editSrt')">Editar Srt</button>
+      </div>
+
+      <div id="postPlayerContainer" class="video-section"></div>
+
+      <button id="captureBtn" class="thumb-gen-button">📸 Capturar Thumbnail</button>
+
+      <div id="previewContainer" class="thumb-gen-preview">
+          <span>A pré-visualização da sua thumbnail aparecerá aqui.</span>
+      </div>
+      
+      <!-- Título -->
+      <h2>Nome</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite um nome..." name="nome" />
+      
+      <!-- Título -->
+      <h2>Descrição</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite uma descrição..." name="description" />
+
+      <!-- Título -->
+      <h2>Adicionar à Playlist</h2>
+      <!-- Lista de checkboxes com nomes de playlists -->
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
+        <label for="playlist1">Playlist 1</label>
+      </div>
+
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
+        <label for="playlist2">Playlist 2</label>
+      </div>
+
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
+        <label for="playlist3">Playlist 3</label>
+      </div>
+      
+    </section>
+    
+    <section id="editSrt">
+      <h2>Editar SRT</h2>
+      <div class="editor" id="editor">
+
+        <!-- Div para exibir o nome do arquivo da legenda -->
+        <p id="subtitleName"></p>
+
+        <div id="editPlayerContainer" class="video-section"></div>
+        
+        <label>Início</label>
+        <div class="time-controls">
+          <input id="editStart">
+          <button onclick="adjustTime('start',  -TIME_STEP)">−</button>
+          <button onclick="adjustTime('start', +TIME_STEP)">+</button>
+
+          <button onclick="undo()">↩</button>
+          <button onclick="redo()">↪</button>
+        </div>
+
+        <label>Fim</label>
+        <div class="time-controls">
+          <input id="editEnd">
+          <button onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button onclick="adjustTime('end', +TIME_STEP)">+</button>
+
+          <button onclick="addSegment()">☰ ➕️</button>
+          <button onclick="removeSegment()">☰ ➖</button>
+        </div>
+
+        <label>Texto</label>
+        <textarea id="editText" rows="3"></textarea>
+
+        <button id="btn-load" onclick="showLoadArea()">📂</button>
+        <button onclick="prevLine()">◀◀</button>
+        <button onclick="playLine()">▶</button>
+        <button onclick="nextLine()">▶▶</button>
+        <button id="btn-save" onclick="showSaveArea()">💾</button>
+
+        <p id="btn-config" onclick="showConfigEdit()">⚙ Editar em Lote</p>
+
+        <div id="config-area" hidden>
+            <span id="btn-close" onclick="closeConfigEdit()">&times;</span>
+            <div class="time-controls">
+              <input id="editStack" placeholder="0.05">
+              <button onclick="showEarlier()">Adiantar</button>
+              <button onclick="showLater()">Atrasar</button>
+            </div>
+
+            <form id="linhaForm">
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="all" checked>
+                Todas as linhas
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="current">
+                Apenas linha atual
+              </label>
+
+            <label class="radio-option">
+              <input type="radio" name="opcao-linha" value="from-current">
+              Linha selecionada e próximas linhas
+            </label>
+            </form>
+            <hr>
+        </div>
+    </div>
+
+    <div class="segmentsArea" id="segments-area">
+        <div id="segments"></div>
+    </div>
+
+    </section>
+    
+    <section id="profile">
+      <h2>My Account</h2>
+      <p>Use this section to see and edit your profile.</p>
+    </section>
+    
+    <section id="posts">
+      <h2>My Lessons Posts</h2>
+      <p>Use this section to see your lessons posted.</p>
+    </section>
+    
+  </main>
+
+  <footer>
+    <a href="#" onclick="showSection('home')" class="active">
+      <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#" onclick="showSection('subscriptions')">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
+      <span>Subscriptions</span>
+    </a>
+    <a href="#" onclick="showSection('notifications')">
+      <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      <span>Notifications</span>
+    </a>
+    <a href="#" onclick="showSection('you')"><div class="avatar">C</div><span>You</span></a>
+  </footer>
+
+  <script>
+let sectionHistory = ['home'];
+
+// 🛑 NOVAS VARIÁVEIS GLOBAIS NECESSÁRIAS PARA O EDITOR SRT
+let srtData = []; 
+let currentSegment = null;
+let undoStack = [];
+let redoStack = [];
+const TIME_STEP = 0.05; // 50 milissegundos
+let stopTimeout = null;
+let isBatchEditing = false;
+let subtitleName = "legenda.srt"; // Nome padrão para download
+// FIM DAS NOVAS VARIÁVEIS GLOBAIS
+
+function showSection(targetId) {
+    const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt', 'posts', 'profile'];
+    
+    // ⭐ PEGA O PLAYER DE VÍDEO E SEU "ESCONDERIJO" ORIGINAL
+    const videoPlayer = document.getElementById('mainVideoPlayer');
+    const videoStorage = document.getElementById('videoStorage');
+
+    // Move o player para o encaixe correto ANTES de mostrar a nova seção
+    if (targetId === 'postLesson') {
+        document.getElementById('postPlayerContainer').appendChild(videoPlayer);
+    } else if (targetId === 'editSrt') {
+        document.getElementById('editPlayerContainer').appendChild(videoPlayer);
+    } else {
+        // Se não for uma seção de vídeo, devolve o player para o esconderijo
+        videoStorage.appendChild(videoPlayer);
+    }
+
+    const current = sectionHistory[sectionHistory.length - 1];
+    if (targetId !== current) {
+        sectionHistory.push(targetId);
+    }
+
+    // Ativa/desativa seções
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('active', id === targetId);
+    });
+
+    // O código de pausar o vídeo não é mais necessário aqui, 
+    // pois ao mover o player para o "storage", ele some da tela.
+    // Mas podemos manter por segurança.
+    if (targetId !== 'postLesson' && targetId !== 'editSrt') {
+        videoPlayer.pause();
+    }
+
+  // Lista de seções onde o botão "Voltar" deve ser ocultado
+  const sectionsToHideBackBtn = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'posts', 'profile'];
+
+  // Atualiza botão "Voltar"
+  const goBackBtn = document.getElementById('btn-goBack');
+  if (goBackBtn) {
+    // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
+    goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
+  }
+
+  // Atualiza footer
+  const footerLinks = document.querySelectorAll('footer a');
+  footerLinks.forEach(link => link.classList.remove('active'));
+  const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
+  if (targetLink) targetLink.classList.add('active');
+}
+
+function goBack() {
+  if (sectionHistory.length > 1) {
+    sectionHistory.pop(); // Remove a atual
+    const previous = sectionHistory[sectionHistory.length - 1];
+    showSection(previous);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// Bloco Edit Srt - Inicio
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+function closeConfigEdit() {
+    document.getElementById('editor').style.display = "block";
+    document.getElementById('segments-area').style.display = "block";
+    document.getElementById('config-area').style.display = "none";
+}
+
+function showConfigEdit() {
+    document.getElementById('editor').style.display = "block";
+    document.getElementById('segments-area').style.display = "block";
+    document.getElementById('config-area').style.display = "block";
+}
+
+
+function renderSegments() {
+  const container = document.getElementById("segments");
+  container.innerHTML = "";  // Limpa a lista de segmentos
+
+  srtData.forEach(seg => {
+    const div = document.createElement("div");
+    div.className = "segment";
+    div.setAttribute('data-id', seg.id);
+    
+    // Adiciona classe ao segmento selecionado
+    if (seg.id === currentSegment?.id) {
+      div.classList.add("segment-selected");
+    }
+    
+    // Define o conteúdo do segmento
+    div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
+    
+    // Define a ação de clicar no segmento
+    div.onclick = () => openEditor(seg.id);
+    
+    // Adiciona o segmento ao container
+    container.appendChild(div);
+  });
+}
+
+function openEditor(id) {
+  currentSegment = srtData.find(s => s.id === id);
+  if (!currentSegment) return;
+
+  document.getElementById("editor").style.display = "block";
+  document.getElementById("editStart").value = currentSegment.start;
+  document.getElementById("editEnd").value = currentSegment.end;
+  document.getElementById("editText").value = currentSegment.text;
+
+  document.getElementById("editStart").oninput = e => handleChange("start", e.target.value);
+  document.getElementById("editEnd").oninput = e => handleChange("end", e.target.value);
+  document.getElementById("editText").oninput = e => handleChange("text", e.target.value);
+  
+  // Remove a classe de todos os segmentos
+  document.querySelectorAll('.segment').forEach(item => {
+    item.classList.remove('segment-selected');
+  });
+  
+  // Adiciona a classe apenas ao segmento atual
+  const itemAtivo = document.querySelector(`[data-id="${id}"]`);
+  if (itemAtivo) {
+    itemAtivo.classList.add('segment-selected');
+  }
+  
+  scrollToSegment(id);
+  
+  setTimeout(() => playLine(), 500);
+}
+
+function handleChange(field, newValue) {
+  if (!currentSegment) return;
+  const oldValue = currentSegment[field];
+  if (oldValue === newValue) return;
+
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  undoStack.push({ 
+    type: "edit",
+    id: currentSegment.id, 
+    field, 
+    oldValue, 
+    newValue,
+    segmentBackup: oldSegment // backup completo do segmento
+  });
+  redoStack = [];
+  currentSegment[field] = newValue;
+  renderSegments();
+}
+
+function adjustTime(field, deltaSeconds) {
+  if (!currentSegment) return;
+
+  const oldValue = currentSegment[field];
+  const newValue = shiftTime(oldValue, deltaSeconds);
+
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const prev = srtData[idx - 1];
+  const next = srtData[idx + 1];
+
+  const toMs = t => {
+    const [h, m, rest] = t.split(":");
+    const [s, ms] = rest.split(",");
+    return (+h * 3600 + +m * 60 + +s) * 1000 + +ms;
+  };
+
+  const newMs = toMs(newValue);
+  const startMs = toMs(currentSegment.start);
+  const endMs = toMs(currentSegment.end);
+
+  if (field === "start" && prev && newMs <= toMs(prev.end) + 0) return;
+  if (field === "end" && next && newMs >= toMs(next.start) - 0) return;
+  if (field === "start" && newMs >= endMs - 0) return;
+  if (field === "end" && newMs <= startMs + 0) return;
+  
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  if (!isBatchEditing) {
+    undoStack.push({ 
+      type: "edit",
+      id: currentSegment.id, 
+      field, 
+      oldValue, 
+      newValue,
+      segmentBackup: oldSegment
+    });
+    redoStack = [];
+  }
+
+  redoStack = [];
+
+  currentSegment[field] = newValue;
+  updateEditorFields(currentSegment);
+  renderSegments();
+}
+
+function shiftTime(timeStr, delta) {
+  // "00:00:04,500" → soma delta (em segundos)
+  const [h, m, rest] = timeStr.split(":");
+  const [s, ms] = rest.split(",");
+  let totalMs = (+h * 3600 + +m * 60 + +s) * 1000 + +ms + delta * 1000;
+
+  if (totalMs < 0) totalMs = 0;
+  const hours = Math.floor(totalMs / 3600000);
+  const minutes = Math.floor((totalMs % 3600000) / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const millis = Math.floor(totalMs % 1000);
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)},${pad(millis, 3)}`;
+}
+
+function pad(num, size=2) {
+  return num.toString().padStart(size, "0");
+}
+
+// ======================
+// ↩ | ↪ | ☰ ➖ | ☰ ➕️
+// ======================
+function undo() {
+  if (!undoStack.length) return;
+  const last = undoStack.pop();
+  redoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de antes da adição
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de antes da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.oldValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  const last = redoStack.pop();
+  undoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de depois da adição
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de depois da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.newValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function addSegment() {
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  let insertIndex = srtData.length;
+  if (currentSegment) {
+    const idx = srtData.findIndex(s => s.id === currentSegment.id);
+    insertIndex = idx + 1;
+  }
+
+  const newId = insertIndex + 1;
+  const newSegment = {
+    id: newId,
+    start: "00:00:00,000",
+    end: "00:00:00,000",
+    text: "Novo trecho"
+  };
+  
+  srtData.splice(insertIndex, 0, newSegment);
+  
+  // Renumera os IDs a partir do ponto de inserção
+  for (let i = insertIndex + 1; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "add",
+    segment: { ...newSegment },
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: insertIndex
+  });
+  redoStack = [];
+
+  currentSegment = newSegment;
+  renderSegments();
+  openEditor(currentSegment.id);
+}
+
+function removeSegment() {
+  if (!currentSegment) return;
+  if (srtData.length === 1) return alert("Não é possível remover o único segmento.");
+
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const removedSegment = { ...srtData[idx] };
+  srtData.splice(idx, 1);
+
+  // Renumera os IDs após a remoção
+  for (let i = idx; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "remove",
+    segment: removedSegment,
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: idx
+  });
+  redoStack = [];
+
+  currentSegment = srtData[idx] || srtData[idx - 1] || null;
+
+  renderSegments();
+  if (currentSegment) openEditor(currentSegment.id);
+  else document.getElementById("editor").style.display = "none";
+}
+
+function updateEditorFields(seg) {
+  document.getElementById("editStart").value = seg.start;
+  document.getElementById("editEnd").value = seg.end;
+  document.getElementById("editText").value = seg.text;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); }
+  if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
+});
+
+
+// ======================
+// ◀◀ | ▶▶
+// ======================
+function prevLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("mainVideoPlayer");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx > 0) {
+    openEditor(srtData[idx - 1].id);
+    scrollToSegment(srtData[idx - 1].id);
+  }
+}
+
+function nextLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("mainVideoPlayer");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx < srtData.length - 1) {
+    openEditor(srtData[idx + 1].id);
+    scrollToSegment(srtData[idx + 1].id);
+  }
+}
+
+function scrollToSegment(id) {
+  const segmentsContainer = document.getElementById("segments-area");
+  const segments = document.querySelectorAll(".segment");
+  
+  // Encontra o elemento do segmento pelo índice (id - 1)
+  const targetSegment = segments[id - 1];
+  
+  if (targetSegment && segmentsContainer) {
+    // Usando scrollIntoView para centralizar o segmento
+    targetSegment.scrollIntoView({
+      behavior: 'smooth',  // Animação suave
+      block: 'center'      // Centraliza verticalmente
+    });
+  }
+}
+
+// ======================
+// Etidar e lote
+// ======================
+function showEarlier() {
+  shiftSelectedLines(-getCurrentStep());
+}
+
+function showLater() {
+  shiftSelectedLines(+getCurrentStep());
+}
+
+function getCurrentStep() {
+  const input = document.getElementById("editStack").value.trim().replace(",", ".");
+  const step = parseFloat(input);
+  return isNaN(step) || step <= 0 ? TIME_STEP : step;
+}
+
+function shiftSelectedLines(delta) {
+  const selected = document.querySelector('input[name="opcao-linha"]:checked');
+  const value = selected ? selected.value : "current";
+
+  const stateBefore = srtData.map(s => ({ ...s }));
+  const prevSegment = currentSegment;
+
+  if (value === "all") {
+    isBatchEditing = true;
+    srtData.forEach(seg => {
+      currentSegment = seg;
+      adjustTime("start", delta);
+      adjustTime("end", delta);
+    });
+    isBatchEditing = false;
+  } else if (value === "from-current" && currentSegment) {
+    const startIdx = srtData.findIndex(s => s.id === currentSegment.id);
+    if (startIdx >= 0) {
+      isBatchEditing = true;
+      for (let i = startIdx; i < srtData.length; i++) {
+        currentSegment = srtData[i];
+        adjustTime("start", delta);
+        adjustTime("end", delta);
+      }
+      isBatchEditing = false;
+    }
+  } else if (value === "current" && currentSegment) {
+    adjustTime("start", delta);
+    adjustTime("end", delta);
+  }
+
+  const stateAfter = srtData.map(s => ({ ...s }));
+
+  undoStack.push({
+    type: "edit-multiple",
+    delta,
+    stateBefore,
+    stateAfter
+  });
+  redoStack = [];
+
+  currentSegment = prevSegment;
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+// ==================================
+// 📂 Funções de Carregamento 
+// ==================================
+// Encontre sua função openContent e substitua-a por esta:
+function openContent() {
+    const videoUpload = document.getElementById("videoUpload").files[0];
+    const srtUpload = document.getElementById("srtUpload").files[0];
+
+    // 1. Carregar o vídeo
+    if (videoUpload) {
+        const videoURL = URL.createObjectURL(videoUpload);
+        
+        // ⭐ CORRIGIDO: Agora atualizamos apenas o player de vídeo único e principal.
+        document.getElementById("mainVideoPlayer").src = videoURL;
+
+    } else {
+        alert("Selecione um arquivo de vídeo para carregar.");
+        return;
+    }
+
+    // 2. Carregar a legenda (o resto da função está correto)
+    if (srtUpload) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            parseSRT(e.target.result);
+            subtitleName = srtUpload.name;
+            document.getElementById("subtitleName").textContent = subtitleName;
+            showSection('postLesson');
+        };
+        reader.readAsText(srtUpload);
+    } else {
+        srtData = [{ id: 1, start: "00:00:00,000", end: "00:00:05,000", text: "Digite sua legenda aqui" }];
+        renderSegments();
+        showSection('postLesson');
+    }
+}
+
+// Função para interpretar o conteúdo .srt para srtData
+function parseSRT(content) {
+  const lines = content.split(/\r?\n/);
+  const segments = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const id = parseInt(lines[i++]);
+    const time = lines[i++];
+
+    if (!time || !time.includes("-->")) continue;
+
+    const [start, end] = time.split("-->").map(s => s.trim().replace(".", ","));
+    let text = "";
+
+    while (i < lines.length && lines[i].trim() !== "") {
+      text += lines[i++] + "\n";
+    }
+
+    segments.push({
+      id,
+      start,
+      end,
+      text: text.trim()
+    });
+
+    while (i < lines.length && lines[i].trim() === "") i++;
+  }
+
+  srtData.length = 0;
+  srtData.push(...segments);
+  currentSegment = null;
+  undoStack = [];
+  redoStack = [];
+  renderSegments();
+}
+
+// Exibir SRT
+function showSRT() {
+  const srt = generateSRT();
+  const novaAba = window.open("", "_blank");
+
+  if (novaAba) {
+    novaAba.document.write(`<pre>${srt.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`);
+    novaAba.document.title = "SRT Gerado";
+    novaAba.document.close();
+  } else {
+    alert("Não foi possível abrir nova aba. Verifique se o bloqueador de pop-up está ativo.");
+  }
+}
+
+
+function generateSRT() {
+  return srtData.map(seg => {
+    return `${seg.id}\n${seg.start} --> ${seg.end}\n${seg.text}`;
+  }).join("\n\n");
+}
+
+function copyToClipboard() {
+  const text = generateSRT();
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Legendas copiadas para a área de transferência.");
+  });
+}
+
+function downSrt() {
+  // Verifique se o nome da legenda está configurado corretamente
+  if (!subtitleName) {
+    alert("Erro: Nome da legenda não encontrado.");
+    return;
+  }
+
+  const blob = new Blob([generateSRT()], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = subtitleName;  // Usando o nome da legenda carregada
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Função auxiliar para playLine()
+// converter o tempo no formato 
+// SRT (hh:mm:ss,SSS) para segundos
+function parseTime(timeString) {
+  const timeParts = timeString.split(/[:,]/);  // Separar por ":" e ","
+  const hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10);
+  const seconds = parseInt(timeParts[2], 10);
+  const milliseconds = parseInt(timeParts[3], 10);
+
+  // Converter tudo para segundos
+  return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+}
+
+// Busca os tempos de início e fim da legenda atual e 
+// usa o vídeo (ou áudio) para tocar o trecho
+function playLine() {
+  if (!currentSegment) {
+    alert("Nenhum trecho selecionado.");
+    return;
+  }
+
+  const videoElement = document.getElementById("mainVideoPlayer");
+  if (!videoElement || !videoElement.src) {
+    alert("Carregue um vídeo primeiro!");
+    return;
+  }
+
+  // **CRÍTICO: Limpa qualquer timeout anterior**
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+
+  // Pausa o vídeo se estiver tocando
+  if (!videoElement.paused) {
+    videoElement.pause();
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+
+  // Aguarda um frame antes de iniciar (garante que pause foi processado)
+  requestAnimationFrame(() => {
+    videoElement.currentTime = startTime;
+    videoElement.play();
+
+    // Configura novo timeout para pausar no fim
+    stopTimeout = setTimeout(() => {
+      videoElement.pause();
+      stopTimeout = null;
+    }, (endTime - startTime) * 1000);
+  });
+}
+
+// ======================
+// Inicializar
+// ======================
+function initSrtEditor() {
+    // Garante que o editor e a lista de segmentos estão visíveis 
+    // e o modo de configuração está oculto
+    document.getElementById('editor').style.display = "block";
+    document.getElementById('segments-area').style.display = "block";
+    const configArea = document.getElementById('config-area');
+    if (configArea) configArea.style.display = "none";
+    
+    // Renderiza os segmentos
+    renderSegments();
+    
+    // Tenta abrir o primeiro segmento se houver dados
+    if (!currentSegment && srtData.length > 0) {
+        openEditor(srtData[0].id);
+    }
+}
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// Bloco Edit Srt - Fim
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Thumbnail -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// Guarda a thumbnail capturada para ser usada depois. (Como no padrão anterior)
+let capturedThumbnailBlob = null;
+
+/**
+ * Adiciona a funcionalidade de captura a um botão, usando um player de vídeo
+ * e um container de preview que já existem na página.
+ * @param {string} videoId - O ID do elemento <video> já carregado.
+ * @param {string} buttonId - O ID do <button> que irá acionar a captura.
+ * @param {string} previewId - O ID do <div> onde a imagem capturada será exibida.
+ */
+function enableThumbnailCapture(videoId, buttonId, previewId) {
+    _injectCaptureStyles(); // Adiciona o CSS para o botão e preview
+
+    const videoElement = document.getElementById(videoId);
+    const captureButton = document.getElementById(buttonId);
+    const previewContainer = document.getElementById(previewId);
+
+    if (!videoElement || !captureButton || !previewContainer) {
+        console.error("Um ou mais elementos (vídeo, botão, preview) não foram encontrados.");
+        return;
+    }
+
+    let currentPreviewUrl = null;
+
+    captureButton.addEventListener('click', () => {
+        // A lógica de captura é a mesma, mas agora usa os elementos existentes
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+            capturedThumbnailBlob = blob; // Atualiza a variável principal
+
+            if (currentPreviewUrl) {
+                URL.revokeObjectURL(currentPreviewUrl);
+            }
+            currentPreviewUrl = URL.createObjectURL(blob);
+            previewContainer.innerHTML = `<img src="${currentPreviewUrl}" alt="Preview da Thumbnail">`;
+        }, 'image/jpeg', 0.9);
+    });
+}
+
+/**
+ * Pega o arquivo da thumbnail que foi capturada.
+ * @returns {File|null}
+ */
+function getCapturedThumbnailFile() {
+    if (!capturedThumbnailBlob) {
+        return null;
+    }
+    return new File([capturedThumbnailBlob], "thumbnail.jpg", { type: "image/jpeg" });
+}
+
+/**
+ * @private Função auxiliar para injetar o CSS mínimo.
+ */
+function _injectCaptureStyles() {
+    if (document.getElementById('capture-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'capture-styles';
+    style.innerHTML = `
+        .thumb-gen-button { width: 100%; padding: 12px; margin-top: 10px; font-size: 16px; font-weight: bold; color: #fff; background-color: #6d28d9; border: none; border-radius: 6px; cursor: pointer; }
+        .thumb-gen-preview { width: 100%; min-height: 150px; background-color: #1a1a1a; border: 2px dashed #444; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #777; margin-top: 16px; overflow: hidden; }
+        .thumb-gen-preview img { width: 100%; height: 100%; object-fit: contain; }
+    `;
+    document.head.appendChild(style);
+}
+
+// Ela vai preparar o botão 'captureBtn' para funcionar quando for clicado.
+enableThumbnailCapture('mainVideoPlayer', 'captureBtn', 'previewContainer');
+		</script>
+	</body>
+</html>
