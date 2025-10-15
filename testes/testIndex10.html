@@ -1,0 +1,1875 @@
+<! recovery from Aw funcionando>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dark Page</title>
+
+<script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #000;
+    color: #fff;
+  }
+  
+.hidden {
+    display: none !important;
+}
+
+h2 {
+  margin-top: 30px;
+}
+
+input[type="text"] {
+  width: 100%;
+  height: 50%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+  header, footer {
+    position: fixed;
+    left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #000;
+    padding: 0 16px;
+  }
+
+  header { top: 0; height: 56px; border-bottom: 1px solid #222; }
+  footer { bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
+
+  .logo-area { display: flex; align-items: center; gap: 8px;}
+  
+  .logo-area img { background: #fff; color: #000;  border-radius: 15%;}
+
+
+  .icons-right, footer a {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .icon, footer svg {
+    width: 24px; height: 24px; fill: currentColor;
+  }
+
+  main { padding: 70px 16px 90px; text-align: center; }
+
+.video-container {
+  widht: 100vw;
+  max-width: 600px;
+  height: 30vh
+  background: #1e1e1e;
+  overflow: hidden;
+}
+
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 2px 0 8px 0;
+  text-align: left;
+}
+
+.channel-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;;
+}
+
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+}
+
+.video-thumb {
+  position: relative;
+  widht: 100vw;
+  max-width: 600px;
+  height: 30vh
+}
+
+.video-thumb img {
+  width: 100%;
+  display: block;
+}
+
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+footer a {
+  /* 1. Transforma o link em um contêiner flexível */
+  display: flex;
+  
+  /* 2. Empilha os itens verticalmente (ícone em cima, texto embaixo) */
+  flex-direction: column; 
+  
+  /* 3. Centraliza os itens horizontalmente */
+  align-items: center; 
+  
+  /* 4. Esta é a propriedade principal para controlar a distância! */
+  gap: 4px; /* ✨ Altere este valor para aumentar ou diminuir o espaço */
+}
+
+/* Apenas para estilização do exemplo */
+footer {
+  display: flex;
+  justify-content: space-around;
+}
+
+footer a {
+  text-decoration: none;
+  font-family: sans-serif;
+  font-size: 12px;
+}
+
+footer svg {
+  width: 20px;
+  height: 20px;
+}
+
+.avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #6d28d9;
+    color: white;
+    display: grid;
+    place-content: center;
+    font-weight: bold;
+}
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.playlist-item input {
+  margin-right: 10px;
+}
+
+section { display: none; }           /* todas escondidas */
+section.active { display: block; }   /* visível */
+
+.video-section {
+    background: ;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+video {
+    width: 100%;
+    border-radius: 4px;
+}
+
+.video-thumb {
+    position: relative;
+    width: 100%;       /* Certifique-se que a div tenha 100% de largura */
+    height: 100%;      /* Ou defina uma altura específica caso necessário */
+    overflow: hidden;  /* Garante que a imagem não saia da div */
+}
+
+.video-thumb-img {
+    width: auto;       /* A largura se ajusta proporcionalmente */
+    height: 100%;      /* Limita a altura a 100% da altura da div */
+    object-fit: cover; /* Garante que a imagem ocupe toda a área sem distorcer, mantendo a proporção */
+}
+
+</style>
+</head>
+<body>
+  <header>
+  	<span id="btn-goBack" onclick="goBack()" class="hidden">← Voltar</span>
+    <div class="logo-area">
+        <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
+      <div>PhraseCraft</div>
+    </div>
+    <div class="icons-right">
+      <!-- Create -->
+      <a href="#" id="icon-create" onclick="showSection('create')" hidden>
+        <svg class="icon" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
+        </svg>
+      </a>
+      <!-- Search -->
+      <a href="#" onclick="showSection('search')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main>
+  	<!-- Player Único de vídeo real em um lugar "neutro" -->
+    <div id="videoStorage" class="hidden">
+      <video id="mainVideoPlayer" controls></video>
+    </div>
+    
+    <section id="home" class="active">
+        <h2>Home</h2>
+        <p>Welcome to the home section.</p>
+        <div id="home-post-container">
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        </div>
+    </section>
+
+    <section id="search">
+      <h2>Search</h2>
+      <p>Use this section to search content.</p>
+    </section>
+
+    <section id="notifications">
+      <h2>Notifications</h2>
+      <p>Here are your notifications.</p>
+    </section>
+
+    <section id="you">
+      <h2>You</h2>
+      <p>This section is about your profile.</p>
+                      
+      <div class="botoes-container">
+          <a href="#" onclick="showProfile()">Meu Perfil</a>
+          <a href="#" id="btn-myPosts" onclick="showSection('myPosts')">Minhas Postagens</a>
+      </div>
+    </section>
+
+    <section id="subscriptions">
+      <h2>Subscriptions</h2>
+      <p>See all your subscriptions here.</p>
+    </section>
+
+    <section id="create">
+        <h2>Create</h2>
+        <p>Use this section to create new content.</p>
+        <div class="load-group">
+            <label for="videoUpload" class="upload-btn">Upload Vídeo</label>
+            <input type="file" id="videoUpload" accept="video/*">
+        </div>
+        <div class="load-group">
+            <label for="srtUpload" class="upload-btn">Upload SRT</label>
+            <input type="file" id="srtUpload" accept=".srt">
+        </div>
+
+        <div class="botoes-container">
+            <a href="#" onclick="openContent()">Carregar</a>
+        </div>
+    </section>
+    
+    <!- Subsections ->
+    <section id="postLesson">
+      <h2>Post</h2>
+      <p>Use this section to post.</p>
+                      
+      <div class="botoes-container">
+          <button href="#" onclick="postLesson()">Postar Lição</button>
+      </div>
+                      
+      <div class="botoes-container">
+          <button onclick="showSection('editSrt')">Editar Srt</button>
+      </div>
+
+      <div id="postPlayerContainer" class="video-section"></div>
+
+      <button id="captureBtn" class="thumb-gen-button">📸 Capturar Thumbnail</button>
+
+      <div id="previewContainer" class="thumb-gen-preview">
+          <span>A pré-visualização da sua thumbnail aparecerá aqui.</span>
+      </div>
+      
+      <!-- Título -->
+      <h2>Nome</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite um nome..." name="nome" />
+      
+      <!-- Título -->
+      <h2>Descrição</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite uma descrição..." name="description" />
+
+      <!-- Título -->
+      <h2>Adicionar à Playlist</h2>
+      <!-- Lista de checkboxes com nomes de playlists -->
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
+        <label for="playlist1">Playlist 1</label>
+      </div>
+
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
+        <label for="playlist2">Playlist 2</label>
+      </div>
+
+      <div class="playlist-item">
+        <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
+        <label for="playlist3">Playlist 3</label>
+      </div>
+      
+    </section>
+    
+    <section id="editSrt">
+      <h2>Editar SRT</h2>
+      <div class="editor" id="editor">
+
+        <!-- Div para exibir o nome do arquivo da legenda -->
+        <p id="subtitleName"></p>
+
+        <div id="editPlayerContainer" class="video-section"></div>
+        
+        <label>Início</label>
+        <div class="time-controls">
+          <input id="editStart">
+          <button onclick="adjustTime('start',  -TIME_STEP)">−</button>
+          <button onclick="adjustTime('start', +TIME_STEP)">+</button>
+
+          <button onclick="undo()">↩</button>
+          <button onclick="redo()">↪</button>
+        </div>
+
+        <label>Fim</label>
+        <div class="time-controls">
+          <input id="editEnd">
+          <button onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button onclick="adjustTime('end', +TIME_STEP)">+</button>
+
+          <button onclick="addSegment()">☰ ➕️</button>
+          <button onclick="removeSegment()">☰ ➖</button>
+        </div>
+
+        <label>Texto</label>
+        <textarea id="editText" rows="3"></textarea>
+
+        <button id="btn-load" onclick="showLoadArea()">📂</button>
+        <button onclick="prevLine()">◀◀</button>
+        <button onclick="playLine()">▶</button>
+        <button onclick="nextLine()">▶▶</button>
+        <button id="btn-save" onclick="showSaveArea()">💾</button>
+
+        <p id="btn-config" onclick="showConfigEdit()">⚙ Editar em Lote</p>
+
+        <div id="config-area" hidden>
+            <span id="btn-close" onclick="closeConfigEdit()">&times;</span>
+            <div class="time-controls">
+              <input id="editStack" placeholder="0.05">
+              <button onclick="showEarlier()">Adiantar</button>
+              <button onclick="showLater()">Atrasar</button>
+            </div>
+
+            <form id="linhaForm">
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="all" checked>
+                Todas as linhas
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="current">
+                Apenas linha atual
+              </label>
+
+            <label class="radio-option">
+              <input type="radio" name="opcao-linha" value="from-current">
+              Linha selecionada e próximas linhas
+            </label>
+            </form>
+            <hr>
+        </div>
+    </div>
+
+    <div class="segmentsArea" id="segments-area">
+        <div id="segments"></div>
+    </div>
+
+    </section>
+    
+    <section id="profile">
+      <h2>My Account</h2>
+      <p>Use this section to see and edit your profile.</p>
+      <div class="header-content"  id="header-content">
+      
+        <div class="user-buttons">
+            <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+
+			<div class="botoes-container">
+				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
+            	<button id="logout-button" class="" onclick="handleLogout()" hidden>Sair</button>
+            </div>
+            
+        </div>
+      </div>
+    </section>
+    
+    <section id="myPosts">
+        <h2>My Lessons Posts</h2>
+        <p>Use this section to see your lessons posted.</p>
+        <div id="user-post-container">
+            <!-- Os cards de vídeo do usuário serão inseridos aqui -->
+        </div>
+    </section>
+
+    <section id="login-screen" class="login-screen-container">
+        <div class="login-card">
+            <h2>Entrar</h2>
+            <form id="login-form">
+                <input type="email" id="email-login" placeholder="E-mail" required>
+                <input type="password" id="password-login" placeholder="Senha" required>
+                <p id="login-message"></p>
+                <button type="submit" class="login-button">Entrar</button>
+            </form>
+        </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <a href="#" onclick="showSection('home')" class="active">
+      <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#" onclick="showSection('subscriptions')">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
+      <span>Subscriptions</span>
+    </a>
+    <a href="#" onclick="showSection('notifications')">
+      <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      <span>Notifications</span>
+    </a>
+    <a href="#" onclick="showSection('you')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="22" height="22" /><span>You</span></a>
+  </footer>
+
+  <script>
+let sectionHistory = ['home'];
+
+// 🛑 NOVAS VARIÁVEIS GLOBAIS NECESSÁRIAS PARA O EDITOR SRT
+let srtData = []; 
+let currentSegment = null;
+let undoStack = [];
+let redoStack = [];
+const TIME_STEP = 0.05; // 50 milissegundos
+let stopTimeout = null;
+let isBatchEditing = false;
+let subtitleName = "legenda.srt"; // Nome padrão para download
+
+let isPreviewMode = false; // Flag para identificar se está em modo de visualização
+// FIM DAS NOVAS VARIÁVEIS GLOBAIS
+
+function showSection(targetId) {
+    const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt', 'myPosts', 'profile', 'login-screen'];
+    
+    // ⭐ PEGA O PLAYER DE VÍDEO E SEU "ESCONDERIJO" ORIGINAL
+    const videoPlayer = document.getElementById('mainVideoPlayer');
+    const videoStorage = document.getElementById('videoStorage');
+
+    // Move o player para o encaixe correto ANTES de mostrar a nova seção
+    if (targetId === 'postLesson') {
+        document.getElementById('postPlayerContainer').appendChild(videoPlayer);
+    } else if (targetId === 'editSrt') {
+        document.getElementById('editPlayerContainer').appendChild(videoPlayer);
+    } else {
+        // Se não for uma seção de vídeo, devolve o player para o esconderijo
+        videoStorage.appendChild(videoPlayer);
+    }
+
+    const current = sectionHistory[sectionHistory.length - 1];
+    if (targetId !== current) {
+        sectionHistory.push(targetId);
+    }
+
+    // Ativa/desativa seções
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('active', id === targetId);
+    });
+
+    // O código de pausar o vídeo não é mais necessário aqui, 
+    // pois ao mover o player para o "storage", ele some da tela.
+    // Mas podemos manter por segurança.
+    if (targetId !== 'postLesson' && targetId !== 'editSrt') {
+        videoPlayer.pause();
+    }
+
+  // Lista de seções onde o botão "Voltar" deve ser ocultado
+  const sectionsToHideBackBtn = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'myPosts', 'profile'];
+
+  // Atualiza botão "Voltar"
+  const goBackBtn = document.getElementById('btn-goBack');
+  if (goBackBtn) {
+    // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
+    goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
+  }
+
+  // Atualiza footer
+  const footerLinks = document.querySelectorAll('footer a');
+  footerLinks.forEach(link => link.classList.remove('active'));
+  const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
+  if (targetLink) targetLink.classList.add('active');
+  
+  // Carrega os posts quando mostrar as seções
+  if (targetId === 'home') {
+      loadHomePosts();
+  } else if (targetId === 'myPosts') {
+      loadUserPosts();
+  }
+}
+
+function goBack() {
+  if (sectionHistory.length > 1) {
+    sectionHistory.pop(); // Remove a atual
+    const previous = sectionHistory[sectionHistory.length - 1];
+    showSection(previous);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Login ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// Configuração do Appwrite
+const client = new Appwrite.Client()
+        .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+        .setProject('68ebe8640000ca7c860b');
+
+const account = new Appwrite.Account(client);
+
+// Seletores de elementos HTML (TODOS JUNTOS AQUI)
+
+const btnLoginHeader = document.getElementById('btnLogin');
+
+const loginForm = document.getElementById('login-form');
+const logoutButton = document.getElementById('logout-button');
+const userEmailDisplay = document.getElementById('user-email-display');
+const iconCreate = document.getElementById('icon-create');
+const btnMyPosts = document.getElementById('btn-myPosts');
+
+const loginMessage = document.getElementById('login-message');
+
+// Função para verificar o status de login
+async function checkAuthStatus() {
+    try {
+        const user = await account.get();
+        renderUIForAuthState(true, user.email);
+        showSection('myPosts');
+    } catch (error) {
+        renderUIForAuthState(false);
+        showSection('home');
+    }
+}
+    
+// Evento de submissão do formulário de login
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email-login').value;
+    const password = document.getElementById('password-login').value;
+    loginMessage.textContent = '';
+    try {
+        await account.createEmailPasswordSession(email, password);
+        // Atualiza a interface
+        const user = await account.get();
+        renderUIForAuthState(true, user.email);
+        showSection('myPosts');
+    } catch (error) {
+        loginMessage.textContent = 'Erro no login: ' + error.message;
+    }
+});
+
+// Função de logout
+function handleLogout() {
+    account.deleteSession('current')
+        .then(() => {
+            renderUIForAuthState(false);
+            showSection('home');
+        })
+        .catch((error) => {
+            console.error('Erro ao fazer logout:', error);
+        });
+}
+    
+/* Função para renderizar a interface de
+    ** acordo com o estado de autenticação */
+function renderUIForAuthState(isLoggedIn, userEmail = '') {
+    // Esconde tudo primeiro
+    iconCreate.style.display = 'none';
+    btnMyPosts.style.display = 'none';
+    btnLoginHeader.style.display = 'none';
+    logoutButton.style.display = 'none';
+    userEmailDisplay.style.display = 'none';
+
+    if (isLoggedIn) {
+        // Mostra email e botão sair
+        userEmailDisplay.textContent = userEmail;
+        userEmailDisplay.style.display = 'block';
+        logoutButton.style.display = 'block';
+        iconCreate.style.display = 'block';
+        btnMyPosts.style.display = 'block';
+    } else {
+        // Mostra apenas botão entrar
+        btnLoginHeader.style.display = 'block';
+    }
+}
+
+// Função para mostrar perfil ou tela de login
+async function showProfile() {
+    try {
+        const user = await account.get();
+        // Se conseguiu pegar o usuário, está logado
+        showSection('profile');
+    } catch (error) {
+        // Se deu erro, não está logado
+        showSection('login-screen');
+    }
+}
+
+checkAuthStatus();
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Upload ---- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// Inicializar a instância de Storage com o client
+const storage = new Appwrite.Storage(client);
+
+// Função para fazer upload de um arquivo e retornar o ID
+async function uploadFile(file, fileName) {
+    try {
+        const response = await storage.createFile(
+            '68ed7f190017280cf294', // bucketId
+            Appwrite.ID.unique(),    // fileId único
+            new File([file], fileName, { type: file.type })
+        );
+        console.log('Upload bem-sucedido:', response);
+        return response.$id; // Retorna o ID do arquivo
+    } catch (error) {
+        console.error('Erro no upload:', error);
+        throw error;
+    }
+}
+
+// Função principal para postar a lição
+async function postLesson() {
+    try {
+        // Valida se há conteúdo carregado
+        if (!subtitleName || srtData.length === 0) {
+            alert('Carregue uma legenda SRT primeiro!');
+            return;
+        }
+
+        const videoElement = document.getElementById('mainVideoPlayer');
+        if (!videoElement.src || videoElement.src.startsWith('blob:') === false) {
+            alert('Carregue um vídeo primeiro!');
+            return;
+        }
+
+        const thumbnailFile = getCapturedThumbnailFile();
+        if (!thumbnailFile) {
+            alert('Capture uma thumbnail primeiro!');
+            return;
+        }
+
+        // Obter o nome base (sem extensão) do arquivo SRT
+        const baseName = subtitleName.replace(/\.[^/.]+$/, "");
+
+        // Converter SRT em arquivo Blob
+        const srtContent = generateSRT();
+        const srtBlob = new Blob([srtContent], { type: 'text/plain' });
+        const srtFile = new File([srtBlob], `${baseName}.srt`, { type: 'text/plain' });
+
+        // Obter o arquivo de vídeo original
+        const videoUpload = document.getElementById('videoUpload').files[0];
+        if (!videoUpload) {
+            alert('Arquivo de vídeo não encontrado!');
+            return;
+        }
+
+        // Renomear o vídeo para usar o mesmo nome base
+        const videoExtension = videoUpload.name.split('.').pop();
+        const videoFile = new File([videoUpload], `${baseName}.${videoExtension}`, { type: videoUpload.type });
+
+        // Renomear a thumbnail
+        const thumbFile = new File([thumbnailFile], `${baseName}.jpg`, { type: 'image/jpeg' });
+
+        console.log('Iniciando uploads...');
+        console.log('- SRT:', srtFile.name);
+        console.log('- Vídeo:', videoFile.name);
+        console.log('- Thumbnail:', thumbFile.name);
+
+        // Upload dos 3 arquivos
+        const srtId = await uploadFile(srtFile, srtFile.name);
+        console.log('✅ SRT enviado:', srtId);
+
+        const videoId = await uploadFile(videoFile, videoFile.name);
+        console.log('✅ Vídeo enviado:', videoId);
+
+        const thumbId = await uploadFile(thumbFile, thumbFile.name);
+        console.log('✅ Thumbnail enviada:', thumbId);
+
+		alert('Lição postada com sucesso!');
+        
+        // Salvar informações no banco de dados
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '68ed87f400375b28a7e7';
+
+        const postData = {
+            videoName: baseName,
+            videoId: videoId,
+            srtId: srtId,
+            thumbId: thumbId,
+            description: document.querySelector('input[name="description"]').value,
+            channelName: userEmailDisplay.textContent,
+            performance: '0%',
+            duration: '00:00',
+            createdAt: new Date().toISOString()
+        };
+
+        await databases.createDocument(
+            DATABASE_ID,
+            COLLECTION_ID,
+            Appwrite.ID.unique(),
+            postData
+        );
+
+        console.log('✅ Dados salvos no banco de dados');
+        showSection('myPosts');
+        
+    } catch (error) {
+        console.error('Erro ao postar lição:', error);
+        alert('Erro ao postar lição: ' + error.message);
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Recuperar e Exibir Posts ---- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+const databases = new Appwrite.Databases(client);
+
+/**
+ * Busca os posts (lições) do banco de dados
+ * @returns {Array} Lista de posts
+ */
+async function fetchPosts() {
+    try {
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '68ed87f400375b28a7e7';
+        
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            COLLECTION_ID
+        );
+        
+        console.log(response.documents);  // Inspecionar os dados dos posts
+        return response.documents;
+    } catch (error) {
+        console.error('Erro ao buscar posts:', error);
+        return [];
+    }
+}
+
+/**
+ * Gera a URL da thumbnail a partir do Storage
+ * @param {string} thumbId - ID da thumbnail no Storage
+ * @returns {string} URL da imagem
+ */
+async function getThumbnailUrl(thumbId) {
+    console.log('thumbId:', thumbId); // Verifique o valor de thumbId aqui
+    const BUCKET_ID = '68ed7f190017280cf294'; // O ID do bucket
+
+    try {
+        const filePreview = await storage.getFileView(
+            BUCKET_ID,      // bucketId
+            thumbId,        // fileId
+            600,            // width (opcional)
+            340,            // height (opcional)
+            'center',       // gravity (opcional)
+            100             // quality (opcional)
+        );
+
+        // Log o retorno da função para ver o que está sendo retornado
+        console.log('filePreview:', filePreview);  
+
+        if (filePreview) {
+            return filePreview;  // Certifique-se de que o href é retornado
+        } else {
+            console.error('Não foi possível obter a URL da thumbnail.');
+            return '';  // Retorna uma string vazia caso o href não esteja presente
+        }
+    } catch (error) {
+        console.error('Erro ao obter thumbnail:', error);
+        return '';  // Retorna uma string vazia caso ocorra erro
+    }
+}
+
+/**
+ * Cria o HTML de um card de vídeo
+ * @param {Object} post - Dados do post (videoName, thumbId, channelName, performance, videoId, srtId, etc)
+ * @param {boolean} showEdit - Se deve mostrar o botão "Editar"
+ * @returns {string} HTML do card
+ */
+async function createVideoCard(post, showEdit = false) {
+    const thumbUrl = await getThumbnailUrl(post.thumbId);  // Obtém a URL da thumbnail
+
+    // Verifique se a URL foi obtida corretamente
+    console.log('thumbUrl:', thumbUrl);
+
+    return `
+        <div class="video-container" data-video-id="${post.$id}">
+            <div class="video-thumb" onclick="previewLesson('${post.$id}')" style="cursor: pointer;">
+                <img src="${thumbUrl || 'fallback-image.jpg'}" alt="Video thumbnail" class="video-thumb-img">
+                <span class="video-time">${post.duration || '10:35'}</span>
+            </div>
+            <div class="channel-info">
+                <div class="channel-pic">
+                    <img src="${post.channelPic || 'canal.jpg'}" alt="Canal" class="channel-pic">
+                </div>
+                <div class="video-text">
+                    <h3 class="video-title" onclick="previewLesson('${post.$id}')" style="cursor: pointer;">${post.videoName}</h3>
+                    <div class="video-meta">
+                        <span class="channel-name">${''}</span>
+                        <span class="performance">${post.performance || '95%'}</span>
+                        ${showEdit ? `<span class="video-edit" onclick="event.stopPropagation(); editPost('${post.$id}')" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Renderiza os posts em um container específico
+ * @param {string} containerId - ID do container onde os posts serão exibidos
+ * @param {boolean} showEdit - Se deve mostrar o botão "Editar"
+ */
+async function renderPosts(containerId, showEdit = false) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`Container ${containerId} não encontrado`);
+        return;
+    }
+    
+    container.innerHTML = '<p>Carregando...</p>';
+    
+    const posts = await fetchPosts();
+    
+    if (posts.length === 0) {
+        container.innerHTML = '<p>Nenhum post encontrado.</p>';
+        return;
+    }
+    
+    // Espera todos os cards serem criados
+    const cardsHTML = await Promise.all(posts.map(post => createVideoCard(post, showEdit)));
+    container.innerHTML = cardsHTML.join('');
+}
+
+/**
+ * Carrega os posts para a seção Home
+ */
+function loadHomePosts() {
+    renderPosts('home-post-container', false);
+}
+
+/**
+ * Carrega os posts do usuário (com opção de editar)
+ */
+function loadUserPosts() {
+    renderPosts('user-post-container', true);
+}
+
+// Inicializar quando necessário
+// Chame essas funções quando mostrar as seções correspondentes
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Editar Post do Servidor ---- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+let contentFromServer = false; // Flag para identificar se o conteúdo veio do servidor
+let currentEditingPost = null; // Armazena os dados do post sendo editado
+
+/**
+ * Carrega um vídeo do Storage do Appwrite
+ * @param {string} videoId - ID do vídeo no Storage
+ * @returns {Promise<string>} URL do vídeo
+ */
+async function loadVideoFromStorage(videoId) {
+    console.log('🎥 Carregando vídeo - videoId:', videoId);
+    
+    const BUCKET_ID = '68ed7f190017280cf294';
+    
+    try {
+        // getFileView retorna diretamente a URL
+        const videoUrl = storage.getFileView(BUCKET_ID, videoId);
+        
+        console.log('✅ URL do vídeo:', videoUrl);
+        return videoUrl;
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar vídeo:', error);
+        throw error;
+    }
+}
+
+/**
+ * Carrega um arquivo SRT do Storage do Appwrite
+ * @param {string} srtId - ID do arquivo SRT no Storage
+ * @returns {Promise<string>} Conteúdo do arquivo SRT
+ */
+async function loadSrtFromStorage(srtId) {
+    const BUCKET_ID = '68ed7f190017280cf294';
+    try {
+        // getFileDownload também retorna diretamente a URL
+        const downloadUrl = storage.getFileDownload(BUCKET_ID, srtId);
+        const response = await fetch(downloadUrl);
+        const text = await response.text();
+        return text;
+    } catch (error) {
+        console.error('Erro ao carregar SRT:', error);
+        throw error;
+    }
+}
+
+/**
+ * Função para editar um post (carrega os dados e abre em modo de edição)
+ * @param {string} postId - ID do post a ser editado
+ */
+async function editPost(postId) {
+    try {
+        // Buscar os dados do post
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '68ed87f400375b28a7e7';
+        
+        const post = await databases.getDocument(DATABASE_ID, COLLECTION_ID, postId);
+        currentEditingPost = post;
+        
+        // ⭐ DESATIVA o modo preview e ATIVA o modo de edição
+        isPreviewMode = false;
+        contentFromServer = true;
+        
+        // Carregar o vídeo
+        const videoUrl = await loadVideoFromStorage(post.videoId);
+        document.getElementById("mainVideoPlayer").src = videoUrl;
+        
+        // Carregar o SRT
+        const srtContent = await loadSrtFromStorage(post.srtId);
+        parseSRT(srtContent);
+        subtitleName = post.videoName + '.srt';
+        
+        // Atualizar o nome da legenda na interface
+        document.getElementById("subtitleName").textContent = subtitleName;
+        
+        // Carregar a thumbnail no preview
+        const thumbUrl = await getThumbnailUrl(post.thumbId);
+        const previewContainer = document.getElementById('previewContainer');
+        previewContainer.innerHTML = `<img src="${thumbUrl}" alt="Preview da Thumbnail">`;
+        
+        // Armazenar o blob da thumbnail para não precisar capturar novamente
+        try {
+            const response = await fetch(thumbUrl);
+            const blob = await response.blob();
+            capturedThumbnailBlob = blob;
+        } catch (err) {
+            console.warn('Não foi possível carregar thumbnail como blob:', err);
+        }
+        
+        // Preencher os campos do formulário
+        document.querySelector('input[name="nome"]').value = post.videoName;
+        document.querySelector('input[name="description"]').value = post.description || '';
+        
+        // ⭐ Configura a interface para modo de EDIÇÃO (mostra todos os controles)
+        configureEditMode();
+        
+        // Mostrar a seção de postagem
+        showSection('postLesson');
+        
+    } catch (error) {
+        console.error('Erro ao editar post:', error);
+        alert('Erro ao carregar post para edição: ' + error.message);
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// Bloco Edit Srt - Inicio
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+function closeConfigEdit() {
+    document.getElementById('editor').style.display = "block";
+    document.getElementById('segments-area').style.display = "block";
+    document.getElementById('config-area').style.display = "none";
+}
+
+function showConfigEdit() {
+    document.getElementById('editor').style.display = "block";
+    document.getElementById('segments-area').style.display = "block";
+    document.getElementById('config-area').style.display = "block";
+}
+
+function renderSegments() {
+  const container = document.getElementById("segments");
+  container.innerHTML = "";  // Limpa a lista de segmentos
+
+  srtData.forEach(seg => {
+    const div = document.createElement("div");
+    div.className = "segment";
+    div.setAttribute('data-id', seg.id);
+    
+    // Adiciona classe ao segmento selecionado
+    if (seg.id === currentSegment?.id) {
+      div.classList.add("segment-selected");
+    }
+    
+    // Define o conteúdo do segmento
+    div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
+    
+    // Define a ação de clicar no segmento
+    div.onclick = () => openEditor(seg.id);
+    
+    // Adiciona o segmento ao container
+    container.appendChild(div);
+  });
+}
+
+function openEditor(id) {
+    currentSegment = srtData.find(s => s.id === id);
+    if (!currentSegment) return;
+
+    document.getElementById("editor").style.display = "block";
+    
+    // Só preenche os campos de edição se NÃO estiver em modo preview
+    if (!isPreviewMode) {
+        document.getElementById("editStart").value = currentSegment.start;
+        document.getElementById("editEnd").value = currentSegment.end;
+        document.getElementById("editText").value = currentSegment.text;
+
+        document.getElementById("editStart").oninput = e => handleChange("start", e.target.value);
+        document.getElementById("editEnd").oninput = e => handleChange("end", e.target.value);
+        document.getElementById("editText").oninput = e => handleChange("text", e.target.value);
+    }
+    
+    // Remove a classe de todos os segmentos
+    document.querySelectorAll('.segment').forEach(item => {
+        item.classList.remove('segment-selected');
+    });
+    
+    // Adiciona a classe apenas ao segmento atual
+    const itemAtivo = document.querySelector(`[data-id="${id}"]`);
+    if (itemAtivo) {
+        itemAtivo.classList.add('segment-selected');
+    }
+    
+    scrollToSegment(id);
+    
+    // ⭐ CORREÇÃO: Reproduz o trecho em AMBOS os modos (preview E edição)
+    // Removido o setTimeout para evitar problemas de timing
+    playLine();
+}
+
+function handleChange(field, newValue) {
+  if (!currentSegment) return;
+  const oldValue = currentSegment[field];
+  if (oldValue === newValue) return;
+
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  undoStack.push({ 
+    type: "edit",
+    id: currentSegment.id, 
+    field, 
+    oldValue, 
+    newValue,
+    segmentBackup: oldSegment // backup completo do segmento
+  });
+  redoStack = [];
+  currentSegment[field] = newValue;
+  renderSegments();
+}
+
+function adjustTime(field, deltaSeconds) {
+  if (!currentSegment) return;
+
+  const oldValue = currentSegment[field];
+  const newValue = shiftTime(oldValue, deltaSeconds);
+
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const prev = srtData[idx - 1];
+  const next = srtData[idx + 1];
+
+  const toMs = t => {
+    const [h, m, rest] = t.split(":");
+    const [s, ms] = rest.split(",");
+    return (+h * 3600 + +m * 60 + +s) * 1000 + +ms;
+  };
+
+  const newMs = toMs(newValue);
+  const startMs = toMs(currentSegment.start);
+  const endMs = toMs(currentSegment.end);
+
+  if (field === "start" && prev && newMs <= toMs(prev.end) + 0) return;
+  if (field === "end" && next && newMs >= toMs(next.start) - 0) return;
+  if (field === "start" && newMs >= endMs - 0) return;
+  if (field === "end" && newMs <= startMs + 0) return;
+  
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  if (!isBatchEditing) {
+    undoStack.push({ 
+      type: "edit",
+      id: currentSegment.id, 
+      field, 
+      oldValue, 
+      newValue,
+      segmentBackup: oldSegment
+    });
+    redoStack = [];
+  }
+
+  redoStack = [];
+
+  currentSegment[field] = newValue;
+  updateEditorFields(currentSegment);
+  renderSegments();
+}
+
+function shiftTime(timeStr, delta) {
+  // "00:00:04,500" → soma delta (em segundos)
+  const [h, m, rest] = timeStr.split(":");
+  const [s, ms] = rest.split(",");
+  let totalMs = (+h * 3600 + +m * 60 + +s) * 1000 + +ms + delta * 1000;
+
+  if (totalMs < 0) totalMs = 0;
+  const hours = Math.floor(totalMs / 3600000);
+  const minutes = Math.floor((totalMs % 3600000) / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const millis = Math.floor(totalMs % 1000);
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)},${pad(millis, 3)}`;
+}
+
+function pad(num, size=2) {
+  return num.toString().padStart(size, "0");
+}
+
+// ======================
+// ↩ | ↪ | ☰ ➖ | ☰ ➕️
+// ======================
+function undo() {
+  if (!undoStack.length) return;
+  const last = undoStack.pop();
+  redoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de antes da adição
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de antes da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.oldValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  const last = redoStack.pop();
+  undoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de depois da adição
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de depois da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.newValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function addSegment() {
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  let insertIndex = srtData.length;
+  if (currentSegment) {
+    const idx = srtData.findIndex(s => s.id === currentSegment.id);
+    insertIndex = idx + 1;
+  }
+
+  const newId = insertIndex + 1;
+  const newSegment = {
+    id: newId,
+    start: "00:00:00,000",
+    end: "00:00:00,000",
+    text: "Novo trecho"
+  };
+  
+  srtData.splice(insertIndex, 0, newSegment);
+  
+  // Renumera os IDs a partir do ponto de inserção
+  for (let i = insertIndex + 1; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "add",
+    segment: { ...newSegment },
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: insertIndex
+  });
+  redoStack = [];
+
+  currentSegment = newSegment;
+  renderSegments();
+  openEditor(currentSegment.id);
+}
+
+function removeSegment() {
+  if (!currentSegment) return;
+  if (srtData.length === 1) return alert("Não é possível remover o único segmento.");
+
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const removedSegment = { ...srtData[idx] };
+  srtData.splice(idx, 1);
+
+  // Renumera os IDs após a remoção
+  for (let i = idx; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "remove",
+    segment: removedSegment,
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: idx
+  });
+  redoStack = [];
+
+  currentSegment = srtData[idx] || srtData[idx - 1] || null;
+
+  renderSegments();
+  if (currentSegment) openEditor(currentSegment.id);
+  else document.getElementById("editor").style.display = "none";
+}
+
+function updateEditorFields(seg) {
+  document.getElementById("editStart").value = seg.start;
+  document.getElementById("editEnd").value = seg.end;
+  document.getElementById("editText").value = seg.text;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); }
+  if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
+});
+
+
+// ======================
+// ◀◀ | ▶▶
+// ======================
+function prevLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("mainVideoPlayer");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx > 0) {
+    openEditor(srtData[idx - 1].id);
+    scrollToSegment(srtData[idx - 1].id);
+  }
+}
+
+function nextLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("mainVideoPlayer");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx < srtData.length - 1) {
+    openEditor(srtData[idx + 1].id);
+    scrollToSegment(srtData[idx + 1].id);
+  }
+}
+
+function scrollToSegment(id) {
+  const segmentsContainer = document.getElementById("segments-area");
+  const segments = document.querySelectorAll(".segment");
+  
+  // Encontra o elemento do segmento pelo índice (id - 1)
+  const targetSegment = segments[id - 1];
+  
+  if (targetSegment && segmentsContainer) {
+    // Usando scrollIntoView para centralizar o segmento
+    targetSegment.scrollIntoView({
+      behavior: 'smooth',  // Animação suave
+      block: 'center'      // Centraliza verticalmente
+    });
+  }
+}
+
+// ======================
+// Etidar e lote
+// ======================
+function showEarlier() {
+  shiftSelectedLines(-getCurrentStep());
+}
+
+function showLater() {
+  shiftSelectedLines(+getCurrentStep());
+}
+
+function getCurrentStep() {
+  const input = document.getElementById("editStack").value.trim().replace(",", ".");
+  const step = parseFloat(input);
+  return isNaN(step) || step <= 0 ? TIME_STEP : step;
+}
+
+function shiftSelectedLines(delta) {
+  const selected = document.querySelector('input[name="opcao-linha"]:checked');
+  const value = selected ? selected.value : "current";
+
+  const stateBefore = srtData.map(s => ({ ...s }));
+  const prevSegment = currentSegment;
+
+  if (value === "all") {
+    isBatchEditing = true;
+    srtData.forEach(seg => {
+      currentSegment = seg;
+      adjustTime("start", delta);
+      adjustTime("end", delta);
+    });
+    isBatchEditing = false;
+  } else if (value === "from-current" && currentSegment) {
+    const startIdx = srtData.findIndex(s => s.id === currentSegment.id);
+    if (startIdx >= 0) {
+      isBatchEditing = true;
+      for (let i = startIdx; i < srtData.length; i++) {
+        currentSegment = srtData[i];
+        adjustTime("start", delta);
+        adjustTime("end", delta);
+      }
+      isBatchEditing = false;
+    }
+  } else if (value === "current" && currentSegment) {
+    adjustTime("start", delta);
+    adjustTime("end", delta);
+  }
+
+  const stateAfter = srtData.map(s => ({ ...s }));
+
+  undoStack.push({
+    type: "edit-multiple",
+    delta,
+    stateBefore,
+    stateAfter
+  });
+  redoStack = [];
+
+  currentSegment = prevSegment;
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+// ==================================
+// 📂 Funções de Carregamento 
+// ==================================
+// Encontre sua função openContent e substitua-a por esta:
+function openContent() {
+    const videoUpload = document.getElementById("videoUpload").files[0];
+    const srtUpload = document.getElementById("srtUpload").files[0];
+
+    // 1. Carregar o vídeo
+    if (videoUpload) {
+        const videoURL = URL.createObjectURL(videoUpload);
+        
+        // ⭐ CORRIGIDO: Agora atualizamos apenas o player de vídeo único e principal.
+        document.getElementById("mainVideoPlayer").src = videoURL;
+
+    } else {
+        alert("Selecione um arquivo de vídeo para carregar.");
+        return;
+    }
+
+    // 2. Carregar a legenda (o resto da função está correto)
+    if (srtUpload) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            parseSRT(e.target.result);
+            subtitleName = srtUpload.name;
+            document.getElementById("subtitleName").textContent = subtitleName;
+            showSection('postLesson');
+        };
+        reader.readAsText(srtUpload);
+    } else {
+        srtData = [{ id: 1, start: "00:00:00,000", end: "00:00:05,000", text: "Digite sua legenda aqui" }];
+        renderSegments();
+        showSection('postLesson');
+    }
+}
+
+// Função para interpretar o conteúdo .srt para srtData
+function parseSRT(content) {
+  const lines = content.split(/\r?\n/);
+  const segments = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const id = parseInt(lines[i++]);
+    const time = lines[i++];
+
+    if (!time || !time.includes("-->")) continue;
+
+    const [start, end] = time.split("-->").map(s => s.trim().replace(".", ","));
+    let text = "";
+
+    while (i < lines.length && lines[i].trim() !== "") {
+      text += lines[i++] + "\n";
+    }
+
+    segments.push({
+      id,
+      start,
+      end,
+      text: text.trim()
+    });
+
+    while (i < lines.length && lines[i].trim() === "") i++;
+  }
+
+  srtData.length = 0;
+  srtData.push(...segments);
+  currentSegment = null;
+  undoStack = [];
+  redoStack = [];
+  renderSegments();
+}
+
+// Exibir SRT
+function showSRT() {
+  const srt = generateSRT();
+  const novaAba = window.open("", "_blank");
+
+  if (novaAba) {
+    novaAba.document.write(`<pre>${srt.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`);
+    novaAba.document.title = "SRT Gerado";
+    novaAba.document.close();
+  } else {
+    alert("Não foi possível abrir nova aba. Verifique se o bloqueador de pop-up está ativo.");
+  }
+}
+
+
+function generateSRT() {
+  return srtData.map(seg => {
+    return `${seg.id}\n${seg.start} --> ${seg.end}\n${seg.text}`;
+  }).join("\n\n");
+}
+
+function copyToClipboard() {
+  const text = generateSRT();
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Legendas copiadas para a área de transferência.");
+  });
+}
+
+function downSrt() {
+  // Verifique se o nome da legenda está configurado corretamente
+  if (!subtitleName) {
+    alert("Erro: Nome da legenda não encontrado.");
+    return;
+  }
+
+  const blob = new Blob([generateSRT()], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = subtitleName;  // Usando o nome da legenda carregada
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Função auxiliar para playLine()
+// converter o tempo no formato 
+// SRT (hh:mm:ss,SSS) para segundos
+function parseTime(timeString) {
+  const timeParts = timeString.split(/[:,]/);  // Separar por ":" e ","
+  const hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10);
+  const seconds = parseInt(timeParts[2], 10);
+  const milliseconds = parseInt(timeParts[3], 10);
+
+  // Converter tudo para segundos
+  return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+}
+
+// Busca os tempos de início e fim da legenda atual e 
+// usa o vídeo (ou áudio) para tocar o trecho
+function playLine() {
+  if (!currentSegment) {
+    alert("Nenhum trecho selecionado.");
+    return;
+  }
+
+  const videoElement = document.getElementById("mainVideoPlayer");
+  if (!videoElement || !videoElement.src) {
+    alert("Carregue um vídeo primeiro!");
+    return;
+  }
+
+  // **CRÍTICO: Limpa qualquer timeout anterior**
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+
+  // Pausa o vídeo se estiver tocando
+  if (!videoElement.paused) {
+    videoElement.pause();
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+
+  // Aguarda um frame antes de iniciar (garante que pause foi processado)
+  requestAnimationFrame(() => {
+    videoElement.currentTime = startTime;
+    videoElement.play();
+
+    // Configura novo timeout para pausar no fim
+    stopTimeout = setTimeout(() => {
+      videoElement.pause();
+      stopTimeout = null;
+    }, (endTime - startTime) * 1000);
+  });
+}
+
+// ======================
+// Inicializar
+// ======================
+function initSrtEditor() {
+    // Garante que o editor e a lista de segmentos estão visíveis 
+    // e o modo de configuração está oculto
+    document.getElementById('editor').style.display = "block";
+    document.getElementById('segments-area').style.display = "block";
+    const configArea = document.getElementById('config-area');
+    if (configArea) configArea.style.display = "none";
+    
+    // Renderiza os segmentos
+    renderSegments();
+    
+    // Tenta abrir o primeiro segmento se houver dados
+    if (!currentSegment && srtData.length > 0) {
+        openEditor(srtData[0].id);
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+//  - Bloco Fx | Thumbnail -
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// Guarda a thumbnail capturada para ser usada depois. (Como no padrão anterior)
+let capturedThumbnailBlob = null;
+
+/**
+ * Adiciona a funcionalidade de captura a um botão, usando um player de vídeo
+ * e um container de preview que já existem na página.
+ * @param {string} videoId - O ID do elemento <video> já carregado.
+ * @param {string} buttonId - O ID do <button> que irá acionar a captura.
+ * @param {string} previewId - O ID do <div> onde a imagem capturada será exibida.
+ */
+function enableThumbnailCapture(videoId, buttonId, previewId) {
+    _injectCaptureStyles(); // Adiciona o CSS para o botão e preview
+
+    const videoElement = document.getElementById(videoId);
+    const captureButton = document.getElementById(buttonId);
+    const previewContainer = document.getElementById(previewId);
+
+    if (!videoElement || !captureButton || !previewContainer) {
+        console.error("Um ou mais elementos (vídeo, botão, preview) não foram encontrados.");
+        return;
+    }
+
+    let currentPreviewUrl = null;
+
+    captureButton.addEventListener('click', () => {
+        // A lógica de captura é a mesma, mas agora usa os elementos existentes
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+            capturedThumbnailBlob = blob; // Atualiza a variável principal
+
+            if (currentPreviewUrl) {
+                URL.revokeObjectURL(currentPreviewUrl);
+            }
+            currentPreviewUrl = URL.createObjectURL(blob);
+            previewContainer.innerHTML = `<img src="${currentPreviewUrl}" alt="Preview da Thumbnail">`;
+        }, 'image/jpeg', 0.9);
+    });
+}
+
+/**
+ * Pega o arquivo da thumbnail que foi capturada.
+ * @returns {File|null}
+ */
+function getCapturedThumbnailFile() {
+    if (!capturedThumbnailBlob) {
+        return null;
+    }
+    return new File([capturedThumbnailBlob], "thumbnail.jpg", { type: "image/jpeg" });
+}
+
+/**
+ * @private Função auxiliar para injetar o CSS mínimo.
+ */
+function _injectCaptureStyles() {
+    if (document.getElementById('capture-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'capture-styles';
+    style.innerHTML = `
+        .thumb-gen-button { width: 100%; padding: 12px; margin-top: 10px; font-size: 16px; font-weight: bold; color: #fff; background-color: #6d28d9; border: none; border-radius: 6px; cursor: pointer; }
+        .thumb-gen-preview { width: 100%; min-height: 150px; background-color: #1a1a1a; border: 2px dashed #444; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #777; margin-top: 16px; overflow: hidden; }
+        .thumb-gen-preview img { width: 100%; height: 100%; object-fit: contain; }
+    `;
+    document.head.appendChild(style);
+}
+
+// Ela vai preparar o botão 'captureBtn' para funcionar quando for clicado.
+enableThumbnailCapture('mainVideoPlayer', 'captureBtn', 'previewContainer');
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Preview da Lição ---- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Função para visualizar (preview) uma lição sem edição
+ * @param {string} postId - ID do post a ser visualizado
+ */
+async function previewLesson(postId) {
+    try {
+        // Buscar os dados do post
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '68ed87f400375b28a7e7';
+        
+        const post = await databases.getDocument(DATABASE_ID, COLLECTION_ID, postId);
+        
+        // Ativa o modo de preview
+        isPreviewMode = true;
+        
+        // Carregar o vídeo
+        const videoUrl = await loadVideoFromStorage(post.videoId);
+        document.getElementById("mainVideoPlayer").src = videoUrl;
+        
+        // Carregar o SRT
+        const srtContent = await loadSrtFromStorage(post.srtId);
+        parseSRT(srtContent);
+        subtitleName = post.videoName + '.srt';
+        
+        // Atualizar nome da legenda
+        document.getElementById("subtitleName").textContent = post.videoName;
+        
+        // Configurar interface para modo de preview
+        configurePreviewMode();
+        
+        // Mostrar a seção editSrt (agora em modo preview)
+        showSection('editSrt');
+        
+    } catch (error) {
+        console.error('Erro ao carregar preview da lição:', error);
+        alert('Erro ao carregar preview: ' + error.message);
+    }
+}
+
+/**
+ * Configura a interface da seção editSrt para modo de visualização
+ */
+function configurePreviewMode() {
+    // Elementos que devem ser ocultados no modo preview
+    const editElements = [
+        'editStart',
+        'editEnd', 
+        'editText',
+        'btn-load',
+        'btn-save',
+        'btn-config'
+    ];
+    
+    // Oculta todos os elementos de edição
+    editElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = 'none';
+        }
+    });
+    
+    // Oculta labels de edição
+    const labels = document.querySelectorAll('#editor label');
+    labels.forEach(label => {
+        label.style.display = 'none';
+    });
+    
+    // Oculta os botões de ajuste de tempo (+ e -)
+    const timeControls = document.querySelectorAll('#editor .time-controls');
+    timeControls.forEach(control => {
+        control.style.display = 'none';
+    });
+    
+    // Oculta a área de configuração se estiver visível
+    const configArea = document.getElementById('config-area');
+    if (configArea) {
+        configArea.style.display = 'none';
+    }
+    
+    // Mantém visíveis apenas os botões de navegação
+    const navButtons = document.querySelectorAll('#editor button');
+    navButtons.forEach(btn => {
+        const text = btn.textContent.trim();
+        if (text === '◀◀' || text === '▶' || text === '▶▶') {
+            btn.style.display = 'inline-block';
+        }
+    });
+    
+    // Desabilita a edição ao clicar nos segmentos
+    const segments = document.querySelectorAll('.segment');
+    segments.forEach(seg => {
+        seg.style.cursor = 'pointer';
+    });
+}
+
+/**
+ * Configura a interface da seção editSrt para modo de edição
+ */
+function configureEditMode() {
+    // Elementos que devem ser mostrados no modo de edição
+    const editElements = [
+        'editStart',
+        'editEnd',
+        'editText',
+        'btn-load',
+        'btn-save',
+        'btn-config'
+    ];
+    
+    // Mostra todos os elementos de edição
+    editElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = '';
+        }
+    });
+    
+    // Mostra labels de edição
+    const labels = document.querySelectorAll('#editor label');
+    labels.forEach(label => {
+        label.style.display = '';
+    });
+    
+    // Mostra os botões de ajuste de tempo
+    const timeControls = document.querySelectorAll('#editor .time-controls');
+    timeControls.forEach(control => {
+        control.style.display = '';
+    });
+}
+		</script>
+	</body>
+</html>
