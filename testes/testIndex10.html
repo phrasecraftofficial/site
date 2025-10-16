@@ -510,14 +510,30 @@ function showSection(targetId) {
     const videoPlayer = document.getElementById('mainVideoPlayer');
     const videoStorage = document.getElementById('videoStorage');
     
-    // Move o player para o encaixe correto ANTES de mostrar a nova seção
-    if (targetId === 'postLesson') {
-        document.getElementById('postPlayerContainer').appendChild(videoPlayer);
-    } else if (targetId === 'editSrt') {
-        document.getElementById('editPlayerContainer').appendChild(videoPlayer);
+    // ⭐ NOVA LÓGICA: Aguarda o vídeo carregar antes de mover
+    const moveVideoToSection = () => {
+        if (targetId === 'postLesson') {
+            document.getElementById('postPlayerContainer').appendChild(videoPlayer);
+        } else if (targetId === 'editSrt') {
+            document.getElementById('editPlayerContainer').appendChild(videoPlayer);
+        } else {
+            videoStorage.appendChild(videoPlayer);
+        }
+    };
+    
+    // Se o vídeo tem src e está indo para uma seção de vídeo, aguarda carregar
+    if (videoPlayer.src && (targetId === 'postLesson' || targetId === 'editSrt')) {
+        if (videoPlayer.readyState >= 2) { // HAVE_CURRENT_DATA ou melhor
+            moveVideoToSection();
+        } else {
+            // Aguarda os metadados carregarem
+            videoPlayer.addEventListener('loadedmetadata', function onLoaded() {
+                moveVideoToSection();
+                videoPlayer.removeEventListener('loadedmetadata', onLoaded);
+            });
+        }
     } else {
-        // Se não for uma seção de vídeo, devolve o player para o esconderijo
-        videoStorage.appendChild(videoPlayer);
+        moveVideoToSection();
     }
     
     const current = sectionHistory[sectionHistory.length - 1];
@@ -532,9 +548,6 @@ function showSection(targetId) {
         el.classList.toggle('active', id === targetId);
     });
     
-    // O código de pausar o vídeo não é mais necessário aqui, 
-    // pois ao mover o player para o "storage", ele some da tela.
-    // Mas podemos manter por segurança.
     if (targetId !== 'postLesson' && targetId !== 'editSrt') {
         videoPlayer.pause();
     }
@@ -545,7 +558,6 @@ function showSection(targetId) {
     // Atualiza botão "Voltar"
     const goBackBtn = document.getElementById('btn-goBack');
     if (goBackBtn) {
-        // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
         goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
     }
     
