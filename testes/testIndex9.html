@@ -1,4 +1,4 @@
-<! recovery from Aw funcionando>
+<! preview>
 <!doctype html>
 <html lang="en">
 <head>
@@ -244,7 +244,7 @@ video {
   <main>
   	<!-- Player Único de vídeo real em um lugar "neutro" -->
     <div id="videoStorage" class="hidden">
-      <video id="mainVideoPlayer" controls></video>
+      <video id="mainVideoPlayer" controls crossorigin="anonymous"></video>
     </div>
     
     <section id="home" class="active">
@@ -489,15 +489,27 @@ const TIME_STEP = 0.05; // 50 milissegundos
 let stopTimeout = null;
 let isBatchEditing = false;
 let subtitleName = "legenda.srt"; // Nome padrão para download
+
+let isEditMode = false;
+let isPreviewMode = false;
 // FIM DAS NOVAS VARIÁVEIS GLOBAIS
 
 function showSection(targetId) {
     const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt', 'myPosts', 'profile', 'login-screen'];
     
+    // Detecta se estava no editSrt ANTES de trocar de seção
+    const wasInEditSrt = document.getElementById('editSrt')?.classList.contains('active');
+    
+    // Se está saindo do editSrt E estava em modo preview, desativa
+    if (wasInEditSrt && targetId !== 'editSrt' && window.isPreviewMode) {
+        window.isPreviewMode = false;
+        console.log('[showSection] Modo preview desativado ao sair de editSrt');
+    }
+    
     // ⭐ PEGA O PLAYER DE VÍDEO E SEU "ESCONDERIJO" ORIGINAL
     const videoPlayer = document.getElementById('mainVideoPlayer');
     const videoStorage = document.getElementById('videoStorage');
-
+    
     // Move o player para o encaixe correto ANTES de mostrar a nova seção
     if (targetId === 'postLesson') {
         document.getElementById('postPlayerContainer').appendChild(videoPlayer);
@@ -507,48 +519,55 @@ function showSection(targetId) {
         // Se não for uma seção de vídeo, devolve o player para o esconderijo
         videoStorage.appendChild(videoPlayer);
     }
-
+    
     const current = sectionHistory[sectionHistory.length - 1];
     if (targetId !== current) {
         sectionHistory.push(targetId);
     }
-
+    
     // Ativa/desativa seções
     sections.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.classList.toggle('active', id === targetId);
     });
-
+    
     // O código de pausar o vídeo não é mais necessário aqui, 
     // pois ao mover o player para o "storage", ele some da tela.
     // Mas podemos manter por segurança.
     if (targetId !== 'postLesson' && targetId !== 'editSrt') {
         videoPlayer.pause();
     }
-
-  // Lista de seções onde o botão "Voltar" deve ser ocultado
-  const sectionsToHideBackBtn = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'myPosts', 'profile'];
-
-  // Atualiza botão "Voltar"
-  const goBackBtn = document.getElementById('btn-goBack');
-  if (goBackBtn) {
-    // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
-    goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
-  }
-
-  // Atualiza footer
-  const footerLinks = document.querySelectorAll('footer a');
-  footerLinks.forEach(link => link.classList.remove('active'));
-  const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
-  if (targetLink) targetLink.classList.add('active');
-  
-  // Carrega os posts quando mostrar as seções
-  if (targetId === 'home') {
-      loadHomePosts();
-  } else if (targetId === 'myPosts') {
-      loadUserPosts();
-  }
+    
+    // Lista de seções onde o botão "Voltar" deve ser ocultado
+    const sectionsToHideBackBtn = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'myPosts', 'profile'];
+    
+    // Atualiza botão "Voltar"
+    const goBackBtn = document.getElementById('btn-goBack');
+    if (goBackBtn) {
+        // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
+        goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
+    }
+    
+    // Atualiza footer
+    const footerLinks = document.querySelectorAll('footer a');
+    footerLinks.forEach(link => link.classList.remove('active'));
+    const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
+    if (targetLink) targetLink.classList.add('active');
+    
+    // Carrega os posts quando mostrar as seções
+    if (targetId === 'home') {
+        loadHomePosts();
+    } else if (targetId === 'myPosts') {
+        loadUserPosts();
+    }
+    
+    // Se está entrando no editSrt, atualiza a UI
+    if (targetId === 'editSrt') {
+        setTimeout(() => {
+            updateEditorUI();
+        }, 100);
+    }
 }
 
 function goBack() {
@@ -841,15 +860,14 @@ async function getThumbnailUrl(thumbId) {
  * @returns {string} HTML do card
  */
 async function createVideoCard(post, showEdit = false) {
-    const thumbUrl = await getThumbnailUrl(post.thumbId);  // Obtém a URL da thumbnail
-
-    // Verifique se a URL foi obtida corretamente
+    const thumbUrl = await getThumbnailUrl(post.thumbId);
+    
     console.log('thumbUrl:', thumbUrl);
 
     return `
         <div class="video-container" data-video-id="${post.$id}">
-            <div class="video-thumb"><img src="${thumbUrl || 'fallback-image.jpg'}" alt="Video thumbnail" class="video-thumb-img">
- <!-- Exibe a imagem -->
+            <div class="video-thumb" onclick="previewLesson('${post.$id}')">
+                <img src="${thumbUrl || 'fallback-image.jpg'}" alt="Video thumbnail" class="video-thumb-img">
                 <span class="video-time">${post.duration || '10:35'}</span>
             </div>
             <div class="channel-info">
@@ -857,11 +875,11 @@ async function createVideoCard(post, showEdit = false) {
                     <img src="${post.channelPic || 'canal.jpg'}" alt="Canal" class="channel-pic">
                 </div>
                 <div class="video-text">
-                    <h3 class="video-title">${post.videoName}</h3>
+                    <h3 class="video-title" onclick="previewLesson('${post.$id}')" style="cursor: pointer;">${post.videoName}</h3>
                     <div class="video-meta">
                         <span class="channel-name">${''}</span>
                         <span class="performance">${post.performance || '95%'}</span>
-                        ${showEdit ? `<span class="video-edit" onclick="editPost('${post.$id}')">Editar</span>` : ''}
+                        ${showEdit ? `<span class="video-edit" onclick="event.stopPropagation(); editPost('${post.$id}')" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -922,6 +940,281 @@ function editPost(postId) {
 // Inicializar quando necessário
 // Chame essas funções quando mostrar as seções correspondentes
 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Preview Mode ---- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Ajusta a interface do editor SRT de acordo com o modo (preview ou edição)
+ */
+function updateEditorUI() {
+    const isPreview = window.isPreviewMode === true;
+    
+    console.log('[updateEditorUI] Modo preview:', isPreview);
+    
+    // Elementos que devem ser ocultados no modo preview
+    const elementsToHide = [
+        document.getElementById('btn-config'),           // ⚙ Editar em Lote
+        document.querySelectorAll('#editor label')[0],   // Label "Início"
+        document.querySelectorAll('.time-controls')[0],  // Controles de tempo Início
+        document.querySelectorAll('#editor label')[1],   // Label "Fim"
+        document.querySelectorAll('.time-controls')[1],  // Controles de tempo Fim
+        document.querySelectorAll('#editor label')[2],   // Label "Texto"
+        document.getElementById('editText'),             // Textarea
+        document.getElementById('btn-load'),             // 📂
+        document.getElementById('btn-save')              // 💾
+    ];
+    
+    // Oculta ou mostra os elementos
+    elementsToHide.forEach(element => {
+        if (element) {
+            element.style.display = isPreview ? 'none' : '';
+        }
+    });
+    
+    // Ajusta os botões de navegação para ficarem mais visíveis no preview
+    const navButtons = [
+        document.querySelector('button[onclick="prevLine()"]'),
+        document.querySelector('button[onclick="playLine()"]'),
+        document.querySelector('button[onclick="nextLine()"]')
+    ];
+    
+    navButtons.forEach(button => {
+        if (button && isPreview) {
+            button.style.padding = '15px 20px';
+            button.style.fontSize = '18px';
+            button.style.margin = '10px 5px';
+        } else if (button) {
+            button.style.padding = '';
+            button.style.fontSize = '';
+            button.style.margin = '';
+        }
+    });
+    
+    console.log('[updateEditorUI] Interface atualizada para modo:', isPreview ? 'PREVIEW' : 'EDIÇÃO');
+}
+
+/**
+ * Abre o modo de preview (apenas visualização) de uma lição
+ */
+async function previewLesson(postId) {
+    try {
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '68ed87f400375b28a7e7';
+        const BUCKET_ID = '68ed7f190017280cf294';
+        
+        console.log('[previewLesson] Carregando post ID:', postId);
+        
+        // Busca os dados do post no banco
+        const post = await databases.getDocument(DATABASE_ID, COLLECTION_ID, postId);
+        
+        if (!post) {
+            alert('Post não encontrado!');
+            return;
+        }
+        
+        // Carrega o vídeo
+        const videoUrl = storage.getFileView(BUCKET_ID, post.videoId);
+        document.getElementById('mainVideoPlayer').src = videoUrl;
+        console.log('[previewLesson] Vídeo carregado:', videoUrl.href);
+        
+        // Carrega o arquivo SRT
+        console.log('[previewLesson] Baixando SRT com ID:', post.srtId);
+        const srtFileUrl = storage.getFileDownload(BUCKET_ID, post.srtId);
+        const response = await fetch(srtFileUrl);
+        const srtText = await response.text();
+        console.log('[previewLesson] SRT baixado, tamanho:', srtText.length, 'caracteres');
+        
+        // Parseia o SRT
+        parseSRT(srtText);
+        subtitleName = post.videoName + '.srt';
+        document.getElementById('subtitleName').textContent = subtitleName;
+        
+        // Define o modo de preview
+        window.isPreviewMode = true;
+        
+        // Limpa qualquer ID de edição
+        delete window.currentEditingPostId;
+        
+        console.log('[previewLesson] Modo preview ativado. Abrindo editSrt...');
+        
+        // Abre a seção de edição SRT (apenas visualização)
+        showSection('editSrt');
+        
+    } catch (error) {
+        console.error('[previewLesson] Erro ao carregar preview:', error);
+        alert('Erro ao carregar visualização: ' + error.message);
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Edit Post ----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Função para editar um post existente
+ * @param {string} postId - ID do post a ser editado
+ */
+async function editPost(postId) {
+    try {
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '68ed87f400375b28a7e7';
+        const BUCKET_ID = '68ed7f190017280cf294';
+        
+        // Busca os dados do post no banco
+        const post = await databases.getDocument(DATABASE_ID, COLLECTION_ID, postId);
+        
+        if (!post) {
+            alert('Post não encontrado!');
+            return;
+        }
+        
+        // Carrega o vídeo
+        const videoUrl = storage.getFileView(BUCKET_ID, post.videoId);
+        document.getElementById('mainVideoPlayer').src = videoUrl;
+        
+        // Carrega o arquivo SRT
+        console.log(`[editPost] Tentando baixar o SRT com ID: ${post.srtId}`);
+        const srtFileUrl = storage.getFileDownload(BUCKET_ID, post.srtId);
+        console.log('[editPost] URL de download do SRT:', srtFileUrl.href);
+
+        const response = await fetch(srtFileUrl);
+        console.log('[editPost] Resposta do fetch do SRT:', response.status, response.statusText);
+
+        const srtText = await response.text();
+        console.log(`[editPost] Conteúdo do SRT baixado (tamanho: ${srtText.length} caracteres):`);
+        console.log(srtText.substring(0, 300)); // Mostra os primeiros 300 caracteres
+
+        // Parseia o SRT
+        parseSRT(srtText);
+        subtitleName = post.videoName + '.srt';
+        document.getElementById('subtitleName').textContent = subtitleName;
+        
+        // Carrega a thumbnail
+        const thumbUrl = await getThumbnailUrl(post.thumbId);
+        const thumbResponse = await fetch(thumbUrl);
+        const thumbBlob = await thumbResponse.blob();
+        capturedThumbnailBlob = thumbBlob;
+        document.getElementById('previewContainer').innerHTML = `<img src="${thumbUrl}" alt="Thumbnail atual">`;
+        
+        // Preenche os campos do formulário
+        document.querySelector('input[name="nome"]').value = post.videoName;
+        document.querySelector('input[name="description"]').value = post.description || '';
+        
+        // Guarda o ID do post para atualização posterior
+        window.currentEditingPostId = postId;
+        
+        // Altera o texto do botão de postar para "Atualizar"
+        const postButton = document.querySelector('button[onclick="postLesson()"]');
+        if (postButton) {
+            postButton.textContent = 'Atualizar Lição';
+            postButton.setAttribute('onclick', 'updateLesson()');
+        }
+        
+        // ⭐ REATIVA o botão de captura de thumbnail para funcionar no modo edição
+        const captureButton = document.getElementById('captureBtn');
+        if (captureButton) {
+            // Remove listeners antigos (se houver)
+            const newCaptureButton = captureButton.cloneNode(true);
+            captureButton.parentNode.replaceChild(newCaptureButton, captureButton);
+            
+            // Adiciona o listener de captura
+            newCaptureButton.addEventListener('click', () => {
+                const videoElement = document.getElementById('mainVideoPlayer');
+                const previewContainer = document.getElementById('previewContainer');
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                
+                canvas.toBlob((blob) => {
+                    capturedThumbnailBlob = blob;
+                    const previewUrl = URL.createObjectURL(blob);
+                    previewContainer.innerHTML = `<img src="${previewUrl}" alt="Preview da Thumbnail">`;
+                }, 'image/jpeg', 0.9);
+            });
+        }
+        
+        // Abre a seção de postagem
+        showSection('postLesson');
+        
+    } catch (error) {
+        console.error('Erro ao carregar post para edição:', error);
+        alert('Erro ao carregar post: ' + error.message);
+    }
+}
+
+/**
+ * Função para atualizar uma lição existente
+ */
+async function updateLesson() {
+    try {
+        if (!window.currentEditingPostId) {
+            alert('Erro: ID do post não encontrado!');
+            return;
+        }
+        
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '68ed87f400375b28a7e7';
+        const BUCKET_ID = '68ed7f190017280cf294';
+        
+        const postId = window.currentEditingPostId;
+        const post = await databases.getDocument(DATABASE_ID, COLLECTION_ID, postId);
+        
+        // Obtém o nome base atual
+        const baseName = document.querySelector('input[name="nome"]').value || post.videoName;
+        
+        // Atualiza o SRT
+        const srtContent = generateSRT();
+        const srtBlob = new Blob([srtContent], { type: 'text/plain' });
+        const srtFile = new File([srtBlob], `${baseName}.srt`, { type: 'text/plain' });
+        
+        // Remove o arquivo SRT antigo e faz upload do novo
+        await storage.deleteFile(BUCKET_ID, post.srtId);
+        const newSrtId = await uploadFile(srtFile, srtFile.name);
+        
+        // Atualiza a thumbnail se foi capturada uma nova
+        let newThumbId = post.thumbId;
+        if (capturedThumbnailBlob) {
+            const thumbFile = new File([capturedThumbnailBlob], `${baseName}.jpg`, { type: 'image/jpeg' });
+            await storage.deleteFile(BUCKET_ID, post.thumbId);
+            newThumbId = await uploadFile(thumbFile, thumbFile.name);
+        }
+        
+        // Atualiza os dados no banco
+        await databases.updateDocument(
+            DATABASE_ID,
+            COLLECTION_ID,
+            postId,
+            {
+                videoName: baseName,
+                srtId: newSrtId,
+                thumbId: newThumbId,
+                description: document.querySelector('input[name="description"]').value
+            }
+        );
+        
+        alert('Lição atualizada com sucesso!');
+        
+        // Limpa o ID de edição
+        delete window.currentEditingPostId;
+        
+        // Restaura o botão original
+        const updateButton = document.querySelector('button[onclick="updateLesson()"]');
+        if (updateButton) {
+            updateButton.textContent = 'Postar Lição';
+            updateButton.setAttribute('onclick', 'postLesson()');
+        }
+        
+        showSection('myPosts');
+        
+    } catch (error) {
+        console.error('Erro ao atualizar lição:', error);
+        alert('Erro ao atualizar lição: ' + error.message);
+    }
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // Bloco Edit Srt - Inicio
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -939,28 +1232,33 @@ function showConfigEdit() {
 }
 
 function renderSegments() {
-  const container = document.getElementById("segments");
-  container.innerHTML = "";  // Limpa a lista de segmentos
-
-  srtData.forEach(seg => {
-    const div = document.createElement("div");
-    div.className = "segment";
-    div.setAttribute('data-id', seg.id);
-    
-    // Adiciona classe ao segmento selecionado
-    if (seg.id === currentSegment?.id) {
-      div.classList.add("segment-selected");
+    // Adicione estes logs
+    console.log('--- [renderSegments] Iniciando a renderização dos segmentos ---');
+    console.log(`[renderSegments] Total de segmentos a renderizar: ${srtData.length}`);
+    if (srtData.length > 0) {
+        console.log('[renderSegments] Amostra do primeiro segmento:', srtData[0]);
+    } else {
+        console.warn('[renderSegments] AVISO: srtData está vazio. Nenhuma legenda para mostrar.');
     }
-    
-    // Define o conteúdo do segmento
-    div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
-    
-    // Define a ação de clicar no segmento
-    div.onclick = () => openEditor(seg.id);
-    
-    // Adiciona o segmento ao container
-    container.appendChild(div);
-  });
+    // O resto do código continua igual
+    const container = document.getElementById("segments");
+    container.innerHTML = "";
+
+    srtData.forEach(seg => {
+        const div = document.createElement("div");
+        div.className = "segment";
+        div.setAttribute('data-id', seg.id);
+
+        if (seg.id === currentSegment?.id) {
+            div.classList.add("segment-selected");
+        }
+
+        div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
+
+        div.onclick = () => openEditor(seg.id);
+
+        container.appendChild(div);
+    });
 }
 
 function openEditor(id) {
@@ -1566,35 +1864,59 @@ let capturedThumbnailBlob = null;
  * @param {string} previewId - O ID do <div> onde a imagem capturada será exibida.
  */
 function enableThumbnailCapture(videoId, buttonId, previewId) {
-    _injectCaptureStyles(); // Adiciona o CSS para o botão e preview
+    _injectCaptureStyles();
 
     const videoElement = document.getElementById(videoId);
     const captureButton = document.getElementById(buttonId);
     const previewContainer = document.getElementById(previewId);
 
     if (!videoElement || !captureButton || !previewContainer) {
-        console.error("Um ou mais elementos (vídeo, botão, preview) não foram encontrados.");
+        console.error("Um ou mais elementos (vídeo, botão, preview) não foram encontrados na inicialização.");
         return;
     }
 
+    // <<< Log para confirmar que o listener inicial foi configurado
+    console.log('--- [enableThumbnailCapture] Listener de captura inicial configurado com sucesso. ---');
+    
     let currentPreviewUrl = null;
 
     captureButton.addEventListener('click', () => {
-        // A lógica de captura é a mesma, mas agora usa os elementos existentes
+        // <<< Log de início da captura
+        console.log('--- [Capture Thumbnail] Botão clicado! (Listener inicial) ---');
+        
+        // <<< Log para verificar o estado do vídeo no momento do clique
+        console.log(`[Capture Thumbnail] Dimensões do vídeo: ${videoElement.videoWidth} x ${videoElement.videoHeight}`);
+        console.log(`[Capture Thumbnail] Tempo atual do vídeo: ${videoElement.currentTime}`);
+
+        // <<< Validação crítica para evitar falhas silenciosas
+        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+            console.error('ERRO CRÍTICO: As dimensões do vídeo são 0. O vídeo pode não ter carregado seus metadados ainda.');
+            alert('Erro ao capturar: o vídeo ainda não está pronto. Tente novamente em um instante.');
+            return;
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = videoElement.videoWidth;
         canvas.height = videoElement.videoHeight;
+        console.log(`[Capture Thumbnail] Criando canvas com as dimensões ${canvas.width} x ${canvas.height}.`);
+        
         const ctx = canvas.getContext('2d');
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        console.log('[Capture Thumbnail] Desenhando a imagem do vídeo no canvas...');
 
         canvas.toBlob((blob) => {
-            capturedThumbnailBlob = blob; // Atualiza a variável principal
+            console.log('[Capture Thumbnail] Blob criado com sucesso:', blob); // <<< Mostra o objeto Blob
+            capturedThumbnailBlob = blob;
+            console.log('[Capture Thumbnail] Variável global "capturedThumbnailBlob" foi atualizada.');
 
             if (currentPreviewUrl) {
                 URL.revokeObjectURL(currentPreviewUrl);
             }
             currentPreviewUrl = URL.createObjectURL(blob);
+            console.log('[Capture Thumbnail] URL de preview gerada:', currentPreviewUrl);
+            
             previewContainer.innerHTML = `<img src="${currentPreviewUrl}" alt="Preview da Thumbnail">`;
+            console.log('[Capture Thumbnail] Container de preview atualizado.');
         }, 'image/jpeg', 0.9);
     });
 }
