@@ -1,4 +1,4 @@
-<!-- solo section -->
+<!-- solo footer preview  -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -933,15 +933,13 @@ async function postLesson() {
  * Cria uma nova lição (upload inicial)
  */
 async function createNewLesson() {
-    showLoading('Postando lição...'); // Mostra loading
-    
     try {
         // Valida se há conteúdo carregado
         if (!subtitleName || srtData.length === 0) {
             alert('Carregue uma legenda SRT primeiro!');
             return;
         }
-
+		
         const videoElement = document.getElementById('mainVideoPlayer');
         if (!videoElement.src || videoElement.src.startsWith('blob:') === false) {
             alert('Carregue um vídeo primeiro!');
@@ -953,6 +951,9 @@ async function createNewLesson() {
             alert('Capture uma thumbnail primeiro!');
             return;
         }
+
+        // ✅ SÓ MOSTRA LOADING DEPOIS DE TODAS AS VALIDAÇÕES
+        showLoading('Postando lição...'); 
 
         // Obter o nome base (sem extensão) do arquivo SRT
         const baseName = subtitleName.replace(/\.[^/.]+$/, "");
@@ -1034,16 +1035,15 @@ async function createNewLesson() {
  * Atualiza uma lição existente
  */
 async function updateLesson() {
-    showLoading('Atualizando lição...'); // Mostra loading
-    
     try {
         if (!window.currentEditingPostId) {
             hideLoading();
             alert('Erro: ID do post não encontrado!');
             return;
         }
-        
-        const DATABASE_ID = '68ed87df000874c3e85a';
+    	showLoading('Atualizando lição...'); // Mostra loading
+		
+		const DATABASE_ID = '68ed87df000874c3e85a';
         const COLLECTION_ID = '68ed87f400375b28a7e7';
         const BUCKET_ID = '68ed7f190017280cf294';
         
@@ -1139,7 +1139,7 @@ async function updateLesson() {
         
     } catch (error) {
         console.error('[updateLesson] ❌ Erro ao atualizar lição:', error);
-        hideLoading();
+        hideLoading(); // ✅ Esconde em caso de erro
         alert('Erro ao atualizar lição: ' + error.message);
     }
 }
