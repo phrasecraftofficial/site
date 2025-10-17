@@ -513,13 +513,11 @@ video {
 
     <section id="solo" class="content-row">
             <div class="video-container">
-                <video id="custom-video" class="hide-controls" preload="auto" crossorigin="anonymous">
-                </video>
+                <video id="mainVideoPlayer" class="hide-controls" preload="auto" crossorigin="anonymous"></video>
         
                 <div id="subtitle-content" class="hidden"> 
                 	<!- As legendas aparecem aqui: -->
                 </div>
-                
             </div>
 
             <div id="buttons">
@@ -529,16 +527,13 @@ video {
                 <button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
                 
              </div>
-            
         </div>
 
         <div class="phrase-container" id="frase">
         </div>
 
         <div class="word-button-wrapper">
-        
             <div class="word-container" id="palavras"></div>
-            
         </div>
         
         <div id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
@@ -640,7 +635,7 @@ function validateSectionAccess(targetId) {
             return false;
         }
         
-        const videoPlayer = document.getElementById('mainVideoPlayer') || document.getElementById('custom-video');
+        const videoPlayer = document.getElementById('mainVideoPlayer');
         if (!videoPlayer || !videoPlayer.src) {
             alert('Carregue uma lição primeiro!');
             showSection('home');
@@ -665,7 +660,7 @@ function updateSectionHistory(targetId) {
  * Gerencia o movimento do player de vídeo entre seções
  */
 function handleVideoPlayerMovement(targetId) {
-    const videoPlayer = document.getElementById('mainVideoPlayer') || document.getElementById('custom-video');
+    const videoPlayer = document.getElementById('mainVideoPlayer');
     const videoStorage = document.getElementById('videoStorage');
     
     if (!videoPlayer) return;
@@ -710,7 +705,6 @@ function handleVideoPlayerMovement(targetId) {
  * Move o vídeo para a seção postLesson
  */
 function moveVideoToPost(videoPlayer) {
-    videoPlayer.id = 'mainVideoPlayer';
     videoPlayer.className = '';
     document.getElementById('postPlayerContainer').appendChild(videoPlayer);
 }
@@ -719,7 +713,6 @@ function moveVideoToPost(videoPlayer) {
  * Move o vídeo para a seção editSrt
  */
 function moveVideoToEdit(videoPlayer) {
-    videoPlayer.id = 'mainVideoPlayer';
     videoPlayer.className = '';
     document.getElementById('editPlayerContainer').appendChild(videoPlayer);
 }
@@ -731,22 +724,15 @@ function moveVideoToSolo(videoPlayer) {
     const soloContainer = document.querySelector('#solo .video-container');
     if (!soloContainer) return;
     
-    // Remove custom-video se existir e for diferente
-    const customVideo = document.getElementById('custom-video');
-    if (customVideo && customVideo !== videoPlayer) {
-        customVideo.remove();
-    }
-    
-    soloContainer.appendChild(videoPlayer);
-    videoPlayer.id = 'custom-video';
+    // Mantém o mesmo ID e apenas ajusta a classe
     videoPlayer.className = 'hide-controls';
+    soloContainer.appendChild(videoPlayer);
 }
 
 /**
  * Move o vídeo de volta para o storage
  */
 function moveVideoToStorage(videoPlayer, videoStorage) {
-    videoPlayer.id = 'mainVideoPlayer';
     videoPlayer.className = '';
     videoStorage.appendChild(videoPlayer);
 }
@@ -764,7 +750,7 @@ function toggleSections(sections, targetId) {
     // Pausa o vídeo se não estiver em seção de vídeo
     const videoSections = ['postLesson', 'editSrt', 'solo'];
     if (!videoSections.includes(targetId)) {
-        const videoPlayer = document.getElementById('mainVideoPlayer') || document.getElementById('custom-video');
+        const videoPlayer = document.getElementById('mainVideoPlayer');
         if (videoPlayer) videoPlayer.pause();
     }
 }
@@ -2396,18 +2382,17 @@ enableThumbnailCapture('mainVideoPlayer', 'captureBtn', 'previewContainer');
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 //  - Bloco Fx | Play Sections -
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+let currentSubtitleIndex = 0;
+let selectedWords = [];
 
 /**
  * Move o player de vídeo principal para a seção 'solo'
  * Garante que o mesmo vídeo seja usado em todas as seções
  */
-function moveVideoToSolo() {
-    const videoPlayer = document.getElementById('mainVideoPlayer');
+function moveVideoToSolo(videoPlayer) {
     const soloContainer = document.querySelector('#solo .video-container');
-    const customVideo = document.getElementById('custom-video');
-    
-    if (!videoPlayer || !soloContainer) {
-        console.error('[moveVideoToSolo] Elementos não encontrados');
+    if (!soloContainer) {
+        console.error('[moveVideoToSolo] Container solo não encontrado');
         return;
     }
     
@@ -2421,24 +2406,15 @@ function moveVideoToSolo() {
     
     console.log('[moveVideoToSolo] Movendo vídeo para a seção solo');
     
-    // Remove o custom-video e adiciona o mainVideoPlayer no lugar
-    if (customVideo && customVideo.parentNode) {
-        customVideo.parentNode.removeChild(customVideo);
-    }
-    
     // Move o player principal para o container solo
     soloContainer.appendChild(videoPlayer);
     
     // Ajusta os atributos do vídeo para o modo solo
-    videoPlayer.id = 'custom-video'; // Mantém o ID esperado
     videoPlayer.className = 'hide-controls';
     
     console.log('[moveVideoToSolo] Vídeo movido com sucesso');
 }
-
-let currentSubtitleIndex = 0;
-let selectedWords = [];
-
+	  
 /**
  * Inicializa o modo solo de jogo
  */
