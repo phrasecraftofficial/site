@@ -582,66 +582,90 @@ video {
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
   </footer>
 
-  <script>
-const sections = document.querySelectorAll('section');
+<script>
+// Lista de elementos com condições
+const elements = [
+  {
+    id: "el1",
+    content: `<div class="card"><p>Esta é a introdução da página.</p></div>`,
+    condition: () => true
+  },
+  {
+    id: "el2",
+    content: `<div class="card"><p>Somos apaixonados por tecnologia.</p></div>`,
+    condition: () => true
+  },
+  {
+    id: "el3",
+    content: `<div class="card"><p>Email: contato@exemplo.com</p></div>`,
+    condition: () => true
+  }
+];
 
-// Lista de elementos compartilhados
-const sharedElements = {
-  video: document.getElementById('shared-video'),
-  text: document.getElementById('shared-text'),
-  image: document.getElementById('shared-image'),
-};
+// Lista de sections com condições
+const sections = [
+  { id: "intro", condition: () => true },
+  { id: "about", condition: () => true },
+  { id: "contact", condition: () => true },
+];
 
-// Define quais elementos aparecem em cada seção
-const sectionElementsMap = {
-  'home': [''],
-  'search': [''],
-  'notifications': [], // Não exibe elementos compartilhados
-  'you': ['', ''],
-  'subscriptions': [''],
-  'create': [''],
-  'postLesson': ['', ''],
-  'editSrt': [''],
-  'myProfile': [],
-  'myPosts': ['', ''],
-  'login-screen': [],
-  'solo': ['', ''],
-  'challenge': ['']
-};
+// Lista de posições (elementos podem aparecer em várias seções)
+const positions = [
+  // after = o 
+  { key: "el1", after: ["intro-content", "about-content"] },
+  { key: "el2", after: ["about-content"] },
+  { key: "el3", after: ["contact-content", "intro-content"] },
+];
 
-function showSection(sectionId) {
-  // Oculta todas as seções
-  sections.forEach(sec => sec.classList.remove('active'));
+// Renderiza seções e elementos
+function renderPage() {
+  // Elementos
+  elements.forEach(element => {
+    const shouldShow = element.condition();
+    const pos = positions.find(p => p.key === element.id);
 
-  const target = document.getElementById(sectionId);
-  if (!target) return;
-
-  target.classList.add('active');
-
-  // Remove todos os elementos compartilhados do DOM
-  // Alternativa robusta: usando Object.values()
-  Object.values(sharedElements).forEach(el => {
-    if (el.parentElement) {
-      el.remove();
-    }
-    el.style.display = 'none';
-  });
-
-  // Insere os elementos definidos para esta seção
-  const elementsToAdd = sectionElementsMap[sectionId] || [];
-
-  elementsToAdd.forEach(key => {
-    const el = sharedElements[key];
-    if (el) {
-      target.appendChild(el);
-      el.style.display = 'block';
+    if (pos) {
+      pos.after.forEach(targetId => {
+        const container = document.getElementById(targetId);
+        if (container) {
+          let existing = document.getElementById(`${element.id}-${targetId}`);
+          if (!existing && shouldShow) {
+            const div = document.createElement("div");
+            div.id = `${element.id}-${targetId}`;
+            div.innerHTML = element.content;
+            container.appendChild(div);
+          } else if (existing) {
+            existing.style.display = shouldShow ? "block" : "none";
+          }
+        }
+      });
     }
   });
 }
 
-// Exibe a primeira seção ao carregar
-window.onload = () => showSection('home');
-  </script>
+
+// Botão para mostrar/ocultar seções
+function toggleSection(sectionId) {
+  // Oculta todas as seções
+  sections.forEach(s => {
+    const el = document.getElementById(s.id);
+    el.classList.add("hidden");
+  });
+
+  // Exibe apenas a seção selecionada
+  const target = document.getElementById(sectionId);
+  target.classList.remove("hidden");
+  
+  // elementos reavaliados e re-renderizados ao trocar de seção
+  renderPage();
+}
+
+
+// Inicializa
+document.addEventListener("DOMContentLoaded", () => {
+  toggleSection("intro"); // mostra apenas a introdução
+});
+</script>
 
 </body>
 </html>
