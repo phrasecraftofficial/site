@@ -617,26 +617,41 @@ const positions = [
 
 // Renderiza seções e elementos
 function renderPage() {
-  // Elementos
+  // Primeiro, encontre a section ativa
+  const activeSection = document.querySelector('section.active');
+  if (!activeSection) return;
+
   elements.forEach(element => {
     const shouldShow = element.condition();
-    const pos = positions.find(p => p.key === element.id);
+    if (!shouldShow) return;
 
-    if (pos) {
-      pos.after.forEach(targetId => {
-        const container = document.getElementById(targetId);
-        if (container) {
-          let existing = document.getElementById(`${element.id}-${targetId}`);
-          if (!existing && shouldShow) {
-            const div = document.createElement("div");
-            div.id = `${element.id}-${targetId}`;
-            div.innerHTML = element.content;
-            container.appendChild(div);
-          } else if (existing) {
-            existing.style.display = shouldShow ? "block" : "none";
-          }
-        }
-      });
+    // Encontre o container deste elemento dentro da section ativa
+    const pos = positions.find(p => p.key === element.id);
+    if (!pos) return;
+
+    // A section ativa deve conter pelo menos um dos containers onde o elemento pode ir
+    let container = null;
+    for (const targetId of pos.after) {
+      if (activeSection.querySelector(`#${targetId}`)) {
+        container = activeSection.querySelector(`#${targetId}`);
+        break;
+      }
+    }
+    if (!container) return;
+
+    // Verifica se o elemento já existe no DOM
+    let existing = document.getElementById(element.id);
+
+    if (!existing) {
+      // Cria o elemento pela primeira vez e adiciona com id único global
+      const div = document.createElement('div');
+      div.id = element.id;
+      div.innerHTML = element.content;
+      container.appendChild(div);
+    } else {
+      // Move o elemento para o container atual da seção ativa
+      container.appendChild(existing);
+      existing.style.display = "block";
     }
   });
 }
