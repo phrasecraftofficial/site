@@ -299,16 +299,6 @@ video {
   </header>
 
   <main>
-    <!-- Elementos compartilhados -->
-    <video id="shared-video" controls>
-      <source src="video.mp4" type="video/mp4" />
-      Seu navegador não suporta vídeo HTML5.
-    </video>
-
-    <div id="shared-text">Este é um conteúdo compartilhado e fixo.</div>
-
-    <img id="shared-image" src="imagem.jpg" alt="Imagem compartilhada" />
-
     <!-- Seções -->
     <section id="home">
         <h2>Home</h2>
@@ -583,30 +573,58 @@ video {
   </footer>
 
 <script>
+
+
+
+
+
+    
+
 // Lista de elementos com condições
 const elements = [
   {
-    id: "el1",
-    content: `<div class="card"><p>Esta é a introdução da página.</p></div>`,
+    id: "video-content",
+    content: `
+    <video>
+      <source src="video.mp4" type="video/mp4" />
+      Seu navegador não suporta vídeo HTML5.
+    </video>`,
     condition: () => true
   },
   {
-    id: "el2",
-    content: `<div class="card"><p>Somos apaixonados por tecnologia.</p></div>`,
+    id: "srt-content",
+    content: `
+    <div>
+      <source src="legendas.srt" type="" />
+        Este é uma srt compartilhada e fixo.
+    </div>`,
     condition: () => true
   },
   {
-    id: "el3",
-    content: `<div class="card"><p>Email: contato@exemplo.com</p></div>`,
+    id: "edit-controls-content",
+    content: `
+    <div>
+        Este é um elemento compartilhada e fixo.
+    </div>`,
     condition: () => true
   }
 ];
 
 // Lista de sections com condições
 const sections = [
-  { id: "intro", condition: () => true },
-  { id: "about", condition: () => true },
-  { id: "contact", condition: () => true },
+  { id: "home", condition: () => true },
+  { id: "search", condition: () => true },
+  { id: "notifications", condition: () => true },
+  { id: "you", condition: () => true },
+  { id: "subscriptions", condition: () => true },
+  { id: "create", condition: () => true },
+  { id: "postLesson", condition: () => true },
+  { id: "editSrt", condition: () => true },
+  { id: "myProfile", condition: () => true },
+  { id: "myPosts", condition: () => true },
+  { id: "login-screen", condition: () => true },
+  { id: "solo", condition: () => true },
+  { id: "challenge", condition: () => true },
 ];
 
 // Lista de posições (elementos podem aparecer em várias seções)
