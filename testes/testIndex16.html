@@ -16,52 +16,11 @@ body {
   color: #fff;
 }
 
-main { padding: 70px 16px 90px; text-align: center; }
-
-section { 
-	display: none; /* todas escondidas */
+section {
 }
 
-section.active {
-	display: block; /* visível */
-}
-
-header, footer {
-  position: fixed;
-  left: 0; right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #000;
-  padding: 0 16px;
-}
-
-header { top: 0; height: 56px; border-bottom: 1px solid #222; }
-
-/*  */
-footer { display: flex; bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
-
-footer a {
-  /* 1. Transforma o link em um contêiner flexível */
-  display: flex;
-  
-  /* 2. Empilha os itens verticalmente (ícone em cima, texto embaixo) */
-  flex-direction: column; 
-  
-  /* 3. Centraliza os itens horizontalmente */
-  align-items: center; 
-  
-  /* 4. Esta é a propriedade principal para controlar a distância! */
-  gap: 4px; /* ✨ Altere este valor para aumentar ou diminuir o espaço */
-  
-  text-decoration: none;
-  font-family: sans-serif;
-  font-size: 12px;
-}
-
-footer svg {
-  width: 20px;
-  height: 20px;
+.active {
+  display: block;
 }
 
   /*=================*/
@@ -119,6 +78,20 @@ input[type="text"] {
   box-sizing: border-box;
 }
 
+header, footer {
+  position: fixed;
+  left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #000;
+  padding: 0 16px;
+}
+
+header { top: 0; height: 56px; border-bottom: 1px solid #222; }
+
+footer { bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
+
 .logo-area { display: flex; align-items: center; gap: 8px;}
   
 .logo-area img { background: #fff; color: #000;  border-radius: 15%;}
@@ -137,23 +110,14 @@ input[type="text"] {
   width: 24px; height: 24px; fill: currentColor;
 }
 
-  /*=================*/
- /*      Video      */
-/*=================*/
-.video-content {
-    width: 90%;
-    max-width: 800px;
-    background-color: #000;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-    margin-top: 20px;
-}
+main { padding: 70px 16px 90px; text-align: center; }
 
-video {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 8px;
+.video-container {
+  widht: 100vw;
+  max-width: 600px;
+  height: 30vh
+  background: #1e1e1e;
+  overflow: hidden;
 }
 
 .video-title {
@@ -162,6 +126,21 @@ video {
   color: #fff;
   margin: 2px 0 8px 0;
   text-align: left;
+}
+
+.channel-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;;
+}
+
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .video-text {
@@ -183,19 +162,12 @@ video {
   position: relative;
   widht: 100vw;
   max-width: 600px;
-  height: 30vh;
-  overflow: hidden;  /* Garante que a imagem não saia da div */
+  height: 30vh
 }
 
 .video-thumb img {
   width: 100%;
   display: block;
-}
-
-.video-thumb-img {
-    width: auto;       /* A largura se ajusta proporcionalmente */
-    height: 100%;      /* Limita a altura a 100% da altura da div */
-    object-fit: cover; /* Garante que a imagem ocupe toda a área sem distorcer, mantendo a proporção */
 }
 
 .video-time {
@@ -208,24 +180,40 @@ video {
   border-radius: 4px;
 }
 
-.channel-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0 10px 8px;
-  font-size: 12px;;
-}
-
-.channel-pic {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 .performance {
   color: #4caf50;
   font-weight: bold;
+}
+
+footer a {
+  /* 1. Transforma o link em um contêiner flexível */
+  display: flex;
+  
+  /* 2. Empilha os itens verticalmente (ícone em cima, texto embaixo) */
+  flex-direction: column; 
+  
+  /* 3. Centraliza os itens horizontalmente */
+  align-items: center; 
+  
+  /* 4. Esta é a propriedade principal para controlar a distância! */
+  gap: 4px; /* ✨ Altere este valor para aumentar ou diminuir o espaço */
+}
+
+/* Apenas para estilização do exemplo */
+footer {
+  display: flex;
+  justify-content: space-around;
+}
+
+footer a {
+  text-decoration: none;
+  font-family: sans-serif;
+  font-size: 12px;
+}
+
+footer svg {
+  width: 20px;
+  height: 20px;
 }
 
 .avatar {
@@ -248,8 +236,36 @@ video {
 .playlist-item input {
   margin-right: 10px;
 }
-		</style>
-	</head>
+
+section { display: none; }           /* todas escondidas */
+section.active { display: block; }   /* visível */
+
+.video-section {
+    background: ;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+video {
+    width: 100%;
+    border-radius: 4px;
+}
+
+.video-thumb {
+    position: relative;
+    width: 100%;       /* Certifique-se que a div tenha 100% de largura */
+    height: 100%;      /* Ou defina uma altura específica caso necessário */
+    overflow: hidden;  /* Garante que a imagem não saia da div */
+}
+
+.video-thumb-img {
+    width: auto;       /* A largura se ajusta proporcionalmente */
+    height: 100%;      /* Limita a altura a 100% da altura da div */
+    object-fit: cover; /* Garante que a imagem ocupe toda a área sem distorcer, mantendo a proporção */
+}
+
+</style>
+</head>
 <body>
 
   <!-- Loading Overlay -->
@@ -281,6 +297,16 @@ video {
       </a>
     </div>
   </header>
+
+    <!-- Elementos compartilhados -->
+    <video id="shared-video" controls hidden>
+      <source src="video.mp4" type="video/mp4" />
+      Seu navegador não suporta vídeo HTML5.
+    </video>
+
+    <div id="shared-text" hidden>Este é um conteúdo compartilhado e fixo.</div>
+
+    <img id="shared-image" src="imagem.jpg" alt="Imagem compartilhada" hidden />
 
   <main>
     <!-- Seções -->
@@ -524,8 +550,7 @@ video {
     </section>
 
     <section id="challenge" class="">
-      <div id="lobby">Aguardando jogador...</div>
-      
+
       <!-- Criadas -->
       <h2>Partidas Criadas</h2>
       <p>Use this section to see all matches waiting a second player.</p>
@@ -557,6 +582,8 @@ video {
   </footer>
 
 <script>
+let videoMode = false;
+
 // Lista de elementos com condições
 const elements = [
   {
@@ -587,6 +614,14 @@ const elements = [
         Este é um elemento compartilhada e fixo.
     </div>`,
     condition: () => true
+  },
+  {
+    id: "lobby",
+    content: `
+    <div id="lobby">
+        Aguardando jogador...
+    </div>`,
+    condition: () => videoMode
   }
 ];
 
@@ -609,7 +644,6 @@ const sections = [
 
 // Lista de posições (elementos podem aparecer em várias seções)
 const positions = [
-  // after = o 
   { key: "video-content", after: ["home-post-container", "user-post-container"] },
   { key: "edit-controls-content", after: ["editSrt"] },
   { key: "srt-content", after: ["editSrt", ""] },
@@ -617,68 +651,54 @@ const positions = [
 
 // Renderiza seções e elementos
 function renderPage() {
-  // Primeiro, encontre a section ativa
-  const activeSection = document.querySelector('section.active');
-  if (!activeSection) return;
-
   elements.forEach(element => {
     const shouldShow = element.condition();
-    if (!shouldShow) return;
-
-    // Encontre o container deste elemento dentro da section ativa
     const pos = positions.find(p => p.key === element.id);
-    if (!pos) return;
 
-    // A section ativa deve conter pelo menos um dos containers onde o elemento pode ir
-    let container = null;
-    for (const targetId of pos.after) {
-      if (activeSection.querySelector(`#${targetId}`)) {
-        container = activeSection.querySelector(`#${targetId}`);
-        break;
-      }
-    }
-    if (!container) return;
-
-    // Verifica se o elemento já existe no DOM
-    let existing = document.getElementById(element.id);
-
-    if (!existing) {
-      // Cria o elemento pela primeira vez e adiciona com id único global
-      const div = document.createElement('div');
-      div.id = element.id;
-      div.innerHTML = element.content;
-      container.appendChild(div);
-    } else {
-      // Move o elemento para o container atual da seção ativa
-      container.appendChild(existing);
-      existing.style.display = "block";
+    if (pos) {
+      pos.after.forEach(targetId => {
+        const container = document.getElementById(targetId);
+        if (container) {
+          let existing = document.getElementById(`${element.id}-${targetId}`);
+          if (!existing && shouldShow) {
+            const div = document.createElement("div");
+            div.id = `${element.id}-${targetId}`;
+            div.innerHTML = element.content;
+            container.appendChild(div);
+          } else if (existing) {
+            existing.style.display = shouldShow ? "block" : "none";
+          }
+        }
+      });
     }
   });
 }
 
-// Fx para mostrar/ocultar seções
+// Botão para mostrar/ocultar seções
 function showSection(sectionId) {
-  // Oculta todas as seções removendo a classe 'active'
-  document.querySelectorAll('section').forEach(section => {
-    section.classList.remove("active");
-  });
-
-  // Exibe apenas a seção selecionada adicionando a classe 'active'
-  const target = document.getElementById(sectionId);
-  if (target) {
-    target.classList.add("active");
-  }
- 
-  // elementos reavaliados e re-renderizados ao trocar de seção
-  renderPage();
+  const section = sections.find(s => s.id === sectionId);
+  
+  // Se a seção não existe ou a condição dela é falsa, não faça nada
+  if (!section || !section.condition()) {
+    return; // Sai da função sem alterar nada
+  }
+  
+  sections.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el) el.classList.remove("active");
+  });
+  
+  const target = document.getElementById(sectionId);
+  if (target) target.classList.add("active");
+  
+  renderPage();
 }
-
 
 // Inicializa
 document.addEventListener("DOMContentLoaded", () => {
   renderPage();
-  showSection("home"); // mostra a seção home por padrão
+  showSection("home");
 });
-		</script>
-	</body>
+</script>
+</body>
 </html>
