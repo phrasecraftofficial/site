@@ -172,46 +172,4 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 </body>
-</html>        const container = document.getElementById(targetId);
-        if (container) {
-          let existing = document.getElementById(`${element.id}-${targetId}`);
-          if (!existing && shouldShow) {
-            const div = document.createElement("div");
-            div.id = `${element.id}-${targetId}`;
-            div.innerHTML = element.content;
-            container.appendChild(div);
-          } else if (existing) {
-            existing.style.display = shouldShow ? "block" : "none";
-          }
-        }
-      });
-    }
-  });
-}
-
-
-// Botão para mostrar/ocultar seções
-function toggleSection(sectionId) {
-  // Oculta todas as seções
-  sections.forEach(s => {
-    const el = document.getElementById(s.id);
-    el.classList.add("hidden");
-  });
-
-  // Exibe apenas a seção selecionada
-  const target = document.getElementById(sectionId);
-  target.classList.remove("hidden");
-  
-  // elementos reavaliados e re-renderizados ao trocar de seção
-  renderPage();
-}
-
-
-// Inicializa
-document.addEventListener("DOMContentLoaded", () => {
-  toggleSection("intro"); // mostra apenas a introdução
-});
-</script>
-
-</body>
 </html>
