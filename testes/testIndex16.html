@@ -19,7 +19,7 @@ body, html {
 }
 
 /* Estilos gerais para Header e Footer */
-header, footer, .botoes-container {
+header, footer {
   position: fixed;
   left: 0;
   right: 0;
@@ -76,16 +76,18 @@ header {
  /* botoes-container */
 /* ===============  */
 .botoes-container {
+  display: flex; /* Habilita o Flexbox */
+  margin: 30px 0;
   height: 56px;
-  justify-content: center;
+  justify-content: center; /* Alinha horizontalmente no centro */
+  align-items: flex-start; /* Alinha verticalmente no topo */
   gap: 30px;
-  align-items: center;
 }
 
 .botoes-container a {
   color: #fff;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,14 +96,14 @@ header {
 }
 
 .botoes-container a svg, .botoes-container a img {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   fill: currentColor;
 }
 
 /* Texto */
 .botoes-container span {
-  font-size: 10px;
+  font-size: 15px;
   user-select: none;
 }
 
@@ -416,16 +418,11 @@ video {
       <h2>You</h2>
       <p>This section is about your profile.</p>
                       
-      <div class="" id="buttons">
-          <a href="#" onclick="showSection('myProfile')">Meu Perfil</a>
-          <a href="#" id="btn-myPosts" onclick="showSection('myPosts')">Minhas Postagens</a>
-      </div>
-                      
       <div class="botoes-container">
         <a href="#" onclick="showSection('myProfile')">
             <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Meu Perfil</span></a>
         <a href="#" id="btn-myPosts" onclick="showSection('myPosts')">
-            <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg><span>Minhas Postagens</span></a>
+            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Minhas Postagens</span></a>
       </div>
     
     </section>
@@ -583,7 +580,7 @@ video {
         <div class="user-buttons">
             <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
 
-			<div class="botoes-container">
+			<div class="">
 				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
             	<button id="logout-button" class="" onclick="handleLogout()" hidden>Sair</button>
             </div>
