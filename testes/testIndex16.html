@@ -445,11 +445,23 @@ video {
         </div>
 
         <div class="botoes-container">
-            <a href="#" onclick="openContent()">Carregar</a>
+            <a href="#" onclick="openContent()">📁<span>Carregar<span></a>
         </div>
     </section>
     
     <!-- Subsections -->
+    <section id="login-screen" class="login-screen-container">
+        <div class="login-card">
+            <h2>Entrar</h2>
+            <form id="login-form">
+                <input type="email" id="email-login" placeholder="E-mail" required>
+                <input type="password" id="password-login" placeholder="Senha" required>
+                <p id="login-message"></p>
+                <button type="submit" class="login-button">Entrar</button>
+            </form>
+        </div>
+    </section>
+    
     <section id="postLesson">
       <h2>Post</h2>
       <p>Use this section to post.</p>
@@ -498,6 +510,65 @@ video {
         <label for="playlist3">Playlist 3</label>
       </div>
       
+    </section>
+    
+    <section id="myProfile">
+      <h2>My Account</h2>
+      <p>Use this section to see and edit your profile.</p>
+      <div class="header-content"  id="header-content">
+      
+        <div class="user-buttons">
+            <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+
+			<div class="">
+				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
+            	<button id="logout-button" class="" onclick="handleLogout()" hidden>Sair</button>
+            </div>
+            
+        </div>
+      </div>
+    </section>
+    
+    <section id="myPosts">
+        <h2>My Lessons Posts</h2>
+        <p>Use this section to see your lessons posted.</p>
+        <div id="user-post-container">
+            <!-- Os cards de vídeo do usuário serão inseridos aqui -->
+        </div>
+    </section>
+
+    <section id="play" class="content-row">
+            <div class="video-container">
+                <video id="mainVideoPlayer" class="hide-controls" preload="auto" crossorigin="anonymous"></video>
+        
+                <div id="subtitle-content" class="hidden"> 
+                	<!- As legendas aparecem aqui: -->
+                </div>
+            </div>
+
+            <div id="buttons">
+                <button id="repetir" class="control-button" style="background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+                <button id="lerFrase" class="control-button" style="background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+                <button id="traduzir-btn" class="control-button" style="background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+                <button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+                
+             </div>
+        </div>
+
+        <div class="phrase-container" id="frase">
+        </div>
+
+        <div class="word-button-wrapper">
+            <div class="word-container" id="palavras"></div>
+        </div>
+        
+        <div id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+    </section>
+
+    <section id="challenge" class="">
+      <!-- Criadas -->
+      <h2>Partidas Criadas</h2>
+      <p>Use this section to see all matches waiting a second player.</p>
     </section>
     
     <section id="editSrt">
@@ -571,79 +642,6 @@ video {
         <div id="segments"></div>
     </div>
     </section>
-    
-    <section id="myProfile">
-      <h2>My Account</h2>
-      <p>Use this section to see and edit your profile.</p>
-      <div class="header-content"  id="header-content">
-      
-        <div class="user-buttons">
-            <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
-
-			<div class="">
-				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
-            	<button id="logout-button" class="" onclick="handleLogout()" hidden>Sair</button>
-            </div>
-            
-        </div>
-      </div>
-    </section>
-    
-    <section id="myPosts">
-        <h2>My Lessons Posts</h2>
-        <p>Use this section to see your lessons posted.</p>
-        <div id="user-post-container">
-            <!-- Os cards de vídeo do usuário serão inseridos aqui -->
-        </div>
-    </section>
-
-    <section id="login-screen" class="login-screen-container">
-        <div class="login-card">
-            <h2>Entrar</h2>
-            <form id="login-form">
-                <input type="email" id="email-login" placeholder="E-mail" required>
-                <input type="password" id="password-login" placeholder="Senha" required>
-                <p id="login-message"></p>
-                <button type="submit" class="login-button">Entrar</button>
-            </form>
-        </div>
-    </section>
-
-    <section id="solo" class="content-row">
-            <div class="video-container">
-                <video id="mainVideoPlayer" class="hide-controls" preload="auto" crossorigin="anonymous"></video>
-        
-                <div id="subtitle-content" class="hidden"> 
-                	<!- As legendas aparecem aqui: -->
-                </div>
-            </div>
-
-            <div id="buttons">
-                <button id="repetir" class="control-button" style="background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
-                <button id="lerFrase" class="control-button" style="background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
-                <button id="traduzir-btn" class="control-button" style="background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
-                <button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
-                
-             </div>
-        </div>
-
-        <div class="phrase-container" id="frase">
-        </div>
-
-        <div class="word-button-wrapper">
-            <div class="word-container" id="palavras"></div>
-        </div>
-        
-        <div id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
-    </section>
-
-    <section id="challenge" class="">
-
-      <!-- Criadas -->
-      <h2>Partidas Criadas</h2>
-      <p>Use this section to see all matches waiting a second player.</p>
-      
-    </section>
 
   </main>  
 
@@ -663,7 +661,7 @@ video {
   </footer>
 
   <footer id="preview-footer" style="display: none;">
-    <a href="#" onclick="showSection('solo')">
+    <a href="#" onclick="showSection('play')">
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
     <a href="#" onclick="showSection('')">
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
@@ -726,7 +724,7 @@ const sections = [
   { id: "myProfile", condition: () => true },
   { id: "myPosts", condition: () => true },
   { id: "login-screen", condition: () => true },
-  { id: "solo", condition: () => true },
+  { id: "play", condition: () => true },
   { id: "challenge", condition: () => true },
 ];
 
