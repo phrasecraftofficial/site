@@ -651,25 +651,38 @@ const positions = [
 
 // Renderiza seções e elementos
 function renderPage() {
+  // Encontra a seção ativa
+  const activeSection = document.querySelector('section.active');
+  if (!activeSection) return;
+
   elements.forEach(element => {
     const shouldShow = element.condition();
-    const pos = positions.find(p => p.key === element.id);
+    if (!shouldShow) return;
 
-    if (pos) {
-      pos.after.forEach(targetId => {
-        const container = document.getElementById(targetId);
-        if (container) {
-          let existing = document.getElementById(`${element.id}-${targetId}`);
-          if (!existing && shouldShow) {
-            const div = document.createElement("div");
-            div.id = `${element.id}-${targetId}`;
-            div.innerHTML = element.content;
-            container.appendChild(div);
-          } else if (existing) {
-            existing.style.display = shouldShow ? "block" : "none";
-          }
-        }
-      });
+    const pos = positions.find(p => p.key === element.id);
+    if (!pos) return;
+
+    // Procura o container correto dentro da seção ativa
+    let container = null;
+    for (const targetId of pos.after) {
+      const candidate = activeSection.querySelector(`#${targetId}`);
+      if (candidate) {
+        container = candidate;
+        break;
+      }
+    }
+    if (!container) return;
+
+    let existing = document.getElementById(element.id);
+    if (!existing) {
+      const div = document.createElement('div');
+      div.id = element.id; // id único global para o elemento
+      div.innerHTML = element.content;
+      container.appendChild(div);
+    } else {
+      // Move o elemento para o container da seção ativa
+      container.appendChild(existing);
+      existing.style.display = "block";
     }
   });
 }
