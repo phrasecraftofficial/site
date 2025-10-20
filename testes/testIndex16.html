@@ -836,6 +836,9 @@ async function checkAuthStatus() {
         return;
     }
     
+    showLoading('Carregando...');
+    console.log('Verificando sessão...')
+    
     try {
         const user = await account.get();
         // Salva o email no cache
@@ -843,10 +846,13 @@ async function checkAuthStatus() {
         renderUIForAuthState(true, user.email);
         showSection('myPosts');
     } catch (error) {
+    	console.log('Usuário não está logando. Direcinando para "home"...')
         // Remove cache se houver erro
         localStorage.removeItem('userEmail');
         renderUIForAuthState(false);
-        showSection('login-screen');
+        showSection('home');
+    } finally {
+        hideLoading();
     }
 }
     
@@ -856,6 +862,9 @@ loginForm.addEventListener('submit', async (e) => {
     const email = document.getElementById('email-login').value;
     const password = document.getElementById('password-login').value;
     loginMessage.textContent = '';
+    
+    showLoading('Entrando...');
+    
     try {
         // Primeiro tenta deletar qualquer sessão existente
         try {
@@ -875,20 +884,26 @@ loginForm.addEventListener('submit', async (e) => {
         showSection('myPosts');
     } catch (error) {
         loginMessage.textContent = 'Erro no login: ' + error.message;
+    } finally {
+        hideLoading();
     }
 });
 
 // Função de logout
 function handleLogout() {
+    showLoading('Saindo...');
+    
     account.deleteSession('current')
         .then(() => {
-            // Remove o cache ao fazer logout
             localStorage.removeItem('userEmail');
             renderUIForAuthState(false);
             showSection('home');
         })
         .catch((error) => {
             console.error('Erro ao fazer logout:', error);
+        })
+        .finally(() => {
+            hideLoading();
         });
 }
     
