@@ -14,7 +14,7 @@ body, html {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-  background: #000;
+  background: #0a0a0a;
   color: #fff;
 }
 
@@ -233,7 +233,6 @@ header {
  /* Edit Srt */
 /* ======== */
 .video-section {
-    background: ;
     padding: 20px;
     border-radius: 8px;
 }
@@ -361,6 +360,7 @@ input[type="radio"] {
         <p>Welcome to the home section.</p>
         <div id="home-post-container">
             <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-home"></div>
         </div>
     </section>
 
@@ -379,7 +379,7 @@ input[type="radio"] {
             </div>
 
             <div class="botoes-container">
-                <button id="btn-open" onclick="showSection('editSrt')">Carregar</button>
+                <button id="btn-open" onclick="openContent();">Carregar</button>
             </div>
     </section>
 
@@ -445,16 +445,13 @@ input[type="radio"] {
       <h2>Post</h2>
       <p>Use this section to post.</p>
                       
-      <div class="botoes-container">
-          <button href="#" onclick="postLesson()">Postar Lição</button>
+      <div id="postLesson-containerBtn" class="botoes-container">
+          <button onclick="showSection('editSrt')">👈</button>
+          <button href="#" onclick="postLesson()">Postar Lição ⬆️</button>
       </div>
-                      
-      <div class="botoes-container">
-          <button onclick="showSection('editSrt')">Editar Srt</button>
-      </div>
-
-      <div id="postPlayerContainer" class="video-section"></div>
-
+      
+      <div id="video-section-postLesson"></div>
+      
       <button id="captureBtn" class="thumb-gen-button">📸 Capturar Thumbnail</button>
 
       <div id="previewContainer" class="thumb-gen-preview">
@@ -499,26 +496,17 @@ input[type="radio"] {
         </div>
     </section>
 
-    <section id="play" class="content-row">
-            <div class="video-container">
-                <video id="mainVideoPlayer" class="hide-controls" preload="auto" crossorigin="anonymous"></video>
-        
-                <div id="subtitle-content" class="hidden"> 
-                	<!- As legendas aparecem aqui: -->
-                </div>
-            </div>
+	<section id="play" class="content-row">
+		<div id="video-section-play"></div>
 
-            <div id="buttons">
-                <button id="repetir" class="control-button" style="background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
-                <button id="lerFrase" class="control-button" style="background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
-                <button id="traduzir-btn" class="control-button" style="background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
-                <button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
-                
-             </div>
-        </div>
+      	<div id="buttons">
+      		<button id="repetir" class="control-button" style="background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button id="lerFrase" class="control-button" style="background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button id="traduzir-btn" class="control-button" style="background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+      		<button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+		</div>
 
-        <div class="phrase-container" id="frase">
-        </div>
+		<div class="phrase-container" id="frase"></div>
 
         <div class="word-button-wrapper">
             <div class="word-container" id="palavras"></div>
@@ -528,6 +516,11 @@ input[type="radio"] {
     </section>
 
     <section id="challenge" class="">
+      <!-- Lobby Area -->
+      <div id="lobby">
+      	<p>Aguardando oponente...</p>
+      </div>
+      
       <!-- Criadas -->
       <h2>Partidas Criadas</h2>
       <p>Use this section to see all matches waiting a second player.</p>
@@ -558,6 +551,8 @@ input[type="radio"] {
       <div class="" id="editor">
         <!-- Div para exibir o nome do arquivo da legenda -->
         <div id="subtitleName"></div>
+        
+        <div id="video-section-editor"></div>
 
         <label>Início</label>
         <div class="time-controls">
@@ -582,11 +577,11 @@ input[type="radio"] {
         <label>Texto</label>
         <textarea id="editText" rows="3"></textarea>
 
-        <button id="btn-load" onclick="toggleSaveArea()">📂</button>
+        <button id="btn-save" onclick="showSave()">💾</button>
         <button onclick="prevLine()">◀◀</button>
         <button onclick="playLine()">▶</button>
         <button onclick="nextLine()">▶▶</button>
-        <button id="btn-save" onclick="showSave()">💾</button>
+        <button id="btn-load" onclick="showSection('postLesson')">👉</button>
 
         <p id="btn-config" onclick="showConfig()">⚙ Editar em Lote</p>
 
@@ -653,7 +648,17 @@ let showSegmentsArea = true;
 let showSaveArea = false;
 let showLoadArea = false;
 let showConfigArea = false;
+let showLobbyArea = false;
 
+// Variáveis do Editor SRT
+let srtData = [];
+let currentSegment = null;
+let undoStack = [];
+let redoStack = [];
+let subtitleName = "";
+let stopTimeout = null;
+let isBatchEditing = false;
+const TIME_STEP = 0.1;
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // GERENCIAMENTO DE SEÇÕES 
@@ -663,18 +668,22 @@ let showConfigArea = false;
 const elements = [
   {
     id: "lobby",
-    content: `
-    <div id="lobby">
-        Aguardando jogador...
-    </div>`,
-    condition: () => true
+    content: ``,
+    condition: () => showLobbyArea
   },
   {
     id: "video-content",
     content: `
-    <div class="video-section">
-		<video id="videoPlayer" controls></video>
-    </div>
+	<video id="videoPlayer" controls>
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+	</video>
+    `,
+    condition: () => showVideoArea
+  },
+  {
+    id: "thumb-content",
+    content: `
+	<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
     `,
     condition: () => showVideoArea
   },
@@ -713,33 +722,6 @@ const elements = [
   }
 ];
 
-function showSave() {
-    showVideoArea = false;
-    showEditorArea = false;
-    showSegmentsArea = false;
-    showLoadArea = false;
-    showSaveArea = true;
-    showConfigArea = false;
-    renderPage();
-}
-
-function closeLoadSaveArea() {
-    showVideoArea = true;
-	showEditorArea = true;
-    showSegmentsArea = true;
-    showSaveArea = false;
-    showLoadArea = false;
-    showConfigArea = false;
-    renderPage();
-}
-
-function showConfig() {
-    showConfigArea = true;
-    showSaveArea = false;
-    showLoadArea = false;
-    renderPage();
-}
-
 // Lista de sections com condições
 const sections = [
   { id: "home", condition: () => true },
@@ -758,9 +740,10 @@ const sections = [
 ];
 
 // Lista de posições para elementos compartilhados (podem aparecer em várias seções)
+// Fará com que o script injete o elmento no container/div correto quando a seção estiver ativa
 const positions = [
-  { key: "video-content", after: ["home-post-container", "user-post-container", "subtitleName"] },
-  { key: "", after: [""] },
+  { key: "video-content", after: ["video-section-editor", "video-section-postLesson", "video-section-play"] },
+  { key: "thumb-content", after: ["thumb-section-home"] },
   { key: "", after: ["", ""] },
 ];
 
@@ -1004,13 +987,744 @@ function hideLoading() {
 // Inicializa
 document.addEventListener("DOMContentLoaded", () => {
   renderPage();
-  showSection("editSrt");
+  showSection("home");
 });
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // ----- Bloco Fx | Edit Srt ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+function showSave() {
+    showVideoArea = false;
+    showEditorArea = false;
+    showSegmentsArea = false;
+    showLoadArea = false;
+    showSaveArea = true;
+    showConfigArea = false;
+    renderPage();
+}
 
+function closeLoadSaveArea() {
+    showVideoArea = true;
+	showEditorArea = true;
+    showSegmentsArea = true;
+    showSaveArea = false;
+    showLoadArea = false;
+    showConfigArea = false;
+    renderPage();
+}
+
+function showConfig() {
+    showConfigArea = true;
+    showSaveArea = false;
+    showLoadArea = false;
+    renderPage();
+}
+
+
+function renderSegments() {
+  const container = document.getElementById("segments");
+  container.innerHTML = "";  // Limpa a lista de segmentos
+
+  srtData.forEach(seg => {
+    const div = document.createElement("div");
+    div.className = "segment";
+    div.setAttribute('data-id', seg.id);
+    
+    // Adiciona classe ao segmento selecionado
+    if (seg.id === currentSegment?.id) {
+      div.classList.add("segment-selected");
+    }
+    
+    // Define o conteúdo do segmento
+    div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
+    
+    // Define a ação de clicar no segmento
+    div.onclick = () => openEditor(seg.id);
+    
+    // Adiciona o segmento ao container
+    container.appendChild(div);
+  });
+}
+
+function openEditor(id) {
+  currentSegment = srtData.find(s => s.id === id);
+  if (!currentSegment) return;
+
+  document.getElementById("editor").style.display = "block";
+  document.getElementById("editStart").value = currentSegment.start;
+  document.getElementById("editEnd").value = currentSegment.end;
+  document.getElementById("editText").value = currentSegment.text;
+
+  document.getElementById("editStart").oninput = e => handleChange("start", e.target.value);
+  document.getElementById("editEnd").oninput = e => handleChange("end", e.target.value);
+  document.getElementById("editText").oninput = e => handleChange("text", e.target.value);
+  
+  // Remove a classe de todos os segmentos
+  document.querySelectorAll('.segment').forEach(item => {
+    item.classList.remove('segment-selected');
+  });
+  
+  // Adiciona a classe apenas ao segmento atual
+  const itemAtivo = document.querySelector(`[data-id="${id}"]`);
+  if (itemAtivo) {
+    itemAtivo.classList.add('segment-selected');
+  }
+  
+  scrollToSegment(id);
+  
+  setTimeout(() => playLine(), 500);
+}
+
+function handleChange(field, newValue) {
+  if (!currentSegment) return;
+  const oldValue = currentSegment[field];
+  if (oldValue === newValue) return;
+
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  undoStack.push({ 
+    type: "edit",
+    id: currentSegment.id, 
+    field, 
+    oldValue, 
+    newValue,
+    segmentBackup: oldSegment // backup completo do segmento
+  });
+  redoStack = [];
+  currentSegment[field] = newValue;
+  renderSegments();
+}
+
+function adjustTime(field, deltaSeconds) {
+  if (!currentSegment) return;
+
+  const oldValue = currentSegment[field];
+  const newValue = shiftTime(oldValue, deltaSeconds);
+
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const prev = srtData[idx - 1];
+  const next = srtData[idx + 1];
+
+  const toMs = t => {
+    const [h, m, rest] = t.split(":");
+    const [s, ms] = rest.split(",");
+    return (+h * 3600 + +m * 60 + +s) * 1000 + +ms;
+  };
+
+  const newMs = toMs(newValue);
+  const startMs = toMs(currentSegment.start);
+  const endMs = toMs(currentSegment.end);
+
+  if (field === "start" && prev && newMs <= toMs(prev.end) + 0) return;
+  if (field === "end" && next && newMs >= toMs(next.start) - 0) return;
+  if (field === "start" && newMs >= endMs - 0) return;
+  if (field === "end" && newMs <= startMs + 0) return;
+  
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  if (!isBatchEditing) {
+    undoStack.push({ 
+      type: "edit",
+      id: currentSegment.id, 
+      field, 
+      oldValue, 
+      newValue,
+      segmentBackup: oldSegment
+    });
+    redoStack = [];
+  }
+
+  redoStack = [];
+
+  currentSegment[field] = newValue;
+  updateEditorFields(currentSegment);
+  renderSegments();
+}
+
+function shiftTime(timeStr, delta) {
+  // "00:00:04,500" → soma delta (em segundos)
+  const [h, m, rest] = timeStr.split(":");
+  const [s, ms] = rest.split(",");
+  let totalMs = (+h * 3600 + +m * 60 + +s) * 1000 + +ms + delta * 1000;
+
+  if (totalMs < 0) totalMs = 0;
+  const hours = Math.floor(totalMs / 3600000);
+  const minutes = Math.floor((totalMs % 3600000) / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const millis = Math.floor(totalMs % 1000);
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)},${pad(millis, 3)}`;
+}
+
+function pad(num, size=2) {
+  return num.toString().padStart(size, "0");
+}
+
+// ======================
+// ↩ | ↪ | ☰ ➖ | ☰ ➕️
+// ======================
+function undo() {
+  if (!undoStack.length) return;
+  const last = undoStack.pop();
+  redoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de antes da adição
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de antes da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.oldValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  const last = redoStack.pop();
+  undoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de depois da adição
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de depois da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.newValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function addSegment() {
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  let insertIndex = srtData.length;
+  if (currentSegment) {
+    const idx = srtData.findIndex(s => s.id === currentSegment.id);
+    insertIndex = idx + 1;
+  }
+
+  const newId = insertIndex + 1;
+  const newSegment = {
+    id: newId,
+    start: "00:00:00,000",
+    end: "00:00:00,000",
+    text: "Novo trecho"
+  };
+  
+  srtData.splice(insertIndex, 0, newSegment);
+  
+  // Renumera os IDs a partir do ponto de inserção
+  for (let i = insertIndex + 1; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "add",
+    segment: { ...newSegment },
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: insertIndex
+  });
+  redoStack = [];
+
+  currentSegment = newSegment;
+  renderSegments();
+  openEditor(currentSegment.id);
+}
+
+function removeSegment() {
+  if (!currentSegment) return;
+  if (srtData.length === 1) return alert("Não é possível remover o único segmento.");
+
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const removedSegment = { ...srtData[idx] };
+  srtData.splice(idx, 1);
+
+  // Renumera os IDs após a remoção
+  for (let i = idx; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "remove",
+    segment: removedSegment,
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: idx
+  });
+  redoStack = [];
+
+  currentSegment = srtData[idx] || srtData[idx - 1] || null;
+
+  renderSegments();
+  if (currentSegment) openEditor(currentSegment.id);
+  else document.getElementById("editor").style.display = "none";
+}
+
+function updateEditorFields(seg) {
+  document.getElementById("editStart").value = seg.start;
+  document.getElementById("editEnd").value = seg.end;
+  document.getElementById("editText").value = seg.text;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); }
+  if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
+});
+
+
+// ======================
+// ◀◀ | ▶▶
+// ======================
+function prevLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("videoPlayer");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx > 0) {
+    openEditor(srtData[idx - 1].id);
+    scrollToSegment(srtData[idx - 1].id);
+  }
+}
+
+function nextLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("videoPlayer");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx < srtData.length - 1) {
+    openEditor(srtData[idx + 1].id);
+    scrollToSegment(srtData[idx + 1].id);
+  }
+}
+
+function scrollToSegment(id) {
+  const segmentsContainer = document.getElementById("segments-area");
+  const segments = document.querySelectorAll(".segment");
+  
+  // Encontra o elemento do segmento pelo índice (id - 1)
+  const targetSegment = segments[id - 1];
+  
+  if (targetSegment && segmentsContainer) {
+    // Usando scrollIntoView para centralizar o segmento
+    targetSegment.scrollIntoView({
+      behavior: 'smooth',  // Animação suave
+      block: 'center'      // Centraliza verticalmente
+    });
+  }
+}
+
+// ======================
+// Etidar e lote
+// ======================
+function showEarlier() {
+  shiftSelectedLines(-getCurrentStep());
+}
+
+function showLater() {
+  shiftSelectedLines(+getCurrentStep());
+}
+
+function getCurrentStep() {
+  const input = document.getElementById("editStack").value.trim().replace(",", ".");
+  const step = parseFloat(input);
+  return isNaN(step) || step <= 0 ? TIME_STEP : step;
+}
+
+function shiftSelectedLines(delta) {
+  const selected = document.querySelector('input[name="opcao-linha"]:checked');
+  const value = selected ? selected.value : "current";
+
+  const stateBefore = srtData.map(s => ({ ...s }));
+  const prevSegment = currentSegment;
+
+  if (value === "all") {
+    isBatchEditing = true;
+    srtData.forEach(seg => {
+      currentSegment = seg;
+      adjustTime("start", delta);
+      adjustTime("end", delta);
+    });
+    isBatchEditing = false;
+  } else if (value === "from-current" && currentSegment) {
+    const startIdx = srtData.findIndex(s => s.id === currentSegment.id);
+    if (startIdx >= 0) {
+      isBatchEditing = true;
+      for (let i = startIdx; i < srtData.length; i++) {
+        currentSegment = srtData[i];
+        adjustTime("start", delta);
+        adjustTime("end", delta);
+      }
+      isBatchEditing = false;
+    }
+  } else if (value === "current" && currentSegment) {
+    adjustTime("start", delta);
+    adjustTime("end", delta);
+  }
+
+  const stateAfter = srtData.map(s => ({ ...s }));
+
+  undoStack.push({
+    type: "edit-multiple",
+    delta,
+    stateBefore,
+    stateAfter
+  });
+  redoStack = [];
+
+  currentSegment = prevSegment;
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+// ======================
+// Inicializar
+// ======================
+function init() {
+	showLoadArea();
+	renderSegments();
+}
+
+init();
+</script>
+
+<script>
+// ==================================
+// Funções de Carregamento
+// ==================================
+// ==================================
+// Funções de Carregamento
+// ==================================
+// ==================================
+// Funções de Carregamento
+// ==================================
+function openContent() {
+  console.log("=== INÍCIO openContent() ===");
+  
+  // Captura os valores dos inputs
+  const videoInput = document.getElementById("videoUrl").value.trim();
+  const videoUpload = document.getElementById("videoUpload").files[0];
+  console.log("Video URL input:", videoInput);
+  console.log("Video Upload file:", videoUpload);
+
+  const srtInput = document.getElementById("srtUrl").value.trim();
+  const srtUpload = document.getElementById("srtUpload").files[0];
+  console.log("SRT URL input:", srtInput);
+  console.log("SRT Upload file:", srtUpload);
+
+  // === IMPORTANTE: Muda para a seção editSrt PRIMEIRO ===
+  // Isso garante que o elemento videoPlayer seja criado
+  console.log("--- Mudando para seção 'editSrt' ANTES de carregar ---");
+  showSection('editSrt');
+  
+  // Aguarda um momento para garantir que o DOM foi atualizado
+  setTimeout(() => {
+    console.log("--- Timeout executado, tentando carregar conteúdo ---");
+    
+    // Verifica se o elemento de vídeo existe AGORA
+    const videoElement = document.getElementById("videoPlayer");
+    console.log("Elemento videoPlayer encontrado?", videoElement !== null);
+    
+    if (!videoElement) {
+      console.error("❌ ERRO CRÍTICO: videoPlayer ainda não existe!");
+      alert("Erro: Elemento de vídeo não encontrado. Tente novamente.");
+      return;
+    }
+
+    // === CARREGAR O VÍDEO ===
+    console.log("--- Tentando carregar vídeo ---");
+    if (videoUpload) {
+      // Se foi feito upload de arquivo
+      console.log("Carregando vídeo via UPLOAD de arquivo:", videoUpload.name);
+      const videoURL = URL.createObjectURL(videoUpload);
+      console.log("URL do vídeo criada:", videoURL);
+      videoElement.src = videoURL;
+      console.log("Vídeo carregado com sucesso via upload!");
+    } else if (videoInput) {
+      // Se foi colada uma URL
+      console.log("Carregando vídeo via URL:", videoInput);
+      videoElement.src = videoInput;
+      console.log("Vídeo carregado com sucesso via URL!");
+    } else {
+      console.warn("⚠️ AVISO: Nenhum vídeo foi fornecido (nem upload nem URL)");
+    }
+
+    // === CARREGAR A LEGENDA ===
+    console.log("--- Tentando carregar legenda ---");
+    if (srtUpload) {
+      // Se foi feito upload de arquivo SRT
+      console.log("Carregando SRT via UPLOAD de arquivo:", srtUpload.name);
+      const reader = new FileReader();
+      
+      reader.onload = function (e) {
+        console.log("FileReader onload disparado");
+        console.log("Conteúdo do SRT (primeiros 200 caracteres):", e.target.result.substring(0, 200));
+        
+        // Processa o conteúdo do SRT
+        parseSRT(e.target.result);
+        console.log("parseSRT() executado. Total de segmentos:", srtData.length);
+        
+        // Atualizar o nome da legenda carregada
+        subtitleName = srtUpload.name;
+        const subtitleNameElement = document.getElementById("subtitleName");
+        if (subtitleNameElement) {
+          subtitleNameElement.textContent = subtitleName;
+          console.log("Nome da legenda atualizado:", subtitleName);
+        } else {
+          console.warn("⚠️ Elemento subtitleName não encontrado");
+        }
+      };
+      
+      reader.onerror = function(e) {
+        console.error("❌ ERRO ao ler arquivo SRT:", e);
+      };
+      
+      reader.readAsText(srtUpload);
+      console.log("FileReader.readAsText() iniciado");
+      
+    } else if (srtInput) {
+      // Se foi colada uma URL do SRT
+      console.log("Carregando SRT via URL:", srtInput);
+      
+      fetch(srtInput)
+        .then(res => {
+          console.log("Fetch response status:", res.status);
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.text();
+        })
+        .then(text => {
+          console.log("SRT baixado via URL (primeiros 200 caracteres):", text.substring(0, 200));
+          
+          // Processa o conteúdo do SRT
+          parseSRT(text);
+          console.log("parseSRT() executado. Total de segmentos:", srtData.length);
+
+          // Atualizar o nome da legenda carregada (com URL)
+          subtitleName = srtInput.split("/").pop();
+          const subtitleNameElement = document.getElementById("subtitleName");
+          if (subtitleNameElement) {
+            subtitleNameElement.textContent = subtitleName;
+            console.log("Nome da legenda atualizado:", subtitleName);
+          } else {
+            console.warn("⚠️ Elemento subtitleName não encontrado");
+          }
+        })
+        .catch(err => {
+          console.error("❌ ERRO ao carregar SRT por URL:", err);
+          alert("Erro ao carregar SRT por URL: " + err.message);
+        });
+        
+    } else {
+      console.warn("⚠️ AVISO: Nenhuma legenda foi fornecida (nem upload nem URL)");
+    }
+    
+    console.log("=== FIM openContent() ===");
+    
+  }, 100); // Aguarda 100ms para o DOM atualizar
+}
+
+// Função para interpretar o conteúdo .srt para srtData
+function parseSRT(content) {
+  const lines = content.split(/\r?\n/);
+  const segments = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const id = parseInt(lines[i++]);
+    const time = lines[i++];
+
+    if (!time || !time.includes("-->")) continue;
+
+    const [start, end] = time.split("-->").map(s => s.trim().replace(".", ","));
+    let text = "";
+
+    while (i < lines.length && lines[i].trim() !== "") {
+      text += lines[i++] + "\n";
+    }
+
+    segments.push({
+      id,
+      start,
+      end,
+      text: text.trim()
+    });
+
+    while (i < lines.length && lines[i].trim() === "") i++;
+  }
+
+  srtData.length = 0;
+  srtData.push(...segments);
+  currentSegment = null;
+  undoStack = [];
+  redoStack = [];
+  renderSegments();
+}
+
+// Exibir SRT
+function showSRT() {
+  const srt = generateSRT();
+  const novaAba = window.open("", "_blank");
+
+  if (novaAba) {
+    novaAba.document.write(`<pre>${srt.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`);
+    novaAba.document.title = "SRT Gerado";
+    novaAba.document.close();
+  } else {
+    alert("Não foi possível abrir nova aba. Verifique se o bloqueador de pop-up está ativo.");
+  }
+}
+
+
+function generateSRT() {
+  return srtData.map(seg => {
+    return `${seg.id}\n${seg.start} --> ${seg.end}\n${seg.text}`;
+  }).join("\n\n");
+}
+
+function copyToClipboard() {
+  const text = generateSRT();
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Legendas copiadas para a área de transferência.");
+  });
+}
+
+function downSrt() {
+  // Verifique se o nome da legenda está configurado corretamente
+  if (!subtitleName) {
+    alert("Erro: Nome da legenda não encontrado.");
+    return;
+  }
+
+  const blob = new Blob([generateSRT()], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = subtitleName;  // Usando o nome da legenda carregada
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Função auxiliar para playLine()
+// converter o tempo no formato 
+// SRT (hh:mm:ss,SSS) para segundos
+function parseTime(timeString) {
+  const timeParts = timeString.split(/[:,]/);  // Separar por ":" e ","
+  const hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10);
+  const seconds = parseInt(timeParts[2], 10);
+  const milliseconds = parseInt(timeParts[3], 10);
+
+  // Converter tudo para segundos
+  return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+}
+
+// Busca os tempos de início e fim da legenda atual e 
+// usa o vídeo (ou áudio) para tocar o trecho
+function playLine() {
+  if (!currentSegment) {
+    alert("Nenhum trecho selecionado.");
+    return;
+  }
+
+  const videoElement = document.getElementById("videoPlayer");
+  if (!videoElement || !videoElement.src) {
+    alert("Carregue um vídeo primeiro!");
+    return;
+  }
+
+  // **CRÍTICO: Limpa qualquer timeout anterior**
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+
+  // Pausa o vídeo se estiver tocando
+  if (!videoElement.paused) {
+    videoElement.pause();
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+
+  // Aguarda um frame antes de iniciar (garante que pause foi processado)
+  requestAnimationFrame(() => {
+    videoElement.currentTime = startTime;
+    videoElement.play();
+
+    // Configura novo timeout para pausar no fim
+    stopTimeout = setTimeout(() => {
+      videoElement.pause();
+      stopTimeout = null;
+    }, (endTime - startTime) * 1000);
+  });
+}
 </script>
 </body>
 </html>
