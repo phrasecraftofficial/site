@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Vídeo</title>
+
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --surface-color: #2a2a2a;
+            --border-color: #444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        p {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 2rem;
+        }
+
+        /* Esconde o input de arquivo padrão */
+        #video-input {
+            display: none;
+        }
+
+        /* Estiliza o label para parecer um botão */
+        .file-label {
+            display: block;
+            background-color: #333;
+            border: 2px dashed var(--border-color);
+            border-radius: 6px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .file-label:hover {
+            background-color: #3a3a3a;
+            border-color: var(--primary-color);
+        }
+
+        #file-name {
+            color: #ccc;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .status-message.success {
+            color: #28a745;
+        }
+
+        .status-message.error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Upload para o Bucket</h1>
+        <p>Selecione um arquivo de vídeo para enviar.</p>
+
+        <form id="upload-form">
+            <label for="video-input" class="file-label">
+                <span id="file-name">Clique para selecionar o vídeo</span>
+                <input type="file" id="video-input" accept="video/*" required>
+            </label>
+            
+            <button type="submit" id="upload-button">Enviar</button>
+        </form>
+
+        <div class="status-message" id="status-message"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@20.0.0"></script>    
+    <script>
+    // 2. USE O SDK (MUITO MAIS FÁCIL)
+    document.getElementById('upload-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('video-input');
+        const statusMessage = document.getElementById('status-message');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            statusMessage.textContent = "Nenhum arquivo selecionado.";
+            statusMessage.className = "status-message error";
+            return;
+        }
+
+        statusMessage.textContent = "Obtendo URL de upload...";
+        statusMessage.className = "status-message";
+
+        try {
+            // --- Configuração do Cliente Appwrite ---
+            const { Client, Functions, ID } = Appwrite;
+            const client = new Client()
+                .setEndpoint('https://nyc.cloud.appwrite.io/v1') // Seu endpoint
+                .setProject('68ebe8640000ca7c860b'); // SEU ID DO PROJETO AQUI
+
+            const functions = new Functions(client);
+            // ----------------------------------------
+
+            // Chama a função do Appwrite usando o SDK
+            const result = await functions.createExecution(
+                '68f7bd14002005b7bb6b',  // ID da sua função
+                JSON.stringify({}),     // Body da requisição (pode ser vazio)
+                false                   // false = síncrono (espera a resposta)
+            );
+
+            // O SDK já faz o parse do JSON da resposta
+            if (result.status !== 'completed') {
+                throw new Error(`Falha na execução da função: ${result.stderr}`);
+            }
+
+            const data = JSON.parse(result.responseBody); // A resposta da sua função está aqui
+
+            if (!data.uploadUrl || !data.authorizationToken) {
+                throw new Error('Erro ao obter URL de upload');
+            }
+
+            const uploadUrl = data.uploadUrl;
+            const authorizationToken = data.authorizationToken;
+
+            console.log("Upload URL:", uploadUrl);
+
+            // ... (O resto do seu código de upload para o Backblaze continua igual) ...
+
+            const headers = {
+                'Authorization': authorizationToken,
+                'X-Bz-File-Name': encodeURIComponent(file.name),
+                'Content-Type': file.type || 'b2/x-auto',
+                'X-Bz-Content-Sha1': 'do_not_verify',
+            };
+
+            statusMessage.textContent = "Enviando vídeo para Backblaze...";
+            const uploadResponse = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: headers,
+                body: file,
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error("Erro no upload: " + uploadResponse.statusText);
+            }
+
+            const uploadResult = await uploadResponse.json();
+            console.log("✅ Upload concluído!", uploadResult);
+            statusMessage.textContent = "✅ Vídeo enviado com sucesso!";
+            statusMessage.className = "status-message success";
+
+        } catch (err) {
+            console.error("❌ Erro no upload:", err);
+            statusMessage.textContent = "❌ Erro ao enviar vídeo: " + err.message;
+            statusMessage.className = "status-message error";
+        }
+    });
+    </script>
+</body>
+</html>
