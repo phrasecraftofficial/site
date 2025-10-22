@@ -558,22 +558,21 @@ input[type="radio"] {
       <input type="text" placeholder="Digite uma descrição..." name="description" />
 
       <!-- Título -->
-      <h2>Adicionar à Playlist</h2>
-      <!-- Lista de checkboxes com nomes de playlists -->
-      <div class="playlist-item">
+      <form id="linhaForm">
+      	<h2>Adicionar à Playlist</h2>
+        <label class="" for="playlist1">
         <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
-        <label for="playlist1">Playlist 1</label>
-      </div>
-
-      <div class="playlist-item">
+        Playlist 1
+        </label>
+        <label class="" for="playlist2">
         <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
-        <label for="playlist2">Playlist 2</label>
-      </div>
-
-      <div class="playlist-item">
+        Playlist 2
+        </label>
+        <label class="" for="playlist3">
         <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
-        <label for="playlist3">Playlist 3</label>
-      </div>
+        Playlist 3
+        </label>
+      </form>
       
     </section>
     
@@ -626,14 +625,6 @@ input[type="radio"] {
               <button onclick="copyToClipboard()">📋 Copiar</button>
               <button onclick="downSrt()">⬇️ Download</button>
               <button onclick="showSRT()">🧾 Exibir</button>
-          </div>
-          <hr>
-          <div class="botoes-container">
-            <a href="#" id="icon-create" onclick="showSection('create')" hidden>
-        		<svg class="icon" viewBox="0 0 24 24">
-        		<path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/></svg>
-        		<span>Postar</span>
-            </a>
           </div>
       </div><!--save-area-->
       
