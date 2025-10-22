@@ -1,4 +1,4 @@
-<!-- exibir thumb e title  -->
+<!-- PreviewMode  -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -636,13 +636,15 @@ input[type="radio"] {
             </a>
           </div>
       </div><!--save-area-->
+      
+      <!-- Div para exibir o nome do arquivo da legenda -->
+      <div id="subtitleName"></div>
+        
+      <div id="video-section-editor"></div>
+      
+      <div id="navigation-controls-previewMode"></div>
 
       <div class="" id="editor">
-        <!-- Div para exibir o nome do arquivo da legenda -->
-        <div id="subtitleName"></div>
-        
-        <div id="video-section-editor"></div>
-
         <label>Início</label>
         <div class="time-controls">
           <input id="editStart">
@@ -738,6 +740,7 @@ let showSaveArea = false;
 let showLoadArea = false;
 let showConfigArea = false;
 let showLobbyArea = false;
+let showPreviewMode = false;
 
 // Variáveis do Editor SRT
 let srtData = [];
@@ -809,12 +812,13 @@ const elements = [
     condition: () => showSegmentsArea
   },
   {
-    id: "edit-controls-content",
+    id: "navigation-controls",
     content: `
-    <div>
-        Este é um elemento compartilhada e fixo.
-    </div>`,
-    condition: () => true
+    <button onclick="prevLine()">◀◀</button>
+    <button onclick="playLine()">▶</button>
+    <button onclick="nextLine()">▶▶</button>
+    `,
+    condition: () => showPreviewMode
   },
   {
     id: "save-area",
@@ -856,7 +860,7 @@ const positions = [
   { key: "video-content", after: ["video-section-editor", "video-section-postLesson", "video-section-play"] },
   { key: "thumb-content", after: ["thumb-section-home", "thumb-section-postLesson"] },
   { key: "info-content", after: ["info-content-home"] },
-  { key: "", after: ["", ""] },
+  { key: "navigation-controls", after: ["navigation-controls-previewMode"] },
 ];
 
 // Renderiza seções e elementos
@@ -1106,6 +1110,7 @@ function hideLoading() {
 document.addEventListener("DOMContentLoaded", () => {
   renderPage();
   showSection("home");
+  loadAndDisplayThumbnails();
 });
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -2112,8 +2117,205 @@ async function postLesson() {
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Exibir Thumb + Título --- 
+// --- Bloco Fx | Listar Thumbnails --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Lista todos os arquivos do bucket via função Appwrite
+ */
+async function listBackblazeFiles() {
+  console.log("--- Listando arquivos do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',
+    JSON.stringify({ action: 'list' }),
+    false
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha ao listar arquivos: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  console.log("✅ Arquivos listados:", data.files?.length || 0);
+  
+  return data.files || [];
+}
+
+/**
+ * Filtra apenas as thumbnails (arquivos .jpg/.jpeg/.png)
+ */
+function filterThumbnails(files) {
+  const thumbs = files.filter(file => {
+    const name = file.fileName.toLowerCase();
+    return name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+  });
+  
+  console.log(`✅ Thumbnails encontradas: ${thumbs.length}`);
+  return thumbs;
+}
+
+/**
+ * Gera URL pública para arquivo do Backblaze usando o fileId
+ */
+function getBackblazePublicUrl(fileId) {
+  return `https://f005.backblazeb2.com/b2api/v1/b2_download_file_by_id?fileId=${fileId}`;
+}
+
+/**
+ * Renderiza as thumbnails nos elementos existentes (thumb-content e info-content)
+ */
+function renderThumbnails(thumbnails) {
+  console.log("--- Renderizando thumbnails ---");
+  console.log("Total de thumbnails:", thumbnails.length);
+  
+  const container = document.getElementById('home-post-container');
+  
+  if (!container) {
+    console.error('Container user-post-container não encontrado');
+    return;
+  }
+  
+  // Limpa o container
+  container.innerHTML = '';
+  
+  if (thumbnails.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Nenhuma thumbnail encontrada.</p>';
+    return;
+  }
+  
+  // Cria um card para cada thumbnail usando os elementos existentes
+  thumbnails.forEach((thumb, index) => {
+    // Nome sem extensão
+    const displayName = thumb.fileName.replace(/\.(jpg|jpeg|png)$/i, '');
+    
+    // Gera a URL pública usando o fileId
+    const thumbnailUrl = getBackblazePublicUrl(thumb.fileId);
+    
+    // Log no console
+    console.log(`[${index + 1}] Thumbnail:`, {
+      fileName: thumb.fileName,
+      displayName: displayName,
+      fileId: thumb.fileId,
+      url: thumbnailUrl,
+      size: `${(thumb.contentLength / 1024).toFixed(2)} KB`
+    });
+    
+    // Cria o wrapper do post
+    const postWrapper = document.createElement('div');
+    postWrapper.className = 'post-item';
+    postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
+    postWrapper.onclick = () => previewLesson(thumb);
+    
+    // Cria a thumb-section
+    const thumbSection = document.createElement('div');
+    thumbSection.className = 'thumb-section';
+    thumbSection.innerHTML = `
+      <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+    `;
+    
+    // Cria a info-content
+    const infoContent = document.createElement('div');
+    infoContent.className = 'info-content';
+    infoContent.innerHTML = `
+      <div class="channel-pic">
+        <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+      </div>
+      
+      <div class="video-text">
+        <h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">${displayName}</h3>
+        <div class="video-meta">
+          <span class="channel-name">Meu Canal</span>
+          <span class="performance">95%</span>
+          <span class="video-edit" onclick="event.stopPropagation(); editLesson('${thumb.fileId}');" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+        </div>
+      </div>
+    `;
+    
+    // Monta o post completo
+    postWrapper.appendChild(thumbSection);
+    postWrapper.appendChild(infoContent);
+    
+    // Adiciona ao container
+    container.appendChild(postWrapper);
+  });
+  
+  console.log(`✅ ${thumbnails.length} thumbnails renderizadas`);
+  console.log("--- Fim da renderização ---");
+}
+
+/**
+ * Função principal para carregar e exibir thumbnails
+ */
+async function loadAndDisplayThumbnails() {
+  console.log("=== INÍCIO loadAndDisplayThumbnails() ===");
+  
+  try {
+    showLoading('Carregando thumbnails...');
+    
+    // 1. Lista todos os arquivos
+    const allFiles = await listBackblazeFiles();
+    
+    // 2. Filtra apenas as thumbnails
+    const thumbnails = filterThumbnails(allFiles);
+    
+    // 3. Renderiza na página usando os elementos existentes
+    renderThumbnails(thumbnails);
+    
+    hideLoading();
+    
+    return thumbnails;
+    
+  } catch (error) {
+    console.error("❌ ERRO em loadAndDisplayThumbnails():", error);
+    hideLoading();
+    
+    const container = document.getElementById('user-post-container');
+    if (container) {
+      container.innerHTML = `
+        <p style="color: #ff6b6b; text-align: center; padding: 20px;">
+          ❌ Erro ao carregar thumbnails: ${error.message}
+        </p>
+      `;
+    }
+    
+    throw error;
+  } finally {
+    console.log("=== FIM loadAndDisplayThumbnails() ===");
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Listar Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+function showPreview() {
+}
+/**
+ * Função placeholder para preview (você pode implementar depois)
+ */
+function previewLesson(thumb) {
+  console.log("Preview da lição:", thumb);
+  showVideoArea = true;
+  showEditorArea = false;
+  showSegmentsArea = true;
+  showLoadArea = false;
+  showSaveArea = false;
+  showConfigArea = false;
+  showPreviewMode = true;
+  renderPage();
+  showSection('editSrt');
+}
+
+/**
+ * Função placeholder para editar (você pode implementar depois)
+ */
+function editLesson(fileId) {
+  console.log("Editar lição:", fileId);
+  // TODO: Implementar edição
+}
 
 </script>
 </body>
