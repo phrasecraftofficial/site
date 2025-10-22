@@ -1,4 +1,4 @@
-<!-- exibir thumb e title  -->
+<!-- exibir thumb e title 2  -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -2126,9 +2126,9 @@ async function listBackblazeFiles() {
   const functions = new Functions(client);
   
   const result = await functions.createExecution(
-    '68f7bd14002005b7bb6b',  // ID da sua função (o mesmo que você já usa)
-    JSON.stringify({ action: 'list' }),  // ← PASSA A AÇÃO 'list'
-    false // síncrono
+    '68f7bd14002005b7bb6b',
+    JSON.stringify({ action: 'list' }),
+    false
   );
   
   if (result.status !== 'completed') {
@@ -2150,7 +2150,7 @@ function filterThumbnails(files) {
     return name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
   });
   
-  console.log("✅ Thumbnails encontradas: " + thumbs.length);
+  console.log(`✅ Thumbnails encontradas: ${thumbs.length}`);
   return thumbs;
 }
 
@@ -2162,16 +2162,16 @@ function getBackblazePublicUrl(fileId) {
 }
 
 /**
- * Renderiza as thumbnails na página
+ * Renderiza as thumbnails nos elementos existentes (thumb-content e info-content)
  */
-function renderThumbnails(thumbnails, containerId = 'user-post-container') {
+function renderThumbnails(thumbnails) {
   console.log("--- Renderizando thumbnails ---");
   console.log("Total de thumbnails:", thumbnails.length);
   
-  const container = document.getElementById(containerId);
+  const container = document.getElementById('user-post-container');
   
   if (!container) {
-    console.error(`Container ${containerId} não encontrado`);
+    console.error('Container user-post-container não encontrado');
     return;
   }
   
@@ -2183,28 +2183,15 @@ function renderThumbnails(thumbnails, containerId = 'user-post-container') {
     return;
   }
   
-  // Cria um card para cada thumbnail
+  // Cria um card para cada thumbnail usando os elementos existentes
   thumbnails.forEach((thumb, index) => {
-    const card = document.createElement('div');
-    card.className = 'thumb-card';
-    card.style.cssText = `
-      background: #1a1a1a;
-      border-radius: 8px;
-      padding: 10px;
-      margin: 10px 0;
-      cursor: pointer;
-      transition: transform 0.2s;
-    `;
-    
-    // Nome sem extensão (remove .jpg, .jpeg, .png)
+    // Nome sem extensão
     const displayName = thumb.fileName.replace(/\.(jpg|jpeg|png)$/i, '');
     
     // Gera a URL pública usando o fileId
     const thumbnailUrl = getBackblazePublicUrl(thumb.fileId);
     
-    // ========================================
-    // EXIBE O LINK NO CONSOLE
-    // ========================================
+    // Log no console
     console.log(`[${index + 1}] Thumbnail:`, {
       fileName: thumb.fileName,
       displayName: displayName,
@@ -2213,35 +2200,43 @@ function renderThumbnails(thumbnails, containerId = 'user-post-container') {
       size: `${(thumb.contentLength / 1024).toFixed(2)} KB`
     });
     
-    card.innerHTML = `
-      <img 
-        src="${thumbnailUrl}" 
-        alt="${displayName}"
-        style="width: 100%; max-width: 600px; height: auto; border-radius: 4px; display: block; margin: 0 auto;"
-        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-      />
-      <p style="display: none; color: #ff6b6b; text-align: center; padding: 20px;">
-        ❌ Erro ao carregar imagem
-      </p>
-      <h3 style="color: #fff; margin: 10px 0 5px; font-size: 16px; text-align: center;">
-        ${displayName}
-      </h3>
-      <p style="color: #888; font-size: 12px; text-align: center;">
-        ${(thumb.contentLength / 1024).toFixed(2)} KB
-      </p>
+    // Cria o wrapper do post
+    const postWrapper = document.createElement('div');
+    postWrapper.className = 'post-item';
+    postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
+    postWrapper.onclick = () => previewLesson(thumb);
+    
+    // Cria a thumb-section
+    const thumbSection = document.createElement('div');
+    thumbSection.className = 'thumb-section';
+    thumbSection.innerHTML = `
+      <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
     `;
     
-    // Efeito hover
-    card.addEventListener('mouseenter', () => {
-      card.style.transform = 'scale(1.02)';
-    });
+    // Cria a info-content
+    const infoContent = document.createElement('div');
+    infoContent.className = 'info-content';
+    infoContent.innerHTML = `
+      <div class="channel-pic">
+        <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+      </div>
+      
+      <div class="video-text">
+        <h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">${displayName}</h3>
+        <div class="video-meta">
+          <span class="channel-name">Meu Canal</span>
+          <span class="performance">95%</span>
+          <span class="video-edit" onclick="event.stopPropagation(); editLesson('${thumb.fileId}');" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+        </div>
+      </div>
+    `;
     
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = 'scale(1)';
-    });
+    // Monta o post completo
+    postWrapper.appendChild(thumbSection);
+    postWrapper.appendChild(infoContent);
     
-    // Adiciona o card ao container
-    container.appendChild(card);
+    // Adiciona ao container
+    container.appendChild(postWrapper);
   });
   
   console.log(`✅ ${thumbnails.length} thumbnails renderizadas`);
@@ -2263,7 +2258,7 @@ async function loadAndDisplayThumbnails() {
     // 2. Filtra apenas as thumbnails
     const thumbnails = filterThumbnails(allFiles);
     
-    // 3. Renderiza na página
+    // 3. Renderiza na página usando os elementos existentes
     renderThumbnails(thumbnails);
     
     hideLoading();
@@ -2273,15 +2268,14 @@ async function loadAndDisplayThumbnails() {
   } catch (error) {
     console.error("❌ ERRO em loadAndDisplayThumbnails():", error);
     hideLoading();
-    alert('❌ Erro ao carregar thumbnails: ' + error.message);
     
-    // Exibe mensagem de erro no container
     const container = document.getElementById('user-post-container');
     if (container) {
       container.innerHTML = `
         <p style="color: #ff6b6b; text-align: center; padding: 20px;">
           ❌ Erro ao carregar thumbnails: ${error.message}
-        </p>`;
+        </p>
+      `;
     }
     
     throw error;
@@ -2290,6 +2284,28 @@ async function loadAndDisplayThumbnails() {
   }
 }
 
+/**
+ * Função placeholder para preview (você pode implementar depois)
+ */
+function previewLesson(thumb) {
+  console.log("Preview da lição:", thumb);
+  // TODO: Implementar preview
+}
+
+/**
+ * Função placeholder para editar (você pode implementar depois)
+ */
+function editLesson(fileId) {
+  console.log("Editar lição:", fileId);
+  // TODO: Implementar edição
+}
+
+// Chama automaticamente quando a seção myPosts é exibida
+document.getElementById('btn-myPosts')?.addEventListener('click', () => {
+  setTimeout(() => {
+    loadAndDisplayThumbnails();
+  }, 100);
+});
 </script>
 </body>
 </html>
