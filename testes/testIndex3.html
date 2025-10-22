@@ -1,4 +1,4 @@
-<!-- Upload  -->
+<!-- exibir thumb e title 2  -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -14,11 +14,12 @@ body, html {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-  background: #0a0a0a;
+  background: #000;
   color: #fff;
 }
 
-main { padding: 70px 16px 90px; text-align: center; }
+main { 
+padding: 70px 16px 90px; text-align: center; }
 
 section { display: none; }           /* todas escondidas */
 
@@ -309,6 +310,94 @@ input[type="radio"] {
   font-weight: bold !important;
 }
 
+/*thumb-section*/
+.thumb-section { 
+  width: 100%;
+  height: auto;
+}
+
+.thumb-section img {
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+/* info-content */
+.info-content {
+  display: flex !important;;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+  max-height: 400px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Imagem do canal */
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 1px 0 0 0;
+}
+
+/* Texto do vídeo */
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Título do vídeo */
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 5px 0 5px 8px;
+  text-align: left;
+}
+
+/* Linha com nome do canal, desempenho e editar */
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 5px 8px;
+  font-size: 14px;
+}
+
+/* Nome do canal */
+.channel-name {
+  color: #bbbbbb;
+}
+
+/* Desempenho (percentual) */
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Botão Editar */
+.video-edit {
+  color: #6d28d9;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
 </style>
 </head>
 <body>
@@ -358,9 +447,11 @@ input[type="radio"] {
     <section id="home">
         <h2>Home</h2>
         <p>Welcome to the home section.</p>
-        <div id="home-post-container">
+        <div class="post-container" id="home-post-container">
             <!-- Os cards de vídeo serão inseridos aqui -->
         	<div id="thumb-section-home"></div>
+            <div id="info-content-home"></div>
+
         </div>
     </section>
 
@@ -680,14 +771,36 @@ const elements = [
   },
   {
     id: "thumb-content",
+    className: "thumb-section",
     content: `
 	<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
     `,
     condition: () => showVideoArea
   },
   {
+    id: "info-content",
+    className: "info-content",
+    content: `
+		<div class="channel-pic">
+			<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+		</div>
+        
+		<div class="video-text">
+			<h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">{post.videoName}</h3>
+			<div class="video-meta">
+				<span class="channel-name">channel-name</span>
+				<span class="performance">95%</span>
+				<span class="video-edit" onclick="event.stopPropagation();" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+    	    </div>
+    	</div>
+    `,
+    condition: () => true
+  },
+  {
     id: "editor",
-    content: ``,
+    content: `
+    
+    `,
     condition: () => showEditorArea
   },
   {
@@ -742,6 +855,7 @@ const sections = [
 const positions = [
   { key: "video-content", after: ["video-section-editor", "video-section-postLesson", "video-section-play"] },
   { key: "thumb-content", after: ["thumb-section-home", "thumb-section-postLesson"] },
+  { key: "info-content", after: ["info-content-home"] },
   { key: "", after: ["", ""] },
 ];
 
@@ -783,6 +897,12 @@ function renderPage() {
     let existing = document.getElementById(element.id);
     if (!existing) {
       const div = document.createElement('div');
+  
+      // Aplica a classe na div injetada
+      if (element.className) {
+        div.className = element.className;
+      }
+      
       div.id = element.id;
       div.innerHTML = element.content;
       container.appendChild(div);
@@ -986,6 +1106,7 @@ function hideLoading() {
 document.addEventListener("DOMContentLoaded", () => {
   renderPage();
   showSection("home");
+  loadAndDisplayThumbnails();
 });
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -1779,9 +1900,9 @@ function handleCaptureClick() {
   }, 'image/jpeg', 0.9); // Usa o formato JPEG com qualidade de 90%
 }
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Post Lesson --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Upload Backblaze --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
 /**
  * Obtém URL de upload do Backblaze via função Appwrite
@@ -1974,6 +2095,7 @@ async function postLesson() {
     
     hideLoading();
     alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
+    showSection('MyPosts')
     
     // TODO: Salvar esses IDs no banco de dados
     // TODO: Exibir os arquivos na página
@@ -1990,6 +2112,200 @@ async function postLesson() {
   }
 }
 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Listar Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Lista todos os arquivos do bucket via função Appwrite
+ */
+async function listBackblazeFiles() {
+  console.log("--- Listando arquivos do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',
+    JSON.stringify({ action: 'list' }),
+    false
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha ao listar arquivos: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  console.log("✅ Arquivos listados:", data.files?.length || 0);
+  
+  return data.files || [];
+}
+
+/**
+ * Filtra apenas as thumbnails (arquivos .jpg/.jpeg/.png)
+ */
+function filterThumbnails(files) {
+  const thumbs = files.filter(file => {
+    const name = file.fileName.toLowerCase();
+    return name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+  });
+  
+  console.log(`✅ Thumbnails encontradas: ${thumbs.length}`);
+  return thumbs;
+}
+
+/**
+ * Gera URL pública para arquivo do Backblaze usando o fileId
+ */
+function getBackblazePublicUrl(fileId) {
+  return `https://f005.backblazeb2.com/b2api/v1/b2_download_file_by_id?fileId=${fileId}`;
+}
+
+/**
+ * Renderiza as thumbnails nos elementos existentes (thumb-content e info-content)
+ */
+function renderThumbnails(thumbnails) {
+  console.log("--- Renderizando thumbnails ---");
+  console.log("Total de thumbnails:", thumbnails.length);
+  
+  const container = document.getElementById('home-post-container');
+  
+  if (!container) {
+    console.error('Container user-post-container não encontrado');
+    return;
+  }
+  
+  // Limpa o container
+  container.innerHTML = '';
+  
+  if (thumbnails.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Nenhuma thumbnail encontrada.</p>';
+    return;
+  }
+  
+  // Cria um card para cada thumbnail usando os elementos existentes
+  thumbnails.forEach((thumb, index) => {
+    // Nome sem extensão
+    const displayName = thumb.fileName.replace(/\.(jpg|jpeg|png)$/i, '');
+    
+    // Gera a URL pública usando o fileId
+    const thumbnailUrl = getBackblazePublicUrl(thumb.fileId);
+    
+    // Log no console
+    console.log(`[${index + 1}] Thumbnail:`, {
+      fileName: thumb.fileName,
+      displayName: displayName,
+      fileId: thumb.fileId,
+      url: thumbnailUrl,
+      size: `${(thumb.contentLength / 1024).toFixed(2)} KB`
+    });
+    
+    // Cria o wrapper do post
+    const postWrapper = document.createElement('div');
+    postWrapper.className = 'post-item';
+    postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
+    postWrapper.onclick = () => previewLesson(thumb);
+    
+    // Cria a thumb-section
+    const thumbSection = document.createElement('div');
+    thumbSection.className = 'thumb-section';
+    thumbSection.innerHTML = `
+      <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+    `;
+    
+    // Cria a info-content
+    const infoContent = document.createElement('div');
+    infoContent.className = 'info-content';
+    infoContent.innerHTML = `
+      <div class="channel-pic">
+        <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+      </div>
+      
+      <div class="video-text">
+        <h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">${displayName}</h3>
+        <div class="video-meta">
+          <span class="channel-name">Meu Canal</span>
+          <span class="performance">95%</span>
+          <span class="video-edit" onclick="event.stopPropagation(); editLesson('${thumb.fileId}');" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+        </div>
+      </div>
+    `;
+    
+    // Monta o post completo
+    postWrapper.appendChild(thumbSection);
+    postWrapper.appendChild(infoContent);
+    
+    // Adiciona ao container
+    container.appendChild(postWrapper);
+  });
+  
+  console.log(`✅ ${thumbnails.length} thumbnails renderizadas`);
+  console.log("--- Fim da renderização ---");
+}
+
+/**
+ * Função principal para carregar e exibir thumbnails
+ */
+async function loadAndDisplayThumbnails() {
+  console.log("=== INÍCIO loadAndDisplayThumbnails() ===");
+  
+  try {
+    showLoading('Carregando thumbnails...');
+    
+    // 1. Lista todos os arquivos
+    const allFiles = await listBackblazeFiles();
+    
+    // 2. Filtra apenas as thumbnails
+    const thumbnails = filterThumbnails(allFiles);
+    
+    // 3. Renderiza na página usando os elementos existentes
+    renderThumbnails(thumbnails);
+    
+    hideLoading();
+    
+    return thumbnails;
+    
+  } catch (error) {
+    console.error("❌ ERRO em loadAndDisplayThumbnails():", error);
+    hideLoading();
+    
+    const container = document.getElementById('user-post-container');
+    if (container) {
+      container.innerHTML = `
+        <p style="color: #ff6b6b; text-align: center; padding: 20px;">
+          ❌ Erro ao carregar thumbnails: ${error.message}
+        </p>
+      `;
+    }
+    
+    throw error;
+  } finally {
+    console.log("=== FIM loadAndDisplayThumbnails() ===");
+  }
+}
+
+/**
+ * Função placeholder para preview (você pode implementar depois)
+ */
+function previewLesson(thumb) {
+  console.log("Preview da lição:", thumb);
+  // TODO: Implementar preview
+}
+
+/**
+ * Função placeholder para editar (você pode implementar depois)
+ */
+function editLesson(fileId) {
+  console.log("Editar lição:", fileId);
+  // TODO: Implementar edição
+}
+
+// Chama automaticamente quando a seção myPosts é exibida
+document.getElementById('btn-myPosts')?.addEventListener('click', () => {
+  setTimeout(() => {
+    loadAndDisplayThumbnails();
+  }, 100);
+});
 </script>
 </body>
 </html>
