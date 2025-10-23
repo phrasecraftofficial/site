@@ -1,4 +1,4 @@
-<! recovery from Aw>
+<!-- recupera video e srt do servidor e play trecho 1 ao entrar em previewMode 2  -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,119 +9,384 @@
 <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
 
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #000;
-    color: #fff;
-  }
-  
-.hidden {
-    display: none !important;
-}
-
-h2 {
-  margin-top: 30px;
-}
-
-input[type="text"] {
-  width: 100%;
-  height: 50%;
-  padding: 8px;
-  margin-top: 5px;
-  margin-bottom: 20px;
-  box-sizing: border-box;
-}
-
-  header, footer {
-    position: fixed;
-    left: 0; right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #000;
-    padding: 0 16px;
-  }
-
-  header { top: 0; height: 56px; border-bottom: 1px solid #222; }
-  footer { bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
-
-  .logo-area { display: flex; align-items: center; gap: 8px;}
-  
-  .logo-area img { background: #fff; color: #000;  border-radius: 15%;}
-
-
-  .icons-right, footer a {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    color: #fff;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .icon, footer svg {
-    width: 24px; height: 24px; fill: currentColor;
-  }
-
-  main { padding: 70px 16px 90px; text-align: center; }
-
-.video-container {
-  widht: 100vw;
-  max-width: 600px;
-  height: 30vh
-  background: #1e1e1e;
-  overflow: hidden;
-}
-
-.video-title {
-  font-size: 14px;
-  font-weight: 600;
+/* Reset e base */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #000;
   color: #fff;
-  margin: 2px 0 8px 0;
-  text-align: left;
 }
 
-.channel-info {
+main { 
+padding: 70px 16px 90px; text-align: center; }
+
+section { display: none; }           /* todas escondidas */
+
+section.active { display: block; }   /* visível */
+
+a {
+  flex-direction: column;
+}
+
+/* Estilos gerais para Header e Footer */
+header, footer {
+  position: fixed;
+  left: 0;
+  right: 0;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #000;
+  padding: 0 16px;
+  color: #fff;
+  user-select: none;
+  z-index: 1000;
+}
+
+  /* ===============  */
+ /*      Header      */
+/* ===============  */
+header {
+  top: 0;
+  height: 56px;
+  border-bottom: 1px solid #222; 
+  font-weight: 600;
+}
+
+.logo-area {
+  color: #fff;  
+  border-radius: 15%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.logo-area img {
+  background: #fff; 
+  color: #000;  
+  border-radius: 15%;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+
+.icon {
+  width: 24px; 
+  height: 24px;
+}
+
+.icons-right {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	color: #6d28d9;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.icons-right a {
+  color: #6d28d9;
+  text-decoration: none;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.icons-right svg, header svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+  /* ===============  */
+ /* botoes-container */
+/* ===============  */
+.botoes-container {
+  display: flex; /* Habilita o Flexbox */
+  margin: 30px 0;
+  height: 56px;
+  justify-content: center; /* Alinha horizontalmente no centro */
+  align-items: flex-start; /* Alinha verticalmente no topo */
+  gap: 30px;
+}
+
+.botoes-container a {
+  flex-direction: column;
+  color: #fff;
+  text-decoration: none;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+
+.botoes-container a svg, .botoes-container a img {
+  width: 36px;
+  height: 36px;
+  fill: currentColor;
+}
+
+/* Texto */
+.botoes-container span {
+  font-size: 15px;
+  user-select: none;
+}
+
+  /* ===============  */
+ /*      Footer      */
+/* ===============  */
+#main-footer, #preview-footer {
+  bottom: 0;
+  height: 56px;
+  border-top: 1px solid #222;
+  justify-content: space-around;
+  align-items: center;
+}
+
+#main-footer a, #preview-footer a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+
+#main-footer a svg, #preview-footer a img {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+/* Texto do footer */
+#main-footer span {
+  font-size: 10px;
+  user-select: none;
+}
+
+/* Adaptativo para telas pequenas */
+@media screen and (max-width: 600px) {
+  header {
+    padding: 0 8px;
+  }
+  #main-footer a {
+    font-size: 8px;
+    gap: 2px;
+  }
+  #main-footer a svg {
+    width: 20px;
+    height: 20px;
+  }
+  #preview-footer {
+    height: 48px;
+  }
+}
+
+  /*=================*/
+ /* Loading Overlay */
+/*=================*/
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #333;
+    border-top: 4px solid #6d28d9;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+  /* ======== */
+ /* Edit Srt */
+/* ======== */
+.video-section {
+    padding: 20px;
+    border-radius: 8px;
+}
+
+video {
+    width: 100%;
+    border-radius: 4px;
+}
+
+input, textarea { 
+  width: calc(100% - 40px); 
+  margin-top: 5px; 
+  margin-bottom: 10px; 
+  padding: 6px; 
+  font-size: 14px; 
+}
+
+button { margin: 3px; padding: 6px 10px; font-size: 14px; cursor: pointer; }
+
+.time-controls { display: flex; align-items: center; gap: 5px; }
+
+label { font-weight: bold; display: block; margin-top: 10px; }
+  
+/* Estilo para o formulário (se você quiser que os itens fiquem um abaixo do outro) */
+form {
+  	display: flex;
+  	flex-direction: column;
+  	gap: 15px; /* Espaço entre cada opção */
+}
+
+form label {
+	font-size: 14px;
+}
+
+/* Estilo para cada par de radio + texto */
+.radio-option {
+  	display: flex;
+  	align-items: center; /* Alinha o botão e o texto verticalmente */
+  	cursor: pointer;
+  	gap: 8px; /* Ajuste este valor para controlar o espaço entre o botão e o texto */
+}
+  
+input[type="radio"] {
+    width: 15px;
+    height: 15px;
+}
+
+/* ================================== */
+/* Estilo para a Lista de Legendas */
+/* ================================== */
+.segmentsArea {
+    max-height: 50vh; /* ou a altura que preferir */
+    overflow-y: auto;
+    width: 100%;
+}
+
+.segment { 
+  background: white; 
+  padding: 10px; 
+  border-radius: 10px; 
+  margin: 5px 0; 
+  cursor: pointer; 
+  transition: 0.2s; 
+}
+
+.segment:hover:not(.segment-selected) { 
+  background: #e7f0ff; 
+  transform: scale(1.01); 
+}
+
+.segment-selected {
+  background: linear-gradient(#AFD9E3, #628FA1 100%) !important;
+  color: #0B2A40 !important;
+  font-weight: bold !important;
+}
+
+/*thumb-section*/
+.thumb-section { 
+  width: 100%;
+  height: auto;
+}
+
+.thumb-section img {
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+/* info-content */
+.info-content {
+  display: flex !important;;
   justify-content: space-between;
   align-items: center;
   margin: 0 10px 8px;
-  font-size: 12px;;
+  font-size: 12px;
+  max-height: 400px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
+/* Imagem do canal */
 .channel-pic {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  margin: 1px 0 0 0;
 }
 
+/* Texto do vídeo */
 .video-text {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
+/* Título do vídeo */
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 5px 0 5px 8px;
+  text-align: left;
+}
+
+/* Linha com nome do canal, desempenho e editar */
 .video-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 10px 8px;
-  font-size: 12px;
+  margin: 0 0 5px 8px;
+  font-size: 14px;
 }
 
-.video-thumb {
-  position: relative;
-  widht: 100vw;
-  max-width: 600px;
-  height: 30vh
+/* Nome do canal */
+.channel-name {
+  color: #bbbbbb;
 }
 
-.video-thumb img {
-  width: 100%;
-  display: block;
+/* Desempenho (percentual) */
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Botão Editar */
+.video-edit {
+  color: #6d28d9;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s;
 }
 
 .video-time {
@@ -133,86 +398,22 @@ input[type="text"] {
   font-size: 12px;
   border-radius: 4px;
 }
-
-.performance {
-  color: #4caf50;
-  font-weight: bold;
-}
-
-footer a {
-  /* 1. Transforma o link em um contêiner flexível */
-  display: flex;
-  
-  /* 2. Empilha os itens verticalmente (ícone em cima, texto embaixo) */
-  flex-direction: column; 
-  
-  /* 3. Centraliza os itens horizontalmente */
-  align-items: center; 
-  
-  /* 4. Esta é a propriedade principal para controlar a distância! */
-  gap: 4px; /* ✨ Altere este valor para aumentar ou diminuir o espaço */
-}
-
-/* Apenas para estilização do exemplo */
-footer {
-  display: flex;
-  justify-content: space-around;
-}
-
-footer a {
-  text-decoration: none;
-  font-family: sans-serif;
-  font-size: 12px;
-}
-
-footer svg {
-  width: 20px;
-  height: 20px;
-}
-
-.avatar {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: #6d28d9;
-    color: white;
-    display: grid;
-    place-content: center;
-    font-weight: bold;
-}
-
-.playlist-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.playlist-item input {
-  margin-right: 10px;
-}
-
-section { display: none; }           /* todas escondidas */
-section.active { display: block; }   /* visível */
-
-.video-section {
-    background: ;
-    padding: 20px;
-    border-radius: 8px;
-}
-
-video {
-    width: 100%;
-    border-radius: 4px;
-}
 </style>
 </head>
 <body>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">Carregando...</div>
+  </div>
+  
   <header>
-  	<span id="btn-goBack" onclick="goBack()" class="hidden">← Voltar</span>
-    <div class="logo-area">
-        <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
+    <div class="logo-area" onclick="showSection('home')">
+      <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div>PhraseCraft</div>
     </div>
+    
     <div class="icons-right">
       <!-- Create -->
       <a href="#" id="icon-create" onclick="showSection('create')" hidden>
@@ -224,21 +425,53 @@ video {
       <a href="#" onclick="showSection('search')">
         <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
       </a>
+      <!-- Notifications -->
+      <a href="#" onclick="showSection('notifications')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      </a>
     </div>
   </header>
 
+    <!-- Elementos compartilhados -->
+    <video id="shared-video" controls hidden>
+      <source src="video.mp4" type="video/mp4" />
+      Seu navegador não suporta vídeo HTML5.
+    </video>
+
+    <div id="shared-text" hidden>Este é um conteúdo compartilhado e fixo.</div>
+
+    <img id="shared-image" src="imagem.jpg" alt="Imagem compartilhada" hidden />
+
   <main>
-  	<!-- Player Único de vídeo real em um lugar "neutro" -->
-    <div id="videoStorage" class="hidden">
-      <video id="mainVideoPlayer" controls></video>
-    </div>
-    
-    <section id="home" class="active">
+    <!-- Seções -->
+    <section id="home">
         <h2>Home</h2>
         <p>Welcome to the home section.</p>
-        <div id="home-post-container">
+        <div class="post-container" id="home-post-container">
             <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-home"></div>
+            <div id="info-content-home"></div>
+
         </div>
+    </section>
+
+    <section id="create">
+        <h2>Create</h2>
+        <p>Use this section to create new content.</p>
+            <div class="load-group">
+                <label for="videoUpload" class="upload-btn">Upload Vídeo</label>
+                <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
+                <input type="file" id="videoUpload" accept="video/*">
+            </div>
+            <div class="load-group">
+                <label for="srtUpload" class="upload-btn">Upload SRT</label>
+                <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
+                <input type="file" id="srtUpload" accept=".srt">
+            </div>
+
+            <div class="botoes-container">
+                <button id="btn-open" onclick="openContent();">Continuar 👉</button>
+            </div>
     </section>
 
     <section id="search">
@@ -256,53 +489,63 @@ video {
       <p>This section is about your profile.</p>
                       
       <div class="botoes-container">
-          <a href="#" onclick="showProfile()">Meu Perfil</a>
-          <a href="#" onclick="showSection('myPosts')">Minhas Postagens</a>
+        <a href="#" onclick="showSection('myProfile')">
+            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Meu Perfil</span></a>
+        <a href="#" id="btn-myPosts" onclick="showSection('myPosts')">
+            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Minhas Postagens</span></a>
       </div>
+    
     </section>
 
     <section id="subscriptions">
       <h2>Subscriptions</h2>
       <p>See all your subscriptions here.</p>
     </section>
-
-    <section id="create">
-        <h2>Create</h2>
-        <p>Use this section to create new content.</p>
-        <div class="load-group">
-            <label for="videoUpload" class="upload-btn">Upload Vídeo</label>
-            <input type="file" id="videoUpload" accept="video/*">
-        </div>
-        <div class="load-group">
-            <label for="srtUpload" class="upload-btn">Upload SRT</label>
-            <input type="file" id="srtUpload" accept=".srt">
-        </div>
-
-        <div class="botoes-container">
-            <a href="#" onclick="openContent()">Carregar</a>
+    
+    <!-- Subsections -->
+    <section id="login-screen" class="login-screen-container">
+        <div class="login-card">
+            <h2>Entrar</h2>
+            <form id="login-form">
+                <input type="email" id="email-login" placeholder="E-mail" required>
+                <input type="password" id="password-login" placeholder="Senha" required>
+                <p id="login-message"></p>
+                <button type="submit" class="login-button">Entrar</button>
+            </form>
         </div>
     </section>
     
-    <!- Subsections ->
+    <section id="myProfile">
+      <h2>My Account</h2>
+      <p>Use this section to see and edit your profile.</p>
+      <div class="header-content"  id="header-content">
+      
+        <div class="user-buttons">
+            <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+
+			<div class="">
+				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
+            	<button id="logout-button" class="" onclick="handleLogout()" >Sair</button>
+            </div>
+            
+        </div>
+      </div>
+    </section>
+    
     <section id="postLesson">
       <h2>Post</h2>
       <p>Use this section to post.</p>
                       
-      <div class="botoes-container">
-          <button href="#" onclick="postLesson()">Postar Lição</button>
+      <div id="postLesson-containerBtn" class="botoes-container">
+          <button onclick="showSection('editSrt')">👈</button>
+          <button href="#" onclick="postLesson()">Postar Lição ⬆️</button>
       </div>
-                      
-      <div class="botoes-container">
-          <button onclick="showSection('editSrt')">Editar Srt</button>
-      </div>
-
-      <div id="postPlayerContainer" class="video-section"></div>
-
-      <button id="captureBtn" class="thumb-gen-button">📸 Capturar Thumbnail</button>
-
-      <div id="previewContainer" class="thumb-gen-preview">
-          <span>A pré-visualização da sua thumbnail aparecerá aqui.</span>
-      </div>
+      
+      <div id="video-section-postLesson"></div>
+      
+      <button id="captureBtn" onclick="handleCaptureClick()">📸 Capturar Thumbnail</button>
+      
+      <div id="thumb-section-postLesson"></div>
       
       <!-- Título -->
       <h2>Nome</h2>
@@ -315,34 +558,84 @@ video {
       <input type="text" placeholder="Digite uma descrição..." name="description" />
 
       <!-- Título -->
-      <h2>Adicionar à Playlist</h2>
-      <!-- Lista de checkboxes com nomes de playlists -->
-      <div class="playlist-item">
+      <form id="linhaForm">
+      	<h2>Adicionar à Playlist</h2>
+        <label class="" for="playlist1">
         <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
-        <label for="playlist1">Playlist 1</label>
-      </div>
-
-      <div class="playlist-item">
+        Playlist 1
+        </label>
+        <label class="" for="playlist2">
         <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
-        <label for="playlist2">Playlist 2</label>
-      </div>
-
-      <div class="playlist-item">
+        Playlist 2
+        </label>
+        <label class="" for="playlist3">
         <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
-        <label for="playlist3">Playlist 3</label>
-      </div>
+        Playlist 3
+        </label>
+      </form>
       
     </section>
     
-    <section id="editSrt">
-      <h2>Editar SRT</h2>
-      <div class="editor" id="editor">
+    <section id="myPosts">
+        <h2>My Lessons Posts</h2>
+        <p>Use this section to see your lessons posted.</p>
+        <div id="user-post-container">
+            <!-- Os cards de vídeo do usuário serão inseridos aqui -->
+        </div>
+    </section>
 
-        <!-- Div para exibir o nome do arquivo da legenda -->
-        <p id="subtitleName"></p>
+	<section id="play" class="content-row">
+		<div id="video-section-play"></div>
 
-        <div id="editPlayerContainer" class="video-section"></div>
+      	<div id="buttons">
+      		<button id="repetir" class="control-button" style="background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button id="lerFrase" class="control-button" style="background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button id="traduzir-btn" class="control-button" style="background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+      		<button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+		</div>
+
+		<div class="phrase-container" id="frase"></div>
+
+        <div class="word-button-wrapper">
+            <div class="word-container" id="palavras"></div>
+        </div>
         
+        <div id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+    </section>
+
+    <section id="challenge" class="">
+      <!-- Lobby Area -->
+      <div id="lobby">
+      	<p>Aguardando oponente...</p>
+      </div>
+      
+      <!-- Criadas -->
+      <h2>Partidas Criadas</h2>
+      <p>Use this section to see all matches waiting a second player.</p>
+    </section>
+    
+    <!----------->
+    <!--editSrt-->
+    <!----------->
+    <section id="editSrt">
+      <div id="save-area">
+          <span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+          <p>💾 Salvar</p>
+          <div class="btn-container">
+              <button onclick="copyToClipboard()">📋 Copiar</button>
+              <button onclick="downSrt()">⬇️ Download</button>
+              <button onclick="showSRT()">🧾 Exibir</button>
+          </div>
+      </div><!--save-area-->
+      
+      <!-- Div para exibir o nome do arquivo da legenda -->
+      <div id="subtitleName"></div>
+        
+      <div id="video-section-editor"></div>
+      
+      <div id="navigation-controls-previewMode"></div>
+
+      <div class="" id="editor">
         <label>Início</label>
         <div class="time-controls">
           <input id="editStart">
@@ -366,16 +659,16 @@ video {
         <label>Texto</label>
         <textarea id="editText" rows="3"></textarea>
 
-        <button id="btn-load" onclick="showLoadArea()">📂</button>
+        <button id="btn-save" onclick="showSave()">💾</button>
         <button onclick="prevLine()">◀◀</button>
         <button onclick="playLine()">▶</button>
         <button onclick="nextLine()">▶▶</button>
-        <button id="btn-save" onclick="showSaveArea()">💾</button>
+        <button id="btn-load" onclick="showSection('postLesson')">👉</button>
 
-        <p id="btn-config" onclick="showConfigEdit()">⚙ Editar em Lote</p>
+        <p id="btn-config" onclick="showConfig()">⚙ Editar em Lote</p>
 
-        <div id="config-area" hidden>
-            <span id="btn-close" onclick="closeConfigEdit()">&times;</span>
+        <div id="config-area">
+            <span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
             <div class="time-controls">
               <input id="editStack" placeholder="0.05">
               <button onclick="showEarlier()">Adiantar</button>
@@ -392,62 +685,24 @@ video {
                 Apenas linha atual
               </label>
 
-            <label class="radio-option">
-              <input type="radio" name="opcao-linha" value="from-current">
-              Linha selecionada e próximas linhas
-            </label>
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="from-current">
+                Linha selecionada e próximas linhas
+              </label>
             </form>
             <hr>
         </div>
-    </div>
+      </div><!--editor-->
 
-    <div class="segmentsArea" id="segments-area">
-        <div id="segments"></div>
-    </div>
-
-    </section>
-    
-    <section id="profile">
-      <h2>My Account</h2>
-      <p>Use this section to see and edit your profile.</p>
-      <div class="header-content"  id="header-content">
-      
-        <div class="user-buttons">
-            <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
-
-			<div class="botoes-container">
-				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
-            	<button id="logout-button" class="" onclick="handleLogout()" hidden>Sair</button>
-            </div>
-            
-        </div>
+      <div class="segmentsArea" id="segments-area">
+      	  <label>Lista de Legendas</label>
+          <div id="segments"></div>
       </div>
     </section>
-    
-    <section id="myPosts">
-        <h2>My Lessons Posts</h2>
-        <p>Use this section to see your lessons posted.</p>
-        <div id="user-post-container">
-            <!-- Os cards de vídeo do usuário serão inseridos aqui -->
-        </div>
-    </section>
+  </main>  
 
-    <section id="login-screen" class="login-screen-container">
-        <div class="login-card">
-            <h2>Entrar</h2>
-            <form id="login-form">
-                <input type="email" id="email-login" placeholder="E-mail" required>
-                <input type="password" id="password-login" placeholder="Senha" required>
-                <p id="login-message"></p>
-                <button type="submit" class="login-button">Entrar</button>
-            </form>
-        </div>
-    </section>
-
-  </main>
-
-  <footer>
-    <a href="#" onclick="showSection('home')" class="active">
+  <footer id="main-footer">
+    <a href="#" onclick="showSection('home')">
       <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
       <span>Home</span>
     </a>
@@ -455,94 +710,326 @@ video {
       <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
       <span>Subscriptions</span>
     </a>
-    <a href="#" onclick="showSection('notifications')">
-      <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
-      <span>Notifications</span>
-    </a>
     <a href="#" onclick="showSection('you')">
-        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="22" height="22" /><span>You</span></a>
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
+    <a href="#" onclick="showSection('challenge')">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
   </footer>
 
-  <script>
-let sectionHistory = ['home'];
+  <footer id="preview-footer" style="display: none;">
+    <a href="#" onclick="showSection('play')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
+    <a href="#" onclick="showSection('')">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+  </footer>
 
-// 🛑 NOVAS VARIÁVEIS GLOBAIS NECESSÁRIAS PARA O EDITOR SRT
-let srtData = []; 
+<script>
+let showVideoArea = true;
+let showEditorArea = true;
+let showSegmentsArea = true;
+let showSaveArea = false;
+let showLoadArea = false;
+let showConfigArea = false;
+let showLobbyArea = false;
+let showPreviewMode = false;
+
+// Variáveis do Editor SRT
+let srtData = [];
 let currentSegment = null;
 let undoStack = [];
 let redoStack = [];
-const TIME_STEP = 0.05; // 50 milissegundos
+let subtitleName = "";
 let stopTimeout = null;
 let isBatchEditing = false;
-let subtitleName = "legenda.srt"; // Nome padrão para download
-// FIM DAS NOVAS VARIÁVEIS GLOBAIS
+const TIME_STEP = 0.1;
 
-function showSection(targetId) {
-    const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt', 'myPosts', 'profile', 'login-screen'];
-    
-    // ⭐ PEGA O PLAYER DE VÍDEO E SEU "ESCONDERIJO" ORIGINAL
-    const videoPlayer = document.getElementById('mainVideoPlayer');
-    const videoStorage = document.getElementById('videoStorage');
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Cache de Lições --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
-    // Move o player para o encaixe correto ANTES de mostrar a nova seção
-    if (targetId === 'postLesson') {
-        document.getElementById('postPlayerContainer').appendChild(videoPlayer);
-    } else if (targetId === 'editSrt') {
-        document.getElementById('editPlayerContainer').appendChild(videoPlayer);
-    } else {
-        // Se não for uma seção de vídeo, devolve o player para o esconderijo
-        videoStorage.appendChild(videoPlayer);
-    }
+const lessonCache = new Map();
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas
 
-    const current = sectionHistory[sectionHistory.length - 1];
-    if (targetId !== current) {
-        sectionHistory.push(targetId);
-    }
-
-    // Ativa/desativa seções
-    sections.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.classList.toggle('active', id === targetId);
-    });
-
-    // O código de pausar o vídeo não é mais necessário aqui, 
-    // pois ao mover o player para o "storage", ele some da tela.
-    // Mas podemos manter por segurança.
-    if (targetId !== 'postLesson' && targetId !== 'editSrt') {
-        videoPlayer.pause();
-    }
-
-  // Lista de seções onde o botão "Voltar" deve ser ocultado
-  const sectionsToHideBackBtn = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'myPosts', 'profile'];
-
-  // Atualiza botão "Voltar"
-  const goBackBtn = document.getElementById('btn-goBack');
-  if (goBackBtn) {
-    // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
-    goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
-  }
-
-  // Atualiza footer
-  const footerLinks = document.querySelectorAll('footer a');
-  footerLinks.forEach(link => link.classList.remove('active'));
-  const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
-  if (targetLink) targetLink.classList.add('active');
+function isCacheValid(fileId) {
+  if (!lessonCache.has(fileId)) return false;
   
-  // Carrega os posts quando mostrar as seções
-  if (targetId === 'home') {
-      loadHomePosts();
-  } else if (targetId === 'myPosts') {
-      loadUserPosts();
+  const cached = lessonCache.get(fileId);
+  const now = Date.now();
+  
+  if (now - cached.timestamp > CACHE_EXPIRY) {
+    console.log(`⏰ Cache expirado para: ${fileId}`);
+    lessonCache.delete(fileId);
+    return false;
+  }
+  
+  return true;
+}
+
+async function saveLessonToCache(fileId, videoFile, srtFile, thumb) {
+  console.log("--- Salvando lição no cache ---");
+  
+  try {
+    const videoUrl = getBackblazePublicUrl(videoFile.fileId);
+    const videoResponse = await fetch(videoUrl);
+    const videoBlob = await videoResponse.blob();
+    
+    const srtUrl = getBackblazePublicUrl(srtFile.fileId);
+    const srtResponse = await fetch(srtUrl);
+    const srtContent = await srtResponse.text();
+    
+    lessonCache.set(fileId, {
+      videoBlob: videoBlob,
+      srtContent: srtContent,
+      videoFileName: videoFile.fileName,
+      srtFileName: srtFile.fileName,
+      thumbUrl: getBackblazePublicUrl(thumb.fileId),
+      timestamp: Date.now()
+    });
+    
+    console.log(`✅ Lição salva no cache: ${fileId}`);
+  } catch (error) {
+    console.error("❌ Erro ao salvar no cache:", error);
+    throw error;
   }
 }
 
-function goBack() {
-  if (sectionHistory.length > 1) {
-    sectionHistory.pop(); // Remove a atual
-    const previous = sectionHistory[sectionHistory.length - 1];
-    showSection(previous);
+function loadLessonFromCache(fileId) {
+  if (!isCacheValid(fileId)) return null;
+  return lessonCache.get(fileId);
+}
+
+function loadVideoFromCache(videoBlob, fileName) {
+  const videoElement = document.getElementById('videoPlayer');
+  if (!videoElement) throw new Error('videoPlayer não encontrado');
+  
+  const blobUrl = URL.createObjectURL(videoBlob);
+  videoElement.src = blobUrl;
+  console.log(`✅ Vídeo do cache carregado: ${fileName}`);
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// GERENCIAMENTO DE SEÇÕES 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// Lista de elementos com condições
+const elements = [
+  {
+    id: "lobby",
+    content: ``,
+    condition: () => showLobbyArea
+  },
+  {
+    id: "video-content",
+    content: `
+	<video id="videoPlayer" controls>
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+	</video>
+    `,
+    condition: () => showVideoArea
+  },
+  {
+    id: "thumb-content",
+    className: "thumb-section",
+    content: `
+	<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+    `,
+    condition: () => showVideoArea
+  },
+  {
+    id: "info-content",
+    className: "info-content",
+    content: `
+		<div class="channel-pic">
+			<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+		</div>
+        
+		<div class="video-text">
+			<h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">{post.videoName}</h3>
+			<div class="video-meta">
+				<span class="channel-name">channel-name</span>
+				<span class="performance">95%</span>
+				<span class="video-edit" onclick="event.stopPropagation();" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+    	    </div>
+    	</div>
+    `,
+    condition: () => true
+  },
+  {
+    id: "editor",
+    content: `
+    
+    `,
+    condition: () => showEditorArea
+  },
+  {
+    id: "segments-area",
+    content: ``,
+    condition: () => showSegmentsArea
+  },
+  {
+    id: "navigation-controls",
+    content: `
+    <button onclick="prevLine()">◀◀</button>
+    <button onclick="playLine()">▶</button>
+    <button onclick="nextLine()">▶▶</button>
+    `,
+    condition: () => showPreviewMode
+  },
+  {
+    id: "save-area",
+    content: "", 
+    condition: () => showSaveArea
+  },
+  {
+    id: "load-area",
+    content: "",
+    condition: () => showLoadArea
+  },
+  {
+    id: "config-area",
+    content: "",
+    condition: () => showConfigArea
+  },
+  {
+    id: "main-footer",
+    content: "", // Já existe no HTML
+    displayType: "flex", // O display que ele deve ter quando visível
+    condition: () => {// REGRA 1: Esconder se o modo preview estiver ativo
+      // REGRA 1: Esconder se o modo preview estiver ativo
+      if (showPreviewMode) {
+          return false;
+      }
+      const activeEl = document.querySelector('section.active');
+      if (!activeEl) return true; // Padrão: mostrar
+      const id = activeEl.id;
+      const noFooterSections = ['editSrt', 'login-screen', 'postLesson'];
+      const previewSections = ['play'];
+      
+      // Mostrar apenas se NÃO estiver nas listas de ocultar ou preview
+      return !noFooterSections.includes(id) && !previewSections.includes(id);
+    }
+  },
+  {
+    id: "preview-footer",
+    content: "", // Já existe no HTML
+    displayType: "flex", // O display que ele deve ter quando visível
+    condition: () => {
+    	// Mostra APENAS se a variável showPreviewMode for true.
+        return showPreviewMode;
+        
+        const activeEl = document.querySelector('section.active');
+        const id = activeEl.id;
+      	const noFooterSections = ['home', 'login-screen', 'postLesson'];
+      	return !noFooterSections.includes(id) && !previewSections.includes(id);
+    }
+  }
+];
+
+// Lista de sections com condições
+const sections = [
+  { id: "home", condition: () => true },
+  { id: "search", condition: () => true },
+  { id: "notifications", condition: () => true },
+  { id: "you", condition: () => true },
+  { id: "subscriptions", condition: () => true },
+  { id: "create", condition: () => true },
+  { id: "postLesson", condition: () => true },
+  { id: "editSrt", condition: () => true },
+  { id: "myProfile", condition: () => true },
+  { id: "myPosts", condition: () => true },
+  { id: "login-screen", condition: () => true },
+  { id: "play", condition: () => true },
+  { id: "challenge", condition: () => true },
+];
+
+// Lista de posições para elementos compartilhados (podem aparecer em várias seções)
+// Fará com que o script injete o elmento no container/div correto quando a seção estiver ativa
+const positions = [
+  { key: "video-content", after: ["video-section-editor", "video-section-postLesson", "video-section-play"] },
+  { key: "thumb-content", after: ["thumb-section-home", "thumb-section-postLesson"] },
+  { key: "info-content", after: ["info-content-home"] },
+  { key: "navigation-controls", after: ["navigation-controls-previewMode"] },
+];
+
+// Renderiza seções e elementos
+function renderPage() {
+  // Encontra a seção ativa
+  const activeSection = document.querySelector('section.active');
+  if (!activeSection) return;
+
+  // Renderiza elementos posicionados (lógica original mantida)
+  elements.forEach(element => {
+    const shouldShow = element.condition();
+    if (!shouldShow) {
+      // Se não deve mostrar, esconde o elemento se existir
+      const existing = document.getElementById(element.id);
+      if (existing) existing.style.display = 'none';
+      return;
+    }
+
+    const pos = positions.find(p => p.key === element.id);
+    if (!pos) {
+      // Se não tem posição definida, apenas controla visibilidade
+      const existing = document.getElementById(element.id);
+      if (existing) {
+        // Usa a displayType específica do elemento, ou 'block' como padrão
+        existing.style.display = element.displayType || 'block'; 
+      }
+      return;
+    }
+
+    // Procura o container correto dentro da seção ativa
+    let container = null;
+    for (const targetId of pos.after) {
+      const candidate = activeSection.querySelector(`#${targetId}`);
+      if (candidate) {
+        container = candidate;
+        break;
+      }
+    }
+    if (!container) return;
+
+    let existing = document.getElementById(element.id);
+    if (!existing) {
+      const div = document.createElement('div');
+  
+      // Aplica a classe na div injetada
+      if (element.className) {
+        div.className = element.className;
+      }
+      
+      div.id = element.id;
+      div.innerHTML = element.content;
+      container.appendChild(div);
+    } else {
+      container.appendChild(existing);
+      existing.style.display = "block";
+    }
+  });
+}
+
+// Botão para mostrar/ocultar seções
+function showSection(sectionId) {
+  // ================================================
+  // <<< Lista de flags para resetar ao mudar de section >>>
+  showPreviewMode = false; 
+  // ================================================
+  const section = sections.find(s => s.id === sectionId);
+  
+  // Se a seção não existe ou a condição dela é falsa, não faça nada
+  if (!section || !section.condition()) {
+    return; // Sai da função sem alterar nada
   }
+  
+  sections.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el) el.classList.remove("active");
+  });
+  
+  const target = document.getElementById(sectionId);
+  if (target) target.classList.add("active");
+  
+  renderPage();
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -564,18 +1051,39 @@ const loginForm = document.getElementById('login-form');
 const logoutButton = document.getElementById('logout-button');
 const userEmailDisplay = document.getElementById('user-email-display');
 const iconCreate = document.getElementById('icon-create');
+const btnMyPosts = document.getElementById('btn-myPosts');
 
 const loginMessage = document.getElementById('login-message');
 
 // Função para verificar o status de login
+let isCheckingAuth = false;
+
 async function checkAuthStatus() {
+    // Verifica se já há uma sessão em cache
+    const cachedEmail = localStorage.getItem('userEmail');
+    if (cachedEmail) {
+        renderUIForAuthState(true, cachedEmail);
+        showSection('myPosts');
+        return;
+    }
+    
+    showLoading('Carregando...');
+    console.log('Verificando sessão...')
+    
     try {
         const user = await account.get();
+        // Salva o email no cache
+        localStorage.setItem('userEmail', user.email);
         renderUIForAuthState(true, user.email);
         showSection('myPosts');
     } catch (error) {
+    	console.log('Usuário não está logando. Direcinando para "home"...')
+        // Remove cache se houver erro
+        localStorage.removeItem('userEmail');
         renderUIForAuthState(false);
         showSection('home');
+    } finally {
+        hideLoading();
     }
 }
     
@@ -585,26 +1093,48 @@ loginForm.addEventListener('submit', async (e) => {
     const email = document.getElementById('email-login').value;
     const password = document.getElementById('password-login').value;
     loginMessage.textContent = '';
+    
+    showLoading('Entrando...');
+    
     try {
+        // Primeiro tenta deletar qualquer sessão existente
+        try {
+            await account.deleteSession('current');
+        } catch (error) {
+            // Ignora erro se não houver sessão ativa
+        }
+        
+        // Agora cria a nova sessão
         await account.createEmailPasswordSession(email, password);
+        
         // Atualiza a interface
         const user = await account.get();
+        // Salva no cache
+        localStorage.setItem('userEmail', user.email);
         renderUIForAuthState(true, user.email);
         showSection('myPosts');
     } catch (error) {
         loginMessage.textContent = 'Erro no login: ' + error.message;
+    } finally {
+        hideLoading();
     }
 });
 
 // Função de logout
 function handleLogout() {
+    showLoading('Saindo...');
+    
     account.deleteSession('current')
         .then(() => {
+            localStorage.removeItem('userEmail');
             renderUIForAuthState(false);
             showSection('home');
         })
         .catch((error) => {
             console.error('Erro ao fazer logout:', error);
+        })
+        .finally(() => {
+            hideLoading();
         });
 }
     
@@ -613,16 +1143,21 @@ function handleLogout() {
 function renderUIForAuthState(isLoggedIn, userEmail = '') {
     // Esconde tudo primeiro
     iconCreate.style.display = 'none';
+    btnMyPosts.style.display = 'none';
     btnLoginHeader.style.display = 'none';
     logoutButton.style.display = 'none';
     userEmailDisplay.style.display = 'none';
+    
+    // Garantir que a tela de login seja escondida
+    document.getElementById('login-screen').classList.remove('active');
 
     if (isLoggedIn) {
         // Mostra email e botão sair
         userEmailDisplay.textContent = userEmail;
         userEmailDisplay.style.display = 'block';
         logoutButton.style.display = 'block';
-    iconCreate.style.display = 'block';
+    	iconCreate.style.display = 'block';
+	    btnMyPosts.style.display = 'flex';
     } else {
         // Mostra apenas botão entrar
         btnLoginHeader.style.display = 'block';
@@ -634,7 +1169,7 @@ async function showProfile() {
     try {
         const user = await account.get();
         // Se conseguiu pegar o usuário, está logado
-        showSection('profile');
+        showSection('myProfile');
     } catch (error) {
         // Se deu erro, não está logado
         showSection('login-screen');
@@ -644,265 +1179,62 @@ async function showProfile() {
 checkAuthStatus();
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// ----- Bloco Fx | Upload ---- 
+// ----- Bloco Fx | Loading ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
-// Inicializar a instância de Storage com o client
-const storage = new Appwrite.Storage(client);
+let isLoading = false;
 
-// Função para fazer upload de um arquivo e retornar o ID
-async function uploadFile(file, fileName) {
-    try {
-        const response = await storage.createFile(
-            '68ed7f190017280cf294', // bucketId
-            Appwrite.ID.unique(),    // fileId único
-            new File([file], fileName, { type: file.type })
-        );
-        console.log('Upload bem-sucedido:', response);
-        return response.$id; // Retorna o ID do arquivo
-    } catch (error) {
-        console.error('Erro no upload:', error);
-        throw error;
-    }
+function showLoading(message = 'Carregando...') {
+    const overlay = document.getElementById('loadingOverlay');
+    const text = document.getElementById('loadingText');
+    if (text) text.textContent = message;
+    if (overlay) overlay.classList.add('active');
+    isLoading = true;
 }
 
-// Função principal para postar a lição
-async function postLesson() {
-    try {
-        // Valida se há conteúdo carregado
-        if (!subtitleName || srtData.length === 0) {
-            alert('Carregue uma legenda SRT primeiro!');
-            return;
-        }
-
-        const videoElement = document.getElementById('mainVideoPlayer');
-        if (!videoElement.src || videoElement.src.startsWith('blob:') === false) {
-            alert('Carregue um vídeo primeiro!');
-            return;
-        }
-
-        const thumbnailFile = getCapturedThumbnailFile();
-        if (!thumbnailFile) {
-            alert('Capture uma thumbnail primeiro!');
-            return;
-        }
-
-        // Obter o nome base (sem extensão) do arquivo SRT
-        const baseName = subtitleName.replace(/\.[^/.]+$/, "");
-
-        // Converter SRT em arquivo Blob
-        const srtContent = generateSRT();
-        const srtBlob = new Blob([srtContent], { type: 'text/plain' });
-        const srtFile = new File([srtBlob], `${baseName}.srt`, { type: 'text/plain' });
-
-        // Obter o arquivo de vídeo original
-        const videoUpload = document.getElementById('videoUpload').files[0];
-        if (!videoUpload) {
-            alert('Arquivo de vídeo não encontrado!');
-            return;
-        }
-
-        // Renomear o vídeo para usar o mesmo nome base
-        const videoExtension = videoUpload.name.split('.').pop();
-        const videoFile = new File([videoUpload], `${baseName}.${videoExtension}`, { type: videoUpload.type });
-
-        // Renomear a thumbnail
-        const thumbFile = new File([thumbnailFile], `${baseName}.jpg`, { type: 'image/jpeg' });
-
-        console.log('Iniciando uploads...');
-        console.log('- SRT:', srtFile.name);
-        console.log('- Vídeo:', videoFile.name);
-        console.log('- Thumbnail:', thumbFile.name);
-
-        // Upload dos 3 arquivos
-        const srtId = await uploadFile(srtFile, srtFile.name);
-        console.log('✅ SRT enviado:', srtId);
-
-        const videoId = await uploadFile(videoFile, videoFile.name);
-        console.log('✅ Vídeo enviado:', videoId);
-
-        const thumbId = await uploadFile(thumbFile, thumbFile.name);
-        console.log('✅ Thumbnail enviada:', thumbId);
-
-		alert('Lição postada com sucesso!');
-        
-        // Salvar informações no banco de dados
-        const DATABASE_ID = '68ed87df000874c3e85a';
-        const COLLECTION_ID = '68ed87f400375b28a7e7';
-
-        const postData = {
-            videoName: baseName,
-            videoId: videoId,
-            srtId: srtId,
-            thumbId: thumbId,
-            description: document.querySelector('input[name="description"]').value,
-            channelName: userEmailDisplay.textContent,
-            performance: '0%',
-            duration: '00:00',
-            createdAt: new Date().toISOString()
-        };
-
-        await databases.createDocument(
-            DATABASE_ID,
-            COLLECTION_ID,
-            Appwrite.ID.unique(),
-            postData
-        );
-
-        console.log('✅ Dados salvos no banco de dados');
-        showSection('myPosts');
-        
-    } catch (error) {
-        console.error('Erro ao postar lição:', error);
-        alert('Erro ao postar lição: ' + error.message);
-    }
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('active');
+    isLoading = false;
 }
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// ----- Bloco Fx | Recuperar e Exibir Posts ---- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// Inicializa
+document.addEventListener("DOMContentLoaded", () => {
+  renderPage();
+  showSection("home");
+  loadAndDisplayThumbnails();
+});
 
-const databases = new Appwrite.Databases(client);
-
-/**
- * Busca os posts (lições) do banco de dados
- * @returns {Array} Lista de posts
- */
-async function fetchPosts() {
-    try {
-        // Substitua pelos IDs corretos do seu projeto
-        const DATABASE_ID = '68ed87df000874c3e85a';
-        const COLLECTION_ID = '68ed87f400375b28a7e7';
-        
-        const response = await databases.listDocuments(
-            DATABASE_ID,
-            COLLECTION_ID
-        );
-        
-        return response.documents;
-    } catch (error) {
-        console.error('Erro ao buscar posts:', error);
-        return [];
-    }
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Edit Srt ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+function showSave() {
+    showVideoArea = false;
+    showEditorArea = false;
+    showSegmentsArea = false;
+    showLoadArea = false;
+    showSaveArea = true;
+    showConfigArea = false;
+    renderPage();
 }
 
-/**
- * Gera a URL da thumbnail a partir do Storage
- * @param {string} thumbId - ID da thumbnail no Storage
- * @returns {string} URL da imagem
- */
-function getThumbnailUrl(thumbId) {
-    const BUCKET_ID = '68ed7f190017280cf294';
-    return storage.getFilePreview(
-        BUCKET_ID,
-        thumbId,
-        600, // largura
-        340  // altura
-    ).href;
+function closeLoadSaveArea() {
+    showVideoArea = true;
+	showEditorArea = true;
+    showSegmentsArea = true;
+    showSaveArea = false;
+    showLoadArea = false;
+    showConfigArea = false;
+    renderPage();
 }
 
-/**
- * Cria o HTML de um card de vídeo
- * @param {Object} post - Dados do post (videoName, thumbId, channelName, performance, videoId, srtId, etc)
- * @param {boolean} showEdit - Se deve mostrar o botão "Editar"
- * @returns {string} HTML do card
- */
-function createVideoCard(post, showEdit = false) {
-    const thumbUrl = getThumbnailUrl(post.thumbId);
-    
-    return `
-        <div class="video-container" data-video-id="${post.$id}">
-            <div class="video-thumb">
-                <img src="${thumbUrl}" alt="Video thumbnail">
-                <span class="video-time">${post.duration || '10:35'}</span>
-            </div>
-            
-            <div class="channel-info">
-                <div class="channel-pic">
-                    <img src="${post.channelPic || 'canal.jpg'}" alt="Canal" class="channel-pic">
-                </div>
-                
-                <div class="video-text">
-                    <h3 class="video-title">${post.videoName}</h3>
-                    
-                    <div class="video-meta">
-                        <span class="channel-name">${post.channelName || 'Nome do Canal'}</span>
-                        <span class="performance">${post.performance || '95%'}</span>
-                        ${showEdit ? `<span class="video-edit" onclick="editPost('${post.$id}')">Editar</span>` : ''}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+function showConfig() {
+    showConfigArea = true;
+    showSaveArea = false;
+    showLoadArea = false;
+    renderPage();
 }
 
-/**
- * Renderiza os posts em um container específico
- * @param {string} containerId - ID do container onde os posts serão exibidos
- * @param {boolean} showEdit - Se deve mostrar o botão "Editar"
- */
-async function renderPosts(containerId, showEdit = false) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error(`Container ${containerId} não encontrado`);
-        return;
-    }
-    
-    container.innerHTML = '<p>Carregando...</p>';
-    
-    const posts = await fetchPosts();
-    
-    if (posts.length === 0) {
-        container.innerHTML = '<p>Nenhum post encontrado.</p>';
-        return;
-    }
-    
-    const cardsHTML = posts.map(post => createVideoCard(post, showEdit)).join('');
-    container.innerHTML = cardsHTML;
-}
-
-/**
- * Carrega os posts para a seção Home
- */
-function loadHomePosts() {
-    renderPosts('home-post-container', false);
-}
-
-/**
- * Carrega os posts do usuário (com opção de editar)
- */
-function loadUserPosts() {
-    renderPosts('user-post-container', true);
-}
-
-/**
- * Função para editar um post
- * @param {string} postId - ID do post a ser editado
- */
-function editPost(postId) {
-    // Implementar lógica de edição
-    console.log('Editar post:', postId);
-    // Você pode carregar os dados do post e abrir a seção de edição
-}
-
-// Inicializar quando necessário
-// Chame essas funções quando mostrar as seções correspondentes
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// Bloco Edit Srt - Inicio
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-function closeConfigEdit() {
-    document.getElementById('editor').style.display = "block";
-    document.getElementById('segments-area').style.display = "block";
-    document.getElementById('config-area').style.display = "none";
-}
-
-function showConfigEdit() {
-    document.getElementById('editor').style.display = "block";
-    document.getElementById('segments-area').style.display = "block";
-    document.getElementById('config-area').style.display = "block";
-}
 
 function renderSegments() {
   const container = document.getElementById("segments");
@@ -933,7 +1265,11 @@ function openEditor(id) {
   currentSegment = srtData.find(s => s.id === id);
   if (!currentSegment) return;
 
-  document.getElementById("editor").style.display = "block";
+  // Só mostra o editor se NÃO estivermos no modo preview
+  if (!showPreviewMode) { 
+    document.getElementById("editor").style.display = "block";
+  }
+  
   document.getElementById("editStart").value = currentSegment.start;
   document.getElementById("editEnd").value = currentSegment.end;
   document.getElementById("editText").value = currentSegment.text;
@@ -1211,7 +1547,7 @@ function prevLine() {
     stopTimeout = null;
   }
   
-  const videoElement = document.getElementById("mainVideoPlayer");
+  const videoElement = document.getElementById("videoPlayer");
   if (videoElement && !videoElement.paused) {
     videoElement.pause();
   }
@@ -1232,7 +1568,7 @@ function nextLine() {
     stopTimeout = null;
   }
   
-  const videoElement = document.getElementById("mainVideoPlayer");
+  const videoElement = document.getElementById("videoPlayer");
   if (videoElement && !videoElement.paused) {
     videoElement.pause();
   }
@@ -1323,41 +1659,158 @@ function shiftSelectedLines(delta) {
   if (currentSegment) updateEditorFields(currentSegment);
 }
 
+// ======================
+// Inicializar
+// ======================
+function init() {
+	showLoadArea();
+	renderSegments();
+}
+
+init();
+
 // ==================================
-// 📂 Funções de Carregamento 
+// 📁 Funções de Carregamento
 // ==================================
-// Encontre sua função openContent e substitua-a por esta:
+function editSrt() {
+  console.log("");
+  showVideoArea = true;
+  showEditorArea = true;
+  showSegmentsArea = true;
+  showLoadArea = false;
+  showSaveArea = false;
+  showConfigArea = false;
+  showPreviewMode = false;
+  
+  renderPage();
+  showSection('editSrt');
+}
+
 function openContent() {
-    const videoUpload = document.getElementById("videoUpload").files[0];
-    const srtUpload = document.getElementById("srtUpload").files[0];
+  console.log("=== INÍCIO openContent() ===");
+  
+  // Captura os valores dos inputs
+  const videoInput = document.getElementById("videoUrl").value.trim();
+  const videoUpload = document.getElementById("videoUpload").files[0];
+  console.log("Video URL input:", videoInput);
+  console.log("Video Upload file:", videoUpload);
 
-    // 1. Carregar o vídeo
+  const srtInput = document.getElementById("srtUrl").value.trim();
+  const srtUpload = document.getElementById("srtUpload").files[0];
+  console.log("SRT URL input:", srtInput);
+  console.log("SRT Upload file:", srtUpload);
+
+  // === IMPORTANTE: Muda para a seção editSrt PRIMEIRO ===
+  // Isso garante que o elemento videoPlayer seja criado
+  console.log("--- Mudando para seção 'editSrt' ANTES de carregar ---");
+  editSrt();
+  
+  // Aguarda um momento para garantir que o DOM foi atualizado
+  setTimeout(() => {
+    console.log("--- Timeout executado, tentando carregar conteúdo ---");
+    
+    // Verifica se o elemento de vídeo existe AGORA
+    const videoElement = document.getElementById("videoPlayer");
+    console.log("Elemento videoPlayer encontrado?", videoElement !== null);
+    
+    if (!videoElement) {
+      console.error("❌ ERRO CRÍTICO: videoPlayer ainda não existe!");
+      alert("Erro: Elemento de vídeo não encontrado. Tente novamente.");
+      return;
+    }
+
+    // === CARREGAR O VÍDEO ===
+    console.log("--- Tentando carregar vídeo ---");
     if (videoUpload) {
-        const videoURL = URL.createObjectURL(videoUpload);
-        
-        // ⭐ CORRIGIDO: Agora atualizamos apenas o player de vídeo único e principal.
-        document.getElementById("mainVideoPlayer").src = videoURL;
-
+      // Se foi feito upload de arquivo
+      console.log("Carregando vídeo via UPLOAD de arquivo:", videoUpload.name);
+      const videoURL = URL.createObjectURL(videoUpload);
+      console.log("URL do vídeo criada:", videoURL);
+      videoElement.src = videoURL;
+      console.log("Vídeo carregado com sucesso via upload!");
+    } else if (videoInput) {
+      // Se foi colada uma URL
+      console.log("Carregando vídeo via URL:", videoInput);
+      videoElement.src = videoInput;
+      console.log("Vídeo carregado com sucesso via URL!");
     } else {
-        alert("Selecione um arquivo de vídeo para carregar.");
-        return;
+      console.warn("⚠️ AVISO: Nenhum vídeo foi fornecido (nem upload nem URL)");
     }
 
-    // 2. Carregar a legenda (o resto da função está correto)
+    // === CARREGAR A LEGENDA ===
+    console.log("--- Tentando carregar legenda ---");
     if (srtUpload) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            parseSRT(e.target.result);
-            subtitleName = srtUpload.name;
-            document.getElementById("subtitleName").textContent = subtitleName;
-            showSection('postLesson');
-        };
-        reader.readAsText(srtUpload);
+      // Se foi feito upload de arquivo SRT
+      console.log("Carregando SRT via UPLOAD de arquivo:", srtUpload.name);
+      const reader = new FileReader();
+      
+      reader.onload = function (e) {
+        console.log("FileReader onload disparado");
+        console.log("Conteúdo do SRT (primeiros 200 caracteres):", e.target.result.substring(0, 200));
+        
+        // Processa o conteúdo do SRT
+        parseSRT(e.target.result);
+        console.log("parseSRT() executado. Total de segmentos:", srtData.length);
+        
+        // Atualizar o nome da legenda carregada
+        subtitleName = srtUpload.name;
+        const subtitleNameElement = document.getElementById("subtitleName");
+        if (subtitleNameElement) {
+          subtitleNameElement.textContent = subtitleName;
+          console.log("Nome da legenda atualizado:", subtitleName);
+        } else {
+          console.warn("⚠️ Elemento subtitleName não encontrado");
+        }
+      };
+      
+      reader.onerror = function(e) {
+        console.error("❌ ERRO ao ler arquivo SRT:", e);
+      };
+      
+      reader.readAsText(srtUpload);
+      console.log("FileReader.readAsText() iniciado");
+      
+    } else if (srtInput) {
+      // Se foi colada uma URL do SRT
+      console.log("Carregando SRT via URL:", srtInput);
+      
+      fetch(srtInput)
+        .then(res => {
+          console.log("Fetch response status:", res.status);
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.text();
+        })
+        .then(text => {
+          console.log("SRT baixado via URL (primeiros 200 caracteres):", text.substring(0, 200));
+          
+          // Processa o conteúdo do SRT
+          parseSRT(text);
+          console.log("parseSRT() executado. Total de segmentos:", srtData.length);
+
+          // Atualizar o nome da legenda carregada (com URL)
+          subtitleName = srtInput.split("/").pop();
+          const subtitleNameElement = document.getElementById("subtitleName");
+          if (subtitleNameElement) {
+            subtitleNameElement.textContent = subtitleName;
+            console.log("Nome da legenda atualizado:", subtitleName);
+          } else {
+            console.warn("⚠️ Elemento subtitleName não encontrado");
+          }
+        })
+        .catch(err => {
+          console.error("❌ ERRO ao carregar SRT por URL:", err);
+          alert("Erro ao carregar SRT por URL: " + err.message);
+        });
+        
     } else {
-        srtData = [{ id: 1, start: "00:00:00,000", end: "00:00:05,000", text: "Digite sua legenda aqui" }];
-        renderSegments();
-        showSection('postLesson');
+      console.warn("⚠️ AVISO: Nenhuma legenda foi fornecida (nem upload nem URL)");
     }
+    
+    console.log("=== FIM openContent() ===");
+    
+  }, 100); // Aguarda 100ms para o DOM atualizar
 }
 
 // Função para interpretar o conteúdo .srt para srtData
@@ -1395,6 +1848,7 @@ function parseSRT(content) {
   undoStack = [];
   redoStack = [];
   renderSegments();
+  
 }
 
 // Exibir SRT
@@ -1465,7 +1919,7 @@ function playLine() {
     return;
   }
 
-  const videoElement = document.getElementById("mainVideoPlayer");
+  const videoElement = document.getElementById("videoPlayer");
   if (!videoElement || !videoElement.src) {
     alert("Carregue um vídeo primeiro!");
     return;
@@ -1498,101 +1952,713 @@ function playLine() {
   });
 }
 
-// ======================
-// Inicializar
-// ======================
-function initSrtEditor() {
-    // Garante que o editor e a lista de segmentos estão visíveis 
-    // e o modo de configuração está oculto
-    document.getElementById('editor').style.display = "block";
-    document.getElementById('segments-area').style.display = "block";
-    const configArea = document.getElementById('config-area');
-    if (configArea) configArea.style.display = "none";
-    
-    // Renderiza os segmentos
-    renderSegments();
-    
-    // Tenta abrir o primeiro segmento se houver dados
-    if (!currentSegment && srtData.length > 0) {
-        openEditor(srtData[0].id);
-    }
-}
-
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 //  - Bloco Fx | Thumbnail -
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// Guarda a thumbnail capturada para ser usada depois. (Como no padrão anterior)
-let capturedThumbnailBlob = null;
+function handleCaptureClick() {
+  const video = document.getElementById('videoPlayer'); // ID correto do vídeo
+  
+  if (!video) {
+    console.error('Elemento de vídeo não encontrado.');
+    alert('Vídeo não encontrado. Certifique-se de ter carregado um vídeo.');
+    return;
+  }
+
+  if (!video.src || video.readyState < 2) {
+    alert('Aguarde o vídeo carregar completamente antes de capturar a thumbnail.');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  // Define as dimensões do canvas para corresponder às do vídeo
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  // Desenha o frame atual do vídeo no canvas
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // Converte o conteúdo do canvas para Blob
+  canvas.toBlob((blob) => {
+    // Armazena o Blob globalmente
+    if (blob) {
+      capturedThumbnailBlob = blob;
+      console.log('Thumbnail Blob capturado com sucesso!');
+
+      // Converte o blob para uma URL de dados (imagem base64)
+      const imageDataURL = URL.createObjectURL(blob);
+
+      // Cria um novo elemento de imagem para a thumbnail
+      const thumbnailImg = document.createElement('img');
+      thumbnailImg.src = imageDataURL;
+      thumbnailImg.alt = 'Thumbnail Capturada';
+      thumbnailImg.style.maxWidth = '100%';
+      thumbnailImg.style.height = 'auto';
+      thumbnailImg.style.borderRadius = '8px';
+
+      // Encontra o contêiner onde a thumbnail será exibida
+      const thumbContentDiv = document.getElementById('thumb-content');
+
+      if (thumbContentDiv) {
+        // Limpa qualquer conteúdo anterior e adiciona a nova thumbnail
+        thumbContentDiv.innerHTML = '';
+        thumbContentDiv.appendChild(thumbnailImg);
+      } else {
+        console.error('Elemento com ID "thumb-content" não encontrado.');
+        alert('Erro: Container da thumbnail não encontrado.');
+      }
+    } else {
+      console.error('Falha ao gerar Blob da thumbnail.');
+      alert('Erro ao capturar a thumbnail.');
+    }
+  }, 'image/jpeg', 0.9); // Usa o formato JPEG com qualidade de 90%
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Upload Backblaze --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
 /**
- * Adiciona a funcionalidade de captura a um botão, usando um player de vídeo
- * e um container de preview que já existem na página.
- * @param {string} videoId - O ID do elemento <video> já carregado.
- * @param {string} buttonId - O ID do <button> que irá acionar a captura.
- * @param {string} previewId - O ID do <div> onde a imagem capturada será exibida.
+ * Obtém URL de upload do Backblaze via função Appwrite
  */
-function enableThumbnailCapture(videoId, buttonId, previewId) {
-    _injectCaptureStyles(); // Adiciona o CSS para o botão e preview
-
-    const videoElement = document.getElementById(videoId);
-    const captureButton = document.getElementById(buttonId);
-    const previewContainer = document.getElementById(previewId);
-
-    if (!videoElement || !captureButton || !previewContainer) {
-        console.error("Um ou mais elementos (vídeo, botão, preview) não foram encontrados.");
-        return;
-    }
-
-    let currentPreviewUrl = null;
-
-    captureButton.addEventListener('click', () => {
-        // A lógica de captura é a mesma, mas agora usa os elementos existentes
-        const canvas = document.createElement('canvas');
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob((blob) => {
-            capturedThumbnailBlob = blob; // Atualiza a variável principal
-
-            if (currentPreviewUrl) {
-                URL.revokeObjectURL(currentPreviewUrl);
-            }
-            currentPreviewUrl = URL.createObjectURL(blob);
-            previewContainer.innerHTML = `<img src="${currentPreviewUrl}" alt="Preview da Thumbnail">`;
-        }, 'image/jpeg', 0.9);
-    });
+async function getBackblazeUploadUrl() {
+  console.log("--- Obtendo URL de upload do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',  // ID da sua função
+    JSON.stringify({}),
+    false // síncrono
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha na execução da função: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  
+  if (!data.uploadUrl || !data.authorizationToken) {
+    throw new Error('Erro ao obter URL de upload');
+  }
+  
+  console.log("✅ URL de upload obtida com sucesso");
+  return data;
 }
 
 /**
- * Pega o arquivo da thumbnail que foi capturada.
- * @returns {File|null}
+ * Faz upload de um arquivo para o Backblaze
  */
-function getCapturedThumbnailFile() {
+async function uploadFileToBackblaze(file, fileName, uploadData) {
+  console.log(`--- Fazendo upload de: ${fileName} ---`);
+  console.log(`Tamanho do arquivo: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+  
+  const headers = {
+    'Authorization': uploadData.authorizationToken,
+    'X-Bz-File-Name': encodeURIComponent(fileName),
+    'Content-Type': file.type || 'b2/x-auto',
+    'X-Bz-Content-Sha1': 'do_not_verify',
+  };
+  
+  const uploadResponse = await fetch(uploadData.uploadUrl, {
+    method: 'POST',
+    headers: headers,
+    body: file,
+  });
+  
+  if (!uploadResponse.ok) {
+    throw new Error(`Erro no upload de ${fileName}: ${uploadResponse.statusText}`);
+  }
+  
+  const uploadResult = await uploadResponse.json();
+  console.log(`✅ Upload de ${fileName} concluído!`, uploadResult);
+  
+  return uploadResult;
+}
+
+/**
+ * Converte vídeo do videoPlayer para Blob
+ */
+async function getVideoBlob() {
+  console.log("--- Obtendo Blob do vídeo ---");
+  
+  const videoElement = document.getElementById('videoPlayer');
+  
+  if (!videoElement || !videoElement.src) {
+    throw new Error('Vídeo não carregado');
+  }
+  
+  // Se o vídeo foi carregado via upload (blob URL), precisa buscar novamente
+  if (videoElement.src.startsWith('blob:')) {
+    console.log("Vídeo é um blob local, buscando conteúdo...");
+    const response = await fetch(videoElement.src);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  // Se o vídeo foi carregado via URL externa, precisa fazer fetch
+  console.log("Vídeo é uma URL externa, fazendo fetch...");
+  const response = await fetch(videoElement.src);
+  const blob = await response.blob();
+  console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+  return blob;
+}
+
+/**
+ * Converte SRT data para Blob
+ */
+function getSrtBlob() {
+  console.log("--- Criando Blob do SRT ---");
+  const srtContent = generateSRT();
+  const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+  console.log(`✅ Blob do SRT criado: ${blob.size} bytes`);
+  return blob;
+}
+
+/**
+ * Gera nome base a partir do nome do SRT (sem extensão)
+ */
+function getBaseName() {
+  if (!subtitleName) {
+    // Fallback: usa timestamp se não houver nome
+    return `lesson_${Date.now()}`;
+  }
+  // Remove a extensão .srt
+  return subtitleName.replace(/\.srt$/i, '');
+}
+
+/**
+ * Função principal para postar a lição
+ */
+async function postLesson() {
+  console.log("=== INÍCIO postLesson() ===");
+  
+  try {
+    showLoading('Preparando upload...');
+    
+    // 1. Validações
+    console.log("--- Validando dados ---");
+    
+    if (!srtData || srtData.length === 0) {
+      throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
+    }
+    
     if (!capturedThumbnailBlob) {
-        return null;
+      throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
     }
-    return new File([capturedThumbnailBlob], "thumbnail.jpg", { type: "image/jpeg" });
+    
+    const videoElement = document.getElementById('videoPlayer');
+    if (!videoElement || !videoElement.src) {
+      throw new Error('Nenhum vídeo carregado.');
+    }
+    
+    console.log("✅ Validações passaram");
+    
+    // 2. Gera nomes dos arquivos baseados no SRT
+    const baseName = getBaseName();
+    const videoFileName = `${baseName}.mp4`;
+    const srtFileName = `${baseName}.srt`;
+    const thumbFileName = `${baseName}.jpg`;
+    
+    console.log("--- Nomes dos arquivos ---");
+    console.log("Base name:", baseName);
+    console.log("Video:", videoFileName);
+    console.log("SRT:", srtFileName);
+    console.log("Thumb:", thumbFileName);
+    
+    // 3. Prepara os arquivos
+    showLoading('Preparando arquivos...');
+    const videoBlob = await getVideoBlob();
+    const srtBlob = getSrtBlob();
+    const thumbBlob = capturedThumbnailBlob;
+    
+    console.log("✅ Todos os arquivos preparados");
+    
+    // 4. Faz upload dos 3 arquivos
+    const uploadResults = {
+      video: null,
+      srt: null,
+      thumb: null
+    };
+    
+    // Upload do vídeo
+    showLoading('Enviando vídeo... (1/3)');
+    const videoUploadData = await getBackblazeUploadUrl();
+    uploadResults.video = await uploadFileToBackblaze(videoBlob, videoFileName, videoUploadData);
+    
+    // Upload do SRT
+    showLoading('Enviando legenda... (2/3)');
+    const srtUploadData = await getBackblazeUploadUrl();
+    uploadResults.srt = await uploadFileToBackblaze(srtBlob, srtFileName, srtUploadData);
+    
+    // Upload da thumbnail
+    showLoading('Enviando thumbnail... (3/3)');
+    const thumbUploadData = await getBackblazeUploadUrl();
+    uploadResults.thumb = await uploadFileToBackblaze(thumbBlob, thumbFileName, thumbUploadData);
+    
+    console.log("=== UPLOADS CONCLUÍDOS ===");
+    console.log("Video ID:", uploadResults.video.fileId);
+    console.log("SRT ID:", uploadResults.srt.fileId);
+    console.log("Thumb ID:", uploadResults.thumb.fileId);
+    
+    // 5. Exibe resultado no console (por enquanto)
+    console.log("--- RESULTADO FINAL ---");
+    console.log(JSON.stringify(uploadResults, null, 2));
+    
+    hideLoading();
+    alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
+    location.reload();
+    
+    // TODO: Salvar esses IDs no banco de dados
+    // TODO: Exibir os arquivos na página
+    
+    return uploadResults;
+    
+  } catch (error) {
+    console.error("❌ ERRO em postLesson():", error);
+    hideLoading();
+    alert('❌ Erro ao postar lição: ' + error.message);
+    throw error;
+  } finally {
+    console.log("=== FIM postLesson() ===");
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Listar Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Lista todos os arquivos do bucket via função Appwrite
+ */
+async function listBackblazeFiles() {
+  console.log("--- Listando arquivos do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',
+    JSON.stringify({ action: 'list' }),
+    false
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha ao listar arquivos: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  console.log("✅ Arquivos listados:", data.files?.length || 0);
+  
+  return data.files || [];
 }
 
 /**
- * @private Função auxiliar para injetar o CSS mínimo.
+ * Filtra apenas as thumbnails (arquivos .jpg/.jpeg/.png)
  */
-function _injectCaptureStyles() {
-    if (document.getElementById('capture-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'capture-styles';
-    style.innerHTML = `
-        .thumb-gen-button { width: 100%; padding: 12px; margin-top: 10px; font-size: 16px; font-weight: bold; color: #fff; background-color: #6d28d9; border: none; border-radius: 6px; cursor: pointer; }
-        .thumb-gen-preview { width: 100%; min-height: 150px; background-color: #1a1a1a; border: 2px dashed #444; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #777; margin-top: 16px; overflow: hidden; }
-        .thumb-gen-preview img { width: 100%; height: 100%; object-fit: contain; }
-    `;
-    document.head.appendChild(style);
+function filterThumbnails(files) {
+  const thumbs = files.filter(file => {
+    const name = file.fileName.toLowerCase();
+    return name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+  });
+  
+  console.log(`✅ Thumbnails encontradas: ${thumbs.length}`);
+  return thumbs;
 }
 
-// Ela vai preparar o botão 'captureBtn' para funcionar quando for clicado.
-enableThumbnailCapture('mainVideoPlayer', 'captureBtn', 'previewContainer');
-		</script>
-	</body>
+/**
+ * Gera URL pública para arquivo do Backblaze usando o fileId
+ */
+function getBackblazePublicUrl(fileId) {
+  return `https://f005.backblazeb2.com/b2api/v1/b2_download_file_by_id?fileId=${fileId}`;
+}
+
+/**
+ * Renderiza as thumbnails nos elementos existentes (thumb-content e info-content)
+ */
+function renderThumbnails(thumbnails) {
+  console.log("--- Renderizando thumbnails ---");
+  console.log("Total de thumbnails:", thumbnails.length);
+  
+  const container = document.getElementById('home-post-container');
+  
+  if (!container) {
+    console.error('Container user-post-container não encontrado');
+    return;
+  }
+  
+  // Limpa o container
+  container.innerHTML = '';
+  
+  if (thumbnails.length === 0) {
+    container.innerHTML = '<p style="color: #888;">Nenhuma thumbnail encontrada.</p>';
+    return;
+  }
+  
+  // Cria um card para cada thumbnail usando os elementos existentes
+  thumbnails.forEach((thumb, index) => {
+    // Nome sem extensão
+    const displayName = thumb.fileName.replace(/\.(jpg|jpeg|png)$/i, '');
+    
+    // Gera a URL pública usando o fileId
+    const thumbnailUrl = getBackblazePublicUrl(thumb.fileId);
+    
+    // Log no console
+    console.log(`[${index + 1}] Thumbnail:`, {
+      fileName: thumb.fileName,
+      displayName: displayName,
+      fileId: thumb.fileId,
+      url: thumbnailUrl,
+      size: `${(thumb.contentLength / 1024).toFixed(2)} KB`
+    });
+    
+    // Cria o wrapper do post
+    const postWrapper = document.createElement('div');
+    postWrapper.className = 'post-item';
+    postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
+    postWrapper.onclick = () => previewLesson(thumb);
+    
+    // Cria a thumb-section
+    const thumbSection = document.createElement('div');
+    thumbSection.className = 'thumb-section';
+    thumbSection.innerHTML = `
+      <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+    `;
+    
+    // Cria a info-content
+    const infoContent = document.createElement('div');
+    infoContent.className = 'info-content';
+    infoContent.innerHTML = `
+      <div class="channel-pic">
+        <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+      </div>
+      
+      <div class="video-text">
+        <h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">${displayName}</h3>
+        <div class="video-meta">
+          <span class="channel-name">Meu Canal</span>
+          <span class="performance">95%</span>
+          <span class="video-edit" onclick="event.stopPropagation(); editLesson('${thumb.fileId}');" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+        </div>
+      </div>
+    `;
+    
+    // Monta o post completo
+    postWrapper.appendChild(thumbSection);
+    postWrapper.appendChild(infoContent);
+    
+    // Adiciona ao container
+    container.appendChild(postWrapper);
+  });
+  
+  console.log(`✅ ${thumbnails.length} thumbnails renderizadas`);
+  console.log("--- Fim da renderização ---");
+}
+
+/**
+ * Função principal para carregar e exibir thumbnails
+ */
+async function loadAndDisplayThumbnails() {
+  console.log("=== INÍCIO loadAndDisplayThumbnails() ===");
+  
+  try {
+    showLoading('Carregando thumbnails...');
+    
+    // 1. Lista todos os arquivos
+    const allFiles = await listBackblazeFiles();
+    
+    // 2. Filtra apenas as thumbnails
+    const thumbnails = filterThumbnails(allFiles);
+    
+    // 3. Renderiza na página usando os elementos existentes
+    renderThumbnails(thumbnails);
+    
+    hideLoading();
+    
+    return thumbnails;
+    
+  } catch (error) {
+    console.error("❌ ERRO em loadAndDisplayThumbnails():", error);
+    hideLoading();
+    
+    const container = document.getElementById('user-post-container');
+    if (container) {
+      container.innerHTML = `
+        <p style="color: #ff6b6b; text-align: center; padding: 20px;">
+          ❌ Erro ao carregar thumbnails: ${error.message}
+        </p>
+      `;
+    }
+    
+    throw error;
+  } finally {
+    console.log("=== FIM loadAndDisplayThumbnails() ===");
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Carregar Lição do Servidor --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Busca o arquivo de vídeo correspondente à thumbnail
+ */
+function findVideoFile(thumbFileName, allFiles) {
+  const baseName = thumbFileName.replace(/\.(jpg|jpeg|png)$/i, '');
+  const videoFileName = `${baseName}.mp4`;
+  
+  console.log(`Procurando vídeo: ${videoFileName}`);
+  
+  const videoFile = allFiles.find(file => file.fileName === videoFileName);
+  
+  if (videoFile) {
+    console.log("✅ Vídeo encontrado:", videoFile.fileName);
+  } else {
+    console.warn("⚠️ Vídeo não encontrado para:", thumbFileName);
+  }
+  
+  return videoFile || null;
+}
+
+/**
+ * Busca o arquivo SRT correspondente à thumbnail
+ */
+function findSrtFile(thumbFileName, allFiles) {
+  const baseName = thumbFileName.replace(/\.(jpg|jpeg|png)$/i, '');
+  const srtFileName = `${baseName}.srt`;
+  
+  console.log(`Procurando SRT: ${srtFileName}`);
+  
+  const srtFile = allFiles.find(file => file.fileName === srtFileName);
+  
+  if (srtFile) {
+    console.log("✅ SRT encontrado:", srtFile.fileName);
+  } else {
+    console.warn("⚠️ SRT não encontrado para:", thumbFileName);
+  }
+  
+  return srtFile || null;
+}
+
+/**
+ * Baixa e carrega o conteúdo do SRT
+ */
+async function loadSrtContent(fileId) {
+  console.log("--- Baixando SRT do servidor ---");
+  
+  const srtUrl = getBackblazePublicUrl(fileId);
+  console.log("URL do SRT:", srtUrl);
+  
+  const response = await fetch(srtUrl);
+  
+  if (!response.ok) {
+    throw new Error(`Erro ao baixar SRT: ${response.statusText}`);
+  }
+  
+  const content = await response.text();
+  console.log(`✅ SRT baixado: ${content.length} caracteres`);
+  
+  return content;
+}
+
+/**
+ * Carrega vídeo no elemento videoPlayer
+ */
+function loadVideoPlayer(fileId, fileName) {
+  console.log("--- Carregando vídeo no player ---");
+  
+  const videoUrl = getBackblazePublicUrl(fileId);
+  console.log("URL do vídeo:", videoUrl);
+  
+  const videoElement = document.getElementById('videoPlayer');
+  
+  if (!videoElement) {
+    throw new Error('Elemento videoPlayer não encontrado');
+  }
+  
+  videoElement.src = videoUrl;
+  console.log(`✅ Vídeo carregado: ${fileName}`);
+}
+
+/**
+ * Carrega SRT no editor
+ */
+function loadSrtEditor(content, fileName) {
+  console.log("--- Carregando SRT no editor ---");
+  
+  parseSRT(content);
+  console.log(`✅ SRT processado: ${srtData.length} segmentos`);
+  
+  subtitleName = fileName;
+  const subtitleNameElement = document.getElementById("subtitleName");
+  if (subtitleNameElement) {
+    subtitleNameElement.textContent = fileName;
+    console.log("✅ Nome da legenda atualizado:", fileName);
+  }
+  
+  renderSegments();
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Load Lesson From Server (com Cache) --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Carrega lição do servidor (ou cache)
+ */
+async function loadLessonFromServer(thumb) {
+  console.log("=== INÍCIO loadLessonFromServer() (com cache) ===");
+  
+  try {
+    const fileId = thumb.fileId;
+    const cached = loadLessonFromCache(fileId);
+    
+    if (cached) {
+      console.log("🚀 Carregando do CACHE (rápido)");
+      showLoading('Carregando do cache...');
+      
+      await loadVideoFromCacheAsync(cached.videoBlob, cached.videoFileName);
+      loadSrtEditor(cached.srtContent, cached.srtFileName);
+      
+      hideLoading();
+      
+      // Aguarda um frame para garantir renderização
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      
+      if (srtData.length > 0) {
+        openEditor(srtData[0].id);
+      }
+      
+      return { /* ... */ };
+    }
+    
+    // Carregamento do servidor
+    showLoading('Carregando lição...');
+    const allFiles = await listBackblazeFiles();
+    
+    const videoFile = findVideoFile(thumb.fileName, allFiles);
+    const srtFile = findSrtFile(thumb.fileName, allFiles);
+    
+    if (!videoFile || !srtFile) {
+      throw new Error('Arquivos não encontrados');
+    }
+    
+    showLoading('Carregando vídeo...');
+    await loadVideoPlayerAsync(videoFile.fileId, videoFile.fileName);
+    
+    showLoading('Carregando legenda...');
+    const srtContent = await loadSrtContent(srtFile.fileId);
+    loadSrtEditor(srtContent, srtFile.fileName);
+    
+    showLoading('Salvando no cache...');
+    await saveLessonToCache(fileId, videoFile, srtFile, thumb);
+    
+    hideLoading();
+    
+    // Aguarda um frame para garantir renderização
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    
+    if (srtData.length > 0) {
+      openEditor(srtData[0].id);
+    }
+    
+    return { /* ... */ };
+    
+  } catch (error) {
+    console.error("❌ ERRO:", error);
+    hideLoading();
+    alert('❌ Erro: ' + error.message);
+    throw error;
+  }
+}
+
+// Nova função assíncrona para carregar vídeo
+function loadVideoPlayerAsync(fileId, fileName) {
+  return new Promise((resolve, reject) => {
+    console.log("--- Carregando vídeo no player ---");
+    
+    const videoUrl = getBackblazePublicUrl(fileId);
+    const videoElement = document.getElementById('videoPlayer');
+    
+    if (!videoElement) {
+      reject(new Error('videoPlayer não encontrado'));
+      return;
+    }
+    
+    // Aguarda o vídeo carregar metadados
+    videoElement.onloadedmetadata = () => {
+      console.log(`✅ Vídeo carregado: ${fileName}`);
+      resolve();
+    };
+    
+    videoElement.onerror = () => {
+      reject(new Error('Erro ao carregar vídeo'));
+    };
+    
+    videoElement.src = videoUrl;
+  });
+}
+
+// Nova função assíncrona para carregar vídeo do cache
+function loadVideoFromCacheAsync(videoBlob, fileName) {
+  return new Promise((resolve, reject) => {
+    const videoElement = document.getElementById('videoPlayer');
+    
+    if (!videoElement) {
+      reject(new Error('videoPlayer não encontrado'));
+      return;
+    }
+    
+    const blobUrl = URL.createObjectURL(videoBlob);
+    
+    videoElement.onloadedmetadata = () => {
+      console.log(`✅ Vídeo do cache carregado: ${fileName}`);
+      resolve();
+    };
+    
+    videoElement.onerror = () => {
+      reject(new Error('Erro ao carregar vídeo do cache'));
+    };
+    
+    videoElement.src = blobUrl;
+  });
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | PreviewMode --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Preview de lição (carrega do servidor)
+ */
+async function previewLesson(thumb) {
+  // Define TODAS as flags de visibilidade
+  showVideoArea = true;
+  showEditorArea = false;
+  showSegmentsArea = true;
+  showSaveArea = false;
+  showLoadArea = false;
+  showConfigArea = false;
+  
+  showSection('editSrt'); 
+  
+  showPreviewMode = true;
+  
+  renderPage();
+  
+  await loadLessonFromServer(thumb);
+    
+}
+
+/**
+ * Função placeholder para editar (você pode implementar depois)
+ */
+function editLesson(fileId) {
+  console.log("Editar lição:", fileId);
+  // TODO: Implementar edição
+}
+</script>
+</body>
 </html>
