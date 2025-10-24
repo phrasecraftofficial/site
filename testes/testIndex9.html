@@ -717,9 +717,9 @@ input[type="radio"] {
   </footer>
 
   <footer id="preview-footer" style="display: none;">
-    <a href="#" onclick="startPlayMode()">
+    <a href="#" onclick="startSoloMode()">
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
-    <a href="#" onclick="showSection('')">
+    <a href="#" onclick="startMultiMode()">
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
   </footer>
 
@@ -753,6 +753,18 @@ let selectedWords = [];
  */
 let currentSegmentIndex = 0;
 
+/**
+ * Inicia o modo solo
+ */
+function startMultiMode() {
+  console.log("=== INÍCIO startSoloMode() ===");
+  showSection('challenge');
+  showLobbyArea = true;
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Cache de Lições --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 /**
  * Aguarda a renderização completa e toca o áudio
  */
@@ -1035,9 +1047,9 @@ function showCompletionMessage() {
 }
 
 /**
- * Inicia o modo de jogo
+ * Inicia o modo solo
  */
-function startPlayMode() {
+function startSoloMode() {
   console.log("=== INÍCIO startPlayMode() ===");
   
   // Injeta o primeiro trecho se estivermos no modo play
@@ -1315,7 +1327,8 @@ function renderPage() {
 function showSection(sectionId) {
   // ================================================
   // <<< Lista de flags para resetar ao mudar de section >>>
-  showPreviewMode = false; 
+  showPreviewMode = false;
+  showLobbyArea = false;
   // ================================================
   const section = sections.find(s => s.id === sectionId);
   
