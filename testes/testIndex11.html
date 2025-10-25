@@ -725,6 +725,11 @@ input[type="radio"] {
   </footer>
 
 <script>
+// --- variaveis do banco de dado ---
+
+let currentLessonForMatch = null; // Armazena a lição selecionada para o desafio
+let currentMatchId = null;        // Armazena o ID da partida atual que o host criou/entrou
+
 let showVideoArea = true;
 let showEditorArea = true;
 let showSegmentsArea = true;
@@ -755,7 +760,7 @@ let selectedWords = [];
 let currentSegmentIndex = 0;
 
 /**
- * Inicia o modo solo
+ * Inicia o modo multi
  */
 function startMultiMode() {
   console.log("=== INÍCIO startSoloMode() ===");
@@ -1184,15 +1189,20 @@ function showSection(sectionId) {
   renderPage();
 }
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// ----- Bloco Fx | Login ----- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Login e AppWrite ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+const DATABASE_ID = "68ed87df000874c3e85a";
+const MATCHES_COLLECTION_ID = "68fb595d00158868bf7c";
 
 // Configuração do Appwrite
 const client = new Appwrite.Client()
-        .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-        .setProject('68ebe8640000ca7c860b');
+    .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+    .setProject('68ebe8640000ca7c860b');
 
+// Inicialização dos módulos (agora client já existe)
+const { Databases, ID } = Appwrite;
+const databases = new Databases(client);
 const account = new Appwrite.Account(client);
 
 // Seletores de elementos HTML (TODOS JUNTOS AQUI)
@@ -2786,6 +2796,8 @@ function loadVideoFromCacheAsync(videoBlob, fileName) {
  * Preview de lição (carrega do servidor)
  */
 async function previewLesson(thumb) {
+  currentLessonForMatch = thumb;
+  
   // Define TODAS as flags de visibilidade
   showVideoArea = true;
   showEditorArea = false;
@@ -3124,17 +3136,6 @@ function startSoloMode() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Multiplayer (Criação de Partida) ---
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-// --- ATENÇÃO: Substitua por seus IDs ---
-const DATABASE_ID = "68ed87df000874c3e85a";
-const MATCHES_COLLECTION_ID = "68fb595d00158868bf7c";
-// ----------------------------------------
-
-const { Databases, ID } = Appwrite;
-const databases = new Databases(client);
-
-let currentLessonForMatch = null; // Armazena a lição selecionada para o desafio
-let currentMatchId = null;        // Armazena o ID da partida atual que o host criou/entrou
 
 /**
  * Cria uma nova partida no servidor Appwrite.
