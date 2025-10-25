@@ -2936,29 +2936,32 @@ function moveWordToPhrase(wordButton, word) {
 /**
  * Verifica se a palavra clicada é a próxima correta da frase (ATUALIZADO PARA PALAVRAS DUPLICADAS)
  */
+/**
+ * Verifica se a palavra clicada é a próxima correta da frase (LÓGICA DE POSIÇÃO ESTRITA)
+ */
 function isNextWord(word) {
-  // Pega o segmento atual
-  const currentSegment = srtData[currentSegmentIndex];
-  
-  const correctWords = currentSegment.text
-    .split(/\s+/)
-    .filter(w => w.trim().length > 0);
-  
-  const nextIndex = selectedWords.length;
-  
-  if (nextIndex >= correctWords.length) {
-    return false;
-  }
-  
-  // Em vez de comparar posição exata, verifica se a palavra existe
-  // nas palavras corretas e ainda não foi totalmente usada
-  const wordCountInCorrect = correctWords.filter(w => w === word).length;
-  const wordCountInSelected = selectedWords.filter(w => w === word).length;
-  
-  // A palavra só é válida se:
-  // 1. Existe na frase original
-  // 2. Ainda não foi usada todas as vezes que aparece
-  return wordCountInCorrect > wordCountInSelected;
+  // Pega o segmento atual
+  const currentSegment = srtData[currentSegmentIndex];
+  
+  // Pega a frase correta, dividida em palavras (equivale ao 'palavrasOriginais' do seu exemplo)
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+  
+  // O número de palavras já selecionadas é o índice da próxima palavra correta
+  // (equivale ao 'indiceAtual' do seu exemplo)
+  const nextIndex = selectedWords.length;
+  
+  // Se a frase já foi completada, não aceite mais palavras
+  if (nextIndex >= correctWords.length) {
+    return false;
+  }
+  
+  // Pega a próxima palavra esperada na ordem correta (equivale ao 'palavraEsperada')
+  const palavraEsperada = correctWords[nextIndex];
+  
+  // Compara a palavra clicada ('word') com a palavra esperada na posição exata
+  return word === palavraEsperada;
 }
 
 /**
