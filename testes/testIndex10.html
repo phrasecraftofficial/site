@@ -414,6 +414,8 @@ input[type="radio"] {
       <div>PhraseCraft</div>
     </div>
     
+    <div id="performance"></div>
+    
     <div class="icons-right">
       <!-- Create -->
       <a href="#" id="icon-create" onclick="showSection('create')" hidden>
@@ -682,7 +684,6 @@ input[type="radio"] {
     </section>
 
 	<section id="play" class="content-row">
-		<div id="performance"></div>
 		<div id="video-section-play"></div>
 
       	<div id="buttons">
@@ -1066,7 +1067,11 @@ const elements = [
   {
     id: "host-performance",
     content: "",
-    condition: () => true
+    condition: () => {
+      // Mostra APENAS quando estiver na seção play
+      const activeEl = document.querySelector('section.active');
+      return activeEl && activeEl.id === 'play';
+    }
   },
 ];
 
@@ -1094,16 +1099,16 @@ const positions = [
   { key: "thumb-content", after: ["thumb-section-home", "thumb-section-postLesson"] },
   { key: "info-content", after: ["info-content-home"] },
   { key: "navigation-controls", after: ["navigation-controls-previewMode"] },
-  { key: "host-performance", after: ["performance"] },
+  { key: "host-performance", after: ["performance"], global: true },
 ];
 
+// Renderiza seções e elementos
 // Renderiza seções e elementos
 function renderPage() {
   // Encontra a seção ativa
   const activeSection = document.querySelector('section.active');
-  if (!activeSection) return;
 
-  // Renderiza elementos posicionados (lógica original mantida)
+  // Renderiza elementos posicionados
   elements.forEach(element => {
     const shouldShow = element.condition();
     if (!shouldShow) {
@@ -1114,25 +1119,37 @@ function renderPage() {
     }
 
     const pos = positions.find(p => p.key === element.id);
-    if (!pos) {
-      // Se não tem posição definida, apenas controla visibilidade
-      const existing = document.getElementById(element.id);
-      if (existing) {
-        // Usa a displayType específica do elemento, ou 'block' como padrão
-        existing.style.display = element.displayType || 'block'; 
-      }
-      return;
-    }
+    if (!pos) {
+      // Se não tem posição definida, apenas controla visibilidade
+      const existing = document.getElementById(element.id);
+      if (existing) {
+        existing.style.display = element.displayType || 'block'; 
+      }
+      return;
+    }
 
-    // Procura o container correto dentro da seção ativa
+    // Procura o container correto
     let container = null;
     for (const targetId of pos.after) {
-      const candidate = activeSection.querySelector(`#${targetId}`);
+      let candidate = null;
+      
+      // **MUDANÇA**: Se o elemento pode estar fora de seções (como no header)
+      if (pos.global) {
+        // Procura no documento inteiro
+        candidate = document.getElementById(targetId);
+      } else {
+        // Procura apenas dentro da seção ativa
+        if (activeSection) {
+          candidate = activeSection.querySelector(`#${targetId}`);
+        }
+      }
+      
       if (candidate) {
         container = candidate;
         break;
       }
     }
+    
     if (!container) return;
 
     let existing = document.getElementById(element.id);
@@ -3123,4 +3140,4 @@ function startSoloMode() {
 
 </script>
 </body>
-</html>
+	</html>
