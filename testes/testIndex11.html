@@ -3193,9 +3193,12 @@ async function createMatchOnServer() {
         return newMatch; // Retorna a partida criada
 
     } catch (error) {
-        console.error("❌ Erro ao criar documento da partida:", error);
-        throw new Error("Falha ao criar a partida no servidor.");
-    }
+      console.error("❌ Erro ao criar documento da partida:", error);
+      const message = error?.message ?? "Erro desconhecido";
+      const code = error?.code ? " (código " + error.code + ")" : "";
+	  alert("Falha ao criar a partida no servidor: " + message + code);
+
+	}
 }
 
 /**
