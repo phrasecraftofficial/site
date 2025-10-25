@@ -2785,18 +2785,7 @@ function loadVideoFromCacheAsync(videoBlob, fileName) {
 /**
  * Preview de lição (carrega do servidor)
  */
-/**
- * (VERSÃO ATUALIZADA) Preview de lição (carrega do servidor)
- * Adiciona o salvamento da lição atual para o modo multi.
- * Esta função SUBSTITUI a sua previewLesson() original.
- */
 async function previewLesson(thumb) {
-  // --- ADIÇÃO ---
-  // Salva o objeto 'thumb' globalmente para que 'startMultiMode' possa acessá-lo
-  currentLessonForMatch = thumb; 
-  console.log("Lição selecionada para possível desafio:", currentLessonForMatch);
-  // --- FIM DA ADIÇÃO ---
-
   // Define TODAS as flags de visibilidade
   showVideoArea = true;
   showEditorArea = false;
@@ -2805,13 +2794,14 @@ async function previewLesson(thumb) {
   showLoadArea = false;
   showConfigArea = false;
   
-  showSection('editSrt');  
+  showSection('editSrt'); 
   
   showPreviewMode = true;
   
   renderPage();
   
   await loadLessonFromServer(thumb);
+    
 }
 
 /**
