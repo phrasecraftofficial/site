@@ -770,9 +770,11 @@ function startMultiMode() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
 // Variáveis de performance
+// Variáveis de performance
 const TIME_PER_LETTER = 0.15; // segundos por letra (ajustável)
 let segmentStartTime = null;
 let totalProjectedTime = 0;
+let performanceUpdateInterval = null;
 
 /**
  * Inicia o cronômetro do segmento
@@ -791,38 +793,94 @@ function startSegmentTimer() {
   // Marca o tempo de início
   segmentStartTime = Date.now();
   
+  // Inicia atualização contínua da performance (a cada 100ms)
+  if (performanceUpdateInterval) {
+    clearInterval(performanceUpdateInterval);
+  }
+  
+  performanceUpdateInterval = setInterval(() => {
+    updatePerformanceDisplay();
+  }, 100); // Atualiza 10x por segundo
+  
   console.log(`⏱️ Timer iniciado: ${totalLetters} letras = ${totalProjectedTime.toFixed(2)}s projetados`);
 }
 
 /**
- * Atualiza o display de performance
+ * Para o cronômetro de performance
+ */
+function stopSegmentTimer() {
+  if (performanceUpdateInterval) {
+    clearInterval(performanceUpdateInterval);
+    performanceUpdateInterval = null;
+    console.log('⏹️ Timer parado');
+  }
+}
+
+/**
+ * Atualiza o display de performance em tempo real
  */
 function updatePerformanceDisplay() {
   const performanceElement = document.getElementById('host-performance');
   
+  // Para se não estivermos na seção play
   if (!performanceElement || !segmentStartTime) return;
   
-  // Calcula tempo decorrido (em segundos)
-  const elapsedTime = (Date.now() - segmentStartTime) / 1000;
+  const currentSegment = srtData[currentSegmentIndex];
+  if (!currentSegment) return;
   
-  // Calcula a performance (tempo projetado / tempo real) * 100
-  const performance = Math.min(100, Math.round((totalProjectedTime / elapsedTime) * 100));
+  // Obtém dados do progresso
+  const wordsCompleted = selectedWords.length;
+  const totalWords = currentSegment.text.split(/\s+/).filter(w => w.trim().length > 0).length;
+  const elapsedTime = (Date.now() - segmentStartTime) / 1000; // segundos
+  
+  // Calcula o tempo projetado total baseado na velocidade atual
+  let projectedTotalTime;
+  
+  if (wordsCompleted > 0) {
+    // Calcula tempo médio por palavra até agora
+    const avgTimePerWord = elapsedTime / wordsCompleted;
+    const remainingWords = totalWords - wordsCompleted;
+    projectedTotalTime = elapsedTime + (remainingWords * avgTimePerWord);
+  } else {
+    // Se nenhuma palavra foi completada, usa uma estimativa inicial
+    projectedTotalTime = elapsedTime * totalWords;
+  }
+  
+  // Calcula a performance (tempo ideal / tempo projetado) * 100
+  let performanceScore = (totalProjectedTime / projectedTotalTime) * 100;
+  
+  // Sanitiza valores inválidos
+  if (!isFinite(performanceScore) || performanceScore > 1000) {
+    performanceScore = 100;
+  }
+  
+  // Escolhe emoji baseado na performance
+  let emoji = '👍'; // Padrão: bom
+  if (performanceScore < 75) emoji = '🐢';      // Lento
+  else if (performanceScore < 100) emoji = '🤔'; // Médio
+  else if (performanceScore > 125) emoji = '🚀'; // Excelente
   
   // Define a cor baseada na performance
   let color = '#4caf50'; // Verde (bom)
-  if (performance < 80) color = '#ff9800'; // Laranja (médio)
-  if (performance < 60) color = '#f44336'; // Vermelho (baixo)
+  if (performanceScore < 80) color = '#ff9800'; // Laranja (médio)
+  if (performanceScore < 60) color = '#f44336'; // Vermelho (baixo)
+  if (performanceScore > 125) color = '#00e676'; // Verde brilhante (excelente)
   
-  performanceElement.textContent = `${performance}%`;
-  performanceElement.style.cssText = `
-    color: ${color};
-    font-size: 24px;
-    font-weight: bold;
-    text-align: center;
-    margin: 20px 0;
+  // Atualiza o display
+  performanceElement.innerHTML = `
+    <span style="font-weight: bold; color: ${color};">
+      ${performanceScore.toFixed(1)}%
+    </span> ${emoji}
   `;
   
-  console.log(`📊 Performance: ${performance}% (Projetado: ${totalProjectedTime.toFixed(2)}s | Real: ${elapsedTime.toFixed(2)}s)`);
+  performanceElement.style.cssText = `
+    font-size: 24px;
+    text-align: center;
+    margin: 20px 0;
+    transition: color 0.3s ease;
+  `;
+  
+  console.log(`📊 Performance: ${performanceScore.toFixed(1)}% | Palavras: ${wordsCompleted}/${totalWords} | Tempo: ${elapsedTime.toFixed(1)}s`);
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -1102,6 +1160,11 @@ function showSection(sectionId) {
   // <<< Lista de flags para resetar ao mudar de section >>>
   showPreviewMode = false;
   showLobbyArea = false;
+  
+  // Para o timer de performance ao sair da seção play
+  if (sectionId !== 'play') {
+    stopSegmentTimer();
+  }
   // ================================================
   const section = sections.find(s => s.id === sectionId);
   
@@ -2868,7 +2931,6 @@ function moveWordToPhrase(wordButton, word) {
   
   // Verifica se a frase está completa
   checkIfPhraseComplete();
-  updatePerformanceDisplay();
 }
 
 /**
@@ -2911,6 +2973,12 @@ function checkIfPhraseComplete() {
   
   if (selectedWords.length === correctWords.length) {
     console.log("🎉 Frase completa!");
+    
+    // Para o timer de performance
+    stopSegmentTimer();
+    
+    // Última atualização da performance (mostra resultado final)
+    updatePerformanceDisplay();
     
     setTimeout(async () => {
       currentSegmentIndex++;
