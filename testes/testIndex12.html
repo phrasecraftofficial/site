@@ -1,4 +1,4 @@
-<!-- cria partida no Aw Db  -->
+<!-- cria partida no Aw Db e performance no header  -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -751,7 +751,7 @@ let isBatchEditing = false;
 const TIME_STEP = 0.1;
 
 // Variáveis de performance
-const TIME_PER_LETTER = 0.15; // segundos por letra (ajustável)
+const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
 let segmentStartTime = null;
 let totalProjectedTime = 0;
 let performanceUpdateInterval = null;
@@ -765,17 +765,6 @@ let selectedWords = [];
  * Variável para controlar o índice do segmento atual
  */
 let currentSegmentIndex = 0;
-
-/**
- * Inicia o modo multi
- */
-function startMultiMode() {
-  console.log("=== INÍCIO startSoloMode() ===");
-  showSection('challenge');
-  showLobbyArea = true;
-  
-  renderPage();    
-}
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Performance --- 
@@ -879,9 +868,9 @@ function updatePerformanceDisplay() {
   `;
   
   performanceElement.style.cssText = `
-    font-size: 24px;
+    font-size: 16px;
     text-align: center;
-    margin: 20px 0;
+    margin: 10px 0;
     transition: color 0.3s ease;
   `;
   
@@ -1099,16 +1088,15 @@ const positions = [
   { key: "thumb-content", after: ["thumb-section-home", "thumb-section-postLesson"] },
   { key: "info-content", after: ["info-content-home"] },
   { key: "navigation-controls", after: ["navigation-controls-previewMode"] },
-  { key: "host-performance", after: ["performance"] },
+  { key: "host-performance", after: ["performance"], global: true },
 ];
 
 // Renderiza seções e elementos
 function renderPage() {
   // Encontra a seção ativa
   const activeSection = document.querySelector('section.active');
-  if (!activeSection) return;
 
-  // Renderiza elementos posicionados (lógica original mantida)
+  // Renderiza elementos posicionados
   elements.forEach(element => {
     const shouldShow = element.condition();
     if (!shouldShow) {
@@ -1119,25 +1107,37 @@ function renderPage() {
     }
 
     const pos = positions.find(p => p.key === element.id);
-    if (!pos) {
-      // Se não tem posição definida, apenas controla visibilidade
-      const existing = document.getElementById(element.id);
-      if (existing) {
-        // Usa a displayType específica do elemento, ou 'block' como padrão
-        existing.style.display = element.displayType || 'block'; 
-      }
-      return;
-    }
+    if (!pos) {
+      // Se não tem posição definida, apenas controla visibilidade
+      const existing = document.getElementById(element.id);
+      if (existing) {
+        existing.style.display = element.displayType || 'block'; 
+      }
+      return;
+    }
 
-    // Procura o container correto dentro da seção ativa
+    // Procura o container correto
     let container = null;
     for (const targetId of pos.after) {
-      const candidate = activeSection.querySelector(`#${targetId}`);
+      let candidate = null;
+      
+      // **MUDANÇA**: Se o elemento pode estar fora de seções (como no header)
+      if (pos.global) {
+        // Procura no documento inteiro
+        candidate = document.getElementById(targetId);
+      } else {
+        // Procura apenas dentro da seção ativa
+        if (activeSection) {
+          candidate = activeSection.querySelector(`#${targetId}`);
+        }
+      }
+      
       if (candidate) {
         container = candidate;
         break;
       }
     }
+    
     if (!container) return;
 
     let existing = document.getElementById(element.id);
@@ -3135,6 +3135,17 @@ function startSoloMode() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Multiplayer (Criação de Partida) ---
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Inicia o modo multi
+ */
+function startMultiMode() {
+  console.log("=== INÍCIO startSoloMode() ===");
+  showSection('challenge');
+  showLobbyArea = true;
+  
+  renderPage();    
+}
 
 /**
  * Cria uma nova partida no servidor Appwrite.
