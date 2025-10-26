@@ -720,27 +720,27 @@ input[type="radio"] {
     </section>
   </main>  
 
-<footer id="main-footer">
-  <a href="#" id="footer-home" onclick="showSection('home')">
-    <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
-    <span>Home</span>
-  </a>
-  <a href="#" id="footer-subscriptions" onclick="showSection('subscriptions')">
-    <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
-    <span>Subscriptions</span>
-  </a>
-  <a href="#" id="footer-you" onclick="showSection('you')">
-      <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
-  <a href="#" id="footer-challenge" onclick="showSection('challenge')">
-      <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
-  
-  <!-- Botões do Preview Mode (ocultos por padrão) -->
-  <a href="#" id="footer-solo" onclick="startSoloMode()" style="display: ;">
-      <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>  
-  <a href="#" id="footer-multi" onclick="handleMultiModeClick()" style="display: ;">
-      <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+  <footer id="main-footer">
+    <a href="#" onclick="showSection('home')">
+      <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#" onclick="showSection('subscriptions')">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
+      <span>Subscriptions</span>
+    </a>
+    <a href="#" onclick="showSection('you')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
+    <a href="#" onclick="loadAndDisplayMatches()">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
+  </footer>
 
-</footer>
+  <footer id="preview-footer" style="display: none;">
+    <a href="#" onclick="startSoloMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
+    <a href="#" onclick="startMultiMode()">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+  </footer>
 
 <script>
 // --- variaveis do banco de dado ---
@@ -978,57 +978,43 @@ const elements = [
     condition: () => showConfigArea
   },
   {
+    id: "main-footer",
+    content: "", // Já existe no HTML
+    displayType: "flex", // O display que ele deve ter quando visível
+    condition: () => {// REGRA 1: Esconder se o modo preview estiver ativo
+      // REGRA 1: Esconder se o modo preview estiver ativo
+      if (showPreviewMode) {
+          return false;
+      }
+      const activeEl = document.querySelector('section.active');
+      if (!activeEl) return true; // Padrão: mostrar
+      const id = activeEl.id;
+      const noFooterSections = ['editSrt', 'login-screen', 'postLesson'];
+      const previewSections = ['play'];
+      
+      // Mostrar apenas se NÃO estiver nas listas de ocultar ou preview
+      return !noFooterSections.includes(id) && !previewSections.includes(id);
+    }
+  },
+  {
+    id: "preview-footer",
+    content: "", // Já existe no HTML
+    displayType: "flex", // O display que ele deve ter quando visível
+    condition: () => {
+    	// Mostra APENAS se a variável showPreviewMode for true.
+        return showPreviewMode;
+        
+        const activeEl = document.querySelector('section.active');
+        const id = activeEl.id;
+      	const noFooterSections = ['home', 'login-screen', 'postLesson'];
+      	return !noFooterSections.includes(id) && !previewSections.includes(id);
+    }
+  },
+  {
     id: "host-performance",
     content: "",
     condition: () => true
   },
-  // ========================================
-  // NOVOS ELEMENTOS PARA CONTROLAR O FOOTER
-  // ========================================
-  {
-    id: "footer-home",
-    displayType: "flex",
-    condition: () => !showPreviewMode
-  },
-  {
-    id: "footer-subscriptions",
-    displayType: "flex",
-    condition: () => !showPreviewMode
-  },
-  {
-    id: "footer-you",
-    displayType: "flex",
-    condition: () => !showPreviewMode
-  },
-  {
-    id: "footer-challenge",
-    displayType: "flex",
-    condition: () => !showPreviewMode
-  },
-  {
-    id: "footer-solo",
-    displayType: "flex",
-    condition: () => showPreviewMode
-  },
-  {
-    id: "footer-multi",
-    displayType: "flex",
-    condition: () => showPreviewMode
-  },
-  {
-    id: "main-footer",
-    content: "",
-    displayType: "flex",
-    condition: () => {
-      const activeEl = document.querySelector('section.active');
-      if (!activeEl) return true;
-      const id = activeEl.id;
-      const noFooterSections = ['editSrt', 'login-screen', 'postLesson', 'play'];
-      
-      // Mostrar footer se NÃO estiver nas seções sem footer
-      return !noFooterSections.includes(id);
-    }
-  }
 ];
 
 // Lista de sections com condições
@@ -1068,78 +1054,62 @@ function renderPage() {
   // Renderiza elementos posicionados
   elements.forEach(element => {
     const shouldShow = element.condition();
-    
-    // Busca o elemento existente
-    const existing = document.getElementById(element.id);
-    
-    if (!existing) {
-      // Se não existe e não deve mostrar, pula
-      if (!shouldShow) return;
+    if (!shouldShow) {
+      // Se não deve mostrar, esconde o elemento se existir
+      const existing = document.getElementById(element.id);
+      if (existing) existing.style.display = 'none';
+      return;
+    }
+
+    const pos = positions.find(p => p.key === element.id);
+    if (!pos) {
+      // Se não tem posição definida, apenas controla visibilidade
+      const existing = document.getElementById(element.id);
+      if (existing) {
+        existing.style.display = element.displayType || 'block'; 
+      }
+      return;
+    }
+
+    // Procura o container correto
+    let container = null;
+    for (const targetId of pos.after) {
+      let candidate = null;
       
-      // Se tem posição definida, cria e injeta
-      const pos = positions.find(p => p.key === element.id);
-      if (pos) {
-        let container = null;
-        for (const targetId of pos.after) {
-          let candidate = null;
-          
-          if (pos.global) {
-            candidate = document.getElementById(targetId);
-          } else {
-            if (activeSection) {
-              candidate = activeSection.querySelector(`#${targetId}`);
-            }
-          }
-          
-          if (candidate) {
-            container = candidate;
-            break;
-          }
-        }
-        
-        if (container) {
-          const div = document.createElement('div');
-          if (element.className) {
-            div.className = element.className;
-          }
-          div.id = element.id;
-          div.innerHTML = element.content;
-          container.appendChild(div);
-        }
-      }
-    } else {
-      // Elemento existe, apenas controla visibilidade
-      if (shouldShow) {
-        existing.style.display = element.displayType || 'block';
-        
-        // Se tem posição definida, move para o container correto
-        const pos = positions.find(p => p.key === element.id);
-        if (pos) {
-          let container = null;
-          for (const targetId of pos.after) {
-            let candidate = null;
-            
-            if (pos.global) {
-              candidate = document.getElementById(targetId);
-            } else {
-              if (activeSection) {
-                candidate = activeSection.querySelector(`#${targetId}`);
-              }
-            }
-            
-            if (candidate) {
-              container = candidate;
-              break;
-            }
-          }
-          
-          if (container) {
-            container.appendChild(existing);
-          }
-        }
+      // **MUDANÇA**: Se o elemento pode estar fora de seções (como no header)
+      if (pos.global) {
+        // Procura no documento inteiro
+        candidate = document.getElementById(targetId);
       } else {
-        existing.style.display = 'none';
+        // Procura apenas dentro da seção ativa
+        if (activeSection) {
+          candidate = activeSection.querySelector(`#${targetId}`);
+        }
       }
+      
+      if (candidate) {
+        container = candidate;
+        break;
+      }
+    }
+    
+    if (!container) return;
+
+    let existing = document.getElementById(element.id);
+    if (!existing) {
+      const div = document.createElement('div');
+  
+      // Aplica a classe na div injetada
+      if (element.className) {
+        div.className = element.className;
+      }
+      
+      div.id = element.id;
+      div.innerHTML = element.content;
+      container.appendChild(div);
+    } else {
+      container.appendChild(existing);
+      existing.style.display = "block";
     }
   });
 }
@@ -2837,9 +2807,6 @@ function loadVideoFromCacheAsync(videoBlob, fileName) {
 async function previewLesson(thumb) {
   currentLessonForMatch = thumb;
   
-  // ✅ DEFINE showPreviewMode ANTES de mudar de seção
-  showPreviewMode = true;
-  
   // Define TODAS as flags de visibilidade
   showVideoArea = true;
   showEditorArea = false;
@@ -2849,7 +2816,9 @@ async function previewLesson(thumb) {
   showConfigArea = false;
   
   showSection('editSrt'); 
-
+  
+  showPreviewMode = true;
+  
   renderPage();
   
   await loadLessonFromServer(thumb);   
