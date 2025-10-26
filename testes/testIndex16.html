@@ -3494,6 +3494,15 @@ async function loadAndDisplayMatches() {
   }
 }
 
+// Função que aplica ou remove a classe conforme a flag
+function updateFooterButtonVisibility() {  
+  const footer = document.getElementById('preview-footer');
+  if (showPreviewModeMulti) {
+    footer.classList.add('preview-mode-multi');
+  } else {
+    footer.classList.remove('preview-mode-multi');
+  }
+}
 </script>
 </body>
 </html>
