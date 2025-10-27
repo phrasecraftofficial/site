@@ -37,7 +37,6 @@ header, footer {
   right: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   background: #000;
   padding: 0 16px;
   color: #fff;
@@ -81,6 +80,7 @@ header {
 .icons-right {
 	display: flex;
 	align-items: center;
+    padding-right: 20px;
 	gap: 20px;
 	color: #6d28d9;
 	text-decoration: none;
@@ -140,7 +140,7 @@ header {
   /* ===============  */
  /*      Footer      */
 /* ===============  */
-#main-footer, #preview-footer {
+#main-footer {
   bottom: 0;
   height: 56px;
   border-top: 1px solid #222;
@@ -148,7 +148,7 @@ header {
   align-items: center;
 }
 
-#main-footer a, #preview-footer a {
+#main-footer a {
   color: #fff;
   text-decoration: none;
   font-size: 12px;
@@ -159,7 +159,7 @@ header {
   transition: color 0.3s ease;
 }
 
-#main-footer a svg, #preview-footer a img {
+#main-footer a svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
@@ -418,7 +418,17 @@ input[type="radio"] {
       </div>
     </div>
     
-	<div id="performance"></div>
+	<div id="performance">
+      <div class="text-area">
+        <span id="host-performance">100%</span>
+      </div>
+      <div class="text-area">
+        <span id="dinamic-icon"> 🚀 </span>
+      </div>
+      <div class="text-area">
+        <span id="opponent-performance">100%</span>
+      </div>
+    </div>
     
     <div class="icons-right" id="icons-right">
       <!-- Create -->
@@ -792,6 +802,7 @@ let currentEditMode = 'editor';
 // Seleciona os elementos Header
 const textArea = document.getElementById('text-area');
 const iconsRight = document.getElementById('icons-right');
+const performance = document.getElementById('performance');
 
 // Seleciona os elementos Edit Srt
 const videoSection = document.getElementById('video-section-editor');
@@ -960,9 +971,11 @@ function updateFooterForSection(sectionId) {
   if (sectionId === "play") {
     iconsRight.style.display = "none";
     textArea.style.display = "none";
+    performance.style.display = "";
   } else {
     iconsRight.style.display = "";
     textArea.style.display = "";
+    performance.style.display = "none";
   }
 
   // Manipula elementoss do footer
