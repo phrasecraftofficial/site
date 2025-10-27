@@ -327,6 +327,23 @@ input[type="radio"] {
   font-weight: bold !important;
 }
 
+/* * MUDANÇA 2: O novo contêiner que usa CSS Grid 
+ * para organizar os cards.
+*/
+.post-container {
+    width: 100%;
+    max-width: 1600px; /* Define uma largura máxima para o grid */
+    display: grid;
+    /* * Esta é a linha principal:
+     * 'repeat(auto-fit, ...)' - Cria quantas colunas puderem caber.
+     * 'minmax(350px, 1fr)' - Cada coluna terá no MÍNIMO 350px.
+     * Se houver espaço sobrando, elas crescerão (1fr) para preenchê-lo.
+     * Em telas pequenas, ele automaticamente fará 1 coluna.
+    */
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px; /* Espaço entre os cards */
+}
+
 /*thumb-section*/
 .thumb-section { 
   width: 100%;
@@ -471,9 +488,10 @@ input[type="radio"] {
         <h2>Home</h2>
         <p>Welcome to the home section.</p>
         <div class="post-container" id="home-post-container">
-        
+
+        <div class="card">        
             <!-- Os cards de vídeo serão inseridos aqui -->
-        	<div id="thumb-section-home" class:"thumb-section" onclick="showSoloPreview()">
+        	<div id="thumb-section-home" class="thumb-section" onclick="showSoloPreview()">
 				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
             </div>
             
@@ -490,6 +508,7 @@ input[type="radio"] {
                   </div>
               </div>
             </div>
+        </div>
             
         </div>
     </section>
