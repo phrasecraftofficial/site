@@ -48,19 +48,31 @@ header, footer {
  /*      Header      */
 /* ===============  */
 header {
-  top: 0;
-  height: 56px;
-  border-bottom: 1px solid #222; 
-  font-weight: 600;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px; /* ajuste se quiser */
+  padding: 0 20px;
+  background: #111; /* só exemplo */
 }
 
+/* Logo à esquerda */
 .logo-area {
-  color: #fff;  
-  border-radius: 15%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* Performance centralizado no header */
+.performance-area {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
-  cursor: pointer;
 }
 
 .logo-area img {
@@ -77,14 +89,11 @@ header {
   height: 24px;
 }
 
+/* Ícones à direita */
 .icons-right {
-	display: flex;
-	align-items: center;
-    padding-right: 20px;
-	gap: 20px;
-	color: #6d28d9;
-	text-decoration: none;
-	cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .icons-right a {
@@ -101,6 +110,13 @@ header {
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+/* Centralização interna dos textos e ícones */
+.text-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
   /* ===============  */
  /* botoes-container */
@@ -334,6 +350,7 @@ input[type="radio"] {
   font-size: 12px;
   max-height: 400px;
   max-width: 600px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -418,7 +435,7 @@ input[type="radio"] {
       </div>
     </div>
     
-	<div id="performance">
+	<div class="performance-area" id="performance-area">
       <div class="text-area">
         <span id="host-performance">100%</span>
       </div>
@@ -802,7 +819,7 @@ let currentEditMode = 'editor';
 // Seleciona os elementos Header
 const textArea = document.getElementById('text-area');
 const iconsRight = document.getElementById('icons-right');
-const performance = document.getElementById('performance');
+const performanceArea = document.getElementById('performance-area');
 
 // Seleciona os elementos Edit Srt
 const videoSection = document.getElementById('video-section-editor');
@@ -855,7 +872,7 @@ function showSection(sectionId) {
 
   // ATUALIZAÇÃO ADICIONADA:
   // Chama a função para atualizar o footer com base na seção
-  updateFooterForSection(sectionId);
+  updateElementForSection(sectionId);
 }
 
 /**
@@ -891,7 +908,8 @@ function setEditorMode(mode) {
     
     if (mode === 'editor') {
         // Mostra o editor
-        if (editorDiv) editorDiv.style.display = 'block'; 
+        if (editorDiv) editorDiv.style.display = 'block';
+        if (navPreview) navPreview.style.display = 'block';
         
     } else if (mode === 'previewSolo') {
         // Mostra navegação e botões de "Solo" e "Desafiar"
@@ -962,7 +980,7 @@ function showMainNavigation() {
  * Decide o que o footer deve mostrar com base na seção ativa.
  * Também gerencia a visibilidade do lobby.
  */
-function updateFooterForSection(sectionId) {
+function updateElementForSection(sectionId) {
 
   // Oculta elementoss do header em play
   if (!iconsRight || !textArea)
@@ -971,11 +989,11 @@ function updateFooterForSection(sectionId) {
   if (sectionId === "play") {
     iconsRight.style.display = "none";
     textArea.style.display = "none";
-    performance.style.display = "";
+    performanceArea.style.display = "";
   } else {
     iconsRight.style.display = "";
     textArea.style.display = "";
-    performance.style.display = "none";
+    performanceArea.style.display = "none";
   }
 
   // Manipula elementoss do footer
@@ -1114,9 +1132,13 @@ function startMultiMode() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-document.addEventListener('DOMContentLoaded', () => {
-  startMultiMode();
+function init() {
+  showSection('home');
   endCreateMode();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	init();
 });
 
 </script>
