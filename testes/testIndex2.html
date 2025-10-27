@@ -797,6 +797,16 @@ const mainNavSections = [
   'login-screen'
 ];
 
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --------------- Bloco Fx ----------------
+//
+// Somente controla visibilidade e
+// chama outras funções.
+// Não mudar essas responsabilidades.
+//
+// --------- Visbilidade e Chamadas --------
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // Função principal para alternar seções
 function showSection(sectionId) {
   // Esconde todas as seções
@@ -1052,6 +1062,9 @@ function startMultiMode() {
   showSection('play');
 }
 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Inicializar --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 document.addEventListener('DOMContentLoaded', () => {
   showSection('home');
   endCreateMode();
