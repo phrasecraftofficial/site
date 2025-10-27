@@ -1,111 +1,393 @@
-<! lista de sections para ocultar>
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dark Page</title>
+
+<script src="https://unpkg.com/dexie@4/dist/dexie.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
+
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #000;
-    color: #fff;
-  }
-  
-.hidden {
-    display: none !important;
-}
-
-  header, footer {
-    position: fixed;
-    left: 0; right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #000;
-    padding: 0 16px;
-  }
-
-  header { top: 0; height: 56px; border-bottom: 1px solid #222; }
-  footer { bottom: 0; height: 70px; border-top: 1px solid #222; justify-content: space-around; font-size: 12px; color: #aaa; }
-
-  .logo-area { display: flex; align-items: center; gap: 8px;}
-  
-  .logo-area img { background: #fff; color: #000;  border-radius: 15%;}
-
-
-  .icons-right, footer a {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    color: #fff;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .icon, footer svg {
-    width: 24px; height: 24px; fill: currentColor;
-  }
-
-  main { padding: 70px 16px 90px; text-align: center; }
-
-.video-container {
-  widht: 100vw;
-  max-width: 600px;
-  height: 30vh
-  background: #1e1e1e;
-  overflow: hidden;
-}
-
-.video-title {
-  font-size: 14px;
-  font-weight: 600;
+/* Reset e base */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #000;
   color: #fff;
-  margin: 2px 0 8px 0;
-  text-align: left;
 }
 
-.channel-info {
+main { 
+padding: 70px 16px 90px; text-align: center; }
+
+section { display: none; }           /* todas escondidas */
+
+section.active { display: block; }   /* visível */
+
+a {
+  flex-direction: column;
+}
+
+/* Estilos gerais para Header e Footer */
+header, footer {
+  position: fixed;
+  left: 0;
+  right: 0;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #000;
+  padding: 0 16px;
+  color: #fff;
+  user-select: none;
+  z-index: 1000;
+}
+
+  /* ===============  */
+ /*      Header      */
+/* ===============  */
+header {
+  top: 0;
+  height: 56px;
+  border-bottom: 1px solid #222; 
+  font-weight: 600;
+}
+
+.logo-area {
+  color: #fff;  
+  border-radius: 15%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.logo-area img {
+  background: #fff; 
+  color: #000;  
+  border-radius: 15%;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+
+.icon {
+  width: 24px; 
+  height: 24px;
+}
+
+.icons-right {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	color: #6d28d9;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.icons-right a {
+  color: #6d28d9;
+  text-decoration: none;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.icons-right svg, header svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+  /* ===============  */
+ /* botoes-container */
+/* ===============  */
+.botoes-container {
+  display: flex; /* Habilita o Flexbox */
+  margin: 30px 0;
+  height: 56px;
+  justify-content: center; /* Alinha horizontalmente no centro */
+  align-items: flex-start; /* Alinha verticalmente no topo */
+  gap: 30px;
+}
+
+.botoes-container a {
+  flex-direction: column;
+  color: #fff;
+  text-decoration: none;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+
+.botoes-container a svg, .botoes-container a img {
+  width: 36px;
+  height: 36px;
+  fill: currentColor;
+}
+
+/* Texto */
+.botoes-container span {
+  font-size: 15px;
+  user-select: none;
+}
+
+  /* ===============  */
+ /*      Footer      */
+/* ===============  */
+#main-footer, #preview-footer {
+  bottom: 0;
+  height: 56px;
+  border-top: 1px solid #222;
+  justify-content: space-around;
+  align-items: center;
+}
+
+#main-footer a, #preview-footer a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+
+#main-footer a svg, #preview-footer a img {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+/* Texto do footer */
+#main-footer span {
+  font-size: 10px;
+  user-select: none;
+}
+
+/* Adaptativo para telas pequenas */
+@media screen and (max-width: 600px) {
+  header {
+    padding: 0 8px;
+  }
+  #main-footer a {
+    font-size: 8px;
+    gap: 2px;
+  }
+  #main-footer a svg {
+    width: 20px;
+    height: 20px;
+  }
+  #preview-footer {
+    height: 48px;
+  }
+}
+
+  /*=================*/
+ /* Loading Overlay */
+/*=================*/
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #333;
+    border-top: 4px solid #6d28d9;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+  /* ======== */
+ /* Edit Srt */
+/* ======== */
+.video-section {
+    padding: 20px;
+    border-radius: 8px;
+}
+
+video {
+    width: 100%;
+    border-radius: 4px;
+}
+
+input, textarea { 
+  width: calc(100% - 40px); 
+  margin-top: 5px; 
+  margin-bottom: 10px; 
+  padding: 6px; 
+  font-size: 14px; 
+}
+
+button { margin: 3px; padding: 6px 10px; font-size: 14px; cursor: pointer; }
+
+.time-controls { display: flex; align-items: center; gap: 5px; }
+
+label { font-weight: bold; display: block; margin-top: 10px; }
+  
+/* Estilo para o formulário (se você quiser que os itens fiquem um abaixo do outro) */
+form {
+  	display: flex;
+  	flex-direction: column;
+  	gap: 15px; /* Espaço entre cada opção */
+}
+
+form label {
+	font-size: 14px;
+}
+
+/* Estilo para cada par de radio + texto */
+.radio-option {
+  	display: flex;
+  	align-items: center; /* Alinha o botão e o texto verticalmente */
+  	cursor: pointer;
+  	gap: 8px; /* Ajuste este valor para controlar o espaço entre o botão e o texto */
+}
+  
+input[type="radio"] {
+    width: 15px;
+    height: 15px;
+}
+
+/* ================================== */
+/* Estilo para a Lista de Legendas */
+/* ================================== */
+.segmentsArea {
+    max-height: 50vh; /* ou a altura que preferir */
+    overflow-y: auto;
+    width: 100%;
+}
+
+.segment { 
+  background: white; 
+  padding: 10px; 
+  border-radius: 10px; 
+  margin: 5px 0; 
+  cursor: pointer; 
+  transition: 0.2s; 
+}
+
+.segment:hover:not(.segment-selected) { 
+  background: #e7f0ff; 
+  transform: scale(1.01); 
+}
+
+.segment-selected {
+  background: linear-gradient(#AFD9E3, #628FA1 100%) !important;
+  color: #0B2A40 !important;
+  font-weight: bold !important;
+}
+
+/*thumb-section*/
+.thumb-section { 
+  width: 100%;
+  height: auto;
+}
+
+.thumb-section img {
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+/* info-content */
+.info-content {
+  display: flex !important;;
   justify-content: space-between;
   align-items: center;
   margin: 0 10px 8px;
-  font-size: 12px;;
+  font-size: 12px;
+  max-height: 400px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
+/* Imagem do canal */
 .channel-pic {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  margin: 1px 0 0 0;
 }
 
+/* Texto do vídeo */
 .video-text {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
+/* Título do vídeo */
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 5px 0 5px 8px;
+  text-align: left;
+}
+
+/* Linha com nome do canal, desempenho e editar */
 .video-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 10px 8px;
-  font-size: 12px;
+  margin: 0 0 5px 8px;
+  font-size: 14px;
 }
 
-.video-thumb {
-  position: relative;
-  widht: 100vw;
-  max-width: 600px;
-  height: 30vh
+/* Nome do canal */
+.channel-name {
+  color: #bbbbbb;
 }
 
-.video-thumb img {
-  width: 100%;
-  display: block;
+/* Desempenho (percentual) */
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Botão Editar */
+.video-edit {
+  color: #6d28d9;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s;
 }
 
 .video-time {
@@ -118,68 +400,27 @@
   border-radius: 4px;
 }
 
-.performance {
-  color: #4caf50;
-  font-weight: bold;
-}
-
-footer a {
-  /* 1. Transforma o link em um contêiner flexível */
-  display: flex;
-  
-  /* 2. Empilha os itens verticalmente (ícone em cima, texto embaixo) */
-  flex-direction: column; 
-  
-  /* 3. Centraliza os itens horizontalmente */
-  align-items: center; 
-  
-  /* 4. Esta é a propriedade principal para controlar a distância! */
-  gap: 4px; /* ✨ Altere este valor para aumentar ou diminuir o espaço */
-}
-
-/* Apenas para estilização do exemplo */
-footer {
-  display: flex;
-  justify-content: space-around;
-}
-
-footer a {
-  text-decoration: none;
-  font-family: sans-serif;
-  font-size: 12px;
-}
-
-footer svg {
-  width: 20px;
-  height: 20px;
-}
-
-.avatar {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: #6d28d9;
-    color: white;
-    display: grid;
-    place-content: center;
-    font-weight: bold;
-}
-
-
-  section { display: none; }           /* todas escondidas */
-  section.active { display: block; }   /* visível */
 </style>
 </head>
 <body>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">Carregando...</div>
+  </div>
+  
   <header>
-  	<span id="btn-goBack" onclick="goBack()" class="hidden">← Voltar</span>
-    <div class="logo-area">
-        <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
+    <div class="logo-area" onclick="showSection('home')">
+      <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div>PhraseCraft</div>
     </div>
+    
+	<div id="performance"></div>
+    
     <div class="icons-right">
       <!-- Create -->
-      <a href="#" onclick="showSection('create')">
+      <a href="#" id="icon-create" onclick="showSection('create')" hidden>
         <svg class="icon" viewBox="0 0 24 24">
         <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
         </svg>
@@ -188,37 +429,60 @@ footer svg {
       <a href="#" onclick="showSection('search')">
         <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
       </a>
+      <!-- Notifications -->
+      <a href="#" onclick="showSection('notifications')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      </a>
     </div>
   </header>
 
   <main>
-    <section id="home" class="active">
-      <h2>Home</h2>
-      <p>Welcome to the home section.</p>
-        <div class="video-container">
-            
-          <div class="video-thumb">
-            <img src="thumbnail.jpg" alt="Video thumbnail">
-            <span class="video-time">10:35</span>
-          </div>
-          
-          <div class="channel-info">
-            <div class="channel-pic">
-              <img src="canal.jpg" alt="Canal" class="channel-pic">
+    <!-- Seções -->
+    <section id="home">
+        <h2>Home</h2>
+        <p>Welcome to the home section.</p>
+        <div class="post-container" id="home-post-container">
+        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-home" class:"thumb-section" onclick="showSoloPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
             </div>
             
-            <div class="video-text">
-              <h3 class="video-title">Título do Vídeo Aqui</h3>
-              
-              <div class="video-meta">
-                <span class="channel-name">Nome do Canal</span>
-                <span class="performance">95%</span>
+            <div id="info-content-home" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
               </div>
-              
+
+              <div class="video-text">
+                  <h3 class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</h3>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                      <span class="video-edit" onclick="event.stopPropagation();" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+                  </div>
+              </div>
             </div>
-          </div>
-          
+            
         </div>
+    </section>
+
+    <section id="create">
+        <h2>Create</h2>
+        <p>Use this section to create new content.</p>
+            <div class="load-group">
+                <label for="videoUpload" class="upload-btn">Upload Vídeo</label>
+                <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
+                <input type="file" id="videoUpload" accept="video/*">
+            </div>
+            <div class="load-group">
+                <label for="srtUpload" class="upload-btn">Upload SRT</label>
+                <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
+                <input type="file" id="srtUpload" accept=".srt">
+            </div>
+
+            <div class="botoes-container">
+                <button id="btn-open" onclick="openContent();">Continuar 👉</button>
+            </div>
     </section>
 
     <section id="search">
@@ -234,84 +498,246 @@ footer svg {
     <section id="you">
       <h2>You</h2>
       <p>This section is about your profile.</p>
+                      
+      <div class="botoes-container">
+        <a href="#" onclick="showSection('myProfile')">
+            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Meu Perfil</span></a>
+        <a href="#" id="btn-myPosts" onclick="showSection('myPosts')">
+            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Minhas Postagens</span></a>
+      </div>
+    
     </section>
 
     <section id="subscriptions">
       <h2>Subscriptions</h2>
       <p>See all your subscriptions here.</p>
     </section>
-
-    <section id="create">
-      <h2>Create</h2>
-      <p>Use this section to create new content.</p>
-        <div class="load-group">
-          	<label for="videoUpload" class="upload-btn">Upload Vídeo</label>
-          	<input type="file" id="videoUpload" accept="video/*">
-        </div>
-        <div class="load-group">
-          	<label for="srtUpload" class="upload-btn">Upload SRT</label>
-          	<input type="file" id="srtUpload" accept=".srt">
-        </div>
-                
-        <div class="botoes-container">
-            <a href="#" onclick="showSection('postLesson')">Carregar</a>
+    
+    <!-- Subsections -->
+    <section id="login-screen" class="login-screen-container">
+        <div class="login-card">
+            <h2>Entrar</h2>
+            <form id="login-form">
+                <input type="email" id="email-login" placeholder="E-mail" required>
+                <input type="password" id="password-login" placeholder="Senha" required>
+                <p id="login-message"></p>
+                <button type="submit" class="login-button">Entrar</button>
+            </form>
         </div>
     </section>
     
-    <!- Subsections ->
+    <section id="myProfile">
+      <h2>My Account</h2>
+      <p>Use this section to see and edit your profile.</p>
+      <div class="header-content"  id="header-content">
+      
+        <div class="user-buttons">
+            <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+
+			<div class="">
+				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
+            	<button id="logout-button" class="" onclick="handleLogout()" >Sair</button>
+            </div>
+            
+        </div>
+      </div>
+    </section>
+    
     <section id="postLesson">
       <h2>Post</h2>
       <p>Use this section to post.</p>
                       
-      <div class="botoes-container">
-          <a href="#" onclick="showSection('editSrt')">Editar Srt</a>
+      <div id="postLesson-containerBtn" class="botoes-container">
+          <button onclick="showSection('editSrt')">👈</button>
+          <button href="#" onclick="postLesson()">Postar Lição ⬆️</button>
       </div>
       
-      <!-- Título 1 -->
-      <h2>Adicionar descrição</h2>
+      <div id="video-section-postLesson"></div>
+      
+      <button id="captureBtn" onclick="handleCaptureClick()">📸 Capturar Thumbnail</button>
+      
+      <div id="thumb-section-postLesson"></div>
+      
+      <!-- Título -->
+      <h2>Nome</h2>
       <!-- Input de texto -->
-      <input type="text" placeholder="Digite uma descrição..." name="descricao" />
+      <input type="text" placeholder="Digite um nome..." name="nome" />
+      
+      <!-- Título -->
+      <h2>Descrição</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite uma descrição..." name="description" />
 
-      <!-- Título 2 -->
-      <h2>Adicionar à Playlist</h2>
-      <!-- Lista de checkboxes com nomes de playlists -->
-      <div class="playlist-item">
+      <!-- Título -->
+      <form id="linhaForm">
+      	<h2>Adicionar à Playlist</h2>
+        <label class="" for="playlist1">
         <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
-        <label for="playlist1">Playlist 1</label>
-      </div>
-
-      <div class="playlist-item">
+        Playlist 1
+        </label>
+        <label class="" for="playlist2">
         <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
-        <label for="playlist2">Playlist 2</label>
-      </div>
-
-      <div class="playlist-item">
+        Playlist 2
+        </label>
+        <label class="" for="playlist3">
         <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
-        <label for="playlist3">Playlist 3</label>
-      </div>
-
+        Playlist 3
+        </label>
+      </form>
       
     </section>
     
-    <section id="editSrt">
-      <h2>Editar SRT</h2>
-      <p>Use this section to edit Srt.</p>
+    <section id="myPosts">
+        <h2>My Lessons Posts</h2>
+        <p>Use this section to see your lessons posted.</p>
+        <div id="user-post-container">
+            <!-- Os cards de vídeo do usuário serão inseridos aqui -->
+        </div>
     </section>
-    
-    <section id="profile">
-      <h2>My Account</h2>
-      <p>Use this section to see and edit your profile.</p>
-    </section>
-    
-    <section id="posts">
-      <h2>My Lessons Posts</h2>
-      <p>Use this section to see your lessons posted.</p>
-    </section>
-    
-  </main>
 
-  <footer>
-    <a href="#" onclick="showSection('home')" class="active">
+    <section id="challenge" class="">
+      <!-- Lobby Area -->
+      <div id="lobby">
+      	<p>Aguardando oponente...</p>
+      </div>
+      
+      <!-- Criadas -->
+      <h2>Partidas Criadas</h2>
+      <p>Use this section to see all matches waiting a second player.</p>
+      <div class="post-container" id="multi-post-container">
+        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-challenge" class:"thumb-section" onclick="showMultiPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-challenge" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <h3 class="video-title" onclick="showMultiPreview()" style="cursor: pointer;">{post.videoName}</h3>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                      <span class="video-edit" onclick="event.stopPropagation();" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
+                  </div>
+              </div>
+            </div>
+            
+        </div>
+      </div>
+    </section>
+    
+    <!----------->
+    <!--editSrt-->
+    <!----------->
+    <section id="editSrt">
+      <div id="save-area">
+          <span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+          <p>💾 Salvar</p>
+          <div class="btn-container">
+              <button onclick="copyToClipboard()">📋 Copiar</button>
+              <button onclick="downSrt()">⬇️ Download</button>
+              <button onclick="showSRT()">🧾 Exibir</button>
+          </div>
+      </div><!--save-area-->
+      
+      <!-- Div para exibir o nome do arquivo da legenda -->
+      <div id="subtitleName"></div>
+        
+      <div id="video-section-editor"></div>
+      
+      <div id="navigation-controls-previewMode"></div>
+
+      <div class="" id="editor">
+        <label>Início</label>
+        <div class="time-controls">
+          <input id="editStart">
+          <button onclick="adjustTime('start',  -TIME_STEP)">−</button>
+          <button onclick="adjustTime('start', +TIME_STEP)">+</button>
+
+          <button onclick="undo()">↩</button>
+          <button onclick="redo()">↪</button>
+        </div>
+
+        <label>Fim</label>
+        <div class="time-controls">
+          <input id="editEnd">
+          <button onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button onclick="adjustTime('end', +TIME_STEP)">+</button>
+
+          <button onclick="addSegment()">☰ ➕️</button>
+          <button onclick="removeSegment()">☰ ➖</button>
+        </div>
+
+        <label>Texto</label>
+        <textarea id="editText" rows="3"></textarea>
+
+        <button id="btn-save" onclick="showSave()">💾</button>
+        <button onclick="prevLine()">◀◀</button>
+        <button onclick="playLine()">▶</button>
+        <button onclick="nextLine()">▶▶</button>
+        <button id="btn-load" onclick="showSection('postLesson')">👉</button>
+
+        <p id="btn-config" onclick="showConfig()">⚙ Editar em Lote</p>
+
+        <div id="config-area">
+            <span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+            <div class="time-controls">
+              <input id="editStack" placeholder="0.05">
+              <button onclick="showEarlier()">Adiantar</button>
+              <button onclick="showLater()">Atrasar</button>
+            </div>
+
+            <form id="linhaForm">
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="all" checked>
+                Todas as linhas
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="current">
+                Apenas linha atual
+              </label>
+
+              <label class="radio-option">
+                <input type="radio" name="opcao-linha" value="from-current">
+                Linha selecionada e próximas linhas
+              </label>
+            </form>
+            <hr>
+        </div>
+      </div><!--editor-->
+
+      <div class="segmentsArea" id="segments-area">
+      	  <label>Lista de Legendas</label>
+          <div id="segments"></div>
+      </div>
+    </section>
+
+	<section id="play" class="content-row">
+		<div id="video-section-play"></div>
+
+      	<div id="buttons">
+      		<button id="repetir" class="control-button" style="background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button id="lerFrase" class="control-button" style="background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button id="traduzir-btn" class="control-button" style="background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+      		<button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+		</div>
+
+		<div class="phrase-container" id="frase"></div>
+
+        <div class="word-button-wrapper">
+            <div class="word-container" id="palavras"></div>
+        </div>
+        
+        <div id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+    </section>
+  </main>  
+
+  <footer id="main-footer">
+    <a href="#" onclick="showSection('home')">
       <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
       <span>Home</span>
     </a>
@@ -319,55 +745,224 @@ footer svg {
       <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
       <span>Subscriptions</span>
     </a>
-    <a href="#" onclick="showSection('notifications')">
-      <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
-      <span>Notifications</span>
-    </a>
-    <a href="#" onclick="showSection('you')"><div class="avatar">C</div><span>You</span></a>
+    <a href="#" onclick="showSection('you')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
+    <a href="#" onclick="showSection('challenge')">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
+    <a href="#" id="preview-footer-solo" onclick="startSoloMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
+    <a href="#" id="preview-footer-challenging" onclick="startCreateMode()">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Aceitar Desafio</span></a>
   </footer>
 
-  <script>
-let sectionHistory = ['home'];
+<script>
+// 1. A variável "estado" (começa como 'editor')
+let currentEditMode = 'editor';
 
-function showSection(targetId) {
-  const sections = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create', 'postLesson', 'editSrt'];
+const footer = document.getElementById('main-footer');
 
-  const current = sectionHistory[sectionHistory.length - 1];
-  if (targetId !== current) {
-    sectionHistory.push(targetId);
+// Seleciona todos os links <a> dentro de #main-footer que NÃO têm um atributo 'id'
+const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+  
+// Defina aqui todas as seções que usam a navegação principal
+const mainNavSections = [
+  'home', 
+  'subscriptions', 
+  'you', 
+  'challenge', 
+  'create', 
+  'search', 
+  'notifications', 
+  'myProfile', 
+  'myPosts', 
+  'login-screen'
+];
+
+// Função principal para alternar seções
+function showSection(sectionId) {
+  // Esconde todas as seções
+  const sections = document.querySelectorAll("main section");
+  sections.forEach(sec => sec.classList.remove("active"));
+
+  // Exibe a seção desejada
+  const target = document.getElementById(sectionId);
+  if (target) {
+    target.classList.add("active");
   }
 
-  // Ativa/desativa seções
-  sections.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.toggle('active', id === targetId);
+  // ATUALIZAÇÃO ADICIONADA:
+  // Chama a função para atualizar o footer com base na seção
+  updateFooterForSection(sectionId);
+}
+
+/**
+ * Esta função atualiza a UI com base no modo
+ */
+function setEditorMode(mode) {
+    // Atualiza a variável de estado
+    currentEditMode = mode; 
+    console.log("Modo alterado para:", currentEditMode);
+
+    // 2. Seleciona os elementos do seu HTML
+    const editorDiv = document.getElementById('editor');
+    const navPreview = document.getElementById('navigation-controls-previewMode');
+    
+    // Botões do footer (baseado no seu HTML)
+    const footerSolo = document.getElementById('preview-footer-solo');
+    const footerChallenging = document.getElementById('preview-footer-challenging');
+    const footerChallenges = document.getElementById('preview-footer-challenges');
+
+    // 3. Lógica para esconder/mostrar
+  	hideMainNavigation();
+    
+    // Primeiro, esconde tudo para "limpar"
+    // (Oculta as partes que mudam)
+    if (editorDiv) editorDiv.style.display = 'none';
+    if (navPreview) navPreview.style.display = 'none';
+    if (footerSolo) footerSolo.style.display = 'none';
+    if (footerChallenging) footerChallenging.style.display = 'none';
+    if (footerChallenges) footerChallenges.style.display = 'none';
+
+    // Agora, mostra apenas o que é necessário para o modo
+    
+    if (mode === 'editor') {
+        // Mostra o editor
+        if (editorDiv) editorDiv.style.display = 'block'; 
+        
+    } else if (mode === 'previewSolo') {
+        // Mostra navegação e botões de "Solo" e "Desafiar"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
+        if (footerChallenging) footerChallenging.style.display = 'flex';
+        
+    } else if (mode === 'previewMulti') {
+        // Mostra navegação e botão "Aceitar Desafio"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerChallenges) footerChallenges.style.display = 'flex';
+    }
+}
+
+function openContent() {
+	hideFooter();
+	setEditorMode('editor');
+    showSection('editSrt');
+}
+
+function showSoloPreview() {
+	hideAcceptChallenge();
+	setEditorMode('previewSolo');
+    showSection('editSrt');
+}
+
+function showMultiPreview() {
+	hideSoloAndChallenging();
+	setEditorMode('previewMulti');
+    showSection('editSrt');
+}
+
+function startCreateMode() {
+    showSection('challenge');
+}
+
+/**
+ * Oculta os links de navegação principais (Home, Subscriptions, You, Desafios)
+ * que estão no footer, deixando os botões contextuais (Solo, Desafiar, etc.)
+ */
+function hideMainNavigation() {
+  // Oculta cada um desses links
+  mainNavLinks.forEach(link => {
+    link.style.display = 'none';
   });
-
-  // Lista de seções onde o botão "Voltar" deve ser ocultado
-  const sectionsToHideBackBtn = ['home', 'search', 'notifications', 'you', 'subscriptions', 'create'];
-
-  // Atualiza botão "Voltar"
-  const goBackBtn = document.getElementById('btn-goBack');
-  if (goBackBtn) {
-    // A classe 'hidden' será adicionada (true) se a seção atual estiver na lista
-    goBackBtn.classList.toggle('hidden', sectionsToHideBackBtn.includes(targetId));
-  }
-
-  // Atualiza footer
-  const footerLinks = document.querySelectorAll('footer a');
-  footerLinks.forEach(link => link.classList.remove('active'));
-  const targetLink = Array.from(footerLinks).find(a => a.getAttribute('onclick')?.includes(targetId));
-  if (targetLink) targetLink.classList.add('active');
 }
 
-function goBack() {
-  if (sectionHistory.length > 1) {
-    sectionHistory.pop(); // Remove a atual
-    const previous = sectionHistory[sectionHistory.length - 1];
-    showSection(previous);
+/**
+ * Exibe a navegação principal (Home, Subs, You, Desafios)
+ * e esconde os botões contextuais (Solo, Desafiar, Aceitar).
+ */
+function showMainNavigation() {
+  // 1. Esconde os botões contextuais
+  hideSoloAndChallenging();
+  hideAcceptChallenge();
+  
+  // 2. Garante que o footer esteja visível
+  showFooter();
+
+  // 3. Define a variável
+  const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+  
+  // 4. Mostra os links de navegação principais
+  mainNavLinks.forEach(link => {
+    link.style.display = 'flex';
+  });
+}
+
+/**
+ * NOVO: Esta função decide o que o footer deve mostrar
+ * com base na seção que está ativa.
+ */
+function updateFooterForSection(sectionId) {
+
+  // Verifica se a seção atual está na lista principal
+  if (mainNavSections.includes(sectionId)) {
+    // Se sim, mostra a navegação principal (Home, Subs, etc.)
+    showMainNavigation();
+  } 
+  
+  // Se a seção NÃO estiver na lista (ex: 'editSrt', 'play'),
+  // esta função não faz nada. Isso permite que outras funções
+  // (como openContent, showSoloPreview) controlem o footer manualmente.
+}
+
+/**
+ * Oculta os botões "Solo" e "Desafiar".
+ */
+function hideSoloAndChallenging() {
+  const btnSolo = document.getElementById('preview-footer-solo');
+  const btnChallenging = document.getElementById('preview-footer-challenging');
+
+  if (btnSolo) {
+    btnSolo.style.display = 'none';
+  }
+  if (btnChallenging) {
+    btnChallenging.style.display = 'none';
   }
 }
-  </script>
+
+/**
+ * Oculta o botão "Aceitar Desafio".
+ */
+function hideAcceptChallenge() {
+  const btnAccept = document.getElementById('preview-footer-challenges');
+  
+  if (btnAccept) {
+    btnAccept.style.display = 'none';
+  }
+}
+
+/**
+ *  footer principal.
+ */
+function hideFooter() {  
+  if (footer) {
+    footer.style.display = 'none';
+  }
+}
+
+function showFooter() {  
+  if (footer) {
+    footer.style.display = 'flex';
+  }
+}
+
+// Modifique sua função existente
+document.addEventListener('DOMContentLoaded', () => {
+  showSection('home');
+});
+
+</script>
+
+
 </body>
 </html>
