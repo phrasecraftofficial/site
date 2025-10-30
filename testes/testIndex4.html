@@ -260,7 +260,7 @@ video {
     border-radius: 4px;
 }
 
-input, textarea { 
+input .textarea { 
   width: calc(100% - 40px); 
   margin-top: 5px; 
   margin-bottom: 10px; 
@@ -432,6 +432,37 @@ input[type="radio"] {
   padding: 2px 6px;
   font-size: 12px;
   border-radius: 4px;
+}
+
+/*Playlists*/
+.playlistForm {
+    background-color: #1e1e1e; /* Um tom um pouco mais claro para o container do formulário */
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Sombra sutil para profundidade */
+    max-width: 350px;
+    margin: 50px auto;
+}
+
+.playlistForm label {
+    display: flex; /* Para alinhar o checkbox e o texto */
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+/* Estilo para o checkbox (para deixá-lo mais visível no tema escuro) */
+.playlistForm input[type="checkbox"] {
+    /* Usando accent-color para estilizar a cor do 'check' (suporte varia) */
+    accent-color: gray; /* Cor secundária de destaque */
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid #5a5a5a; /* Borda para contraste */
+    background-color: #333333; /* Fundo do checkbox */
+    cursor: pointer;
 }
 
 </style>
@@ -615,20 +646,30 @@ input[type="radio"] {
       <input type="text" placeholder="Digite uma descrição..." name="description" />
 
       <!-- Título -->
-      <form id="linhaForm">
-      	<h2>Adicionar à Playlist</h2>
-        <label class="" for="playlist1">
-        <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
-        Playlist 1
-        </label>
-        <label class="" for="playlist2">
-        <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
-        Playlist 2
-        </label>
-        <label class="" for="playlist3">
-        <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
-        Playlist 3
-        </label>
+      <form id="playlistForm">
+          <h2>Adicionar à Playlist</h2>
+          <label for="playlist1">
+          <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
+          Playlist 1
+          </label>
+          <label for="playlist2">
+          <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
+          Playlist 2
+          </label>
+          <label for="playlist3">
+          <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
+          Playlist 3
+          </label>
+          <div id="">
+              <button id="btn-newPlaylist">Nova Playlist</button>
+          </div>
+          <div id="newPlaylist">
+              <p>Nome da Playlist</p>
+              <input></input>
+              <div id="">
+                  <button id="btn-saveNewPlaylist">Salvar</button>
+              </div>
+          </div>
       </form>
       
     </section>
@@ -1777,7 +1818,7 @@ function playLine() {
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 function init() {
-  showSection('home');
+  showSection('postLesson');
   endCreateMode();
 }
 
