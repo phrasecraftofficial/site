@@ -621,60 +621,6 @@ input[type="radio"] {
       </div>
     </section>
     
-    <section id="postLesson">
-      <h2>Post</h2>
-      <p>Use this section to post.</p>
-      
-      <div id="video-section-postLesson"></div>
-                      
-      <div id="postLesson-containerBtn" class="botoes-container">
-          <button onclick="showSection('editSrt')">👈</button>
-      	  <button id="captureBtn" onclick="handleCaptureClick()">📸 Capturar Thumbnail</button>
-          <button href="#" onclick="postLesson()">Postar Lição ⬆️</button>
-      </div>
-      
-      <div id="thumb-section-postLesson"></div>
-      
-      <!-- Título -->
-      <h2>Nome</h2>
-      <!-- Input de texto -->
-      <input type="text" placeholder="Digite um nome..." name="nome" />
-      
-      <!-- Título -->
-      <h2>Descrição</h2>
-      <!-- Input de texto -->
-      <input type="text" placeholder="Digite uma descrição..." name="description" />
-
-      <!-- Título -->
-      <form id="playlistForm">
-          <h2>Adicionar à Playlist</h2>
-          <label for="playlist1">
-          <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
-          Playlist 1
-          </label>
-          <label for="playlist2">
-          <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
-          Playlist 2
-          </label>
-          <label for="playlist3">
-          <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
-          Playlist 3
-          </label>
-          <div id="">
-              <button id="btn-newPlaylist" onclick="showAddPlaylistInput()">Nova Playlist</button>
-          </div>
-          <div id="newPlaylist">
-              <p>Nome da Playlist</p>
-              <input></input>
-              <div id="">
-                  <button id="btn-saveNewPlaylist" onclick="">✔</button>
-                  <button id="btn-saveNewPlaylist" onclick="hideAddPlaylistInput()">✖</button>
-              </div>
-          </div>
-      </form>
-      
-    </section>
-    
     <section id="myPosts">
         <h2>My Lessons Posts</h2>
         <p>Use this section to see your lessons posted.</p>
@@ -735,6 +681,59 @@ input[type="radio"] {
             
         </div>
       </div>
+    </section>
+    
+    <section id="postLesson">
+      <h2>Post</h2>
+      <p>Use this section to post.</p>
+      
+      <div id="video-section-postLesson"></div>
+                      
+      <div id="postLesson-containerBtn" class="botoes-container">
+          <button onclick="showSection('editSrt')">👈</button>
+      	  <button id="captureBtn" onclick="handleCaptureClick()">📸 Capturar Thumbnail</button>
+          <button href="#" onclick="postLesson()">Postar Lição ⬆️</button>
+      </div>
+      
+      <div id="thumb-section-postLesson"></div>
+      
+      <!-- Título -->
+      <h2>Nome</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite um nome..." name="nome" />
+      
+      <!-- Título -->
+      <h2>Descrição</h2>
+      <!-- Input de texto -->
+      <input type="text" placeholder="Digite uma descrição..." name="description" />
+
+      <!-- Título -->
+      <form id="playlistForm">
+          <h2>Adicionar à Playlist</h2>
+          <label for="playlist1">
+          <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
+          Playlist 1
+          </label>
+          <label for="playlist2">
+          <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
+          Playlist 2
+          </label>
+          <label for="playlist3">
+          <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
+          Playlist 3
+          </label>
+          <div id="">
+              <button id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
+          </div>
+          <div id="new-playlist-name-area" style="display: none;">
+          	  <p>Nome da Playlist</p>
+              <input type="text"  id="new-playlist-name"></input>
+              <div id="">
+                  <button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
+                  <button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
+              </div>
+          </div>
+      </form> 
     </section>
     
     <!----------->
@@ -894,7 +893,11 @@ const footer = document.getElementById('main-footer');
 
 // Seleciona todos os links <a> dentro de #main-footer que NÃO têm um atributo 'id'
 const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
-  
+
+// Playlist Area (NOVAS DECLARAÇÕES GLOBAIS)
+const newPlaylistArea = document.getElementById('new-playlist-name-area');
+const btnShowNewPlaylist = document.getElementById('btn-show-new-playlist-area');
+
 // Defina aqui todas as seções que usam a navegação principal
 const mainNavSections = [
   'home', 
@@ -1048,7 +1051,15 @@ function updateElementForSection(sectionId) {
   // Oculta elementoss do header em play
   if (!iconsRight || !textArea)
   return; // segurança caso não existam
-
+  
+  // --- LÓGICA DE OCULTAR PLAYLIST ---
+  // Apenas tenta esconder a área da Playlist se a função existir
+  // E se não estiver na seção postLesson.
+  if (sectionId !== "postLesson" && typeof hideAddPlaylistArea === 'function') {
+      hideAddPlaylistArea();
+  }
+  // ----------------------------------
+    
   if (sectionId === "play") {
     iconsRight.style.display = "none";
     textArea.style.display = "none";
@@ -1190,6 +1201,27 @@ function endCreateMode() {
 function startMultiMode() {
   hideFooter();
   showSection('play');
+}
+
+// Playlist Area
+function showNewPlaylistNameArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'flex'; // Use 'flex' ou 'block'
+    btnShowNewPlaylist.style.display = 'none';
+  }
+}
+
+function hideAddPlaylistArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'none';
+    btnShowNewPlaylist.style.display = 'flex'; // Mostra o botão de volta
+  }
+}
+
+function saveNewPlaylistName() {
+  // Lógica para salvar o nome da playlist
+  console.log("Nova playlist salva e área escondida.");
+  hideAddPlaylistArea();
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
