@@ -661,13 +661,14 @@ input[type="radio"] {
           Playlist 3
           </label>
           <div id="">
-              <button id="btn-newPlaylist">Nova Playlist</button>
+              <button id="btn-newPlaylist" onclick="showAddPlaylistInput()">Nova Playlist</button>
           </div>
           <div id="newPlaylist">
               <p>Nome da Playlist</p>
               <input></input>
               <div id="">
-                  <button id="btn-saveNewPlaylist">Salvar</button>
+                  <button id="btn-saveNewPlaylist" onclick="">✔</button>
+                  <button id="btn-saveNewPlaylist" onclick="hideAddPlaylistInput()">✖</button>
               </div>
           </div>
       </form>
