@@ -708,7 +708,7 @@ input[type="radio"] {
       <input type="text" placeholder="Digite uma descrição..." name="description" />
 
       <!-- Título -->
-      <form id="playlistForm">
+      <form class="playlistForm" id="playlistForm">
           <h2>Adicionar à Playlist</h2>
           <div id="playlist-checkbox-container">
               <p>Carregando playlists...</p>
@@ -2076,40 +2076,53 @@ async function saveNewPlaylistName() {
  * 1. Renderiza os elementos de checkbox no formulário com base nos dados.
  * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
  */
+/**
+ * Renderiza os elementos de checkbox no formulário com base nos dados.
+ * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
+ */
 function renderPlaylists(playlists) {
     if (!playlistContainer) return;
 
-    // Limpa o conteúdo existente (incluindo o "Carregando playlists...")
+    // Limpa o conteúdo existente
     playlistContainer.innerHTML = '';
 
     if (playlists.length === 0) {
         playlistContainer.innerHTML = '<p>Você não possui playlists.</p>';
         return;
     }
-
+    
+    // Contêiner flexível opcional para melhor alinhamento
+    // const listWrapper = document.createElement('div');
+    // listWrapper.className = 'playlist-list-wrapper'; // Você pode criar um estilo para este wrapper
+    
     playlists.forEach(playlist => {
         const playlistId = playlist.$id;
         const playlistName = playlist.playlistName;
 
-        // Cria a label (elemento pai)
+        // 1. Cria o elemento LABEL
         const label = document.createElement('label');
-        label.setAttribute('for', `playlist-${playlistId}`);
+        // Seu CSS .playlistForm label aplica-se a esta tag
 
-        // Cria o input (checkbox)
+        // 2. Cria o INPUT (checkbox)
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.id = `playlist-${playlistId}`;
-        input.name = 'playlist'; // O nome do grupo de checkboxes
-        input.value = playlistId; // Armazena o ID do Appwrite como valor
+        input.name = 'playlist';
+        input.value = playlistId;
 
-        // Adiciona o input e o texto à label
+        // 3. Adiciona input e texto à label
         label.appendChild(input);
         label.appendChild(document.createTextNode(` ${playlistName}`));
         
-        // Adiciona a label ao contêiner
+        // 4. Adiciona a label ao contêiner principal
         playlistContainer.appendChild(label);
-        playlistContainer.appendChild(document.createElement('br')); // Adiciona uma quebra de linha para melhor visualização
+        
+        // Em vez de <br>, usar margin-bottom no CSS é mais limpo.
+        // Já está no seu CSS: .playlistForm label { margin-bottom: 15px; }
     });
+    
+    // Se você usou o listWrapper opcional:
+    // playlistContainer.appendChild(listWrapper);
 }
 
 /**
