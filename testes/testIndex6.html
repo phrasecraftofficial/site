@@ -894,7 +894,7 @@ const footer = document.getElementById('main-footer');
 // Seleciona todos os links <a> dentro de #main-footer que NÃO têm um atributo 'id'
 const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
 
-// Playlist Area (NOVAS DECLARAÇÕES GLOBAIS)
+// Playlist Area (DECLARAÇÕES GLOBAIS)
 const newPlaylistArea = document.getElementById('new-playlist-name-area');
 const btnShowNewPlaylist = document.getElementById('btn-show-new-playlist-area');
 const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
@@ -1226,14 +1226,19 @@ function hideAddPlaylistArea() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
 // Configuração do Appwrite
+const PLAYLISTS_DATABASE_ID = "68ed87df000874c3e85a"; 
+const PLAYLISTS_COLLECTION_ID = "playlists";
+
 const client = new Appwrite.Client()
         .setEndpoint('https://nyc.cloud.appwrite.io/v1')
         .setProject('68ebe8640000ca7c860b');
 
+// Inicialização dos módulos (ID e Databases são necessários para a playlist)
+const { Databases, ID, Permission, Role } = Appwrite;
+const databases = new Databases(client);
 const account = new Appwrite.Account(client);
 
-// Seletores de elementos HTML (TODOS JUNTOS AQUI)
-
+// Seletores de elementos HTML 
 const btnLoginHeader = document.getElementById('btnLogin');
 
 const loginForm = document.getElementById('login-form');
