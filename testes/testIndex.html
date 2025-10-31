@@ -9,7 +9,304 @@
 
 <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
 
-<style> /* Reset básico */ * { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: "Roboto", Arial, sans-serif; background-color: #fff; color: #030303; line-height: 1.54; } a { color: inherit; text-decoration: none; cursor: pointer; } a:hover { text-decoration: underline; } /* Cabeçalho (header) */ header { display: flex; justify-content: space-between; align-items: center; background-color: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.1); height: 56px; padding: 0 16px; position: fixed; width: 100%; top: 0; z-index: 1000; } .logo-area { display: flex; align-items: center; cursor: pointer; user-select: none; } .logo-area img { width: 24px; height: 24px; } .text-area#text-area { font-weight: 500; font-size: 20px; margin-left: 8px; color: #282828; } .performance-area { display: flex; align-items: center; gap: 24px; font-size: 14px; color: #606060; } .performance-area .text-area { font-weight: 500; } .icons-right { display: flex; align-items: center; gap: 24px; } .icons-right a { display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; color: #606060; transition: background-color 0.2s ease; } .icons-right a:hover { background-color: #f2f2f2; color: #000; } .icon { fill: currentColor; width: 20px; height: 20px; } /* Conteúdo principal (main) */ main { margin-top: 56px; /* espaço para header fixo */ padding: 24px; background-color: #f9f9f9; min-height: calc(100vh - 56px - 56px); } section { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.1); padding: 24px; margin-bottom: 24px; } section h2 { font-size: 24px; font-weight: 500; margin-bottom: 16px; color: #202020; } section p { font-size: 14px; color: #606060; } /* Botões padrão */ button, .btnLogin { background-color: transparent; border: none; color: #065fd4; font-weight: 500; cursor: pointer; padding: 8px 12px; border-radius: 4px; transition: background-color 0.2s ease; } button:hover, .btnLogin:hover { background-color: #e8f0fe; } /* Formulários */ form { display: flex; flex-direction: column; gap: 12px; } input[type="email"], input[type="password"], input[type="text"] { border: 1px solid #ccc; border-radius: 4px; padding: 10px 12px; font-size: 14px; width: 100%; transition: border-color 0.2s ease; } input[type="email"]:focus, input[type="password"]:focus, input[type="text"]:focus { border-color: #065fd4; outline: none; } .login-button { background-color: #065fd4; color: white; font-weight: 700; padding: 10px 12px; border-radius: 4px; cursor: pointer; border: none; transition: background-color 0.3s ease; } .login-button:hover { background-color: #0041a8; } #login-message { font-size: 13px; color: #d93025; min-height: 16px; } /* Rodapé (footer) */ footer#main-footer { position: fixed; bottom: 0; width: 100%; height: 56px; background: #fff; border-top: 1px solid #ddd; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -1px 2px rgb(0 0 0 / 0.1); z-index: 1000; } footer#main-footer a { display: flex; flex-direction: column; align-items: center; color: #606060; font-size: 10px; font-weight: 500; max-width: 56px; text-align: center; } footer#main-footer a:hover { color: #065fd4; } footer#main-footer svg { fill: currentColor; width: 22px; height: 22px; margin-bottom: 4px; } /* Sections with scrollable content */ #home-post-container, #user-post-container, #multi-post-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; } /* Card style for video/posts */ .card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; transition: box-shadow 0.2s ease; } .card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); } .thumb-section, .channel-pic img { width: 100%; height: auto; display: block; } .info-content { padding: 8px 12px; } .channel-pic { width: 40px; height: 40px; overflow: hidden; border-radius: 50%; margin-right: 8px; display: inline-block; vertical-align: middle; } .video-text { display: inline-block; vertical-align: middle; max-width: calc(100% - 56px); } .video-title { font-size: 16px; font-weight: 500; color: #202020; margin-bottom: 4px; } .video-meta { font-size: 12px; color: #606060; display: flex; justify-content: space-between; } .video-edit { cursor: pointer; color: #3ea6ff; font-weight: 600; margin-left: auto; } /* Loading Overlay */ .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; flex-direction: column; text-align: center; } .loading-spinner { border: 4px solid #ddd; border-top: 4px solid #065fd4; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 12px; } .loading-text { font-size: 16px; color: #111; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
+<style> 
+    /* Reset básico */ 
+    * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+    } 
+    body { 
+        font-family: "Roboto", Arial, sans-serif; 
+        background-color: #121212; 
+        color: #e0e0e0; 
+        line-height: 1.54; 
+    } 
+    a { 
+        color: inherit; 
+        text-decoration: none; 
+        cursor: pointer; 
+    } 
+    a:hover { 
+        text-decoration: underline; 
+    } 
+    /* Cabeçalho (header) */ 
+    header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        background-color: #1f1f1f; 
+        box-shadow: 0 1px 2px rgb(255 255 255 / 0.1); 
+        height: 56px; 
+        padding: 0 16px; 
+        position: fixed; 
+        width: 100%; 
+        top: 0; 
+        z-index: 1000; 
+    } 
+    .logo-area { 
+        display: flex; 
+        align-items: center; 
+        cursor: pointer; 
+        user-select: none; 
+    } 
+    .logo-area img { 
+        width: 24px; 
+        height: 24px; 
+    } 
+    .text-area#text-area-header { 
+        font-weight: 500; 
+        font-size: 20px; 
+        margin-left: 8px; 
+        color: #e0e0e0; 
+    } 
+    .performance-area { 
+        display: flex; 
+        align-items: center; 
+        gap: 24px; 
+        font-size: 14px; 
+        color: #b0b0b0; 
+        display: none;
+    } 
+    @media (min-width: 640px) {
+        .performance-area {
+            display: flex;
+        }
+    }
+    .performance-area .text-area { 
+        font-weight: 500; 
+    } 
+    .icons-right { 
+        display: flex; 
+        align-items: center; 
+        gap: 24px; 
+    } 
+    .icons-right a { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        padding: 8px; 
+        border-radius: 50%; 
+        color: #b0b0b0; 
+        transition: background-color 0.2s ease; 
+    } 
+    .icons-right a:hover { 
+        background-color: #2a2a2a; 
+        color: #fff; 
+    } 
+    .icon { 
+        fill: currentColor; 
+        width: 20px; 
+        height: 20px; 
+    } 
+    /* Conteúdo principal (main) */ 
+    main { 
+        margin-top: 56px; 
+        padding: 24px; 
+        background-color: #181818; 
+        min-height: calc(100vh - 56px); 
+        padding-bottom: 80px; 
+    } 
+    section { 
+        background: #1f1f1f; 
+        border-radius: 8px; 
+        box-shadow: 0 1px 2px rgb(255 255 255 / 0.1); 
+        padding: 24px; 
+        margin-bottom: 24px; 
+    } 
+    section h2 { 
+        font-size: 24px; 
+        font-weight: 500; 
+        margin-bottom: 16px; 
+        color: #ffffff; 
+    } 
+    section p { 
+        font-size: 14px; 
+        color: #b0b0b0; 
+    } 
+    button, .btnLogin { 
+        background-color: transparent; 
+        border: none; 
+        color: #3ea6ff; 
+        font-weight: 500; 
+        cursor: pointer; 
+        padding: 8px 12px; 
+        border-radius: 4px; 
+        transition: background-color 0.2s ease; 
+    } 
+    button:hover, .btnLogin:hover { 
+        background-color: #263238; 
+    } 
+    form { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 12px; 
+    } 
+    input[type="email"], input[type="password"], input[type="text"] { 
+        border: 1px solid #555; 
+        border-radius: 4px; 
+        padding: 10px 12px; 
+        font-size: 14px; 
+        width: 100%; 
+        background-color: #121212; 
+        color: #e0e0e0; 
+        transition: border-color 0.2s ease; 
+    } 
+    input[type="email"]:focus, input[type="password"]:focus, input[type="text"]:focus { 
+        border-color: #3ea6ff; 
+        outline: none; 
+    } 
+    .login-button { 
+        background-color: #3ea6ff; 
+        color: #121212; 
+        font-weight: 700; 
+        padding: 10px 12px; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        border: none; 
+        transition: background-color 0.3s ease; 
+    } 
+    .login-button:hover { 
+        background-color: #1e88e5; 
+    } 
+    #login-message { 
+        font-size: 13px; 
+        color: #ef5350; 
+        min-height: 16px; 
+    } 
+    footer#main-footer { 
+        position: fixed; 
+        bottom: 0; 
+        width: 100%; 
+        height: 56px; 
+        background: #1f1f1f; 
+        border-top: 1px solid #333; 
+        display: flex; 
+        justify-content: space-around; 
+        align-items: center; 
+        box-shadow: 0 -1px 2px rgb(255 255 255 / 0.1); 
+        z-index: 1000; 
+    } 
+    @media (min-width: 640px) {
+        footer#main-footer {
+            display: none;
+        }
+        main {
+             padding-bottom: 24px;
+        }
+    }
+    footer#main-footer a { 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        color: #b0b0b0; 
+        font-size: 10px; 
+        font-weight: 500; 
+        max-width: 56px; 
+        text-align: center; 
+    } 
+    footer#main-footer a:hover { 
+        color: #3ea6ff; 
+    } 
+    footer#main-footer svg { 
+        fill: currentColor; 
+        width: 22px; 
+        height: 22px; 
+        margin-bottom: 4px; 
+    } 
+    #home-post-container, #user-post-container, #multi-post-container { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+        gap: 16px; 
+    } 
+    .card { 
+        background: #1f1f1f; 
+        border-radius: 8px; 
+        overflow: hidden; 
+        box-shadow: 0 1px 2px rgba(255,255,255,0.1); 
+        cursor: pointer; 
+        transition: box-shadow 0.2s ease; 
+    } 
+    .card:hover { 
+        box-shadow: 0 4px 8px rgba(255,255,255,0.15); 
+    } 
+    .thumb-section, .channel-pic img { 
+        width: 100%; 
+        height: auto; 
+        display: block; 
+    } 
+    .info-content { 
+        padding: 8px 12px; 
+    } 
+    .channel-pic { 
+        width: 40px; 
+        height: 40px; 
+        overflow: hidden; 
+        border-radius: 50%; 
+        margin-right: 8px; 
+        display: inline-block; 
+        vertical-align: middle; 
+    } 
+    .video-text { 
+        display: inline-block; 
+        vertical-align: middle; 
+        max-width: calc(100% - 56px); 
+    } 
+    .video-title { 
+        font-size: 16px; 
+        font-weight: 500; 
+        color: #ffffff; 
+        margin-bottom: 4px; 
+    } 
+    .video-meta { 
+        font-size: 12px; 
+        color: #b0b0b0; 
+        display: flex; 
+        justify-content: space-between; 
+    } 
+    .video-edit { 
+        cursor: pointer; 
+        color: #3ea6ff; 
+        font-weight: 600; 
+        margin-left: auto; 
+    } 
+    .loading-overlay { 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        right: 0; 
+        bottom: 0; 
+        background: rgba(18,18,18,0.8); 
+        z-index: 2000; 
+        display: none; 
+        justify-content: center; 
+        align-items: center; 
+        flex-direction: column; 
+        text-align: center; 
+    } 
+    .loading-spinner { 
+        border: 4px solid #333; 
+        border-top: 4px solid #3ea6ff; 
+        border-radius: 50%; 
+        width: 40px; 
+        height: 40px; 
+        animation: spin 1s linear infinite; 
+        margin-bottom: 12px; 
+    } 
+    .loading-text { 
+        font-size: 16px; 
+        color: #e0e0e0; 
+    } 
+    @keyframes spin { 
+        0% { 
+            transform: rotate(0deg); 
+        } 
+        100% { 
+            transform: rotate(360deg); 
+        } 
+    } 
+</style>
+
 </head>
 <body>
 
