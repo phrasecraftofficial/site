@@ -16,14 +16,14 @@ main {
 }
 section {
 }
-.height-area, p {
+.width-area, p {
   display: flex;
   justify-content: center; /* centraliza na horizontal */
   margin: 10px;
   align-items: flex-start;
   gap: 10px; /* espaço entre as seções */
 }
-.width-area {
+.height-area {
   display: flex;
   align-items: center; /* centraliza na vertial */
   gap: 4px;
@@ -146,7 +146,7 @@ video, .thumb-section img {
 	</div>
 
 	<div id="editor">
-	<form>
+	<form class="width-area" class="width-area">
     	<button type="button" id="btn-save" onclick="showSave()">💾</button>
     	<button type="button" onclick="undo()">↩</button>
     	<button type="button" onclick="redo()">↪</button>
@@ -155,8 +155,8 @@ video, .thumb-section img {
     	<button type="button" onclick="removeSegment()">|-</button>
     	<button type="button" id="btn-load" onclick="showSection('postLesson')">👉</button>
 	</form>
-	<form>
-      <label>
+	<form class="width-area">
+      <label class="height-area">
         <div class="column-area">
           Início
           <input type="text" id="editStart" value="00:00:000">
@@ -166,7 +166,7 @@ video, .thumb-section img {
           <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
         </div>
       </label>
-      <label>
+      <label class="height-area">
         <div class="column-area">
           Fim
           <input id="editEnd" value="00:00:000">
@@ -177,13 +177,13 @@ video, .thumb-section img {
         </div>
       </label>
     </form>
-    <form>
-      <label>Texto
+    <form class="width-area" class="width-area">
+      <label class="height-area">Texto
           <textarea type="text" id="editText" rows="3"></textarea>
       </label>
     </form>
     </div><!--editor-->
-    <form id="navigation-controls-previewMode">
+    <form class="width-area" id="navigation-controls-previewMode">
 		<button type="button" onclick="prevLine()">⏮︎</button>
 		<button type="button" onclick="playLine()">⏯︎</button>
 		<button type="button" onclick="nextLine()">⏭︎</button>
@@ -191,12 +191,12 @@ video, .thumb-section img {
 	<div class="column-area" id="config-area">
 		<span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
      	<p>⚙ Editar em lote</p>
-         <form  class="line-area">
+         <form class="width-area"  class="line-area">
            <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
            <input id="editStack" placeholder="0.05">
            <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
 		</form>
-		<form class="column-area" id="linhaForm">
+		<form class="width-area" class="column-area" id="linhaForm">
 			<span class="radio-option">
 				<input type="radio" name="opcao-linha" value="all" checked>
 				Todas as linhas
