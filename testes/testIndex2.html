@@ -218,7 +218,7 @@ button:hover {
 .general-btn { 
     background-color: transparent; 
     border: none; 
-    color: #3ea6ff; 
+    color: #3ea6ff;
     font-weight: 500;
   	white-space: nowrap; 
     cursor: pointer; 
@@ -248,7 +248,7 @@ video, .thumb-section img {
 }
 /* info-content */
 .info-content {
-  display: flex !important;;
+  display: flex;
   justify-content: space-between;
   padding: 0 5px 0 5px;
   align-items: center;
@@ -325,7 +325,6 @@ video, .thumb-section img {
   </style>
 </head>
 <body>
-  
   <header>
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
@@ -365,29 +364,6 @@ video, .thumb-section img {
   </header>
 
 <main>
-	<section id="play" class="content-row">
-		<div id="video-section-play">
-          <video id="videoPlayer" controls>
-                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-          </video>
-        </div>
-
-      	<div class="width-area">
-      		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
-      		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
-      		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
- font-weight: bold; background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
-      		<button class="general-btn" id="desistir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
-		</div>
-
-		<div class="phrase-container" id="frase"></div>
-
-        <div class="word-button-wrapper">
-            <div class="word-container" id="palavras"></div>
-        </div>
-        
-        <div class="width-area" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
-    </section>
     <!-- Seções -->
     <section id="home">
         <h2>Home</h2>
@@ -465,7 +441,7 @@ video, .thumb-section img {
 		<p>Use this section to see and edit your profile.</p>
 		<div class="width-area" id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
 		<button id="btnLogin" class="general-btn" onclick="showSection('login-screen')">Entrar</button>
-        <hr>
+      	<span class="line-area">____________________________________</span>
 		<button id="logout-button" class="general-btn" onclick="handleLogout()">Sair</button>
 	</section>
     
@@ -572,15 +548,37 @@ video, .thumb-section img {
           
       </form> 
     </section>
-    
+	<section id="play">
+		<div id="video-section-play">
+          <video id="videoPlayer" controls>
+                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+          </video>
+        </div>
+
+      	<div class="width-area">
+      		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
+ font-weight: bold; background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+      		<button class="general-btn" id="desistir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+		</div>
+
+		<div class="phrase-container" id="frase"></div>
+
+        <div class="word-button-wrapper">
+            <div class="word-container" id="palavras"></div>
+        </div>
+        
+        <div class="width-area" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+    </section>
   <!----------->
   <!--editSrt-->
   <!----------->
   <section id="editSrt" style="display: ;">
-    <div class="column-area" id="save-area">
+    <div id="save-area">
         <span class="width-area" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
         <p>💾 Salvar</p>
-        <div class="line-area">
+        <div class="width-area">
             <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
             <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
             <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
