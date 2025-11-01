@@ -14,9 +14,138 @@
 } 
 body { 
     font-family: "Roboto", Arial, sans-serif; 
-    background-color: #000; 
+    background-color: #0b0404; 
     color: #e0e0e0; 
     line-height: 1.54;
+}
+main {
+  padding: 62px 0 62px 0; /* altura do footer e do header */
+}
+/* Estilos gerais para Header e Footer */
+header, footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: #000;
+  padding: 0 16px;
+  color: #fff;
+  user-select: none;
+  z-index: 1000;
+}
+  /* ===============  */
+ /*      Header      */
+/* ===============  */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
+  background: ; /* só exemplo */
+  border-bottom: 1px solid #222;
+}
+/* Logo à esquerda */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+/* Performance centralizado no header */
+.performance-area {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-area img {
+  background: #fff; 
+  color: #000;  
+  border-radius: 15%;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+.icon {
+  width: 24px; 
+  height: 24px;
+}
+/* Ícones à direita */
+.icons-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.icons-right a {
+  color: #6d28d9;
+  text-decoration: none;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+.icons-right svg, header svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Centralização interna dos textos e ícones */
+.text-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+  /* ===============  */
+ /*      Footer      */
+/* ===============  */
+#main-footer {
+  bottom: 0;
+  height: 56px;
+  border-top: 1px solid #222;
+  justify-content: space-around;
+  align-items: center;
+}
+#main-footer a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+#main-footer a svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Texto do footer */
+#main-footer span {
+  font-size: 10px;
+  user-select: none;
+}
+/* Adaptativo para telas pequenas */
+@media screen and (max-width: 600px) {
+  header {
+    padding: 0 8px;
+  }
+  #main-footer a {
+    font-size: 8px;
+    gap: 2px;
+  }
+  #main-footer a svg {
+    width: 20px;
+    height: 20px;
+  }
+  #preview-footer {
+    height: 48px;
+  }
 }
 .width-area, p, h2, h4 {
   display: flex;
@@ -67,8 +196,8 @@ input:focus, textarea:focus {
     width: 90px;
 }
 input[type="radio"] {
-    width: 12px; 
-    max-width: 12px; 
+    width: 16px; 
+    max-width: 16px; 
 } 
 button {
   width: 30px;
@@ -196,9 +325,46 @@ video, .thumb-section img {
   </style>
 </head>
 <body>
+  
+  <header>
+    <div class="logo-area" onclick="showSection('home')">
+      <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
+      <div class="text-area" id="text-area">
+        <span>PhraseCraft</span>
+      </div>
+    </div>
+    
+	<div class="performance-area" id="performance-area">
+      <div class="text-area">
+        <span id="host-performance">100%</span>
+      </div>
+      <div class="text-area">
+        <span id="dinamic-icon"> 🚀 </span>
+      </div>
+      <div class="text-area">
+        <span id="opponent-performance">100%</span>
+      </div>
+    </div>
+    
+    <div class="icons-right" id="icons-right">
+      <!-- Create -->
+      <a href="#" id="icon-create" onclick="showSection('create')">
+        <svg class="icon" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
+        </svg>
+      </a>
+      <!-- Search -->
+      <a href="#" onclick="showSection('search')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
+      </a>
+      <!-- Notifications -->
+      <a href="#" onclick="showSection('notifications')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      </a>
+    </div>
+  </header>
 
 <main>
-
 	<section id="play" class="content-row">
 		<div id="video-section-play">
           <video id="videoPlayer" controls>
@@ -502,7 +668,28 @@ video, .thumb-section img {
         <div id="segments"></div>
     </div>
 	</section>
-  </main>
+  </main>  
+
+  <footer id="main-footer">
+    <a href="#" onclick="showSection('home')">
+      <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#" onclick="showSection('subscriptions')">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
+      <span>Subscriptions</span>
+    </a>
+    <a href="#" onclick="showSection('you')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
+    <a href="#" onclick="showSection('challenge')">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
+    <a href="#" id="preview-footer-solo" onclick="startSoloMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
+    <a href="#" id="preview-footer-challenging" onclick="startCreateMode()">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Aceitar Desafio</span></a>
+  </footer>
 
   <script>
   </script>
