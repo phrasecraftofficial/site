@@ -24,7 +24,7 @@ main {
 }
 /* todas escondidas */
 section { 
-	display: ;
+	display: none;
 } 
 /* visível */
 section.active { 
@@ -173,9 +173,10 @@ header {
 }
 .column-area {
   display: flex;
-  margin: 0 auto; /* centraliza o vertial no contêiner pai */
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: column; /* empilha os elementos verticalmente */
+  align-items: center;    /* centraliza horizontalmente */
+  justify-content: flex-start; /* ou center, se quiser centralizar também verticalmente */
+  gap: 10px;              /* espaço entre os elementos */
 }
 .line-area {
   display: flex;
@@ -231,7 +232,8 @@ button:hover {
     padding: 8px 12px; 
     border-radius: 4px; 
     transition: background-color 0.2s ease; 
-	width: auto;
+	width: auto; 
+	max-width: 150px;
 	height: auto;
 }
 .general-btn:hover { 
@@ -498,7 +500,7 @@ video, .thumb-section img {
     <!-- Subsections -->
     <section id="login-screen">
     	<h2>Entrar</h2>
-    	<form class="column-area height-area" id="login-form">
+    	<form class="column-area" id="login-form">
     	    <p id="login-message"></p>
     	    <input type="email" id="email-login" placeholder="E-mail" required>
     	    <input type="password" id="password-login" placeholder="Senha" required>
@@ -509,11 +511,11 @@ video, .thumb-section img {
     <section id="myProfile">
 		<h2>My Account</h2>
 		<p>Use this section to see and edit your profile.</p>
-        <div class="column-area" >
-          <div class="width-area" id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
-          <button id="btnLogin" class="general-btn" onclick="showSection('login-screen')">Entrar</button>
-          <span class="line-area">____________________________________</span>
-          <button id="logout-button" class="general-btn" onclick="handleLogout()">Sair</button>
+        <div class="width-area" id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+        <div class="column-area">
+          <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
+          <span>____________________________________</span>
+          <button class="general-btn" id="logout-button" onclick="handleLogout()">Sair</button>
         </div>
 	</section>
     
@@ -2057,8 +2059,8 @@ async function fetchUserPlaylists() {
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 function init() {
-  checkAuthStatus();
-  showSection('home');
+  showSection('myProfile');
+  //checkAuthStatus();
   endCreateMode();
 }
 
