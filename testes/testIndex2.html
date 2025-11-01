@@ -146,15 +146,15 @@ video, .thumb-section img {
 	</div>
 
 	<div id="editor">
-	<form class="width-area" class="width-area">
-    	<button type="button" id="btn-save" onclick="showSave()">💾</button>
-    	<button type="button" onclick="undo()">↩</button>
-    	<button type="button" onclick="redo()">↪</button>
-    	<button type="button" id="btn-config" onclick="showConfig()">⚙</button>
-    	<button type="button" onclick="addSegment()">|+</button>
-    	<button type="button" onclick="removeSegment()">|-</button>
-    	<button type="button" id="btn-load" onclick="showSection('postLesson')">👉</button>
-	</form>
+	<div class="width-area" class="width-area">
+    	<button id="btn-save" onclick="showSave()">💾</button>
+    	<button onclick="undo()">↩</button>
+    	<button onclick="redo()">↪</button>
+    	<button id="btn-config" onclick="showConfig()">⚙</button>
+    	<button onclick="addSegment()">|+</button>
+    	<button onclick="removeSegment()">|-</button>
+    	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
+	</div>
 	<form class="width-area">
       <label class="height-area">
         <div class="column-area">
@@ -183,11 +183,11 @@ video, .thumb-section img {
       </label>
     </form>
     </div><!--editor-->
-    <form class="width-area" id="navigation-controls-previewMode">
-		<button type="button" onclick="prevLine()">⏮︎</button>
-		<button type="button" onclick="playLine()">⏯︎</button>
-		<button type="button" onclick="nextLine()">⏭︎</button>
-	</form>
+    <div class="width-area" id="navigation-controls-previewMode">
+		<button onclick="prevLine()">⏮︎</button>
+		<button onclick="playLine()">⏯︎</button>
+		<button onclick="nextLine()">⏭︎</button>
+	</div>
 	<div class="column-area" id="config-area">
 		<span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
      	<p>⚙ Editar em lote</p>
@@ -196,7 +196,7 @@ video, .thumb-section img {
            <input id="editStack" placeholder="0.05">
            <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
 		</form>
-		<form class="width-area" class="column-area" id="linhaForm">
+		<form class="column-area" id="linhaForm">
 			<span class="radio-option">
 				<input type="radio" name="opcao-linha" value="all" checked>
 				Todas as linhas
