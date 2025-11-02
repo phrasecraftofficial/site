@@ -154,35 +154,24 @@ header {
   #preview-footer {
     height: 48px;
   }
-}
-.width-area, p, h2, h4 {
+}  
+/* --- Classes de layout simplificadas --- */
+.flex, h4, h3, h2, p {
   display: flex;
-  justify-content: center; /* centraliza na horizontal */
-  margin: 10px;
-  align-items: flex-start;
-  gap: 10px; /* espaço entre as seções */
-}
-.height-area {
-  display: flex;
-  align-items: center; /* centraliza na vertial */
-  gap: 4px;
+  justify-content: center; /* centraliza horizontalmente */
+  align-items: center;     /* centraliza verticalmente */
+  gap: 10px;
   padding: 10px;
-  border-radius: 10px;
-  font-weight: bold;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
+  text-align: center;
 }
-.column-area {
-  display: flex;
-  flex-direction: column; /* empilha os elementos verticalmente */
-  align-items: center;    /* centraliza horizontalmente */
-  justify-content: flex-start; /* ou center, se quiser centralizar também verticalmente */
-  gap: 10px;              /* espaço entre os elementos */
-}
-.line-area {
-  display: flex;
-  margin: 0 auto; /* centraliza o horizontal no contêiner pai */
+.row, h4, h3, h2, p {
+  margin: 0 auto;
   flex-direction: row;
-  gap: 4px;
+}
+.column {
+  margin: 0 auto;
+  flex-direction: column;
 }
 input, textarea {
     border: 1px solid #555; 
@@ -207,16 +196,16 @@ input[type="radio"] {
     max-width: 16px; 
 } 
 button {
-  width: 30px;
-  height: 30px;
-  font-size: 18px;
-  white-space: nowrap;
-  cursor: pointer;
-  border: none; 
-  background-color: #263238; 
-  color: #3ea6ff;
-  border-radius: 4px;
-  transition: background 0.2s;
+	width: 30px;
+	height: 30px;
+	font-size: 18px;
+	white-space: nowrap;
+	cursor: pointer;
+	border: none; 
+	background-color: #263238; 
+	color: #3ea6ff;
+	border-radius: 8px; 
+	transition: background 0.2s;
 }
 button:hover {
 	background-color: #bbb;
@@ -229,12 +218,13 @@ button:hover {
     font-weight: 500;
   	white-space: nowrap; 
     cursor: pointer; 
-    padding: 8px 12px; 
-    border-radius: 4px; 
+    padding: 8px 12px;
+	border-radius: 8px;  
     transition: background-color 0.2s ease; 
 	width: auto; 
 	max-width: 150px;
 	height: auto;
+    margin-bottom: 15px;
 }
 .general-btn:hover { 
 	background-color: #00111b; 
@@ -298,12 +288,13 @@ video, .thumb-section img {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  margin: 1px 0 0 0;
+  margin: 1px 0 20px 0;
 }
 
 /* Nome do canal */
 .channel-name {
   color: #bbbbbb;
+  margin-bottom: 15px;
 }
 
 /* Desempenho (percentual) */
@@ -313,13 +304,6 @@ video, .thumb-section img {
 }
 
 /* Botão Editar */
-.video-edit {
-  color: #6d28d9;
-  font-weight: bold;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
 .video-time {
   position: absolute;
   bottom: 8px;
@@ -328,6 +312,21 @@ video, .thumb-section img {
   padding: 2px 6px;
   font-size: 12px;
   border-radius: 4px;
+}
+/* Playlist Item */
+label {
+	display: flex;
+	align-self: flex-start;
+}
+label input[type="checkbox"] {
+    /* Usando accent-color para estilizar a cor do 'check' (suporte varia) */
+    accent-color: gray; /* Cor secundária de destaque */
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid #5a5a5a; /* Borda para contraste */
+    background-color: #333333; /* Fundo do checkbox */
+    cursor: pointer;
 }
   /*=================*/
  /* Loading Overlay */
@@ -435,7 +434,7 @@ video, .thumb-section img {
               </div>
 
               <div class="video-text">
-                  <h3 class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</h3>
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
                   <div class="video-meta">
                       <span class="channel-name">channel-name</span>
                       <span class="performance">95%</span>
@@ -448,22 +447,17 @@ video, .thumb-section img {
     </section>
 
     <section id="create">
-        <h2>Create</h2>
+		<h2>Create</h2>
         <p>Use this section to create new content.</p>
-            <div class="load-group">
-                <label for="videoUpload" class="upload-btn">Upload Vídeo</label>
+			<form>
+                <label for="videoUpload" class="flex column">Upload Vídeo
                 <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
-                <input type="file" id="videoUpload" accept="video/*">
-            </div>
-            <div class="load-group">
-                <label for="srtUpload" class="upload-btn">Upload SRT</label>
+                <input type="file" id="videoUpload" accept="video/*"></label>
+                <label for="srtUpload" class="flex column" class="upload-btn">Upload SRT
                 <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
-                <input type="file" id="srtUpload" accept=".srt">
-            </div>
-
-            <div class="botoes-container">
-                <button id="btn-open" onclick="openContent();">Continuar 👉</button>
-            </div>
+                <input type="file" id="srtUpload" accept=".srt"></label>
+                <button class="general-btn flex row" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+            </form>
     </section>
 
     <!-- Search -->
@@ -483,11 +477,11 @@ video, .thumb-section img {
       <h2>You</h2>
       <p>This section is about your profile.</p>
                       
-      <div class="botoes-container">
-        <a href="#" onclick="showSection('myProfile')">
-            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Meu Perfil</span></a>
-        <a href="#" id="btn-myPosts" onclick="showSection('myPosts')">
-            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Minhas Postagens</span></a>
+      <div>
+        <button class="flex column general-btn" onclick="showSection('myProfile')">
+            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Perfil</span></button>
+        <button class="flex column general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
+            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Postagens</span></button>
       </div>
     
     </section>
@@ -498,26 +492,26 @@ video, .thumb-section img {
     </section>
     
     <!-- Subsections -->
+    <section id="myProfile">
+		<h2>My Account</h2>
+		<p>Use this section to see and edit your profile.</p>
+        <div class="flex column" >
+          <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
+          <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+          <span>____________________________________</span>
+          <button class="general-btn" id="logout-button" onclick="handleLogout()">Sair</button>
+        </div>
+	</section>
+    
     <section id="login-screen">
     	<h2>Entrar</h2>
-    	<form class="column-area" id="login-form">
+    	<form class="flex column" id="login-form">
     	    <p id="login-message"></p>
     	    <input type="email" id="email-login" placeholder="E-mail" required>
     	    <input type="password" id="password-login" placeholder="Senha" required>
     	    <button type="submit" class="general-btn">Iniciar Sessão</button>
     	</form>
     </section>
-    
-    <section id="myProfile">
-		<h2>My Account</h2>
-		<p>Use this section to see and edit your profile.</p>
-        <div class="width-area" id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
-        <div class="column-area">
-          <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
-          <span>____________________________________</span>
-          <button class="general-btn" id="logout-button" onclick="handleLogout()">Sair</button>
-        </div>
-	</section>
     
     <section id="myPosts">
         <h2>My Lessons Posts</h2>
@@ -535,7 +529,7 @@ video, .thumb-section img {
               </div>
 
               <div class="video-text">
-                  <h3 class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</h3>
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
                   <div class="video-meta">
                       <span class="channel-name">channel-name</span>
                       <span class="general-btn" onclick="openContent();">✎ Editar</span>
@@ -568,7 +562,7 @@ video, .thumb-section img {
               </div>
 
               <div class="video-text">
-                  <h3 class="video-title" onclick="showMultiPreview()" style="cursor: pointer;">{post.videoName}</h3>
+                  <span class="video-title" onclick="showMultiPreview()" style="cursor: pointer;">{post.videoName}</span>
                   <div class="video-meta">
                       <span class="channel-name">channel-name</span>
                       <span class="performance">95%</span>
@@ -581,40 +575,52 @@ video, .thumb-section img {
 	<section id="postLesson">
 		<h2>Post</h2>
 		<p>Use this section to post.</p>
-		<div class="column-area" id="video-section-editor">
+		<div class="flex column" id="video-section-editor">
           <!-- O vídeo de postagem ou edição será inserido aqui -->
           <video id="videoPlayer" controls>
               <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
           </video>
 		</div>
-      	<div class="width-area" id="postLesson-containerBtn">
+      	<div class="flex row" id="postLesson-containerBtn">
       	    <button class="general-btn" onclick="showSection('editSrt')">👈</button>
       		  <button class="general-btn" onclick="handleCaptureClick()">Thumbnail 📸</button>
       	    <button class="general-btn" onclick="postLesson()">Postar 🛰️</button>
       	</div>
       
-      <div class="width-area" id="thumb-section-postLesson">
+      <div class="flex row" id="thumb-section-postLesson">
       	<img class="channel-pic" alt="captured thumb" hidden>
-        <form class="column-area">
+        <form class="flex column">
             <!-- Título -->
-            <input class="line-area" type="text" placeholder="Digite o nome o vídeo..." name="nome">
+            <input type="text" placeholder="Digite o nome o vídeo..." name="nome">
 
             <!-- Descrição -->
-            <textarea class="line-area" type="text" placeholder="Digite uma descrição..." name="description"></textarea>
+            <textarea type="text" placeholder="Digite uma descrição..." name="description"></textarea>
         </form>
       </div>
       <p>______________</p>
 
       <!-- Playlist -->
-      <form class="playlistForm" id="playlistForm">
+      <form class="flex column" id="playlistForm">
           <h4>Adicionar à Playlist</h4>
-          <div id="playlist-checkbox-container">
-              <p>Carregando playlists...</p>
+          <div class="flex column"  id="playlist-checkbox-container" style="width: 150px;">
+              <p>Carregando...</p>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="all" checked>
+                  Playlist 1
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="current">
+                  Playlist 2
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="from-current">
+                  Playlist 3
+              </label>
           </div>
           
-          <button class="general-btn line-area" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
-          
-          <div class="width-area" id="new-playlist-name-area" style="display: none;">
+          <div class="flex row" id="new-playlist-name-area" style="display: none;">
+          <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
+          <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
 			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." ></input>
 			<button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
 			<button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
@@ -629,7 +635,7 @@ video, .thumb-section img {
           </video>
         </div>
 
-      	<div class="width-area">
+      	<div class="flex row">
       		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
       		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
       		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
@@ -643,16 +649,16 @@ video, .thumb-section img {
             <div class="word-container" id="palavras"></div>
         </div>
         
-        <div class="width-area" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+        <div class="flex row" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
     </section>
   <!----------->
   <!--editSrt-->
   <!----------->
   <section id="editSrt">
     <div id="save-area">
-        <span class="width-area" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
         <p>💾 Salvar</p>
-        <div class="width-area">
+        <div class="flex row">
             <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
             <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
             <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
@@ -670,7 +676,7 @@ video, .thumb-section img {
 	</div>
 
 	<div id="editor">
-	<div class="width-area">
+	<div class="flex row">
     	<button id="btn-save" onclick="showSave()">💾</button>
     	<button onclick="undo()">↩</button>
     	<button onclick="redo()">↪</button>
@@ -679,63 +685,63 @@ video, .thumb-section img {
     	<button onclick="removeSegment()">|−</button>
     	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
 	</div>
-	<form class="width-area">
-      <label class="height-area">
-        <div class="column-area">
+	<form class="flex row" style="gap: 0; padding: 0;">
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
           Início
           <input type="text" id="editStart" placeholder="00:00:000">
         </div>
-        <div class="column-area">
+        <div class="flex column">
           <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
           <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
         </div>
       </label>
-      <label class="height-area">
-        <div class="column-area">
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
           Fim
           <input id="editEnd"  placeholder="00:00:000">
         </div>
-        <div class="column-area">
+        <div class="flex column">
           <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
           <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
         </div>
       </label>
     </form>
-    <form class="width-area">
-      <label class="height-area">Texto
+    <form>
+      <label class="flex row">Texto
           <textarea type="text" id="editText" rows="3"></textarea>
       </label>
     </form>
     </div><!--editor-->
-    <div class="width-area" id="navigation-controls-previewMode">
+    <div class="flex row" id="navigation-controls-previewMode">
 		<button onclick="prevLine()">⏮︎</button>
 		<button onclick="playLine()">⏯︎</button>
 		<button onclick="nextLine()">⏭︎</button>
 	</div>
 	<div class="column-area" id="config-area">
-        <span class="width-area" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
      	<p>⚙ Editar em lote</p>
-         <form class="width-area">
+         <form class="flex row">
            <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
            <input id="editStack" placeholder="0.05">
            <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
 		</form>
-		<form class="column-area" id="linhaForm">
-			<span class="radio-option">
+		<form class="flex column" id="linhaForm" style="width: 300px;">
+			<label class="radio-option" style="align-self: flex-start;">
 				<input type="radio" name="opcao-linha" value="all" checked>
 				Todas as linhas
-			</span>
-			<span class="radio-option">
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
 				<input type="radio" name="opcao-linha" value="current">
 				Apenas linha atual
-			</span>
-			<span class="radio-option">
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
 				<input type="radio" name="opcao-linha" value="from-current">
 				Linha selecionada e próximas linhas
-			</span>
+			</label>
 		</form>
 	</div><!--config-area-->
-    <div class="segmentsArea" id="segments-area">
+    <div class="flex column" id="segments-area">
     	  <span>Lista de Legendas</span>
         <div id="segments"></div>
     </div>
@@ -2059,8 +2065,8 @@ async function fetchUserPlaylists() {
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 function init() {
-  showSection('myProfile');
-  //checkAuthStatus();
+  checkAuthStatus();
+  showSection('home');
   endCreateMode();
 }
 
