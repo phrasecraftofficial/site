@@ -153,9 +153,6 @@ header {
   }
   #preview-footer {
     height: 48px;
-  } 
-  button {
-    font-size: 14px;
   }
 }  
 /* --- Classes de layout simplificadas --- */
@@ -372,6 +369,19 @@ label input[type="checkbox"] {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+/* Telas muito pequenas */
+@media screen and (max-width: 400px) {
+  button {
+    font-size: 12px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .general-btn {
+    font-size: 12px;
+    padding: 5px 6px;
+  }
+}
   </style>
 </head>
 <body>
@@ -522,11 +532,11 @@ label input[type="checkbox"] {
         <div id="user-post-container" id="myPosts-post-container">
         
             <!-- Os cards de vídeo serão inseridos aqui -->
-        	<div id="thumb-section-home" class="thumb-section" onclick="showSoloPreview()">
+        	<div id="thumb-section-myPosts" class="thumb-section" onclick="showSoloPreview()">
 				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
             </div>
             
-            <div id="info-content-home" class="info-content">
+            <div id="info-content-myPosts" class="info-content">
               <div class="channel-pic">
                   <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
               </div>
@@ -578,7 +588,7 @@ label input[type="checkbox"] {
 	<section id="postLesson">
 		<h2>Post</h2>
 		<p>Use this section to post.</p>
-		<div class="flex column" id="video-section-editor">
+		<div class="flex column" id="video-section-postLesson">
           <!-- O vídeo de postagem ou edição será inserido aqui -->
           <video id="videoPlayer-postLesson" controls>
               <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
@@ -624,7 +634,7 @@ label input[type="checkbox"] {
           <div class="flex row" id="new-playlist-name-area" style="display: none;">
           <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
           <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
-			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." ></input>
+			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
 			<button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
 			<button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
           </div>
