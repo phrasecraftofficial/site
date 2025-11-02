@@ -138,6 +138,9 @@ header {
   font-size: 10px;
   user-select: none;
 }
+body.footer-hidden main {
+  padding-bottom: 0;
+}
 /* Adaptativo para telas pequenas */
 @media screen and (max-width: 600px) {
   header {
@@ -364,10 +367,70 @@ label input[type="checkbox"] {
     font-size: 16px;
     text-align: center;
 }
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+/* ================================== */
+/* Estilo para a Lista de Legendas */
+/* ================================== */
+/* ================================== */
+.segmentsArea {
+	padding: 10px; 
+    max-height: 50vh; /* ou a altura que preferir */
+    overflow-y: auto;
+    width: 100%;
+    max-width: 600px;
+}
+
+.segment { 
+  background: #1a1a1a;
+  padding: 10px; 
+  border-radius: 10px; 
+  margin: 5px 0; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.segment:hover:not(.segment-selected) {
+  background: #334450;
+  border-left-color: #3ea6ff;
+}
+
+.segment-selected {
+  background: #1e3a4f;
+  border-left-color: #6d28d9;
+}
+
+/* Scrollbar customizada */
+.segmentsArea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.segmentsArea::-webkit-scrollbar-track {
+  background: #0b0404;
+}
+
+.segmentsArea::-webkit-scrollbar-thumb {
+  background: #3ea6ff;
+  border-radius: 4px;
+}
+
+.segmentsArea::-webkit-scrollbar-thumb:hover {
+  background: #6d28d9;
+}
+
+/* Para telas pequenas */
+@media screen and (max-width: 600px) {
+  .segmentsArea {
+    max-height: 50vh; /* Mais espaço em telas pequenas */
+  }
+  
+  .segment {
+    padding: 8px;
+    font-size: 14px;
+  }
 }
 /* Telas muito pequenas */
 @media screen and (max-width: 400px) {
@@ -748,7 +811,7 @@ label input[type="checkbox"] {
 			</label>
 		</form>
 	</div><!--config-area-->
-    <div class="flex column" id="segments-area">
+    <div class="segmentsArea flex column" id="segments-area">
     	  <span>Lista de Legendas</span>
         <div id="segments"></div>
     </div>
@@ -1026,6 +1089,7 @@ function hideAcceptChallenge() {
 function hideFooter() {  
   if (footer) {
     footer.style.display = 'none';
+    document.body.classList.add('footer-hidden');
   }
 }
 
@@ -1035,6 +1099,7 @@ function hideFooter() {  
 function showFooter() {  
   if (footer) {
     footer.style.display = 'flex';
+    document.body.classList.remove('footer-hidden');
   }
 }
 
@@ -1307,7 +1372,13 @@ function hideLoading() {
 const srtData = [
   { id: 1, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
   { id: 2, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
-  { id: 3, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." }
+  { id: 3, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." },
+  { id: 4, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
+  { id: 5, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
+  { id: 6, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." },
+  { id: 7, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
+  { id: 8, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
+  { id: 9, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." }
 ];
 
 let currentSegment = null;
@@ -2073,7 +2144,7 @@ async function fetchUserPlaylists() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 function init() {
   checkAuthStatus();
-  showSection('home');
+  showSection('create');
   endCreateMode();
 }
 
