@@ -163,6 +163,7 @@ body.footer-hidden main {
   display: flex;
   justify-content: center; /* centraliza horizontalmente */
   align-items: center;     /* centraliza verticalmente */
+  max-width: 600px;
   gap: 10px;
   padding: 10px;
   margin-bottom: 20px;
@@ -740,7 +741,7 @@ label input[type="checkbox"] {
 	</div>
     
 	<div class="column-area" id="video-section-editor">
-		<video id="videoPlayer" controls>
+		<video id="videoPlayer-editSrt" controls>
 			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
 		</video>
 	</div>
@@ -882,7 +883,18 @@ const mainNavSections = [
   'myPosts', 
   'login-screen'
 ];
+	
+// Configuração centralizada de elementos
+const SELECTORS = {
+  // VÍDEOS: Sempre começar com "videoPlayer"
+  videos: 'video[id^="videoPlayer"]',
 
+  // THUMBNAILS: Sempre começar com "thumb-section"
+  thumbnails: '[id^="thumb-section"] img',
+	
+  subtitleDisplays: '[id^="subtitleName"]',
+  segmentAreas: '[id^="segments-area"]'
+};
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --------------- Bloco Fx ----------------
@@ -893,6 +905,33 @@ const mainNavSections = [
 //
 // --------- Visbilidade e Chamadas --------
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+	
+// Mantem um estado global e propaga 
+// as mudanças para todos os elementos
+// relevantes quando o estado mudar.
+function updateAllElements(selector, updateFn) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach(updateFn);
+  console.log(`✅ ${elements.length} elemento(s) atualizado(s) [${selector}]`);
+}
+
+// Uso:
+function updateAllVideos(source) {
+  updateAllElements(SELECTORS.videos, (video) => {
+    video.src = source;
+    video.load();
+  });
+  appState.video.url = source;
+}
+
+function updateAllThumbnails(imageUrl) {
+  updateAllElements(SELECTORS.thumbnails, (img) => {
+    img.src = imageUrl;
+    img.hidden = false;
+  });
+  appState.thumbnail.url = imageUrl;
+}
+	
 // Função principal para alternar seções
 function showSection(sectionId) {
   // Esconde todas as seções
