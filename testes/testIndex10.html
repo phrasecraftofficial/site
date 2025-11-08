@@ -847,6 +847,18 @@ let currentEditMode = 'editor';
 // Variável para controlar se já está carregando
 let isLoadingThumbnails = false;
 
+// Cache global de lições
+let lessonsCache = [];
+let isCacheLoaded = false;
+
+// Seções que devem exibir thumbnails
+const SECTIONS_WITH_THUMBNAILS = [
+  'home',
+  'myPosts',
+  'subscriptions',
+  'challenge'
+];
+
 // Seleciona os elementos Header
 const textArea = document.getElementById('text-area');
 const iconsRight = document.getElementById('icons-right');
@@ -970,7 +982,7 @@ function syncStateToSection(sectionId) {
 }
 	
 // Função principal para alternar seções
-function showSection(sectionId) {
+async function showSection(sectionId) {
   // Esconde todas as seções
   const sections = document.querySelectorAll("main section");
   sections.forEach(sec => sec.classList.remove("active"));
@@ -983,6 +995,15 @@ function showSection(sectionId) {
 
   // SINCRONIZA o estado ao trocar de seção (NOVO)
   syncStateToSection(sectionId);
+  
+  // Renderiza thumbnails se a seção precisar
+  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId)) {
+    // Garante que o cache está carregado antes de renderizar
+    if (!isCacheLoaded) {
+      await loadLessonsToCache();
+    }
+    renderThumbnailsFromCache(sectionId);
+  }
   
   updateElementForSection(sectionId);
 }
@@ -2473,6 +2494,9 @@ async function postLesson() {
     alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
     // location.reload(); desativado por enquanto
     
+    // NOVO: Atualiza o cache antes de recarregar
+    await refreshLessonsCache();
+    
     showSection('home');
     
     // TODO: Salvar esses IDs no banco de dados
@@ -2575,40 +2599,153 @@ function groupFilesByLesson(files) {
 }
 
 /**
- * Renderiza as thumbnails nos elementos existentes (thumb-content e info-content)
+ * Carrega uma lição específica (vídeo + SRT + thumb) do Backblaze
+ * e guarda o conteúdo em cache após o primeiro carregamento
  */
-function renderThumbnails(lessons) {
-  console.log("--- Renderizando thumbnails ---");
-  console.log("Total de lições:", lessons.length);
+async function previewLesson(lesson) {
+  console.log("--- Carregando lição para preview ---", lesson.baseName);
+
+  try {
+    showLoading('Carregando lição...');
+
+    // 1️⃣ VIDEO -----------------------------------------
+    if (lesson.video) {
+      // Se o vídeo já estiver em cache, usa ele
+      if (!lesson.video.blobUrl) {
+        const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+        const videoResponse = await fetch(videoUrl);
+        const videoBlob = await videoResponse.blob();
+        lesson.video.blobUrl = URL.createObjectURL(videoBlob); // guarda no cache
+        console.log("📦 Vídeo adicionado ao cache:", lesson.video.fileName);
+      } else {
+        console.log("✅ Vídeo já estava no cache:", lesson.video.fileName);
+      }
+
+      appState.video.url = lesson.video.blobUrl;
+      updateAllVideos(lesson.video.blobUrl);
+    } else {
+      console.warn("⚠️ Esta lição não possui vídeo");
+    }
+
+    // 2️⃣ SRT -----------------------------------------
+    if (lesson.srt) {
+      if (!lesson.srt.content) {
+        const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
+        const response = await fetch(srtUrl);
+        const srtContent = await response.text();
+        lesson.srt.content = srtContent; // guarda no cache
+        console.log("📦 Legendas adicionadas ao cache:", lesson.srt.fileName);
+      } else {
+        console.log("✅ Legendas já estavam no cache:", lesson.srt.fileName);
+      }
+
+      parseSRT(lesson.srt.content);
+      appState.subtitle.name = lesson.srt.fileName;
+      appState.subtitle.url = lesson.srt.content;
+    } else {
+      console.warn("⚠️ Esta lição não possui legendas");
+    }
+
+    // 3️⃣ THUMBNAIL -----------------------------------
+    if (lesson.thumb) {
+      const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+      updateAllThumbnails(thumbUrl);
+      appState.thumbnail.url = thumbUrl;
+    }
+
+    hideLoading();
+
+    // 4️⃣ Exibe o preview
+    showSoloPreview();
+
+  } catch (error) {
+    console.error("❌ Erro ao carregar lição:", error);
+    hideLoading();
+    alert('Erro ao carregar lição: ' + error.message);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Sistema de Cache de Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Carrega as lições UMA VEZ e salva em cache
+ */
+async function loadLessonsToCache() {
+  if (isCacheLoaded) {
+    console.log("📦 Cache já carregado, pulando...");
+    return lessonsCache;
+  }
   
-  const container = document.getElementById('home-post-container');
+  console.log("=== Carregando lições para o cache ===");
+  
+  try {
+    showLoading('Carregando lições...');
+    
+    // 1. Lista todos os arquivos
+    const allFiles = await listBackblazeFiles();
+    
+    // 2. Agrupa arquivos por lição (nome base)
+    lessonsCache = groupFilesByLesson(allFiles);
+    isCacheLoaded = true;
+    
+    console.log(`✅ Cache carregado: ${lessonsCache.length} lições`);
+    
+    hideLoading();
+    
+    return lessonsCache;
+    
+  } catch (error) {
+    console.error("❌ ERRO ao carregar cache:", error);
+    hideLoading();
+    throw error;
+  }
+}
+
+/**
+ * Renderiza thumbnails a partir do cache para uma seção específica
+ */
+function renderThumbnailsFromCache(sectionId) {
+  console.log(`--- Renderizando thumbnails para: ${sectionId} ---`);
+  console.log(`Cache carregado: ${isCacheLoaded}, Total de lições: ${lessonsCache.length}`);
+  
+  // Mapeia o ID da seção para o ID do container
+  const containerMap = {
+    'home': 'home-post-container',
+    'myPosts': 'user-post-container',
+    'subscriptions': 'subscriptions-post-container',
+    'challenge': 'multi-post-container'
+  };
+  
+  const containerId = containerMap[sectionId];
+  const container = document.getElementById(containerId);
   
   if (!container) {
-    console.error('Container home-post-container não encontrado');
+    console.error(`Container ${containerId} não encontrado para seção ${sectionId}`);
     return;
   }
   
   // Limpa o container
   container.innerHTML = '';
   
-  if (lessons.length === 0) {
+  if (!isCacheLoaded) {
+    container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Carregando lições...</p>';
+    return;
+  }
+  
+  if (lessonsCache.length === 0) {
     container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição encontrada.</p>';
     return;
   }
   
-  // Cria um card para cada lição
-  lessons.forEach((lesson, index) => {
+  // Filtra lições se necessário
+  let lessonsToRender = lessonsCache;
+  
+  // Renderiza cada lição
+  lessonsToRender.forEach((lesson, index) => {
     const displayName = lesson.baseName;
     const thumbnailUrl = getBackblazePublicUrl(lesson.thumb.fileId);
-    
-    // Log no console
-    console.log(`[${index + 1}] Lição:`, {
-      baseName: lesson.baseName,
-      hasVideo: !!lesson.video,
-      hasSrt: !!lesson.srt,
-      hasThumb: !!lesson.thumb,
-      thumbUrl: thumbnailUrl
-    });
     
     // Cria o wrapper do post
     const postWrapper = document.createElement('div');
@@ -2648,126 +2785,37 @@ function renderThumbnails(lessons) {
     container.appendChild(postWrapper);
   });
   
-  console.log(`✅ ${lessons.length} lições renderizadas`);
-  console.log("--- Fim da renderização ---");
+  console.log(`✅ ${lessonsToRender.length} lições renderizadas em ${sectionId}`);
 }
 
 /**
- * Carrega uma lição específica (vídeo + SRT + thumb) do Backblaze
+ * Força atualização do cache (após upload de nova lição)
  */
-async function previewLesson(lesson) {
-  console.log("--- Carregando lição para preview ---", lesson.baseName);
+async function refreshLessonsCache() {
+  console.log("🔄 Forçando atualização do cache...");
+  isCacheLoaded = false;
+  lessonsCache = [];
+  await loadLessonsToCache();
   
-  try {
-    showLoading('Carregando lição...');
-    
-    // 1. Carrega o vídeo
-    if (lesson.video) {
-      const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
-      appState.video.url = videoUrl;
-      updateAllVideos(videoUrl);
-      console.log("✅ Vídeo carregado:", lesson.video.fileName);
-    } else {
-      console.warn("⚠️ Esta lição não possui vídeo");
-    }
-    
-    // 2. Carrega o SRT
-    if (lesson.srt) {
-      const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
-      const response = await fetch(srtUrl);
-      const srtContent = await response.text();
-      
-      parseSRT(srtContent);
-      appState.subtitle.name = lesson.srt.fileName;
-      appState.subtitle.url = srtUrl;
-      
-      console.log("✅ Legendas carregadas:", lesson.srt.fileName);
-    } else {
-      console.warn("⚠️ Esta lição não possui legendas");
-    }
-    
-    // 3. Carrega a thumbnail
-    if (lesson.thumb) {
-      const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
-      updateAllThumbnails(thumbUrl);
-      appState.thumbnail.url = thumbUrl;
-      console.log("✅ Thumbnail carregada:", lesson.thumb.fileName);
-    }
-    
-    hideLoading();
-    
-    // 4. Vai para a tela de preview
-    showSoloPreview();
-    
-  } catch (error) {
-    console.error("❌ Erro ao carregar lição:", error);
-    hideLoading();
-    alert('Erro ao carregar lição: ' + error.message);
-  }
-}
-
-/**
- * Função principal para carregar e exibir thumbnails
- */
-async function loadAndDisplayThumbnails() {
-  console.log("=== INÍCIO loadAndDisplayThumbnails() ===");
-  
-  // Evita múltiplas chamadas simultâneas
-  if (isLoadingThumbnails) {
-    console.log("⏳ Já está carregando thumbnails, aguarde...");
-    return;
-  }
-  
-  isLoadingThumbnails = true;
-  
-  try {
-    showLoading('Carregando lições...');
-    
-    // 1. Lista todos os arquivos
-    const allFiles = await listBackblazeFiles();
-    
-    // 2. Agrupa arquivos por lição (nome base)
-    const lessons = groupFilesByLesson(allFiles);
-    
-    console.log(`📦 Total de arquivos: ${allFiles.length}`);
-    console.log(`📚 Total de lições: ${lessons.length}`);
-    
-    // 3. Renderiza na página usando os elementos existentes
-    renderThumbnails(lessons);
-    
-    hideLoading();
-    
-    return lessons;
-    
-  } catch (error) {
-    console.error("❌ ERRO em loadAndDisplayThumbnails():", error);
-    hideLoading();
-    
-    const container = document.getElementById('home-post-container');
-    if (container) {
-      container.innerHTML = `
-        <p style="color: #ff6b6b; text-align: center; padding: 20px;">
-          ❌ Erro ao carregar lições: ${error.message}
-        </p>
-      `;
-    }
-    
-    throw error;
-  } finally {
-    console.log("=== FIM loadAndDisplayThumbnails() ===");
+  // Re-renderiza a seção atual se for uma seção com thumbnails
+  const currentSection = document.querySelector('section.active');
+  if (currentSection && SECTIONS_WITH_THUMBNAILS.includes(currentSection.id)) {
+    renderThumbnailsFromCache(currentSection.id);
   }
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-function init() {
+async function init() {
   checkAuthStatus();
-  showSection('home');
   endCreateMode();
   
-  // Carrega as thumbnails ao iniciar
-  loadAndDisplayThumbnails();
+  // Carrega o cache ANTES de mostrar qualquer seção
+  await loadLessonsToCache();
+  
+  // Agora mostra a home com as thumbnails já carregadas
+  showSection('home');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
