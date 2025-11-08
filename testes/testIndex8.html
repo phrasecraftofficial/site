@@ -648,7 +648,7 @@ label input[type="checkbox"] {
 		<p>Use this section to post.</p>
 		<div class="flex column" id="video-section-postLesson">
           <!-- O vídeo de postagem ou edição será inserido aqui -->
-          <video id="videoPlayer-postLesson" controls>
+          <video id="videoPlayer-postLesson" controls crossorigin="anonymous">
               <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
           </video>
 		</div>
@@ -701,7 +701,7 @@ label input[type="checkbox"] {
     </section>
 	<section id="play">
 		<div id="video-section-play">
-          <video id="videoPlayer-play" controls>
+          <video id="videoPlayer-play" controls crossorigin="anonymous">
                   <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
           </video>
         </div>
@@ -741,7 +741,7 @@ label input[type="checkbox"] {
 	</div>
     
 	<div class="column-area" id="video-section-editor">
-		<video id="videoPlayer-editSrt" controls>
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
 			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
 		</video>
 	</div>
@@ -2208,20 +2208,20 @@ async function fetchUserPlaylists() {
     }
 }
 
-	function handleCaptureClick() {
-  // Tenta pegar qualquer vídeo que tenha conteúdo carregado
-  const videos = document.querySelectorAll('video[id^="videoPlayer"]');
-  let video = null;
-  
-  for (let v of videos) {
-    if (v.src && v.readyState >= 2) {
-      video = v;
-      break;
-    }
-  }
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+//  - Bloco Fx | Thumbnail -
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+function handleCaptureClick() {
+  const video = document.getElementById('videoPlayer-postLesson'); // Corrigido o ID
   
   if (!video) {
-    alert('Vídeo não encontrado ou não carregado completamente.');
+    console.error('Elemento de vídeo não encontrado.');
+    alert('Vídeo não encontrado. Certifique-se de ter carregado um vídeo.');
+    return;
+  }
+
+  if (!video.src || video.readyState < 2) {
+    alert('Aguarde o vídeo carregar completamente antes de capturar a thumbnail.');
     return;
   }
 
@@ -2230,23 +2230,36 @@ async function fetchUserPlaylists() {
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
+
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
   canvas.toBlob((blob) => {
     if (blob) {
-      appState.thumbnail.blob = blob; // Salva no estado global
+      window.capturedThumbnailBlob = blob; // Torna global
+      console.log('Thumbnail Blob capturado com sucesso!');
+
       const imageDataURL = URL.createObjectURL(blob);
-      appState.thumbnail.url = imageDataURL;
-      
-      // Atualiza em TODAS as seções
-      updateAllThumbnails(imageDataURL);
-      
-      console.log('✅ Thumbnail capturada e sincronizada em todas as seções!');
+
+      // Encontra a imagem que já existe no HTML
+      const thumbnailImg = document.querySelector('#thumb-section-postLesson img');
+
+      if (thumbnailImg) {
+        // Atualiza a imagem existente
+        thumbnailImg.src = imageDataURL;
+        thumbnailImg.hidden = false; // Torna visível
+        thumbnailImg.style.maxWidth = '200px';
+        thumbnailImg.style.height = 'auto';
+      } else {
+        console.error('Elemento de imagem não encontrado.');
+        alert('Erro: Container da thumbnail não encontrado.');
+      }
     } else {
+      console.error('Falha ao gerar Blob da thumbnail.');
       alert('Erro ao capturar a thumbnail.');
     }
   }, 'image/jpeg', 0.9);
 }
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
