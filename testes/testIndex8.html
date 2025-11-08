@@ -883,6 +883,26 @@ const mainNavSections = [
   'myPosts', 
   'login-screen'
 ];
+
+// Estado global da aplicação
+const appState = {
+  video: {
+    url: null,
+    file: null,
+    blob: null
+  },
+  subtitle: {
+    url: null,
+    file: null,
+    name: 'legendas.srt',
+    data: [] // srtData
+  },
+  thumbnail: {
+    blob: null,
+    url: null
+  },
+  currentSection: 'home'
+};
 	
 // Configuração centralizada de elementos
 const SELECTORS = {
@@ -931,22 +951,37 @@ function updateAllThumbnails(imageUrl) {
   });
   appState.thumbnail.url = imageUrl;
 }
+
+// Sincronizar dados ao mudar de seção
+function syncStateToSection(sectionId) {
+  // Sincroniza vídeo se houver
+  if (appState.video.url || appState.video.blob) {
+    const source = appState.video.blob || appState.video.url;
+    updateAllVideos(source);
+  }
+  
+  // Sincroniza thumbnail se houver
+  if (appState.thumbnail.url) {
+    updateAllThumbnails(appState.thumbnail.url);
+  }
+}
 	
 // Função principal para alternar seções
 function showSection(sectionId) {
-  // Esconde todas as seções
-  const sections = document.querySelectorAll("main section");
-  sections.forEach(sec => sec.classList.remove("active"));
+  // Esconde todas as seções
+  const sections = document.querySelectorAll("main section");
+  sections.forEach(sec => sec.classList.remove("active"));
 
-  // Exibe a seção desejada
-  const target = document.getElementById(sectionId);
-  if (target) {
-    target.classList.add("active");
-  }
+  // Exibe a seção desejada
+  const target = document.getElementById(sectionId);
+  if (target) {
+    target.classList.add("active");
+  }
 
-  // ATUALIZAÇÃO ADICIONADA:
-  // Chama a função para atualizar o footer com base na seção
-  updateElementForSection(sectionId);
+  // SINCRONIZA o estado ao trocar de seção (NOVO)
+  syncStateToSection(sectionId);
+  
+  updateElementForSection(sectionId);
 }
 
 /**
@@ -1853,12 +1888,15 @@ function loadContent() {
   const srtInput = document.getElementById("srtUrl").value.trim();
   const srtUpload = document.getElementById("srtUpload").files[0];
 
-  // Carregar o vídeo
+  // Carregar o vídeo em TODAS as seções (CORRIGIDO)
   if (videoUpload) {
     const videoURL = URL.createObjectURL(videoUpload);
-    document.getElementById("videoPlayer-editSrt").src = videoURL;
+    appState.video.file = videoUpload;
+    appState.video.blob = videoURL;
+    updateAllVideos(videoURL); // Usa a função de sincronização
   } else if (videoInput) {
-    document.getElementById("videoPlayer-editSrt").src = videoInput;
+    appState.video.url = videoInput;
+    updateAllVideos(videoInput); // Usa a função de sincronização
   }
 
   // Carregar a legenda
@@ -1867,9 +1905,9 @@ function loadContent() {
     reader.onload = function (e) {
       parseSRT(e.target.result);
       
-      // Atualizar o nome da legenda carregada
-      subtitleName = srtUpload.name;  // Usa o nome do arquivo carregado
-      document.getElementById("subtitleName").textContent = subtitleName;  // Exibe o nome da legenda
+      appState.subtitle.name = srtUpload.name;
+      appState.subtitle.file = srtUpload;
+      document.getElementById("subtitleName").textContent = srtUpload.name;
     };
     reader.readAsText(srtUpload);
   } else if (srtInput) {
@@ -1878,9 +1916,9 @@ function loadContent() {
       .then(text => {
         parseSRT(text);
 
-        // Atualizar o nome da legenda carregada (com URL)
-        subtitleName = srtInput.split("/").pop();  // Extraí o nome da URL
-        document.getElementById("subtitleName").textContent = subtitleName;  // Exibe o nome da legenda
+        appState.subtitle.name = srtInput.split("/").pop();
+        appState.subtitle.url = srtInput;
+        document.getElementById("subtitleName").textContent = appState.subtitle.name;
       })
       .catch(err => alert("Erro ao carregar SRT por URL: " + err.message));
   }
@@ -2170,6 +2208,45 @@ async function fetchUserPlaylists() {
     }
 }
 
+	function handleCaptureClick() {
+  // Tenta pegar qualquer vídeo que tenha conteúdo carregado
+  const videos = document.querySelectorAll('video[id^="videoPlayer"]');
+  let video = null;
+  
+  for (let v of videos) {
+    if (v.src && v.readyState >= 2) {
+      video = v;
+      break;
+    }
+  }
+  
+  if (!video) {
+    alert('Vídeo não encontrado ou não carregado completamente.');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  canvas.toBlob((blob) => {
+    if (blob) {
+      appState.thumbnail.blob = blob; // Salva no estado global
+      const imageDataURL = URL.createObjectURL(blob);
+      appState.thumbnail.url = imageDataURL;
+      
+      // Atualiza em TODAS as seções
+      updateAllThumbnails(imageDataURL);
+      
+      console.log('✅ Thumbnail capturada e sincronizada em todas as seções!');
+    } else {
+      alert('Erro ao capturar a thumbnail.');
+    }
+  }, 'image/jpeg', 0.9);
+}
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
