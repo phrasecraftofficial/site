@@ -2260,6 +2260,231 @@ function handleCaptureClick() {
   }, 'image/jpeg', 0.9);
 }
 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Upload Backblaze --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Obtém URL de upload do Backblaze via função Appwrite
+ */
+async function getBackblazeUploadUrl() {
+  console.log("--- Obtendo URL de upload do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',  // ID da sua função
+    JSON.stringify({}),
+    false // síncrono
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha na execução da função: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  
+  if (!data.uploadUrl || !data.authorizationToken) {
+    throw new Error('Erro ao obter URL de upload');
+  }
+  
+  console.log("✅ URL de upload obtida com sucesso");
+  return data;
+}
+
+/**
+ * Faz upload de um arquivo para o Backblaze
+ */
+async function uploadFileToBackblaze(file, fileName, uploadData) {
+  console.log(`--- Fazendo upload de: ${fileName} ---`);
+  console.log(`Tamanho do arquivo: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+  
+  const headers = {
+    'Authorization': uploadData.authorizationToken,
+    'X-Bz-File-Name': encodeURIComponent(fileName),
+    'Content-Type': file.type || 'b2/x-auto',
+    'X-Bz-Content-Sha1': 'do_not_verify',
+  };
+  
+  const uploadResponse = await fetch(uploadData.uploadUrl, {
+    method: 'POST',
+    headers: headers,
+    body: file,
+  });
+  
+  if (!uploadResponse.ok) {
+    throw new Error(`Erro no upload de ${fileName}: ${uploadResponse.statusText}`);
+  }
+  
+  const uploadResult = await uploadResponse.json();
+  console.log(`✅ Upload de ${fileName} concluído!`, uploadResult);
+  
+  return uploadResult;
+}
+
+/**
+ * Converte vídeo do videoPlayer para Blob
+ */
+async function getVideoBlob() {
+  console.log("--- Obtendo Blob do vídeo ---");
+  
+  // CORRIGIDO: Usa o arquivo original do appState
+  if (appState.video.file) {
+    console.log("Usando arquivo de vídeo carregado (File object)");
+    console.log(`✅ Blob do vídeo obtido: ${(appState.video.file.size / 1024 / 1024).toFixed(2)} MB`);
+    return appState.video.file;
+  }
+  
+  // Se foi carregado via blob URL (raro, mas possível)
+  if (appState.video.blob) {
+    console.log("Vídeo é um blob local, buscando conteúdo...");
+    const response = await fetch(appState.video.blob);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  // Se foi carregado via URL externa
+  if (appState.video.url) {
+    console.log("Vídeo é uma URL externa, fazendo fetch...");
+    const response = await fetch(appState.video.url);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  throw new Error('Nenhum vídeo foi carregado');
+}
+
+/**
+ * Converte SRT data para Blob
+ */
+function getSrtBlob() {
+  console.log("--- Criando Blob do SRT ---");
+  const srtContent = generateSRT();
+  const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+  console.log(`✅ Blob do SRT criado: ${blob.size} bytes`);
+  return blob;
+}
+
+/**
+ * Gera nome base a partir do nome do SRT (sem extensão)
+ */
+function getBaseName() {
+  // CORRIGIDO: Usa o nome do appState
+  if (appState.subtitle.name && appState.subtitle.name !== 'legendas.srt') {
+    // Remove a extensão .srt
+    return appState.subtitle.name.replace(/\.srt$/i, '');
+  }
+  
+  // Se não houver nome personalizado, usa o nome do vídeo
+  if (appState.video.file && appState.video.file.name) {
+    return appState.video.file.name.replace(/\.[^/.]+$/, ''); // Remove qualquer extensão
+  }
+  
+  // Fallback: usa timestamp se não houver nome
+  return `lesson_${Date.now()}`;
+}
+
+/**
+ * Função principal para postar a lição
+ */
+async function postLesson() {
+  console.log("=== INÍCIO postLesson() ===");
+  
+  try {
+    showLoading('Preparando upload...');
+    
+    // 1. Validações
+    console.log("--- Validando dados ---");
+    
+    if (!srtData || srtData.length === 0) {
+      throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
+    }
+    
+    // CORRIGIDO: Verifica se há thumbnail capturada
+    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob) {
+      throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
+    }
+    
+    // CORRIGIDO: Verifica se há vídeo no appState
+    if (!appState.video.file && !appState.video.blob && !appState.video.url) {
+      throw new Error('Nenhum vídeo carregado.');
+    }
+    
+    console.log("✅ Validações passaram");
+    
+    // 2. Gera nomes dos arquivos baseados no SRT
+    const baseName = getBaseName();
+    const videoFileName = `${baseName}.mp4`;
+    const srtFileName = `${baseName}.srt`;
+    const thumbFileName = `${baseName}.jpg`;
+    
+    console.log("--- Nomes dos arquivos ---");
+    console.log("Base name:", baseName);
+    console.log("Video:", videoFileName);
+    console.log("SRT:", srtFileName);
+    console.log("Thumb:", thumbFileName);
+    
+    // 3. Prepara os arquivos
+    showLoading('Preparando arquivos...');
+    const videoBlob = await getVideoBlob();
+    const srtBlob = getSrtBlob();
+    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob; // CORRIGIDO
+    
+    console.log("✅ Todos os arquivos preparados");
+    
+    // 4. Faz upload dos 3 arquivos
+    const uploadResults = {
+      video: null,
+      srt: null,
+      thumb: null
+    };
+    
+    // Upload do vídeo
+    showLoading('Enviando vídeo... (1/3)');
+    const videoUploadData = await getBackblazeUploadUrl();
+    uploadResults.video = await uploadFileToBackblaze(videoBlob, videoFileName, videoUploadData);
+    
+    // Upload do SRT
+    showLoading('Enviando legenda... (2/3)');
+    const srtUploadData = await getBackblazeUploadUrl();
+    uploadResults.srt = await uploadFileToBackblaze(srtBlob, srtFileName, srtUploadData);
+    
+    // Upload da thumbnail
+    showLoading('Enviando thumbnail... (3/3)');
+    const thumbUploadData = await getBackblazeUploadUrl();
+    uploadResults.thumb = await uploadFileToBackblaze(thumbBlob, thumbFileName, thumbUploadData);
+    
+    console.log("=== UPLOADS CONCLUÍDOS ===");
+    console.log("Video ID:", uploadResults.video.fileId);
+    console.log("SRT ID:", uploadResults.srt.fileId);
+    console.log("Thumb ID:", uploadResults.thumb.fileId);
+    
+    // 5. Exibe resultado no console (por enquanto)
+    console.log("--- RESULTADO FINAL ---");
+    console.log(JSON.stringify(uploadResults, null, 2));
+    
+    hideLoading();
+    alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
+    location.reload();
+    
+    // TODO: Salvar esses IDs no banco de dados
+    // TODO: Exibir os arquivos na página
+    
+    return uploadResults;
+    
+  } catch (error) {
+    console.error("❌ ERRO em postLesson():", error);
+    hideLoading();
+    alert('❌ Erro ao postar lição: ' + error.message);
+    throw error;
+  } finally {
+    console.log("=== FIM postLesson() ===");
+  }
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
