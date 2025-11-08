@@ -1089,7 +1089,6 @@ function hideAcceptChallenge() {
 function hideFooter() {  
   if (footer) {
     footer.style.display = 'none';
-    document.body.classList.add('footer-hidden');
   }
 }
 
@@ -1099,7 +1098,6 @@ function hideFooter() {  
 function showFooter() {  
   if (footer) {
     footer.style.display = 'flex';
-    document.body.classList.remove('footer-hidden');
   }
 }
 
@@ -1193,6 +1191,44 @@ function hideAddPlaylistArea() {
   }
 }
 
+// ================================
+// Sincroniza o estado entre 
+// seções através de uma fonte única 
+// de verdade (single source of truth).
+// =================================
+
+// Configuração centralizada
+const SELECTORS = {
+  videos: 'video[id^="videoPlayer"]',
+  thumbnails: '[id^="thumb-section"] img',
+  subtitleDisplays: '[id^="subtitleName"]',
+  segmentAreas: '[id^="segments-area"]'
+};
+
+// Função genérica de atualização
+function updateAllElements(selector, updateFn) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach(updateFn);
+  console.log(`✅ ${elements.length} elemento(s) atualizado(s) [${selector}]`);
+}
+
+// Uso:
+function updateAllVideos(source) {
+  updateAllElements(SELECTORS.videos, (video) => {
+    video.src = source;
+    video.load();
+  });
+  appState.video.url = source;
+}
+
+function updateAllThumbnails(imageUrl) {
+  updateAllElements(SELECTORS.thumbnails, (img) => {
+    img.src = imageUrl;
+    img.hidden = false;
+  });
+  appState.thumbnail.url = imageUrl;
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // ----- Bloco Fx | Login ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -1234,7 +1270,7 @@ async function checkAuthStatus() {
     }
     
     showLoading('Carregando...');
-    console.log('Verificando sessão...');
+    console.log('Verificando sessão...')
     
     try {
         const user = await account.get();
@@ -1243,7 +1279,7 @@ async function checkAuthStatus() {
         renderUIForAuthState(true, user.email);
         showSection('myPosts');
     } catch (error) {
-    	console.log('Usuário não está logando. Direcinando para "home"...');
+    	console.log('Usuário não está logando. Direcinando para "home"...')
         // Remove cache se houver erro
         localStorage.removeItem('userEmail');
         renderUIForAuthState(false);
@@ -1372,13 +1408,7 @@ function hideLoading() {
 const srtData = [
   { id: 1, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
   { id: 2, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
-  { id: 3, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." },
-  { id: 4, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
-  { id: 5, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
-  { id: 6, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." },
-  { id: 7, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
-  { id: 8, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
-  { id: 9, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." }
+  { id: 3, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." }
 ];
 
 let currentSegment = null;
@@ -2139,12 +2169,64 @@ async function fetchUserPlaylists() {
     }
 }
 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+//  - Bloco Fx | Thumbnail -
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+function handleCaptureClick() {
+  const video = document.getElementById('videoPlayer-postLesson'); // Corrigido o ID
+  
+  if (!video) {
+    console.error('Elemento de vídeo não encontrado.');
+    alert('Vídeo não encontrado. Certifique-se de ter carregado um vídeo.');
+    return;
+  }
+
+  if (!video.src || video.readyState < 2) {
+    alert('Aguarde o vídeo carregar completamente antes de capturar a thumbnail.');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  canvas.toBlob((blob) => {
+    if (blob) {
+      window.capturedThumbnailBlob = blob; // Torna global
+      console.log('Thumbnail Blob capturado com sucesso!');
+
+      const imageDataURL = URL.createObjectURL(blob);
+
+      // Encontra a imagem que já existe no HTML
+      const thumbnailImg = document.querySelector('#thumb-section-postLesson img');
+
+      if (thumbnailImg) {
+        // Atualiza a imagem existente
+        thumbnailImg.src = imageDataURL;
+        thumbnailImg.hidden = false; // Torna visível
+        thumbnailImg.style.maxWidth = '200px';
+        thumbnailImg.style.height = 'auto';
+      } else {
+        console.error('Elemento de imagem não encontrado.');
+        alert('Erro: Container da thumbnail não encontrado.');
+      }
+    } else {
+      console.error('Falha ao gerar Blob da thumbnail.');
+      alert('Erro ao capturar a thumbnail.');
+    }
+  }, 'image/jpeg', 0.9);
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 function init() {
   checkAuthStatus();
-  showSection('create');
+  showSection('home');
   endCreateMode();
 }
 
