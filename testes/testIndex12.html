@@ -1,34 +1,36 @@
-<!-- cria partida no Aw Db e performance no header  -->
-<!doctype html>
-<html lang="en">
+<!-- indexedDb que consulta time stamps  -->
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dark Page</title>
-
-<script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhraseCraft</title>
+  <script src="https://unpkg.com/dexie@4/dist/dexie.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
 <style>
-/* Reset e base */
-body, html {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background: #000;
-  color: #fff;
+/* Reset básico */ 
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+} 
+body { 
+    font-family: "Roboto", Arial, sans-serif; 
+    background-color: #0b0404; 
+    color: #e0e0e0; 
+    line-height: 1.54;
 }
-
-main { 
-padding: 70px 16px 90px; text-align: center; }
-
-section { display: none; }           /* todas escondidas */
-
-section.active { display: block; }   /* visível */
-
-a {
-  flex-direction: column;
+main {
+  padding: 62px 0 62px 0; /* altura do footer e do header */
 }
-
+/* todas escondidas */
+section { 
+	display: none;
+} 
+/* visível */
+section.active { 
+	display: block; 
+}   
 /* Estilos gerais para Header e Footer */
 header, footer {
   position: fixed;
@@ -36,33 +38,39 @@ header, footer {
   right: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   background: #000;
   padding: 0 16px;
   color: #fff;
   user-select: none;
   z-index: 1000;
 }
-
   /* ===============  */
  /*      Header      */
 /* ===============  */
 header {
-  top: 0;
-  height: 56px;
-  border-bottom: 1px solid #222; 
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid #222;
 }
-
+/* Logo à esquerda */
 .logo-area {
-  color: #fff;  
-  border-radius: 15%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+/* Performance centralizado no header */
+.performance-area {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
-  cursor: pointer;
 }
-
 .logo-area img {
   background: #fff; 
   color: #000;  
@@ -71,21 +79,16 @@ header {
   height: 30px;
   border-radius: 4px;
 }
-
 .icon {
   width: 24px; 
   height: 24px;
 }
-
+/* Ícones à direita */
 .icons-right {
-	display: flex;
-	align-items: center;
-	gap: 20px;
-	color: #6d28d9;
-	text-decoration: none;
-	cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-
 .icons-right a {
   color: #6d28d9;
   text-decoration: none;
@@ -95,59 +98,28 @@ header {
   transition: color 0.3s ease;
   cursor: pointer;
 }
-
 .icons-right svg, header svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
 }
-  /* ===============  */
- /* botoes-container */
-/* ===============  */
-.botoes-container {
-  display: flex; /* Habilita o Flexbox */
-  margin: 30px 0;
-  height: 56px;
-  justify-content: center; /* Alinha horizontalmente no centro */
-  align-items: flex-start; /* Alinha verticalmente no topo */
-  gap: 30px;
-}
-
-.botoes-container a {
-  flex-direction: column;
-  color: #fff;
-  text-decoration: none;
-  font-size: 18px;
+/* Centralização interna dos textos e ícones */
+.text-area {
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: color 0.3s ease;
+  justify-content: center;
 }
-
-.botoes-container a svg, .botoes-container a img {
-  width: 36px;
-  height: 36px;
-  fill: currentColor;
-}
-
-/* Texto */
-.botoes-container span {
-  font-size: 15px;
-  user-select: none;
-}
-
   /* ===============  */
  /*      Footer      */
 /* ===============  */
-#main-footer, #preview-footer {
+#main-footer {
   bottom: 0;
   height: 56px;
   border-top: 1px solid #222;
   justify-content: space-around;
   align-items: center;
 }
-
-#main-footer a, #preview-footer a {
+#main-footer a {
   color: #fff;
   text-decoration: none;
   font-size: 12px;
@@ -157,19 +129,19 @@ header {
   gap: 4px;
   transition: color 0.3s ease;
 }
-
-#main-footer a svg, #preview-footer a img {
+#main-footer a svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
 }
-
 /* Texto do footer */
 #main-footer span {
   font-size: 10px;
   user-select: none;
 }
-
+body.footer-hidden main {
+  padding-bottom: 0;
+}
 /* Adaptativo para telas pequenas */
 @media screen and (max-width: 600px) {
   header {
@@ -186,8 +158,181 @@ header {
   #preview-footer {
     height: 48px;
   }
+}  
+/* --- Classes de layout simplificadas --- */
+.flex, h4, h3, h2, p {
+  display: flex;
+  justify-content: center; /* centraliza horizontalmente */
+  align-items: center;     /* centraliza verticalmente */
+  max-width: 600px;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.row, h4, h3, h2, p {
+  margin: 0 auto;
+  flex-direction: row;
+}
+.column {
+  margin: 0 auto;
+  flex-direction: column;
+}
+input, textarea {
+    border: 1px solid #555; 
+    border-radius: 4px; 
+    padding: 10px 12px; 
+    font-size: 14px; 
+    width: 250px; 
+    max-width: 400px; 
+    background-color: #121212; 
+    color: #e0e0e0; 
+    transition: border-color 0.2s ease; 
+} 
+input:focus, textarea:focus { 
+    border-color: #3ea6ff; 
+    outline: none; 
+}
+#editEnd, #editStart, #editStack {
+    width: 90px;
+}
+input[type="radio"] {
+    width: 16px; 
+    max-width: 16px; 
+} 
+button {
+	width: 30px;
+	height: 30px;
+	font-size: 18px;
+	white-space: nowrap;
+	cursor: pointer;
+	border: none; 
+	background-color: #263238; 
+	color: #3ea6ff;
+	border-radius: 8px; 
+	transition: background 0.2s;
+}
+button:hover {
+	background-color: #bbb;
+	color: #000;
+}
+.general-btn { 
+    background-color: transparent; 
+    border: none; 
+    color: #3ea6ff;
+    font-weight: 500;
+  	white-space: nowrap; 
+    cursor: pointer; 
+    padding: 8px 12px;
+	border-radius: 8px;  
+    transition: background-color 0.2s ease; 
+	width: auto; 
+	max-width: 150px;
+	height: auto;
+    margin-bottom: 15px;
+}
+.general-btn:hover { 
+	background-color: #00111b; 
+	color: #fff;
+}
+/*thumb-section*/
+.video-section, .thumb-section { 
+  width: 100%;
+  height: auto;
 }
 
+video, .thumb-section img {
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+/* info-content */
+.info-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px 0 5px;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Texto do vídeo */
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Título do vídeo */
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 5px 0 5px 8px;
+  text-align: left;
+}
+
+/* Linha com nome do canal, desempenho e editar */
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 5px 8px;
+  font-size: 14px;
+}
+
+/* Imagem do canal */
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 1px 0 20px 0;
+}
+
+/* Nome do canal */
+.channel-name {
+  color: #bbbbbb;
+  margin-bottom: 15px;
+}
+
+/* Desempenho (percentual) */
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Botão Editar */
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+/* Playlist Item */
+label {
+	display: flex;
+	align-self: flex-start;
+}
+label input[type="checkbox"] {
+    /* Usando accent-color para estilizar a cor do 'check' (suporte varia) */
+    accent-color: gray; /* Cor secundária de destaque */
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid #5a5a5a; /* Borda para contraste */
+    background-color: #333333; /* Fundo do checkbox */
+    cursor: pointer;
+}
   /*=================*/
  /* Loading Overlay */
 /*=================*/
@@ -224,201 +369,109 @@ header {
     font-size: 16px;
     text-align: center;
 }
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-
-  /* ======== */
- /* Edit Srt */
-/* ======== */
-.video-section {
-    padding: 20px;
-    border-radius: 8px;
-}
-
-video {
-    width: 100%;
-    border-radius: 4px;
-}
-
-input, textarea { 
-  width: calc(100% - 40px); 
-  margin-top: 5px; 
-  margin-bottom: 10px; 
-  padding: 6px; 
-  font-size: 14px; 
-}
-
-button { margin: 3px; padding: 6px 10px; font-size: 14px; cursor: pointer; }
-
-.time-controls { display: flex; align-items: center; gap: 5px; }
-
-label { font-weight: bold; display: block; margin-top: 10px; }
-  
-/* Estilo para o formulário (se você quiser que os itens fiquem um abaixo do outro) */
-form {
-  	display: flex;
-  	flex-direction: column;
-  	gap: 15px; /* Espaço entre cada opção */
-}
-
-form label {
-	font-size: 14px;
-}
-
-/* Estilo para cada par de radio + texto */
-.radio-option {
-  	display: flex;
-  	align-items: center; /* Alinha o botão e o texto verticalmente */
-  	cursor: pointer;
-  	gap: 8px; /* Ajuste este valor para controlar o espaço entre o botão e o texto */
-}
-  
-input[type="radio"] {
-    width: 15px;
-    height: 15px;
-}
-
 /* ================================== */
 /* Estilo para a Lista de Legendas */
 /* ================================== */
+/* ================================== */
 .segmentsArea {
+	padding: 10px; 
     max-height: 50vh; /* ou a altura que preferir */
     overflow-y: auto;
     width: 100%;
+    max-width: 600px;
 }
 
 .segment { 
-  background: white; 
+  background: #1a1a1a;
   padding: 10px; 
   border-radius: 10px; 
   margin: 5px 0; 
   cursor: pointer; 
-  transition: 0.2s; 
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
 }
 
-.segment:hover:not(.segment-selected) { 
-  background: #e7f0ff; 
-  transform: scale(1.01); 
+.segment:hover:not(.segment-selected) {
+  background: #334450;
+  border-left-color: #3ea6ff;
 }
 
 .segment-selected {
-  background: linear-gradient(#AFD9E3, #628FA1 100%) !important;
-  color: #0B2A40 !important;
-  font-weight: bold !important;
+  background: #1e3a4f;
+  border-left-color: #6d28d9;
 }
 
-/*thumb-section*/
-.thumb-section { 
-  width: 100%;
-  height: auto;
+/* Scrollbar customizada */
+.segmentsArea::-webkit-scrollbar {
+  width: 8px;
 }
 
-.thumb-section img {
-  max-height: 400px;
-  max-width: 600px;
-  width: 100%;
-  display: block;
-  margin: 0 auto;
+.segmentsArea::-webkit-scrollbar-track {
+  background: #0b0404;
 }
 
-/* info-content */
-.info-content {
-  display: flex !important;;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0 10px 8px;
-  font-size: 12px;
-  max-height: 400px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-/* Imagem do canal */
-.channel-pic {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin: 1px 0 0 0;
-}
-
-/* Texto do vídeo */
-.video-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Título do vídeo */
-.video-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  margin: 5px 0 5px 8px;
-  text-align: left;
-}
-
-/* Linha com nome do canal, desempenho e editar */
-.video-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0 0 5px 8px;
-  font-size: 14px;
-}
-
-/* Nome do canal */
-.channel-name {
-  color: #bbbbbb;
-}
-
-/* Desempenho (percentual) */
-.performance {
-  color: #4caf50;
-  font-weight: bold;
-}
-
-/* Botão Editar */
-.video-edit {
-  color: #6d28d9;
-  font-weight: bold;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.video-time {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0,0,0,0.7);
-  padding: 2px 6px;
-  font-size: 12px;
+.segmentsArea::-webkit-scrollbar-thumb {
+  background: #3ea6ff;
   border-radius: 4px;
 }
-</style>
+
+.segmentsArea::-webkit-scrollbar-thumb:hover {
+  background: #6d28d9;
+}
+
+/* Para telas pequenas */
+@media screen and (max-width: 600px) {
+  .segmentsArea {
+    max-height: 50vh; /* Mais espaço em telas pequenas */
+  }
+  
+  .segment {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+/* Telas muito pequenas */
+@media screen and (max-width: 400px) {
+  .general-btn {
+    font-size: 14px;
+    padding: 5px 6px;
+  }
+}
+  </style>
 </head>
 <body>
-
   <!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay">
       <div class="loading-spinner"></div>
       <div class="loading-text" id="loadingText">Carregando...</div>
   </div>
-  
   <header>
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
-      <div>PhraseCraft</div>
+      <div class="text-area" id="text-area">
+        <span>PhraseCraft</span>
+      </div>
     </div>
     
-	<div id="performance"></div>
+	<div class="performance-area" id="performance-area">
+      <div class="text-area">
+        <span id="host-performance">100%</span>
+      </div>
+      <div class="text-area">
+        <span id="dinamic-icon"> 🚀 </span>
+      </div>
+      <div class="text-area">
+        <span id="opponent-performance">100%</span>
+      </div>
+    </div>
     
-    <div class="icons-right">
+    <div class="icons-right" id="icons-right">
       <!-- Create -->
-      <a href="#" id="icon-create" onclick="showSection('create')" hidden>
+      <a href="#" id="icon-create" onclick="showSection('create')">
         <svg class="icon" viewBox="0 0 24 24">
         <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
         </svg>
@@ -434,67 +487,73 @@ input[type="radio"] {
     </div>
   </header>
 
-    <!-- Elementos compartilhados -->
-    <video id="shared-video" controls hidden>
-      <source src="video.mp4" type="video/mp4" />
-      Seu navegador não suporta vídeo HTML5.
-    </video>
-
-    <div id="shared-text" hidden>Este é um conteúdo compartilhado e fixo.</div>
-
-    <img id="shared-image" src="imagem.jpg" alt="Imagem compartilhada" hidden />
-
-  <main>
+<main>
     <!-- Seções -->
     <section id="home">
         <h2>Home</h2>
         <p>Welcome to the home section.</p>
         <div class="post-container" id="home-post-container">
-            <!-- Os cards de vídeo serão inseridos aqui -->
-        	<div id="thumb-section-home"></div>
-            <div id="info-content-home"></div>
 
+        <div class="card">        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-home" class="thumb-section" onclick="showSoloPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-home" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                  </div>
+              </div>
+            </div>
+        </div>
+            
         </div>
     </section>
 
     <section id="create">
-        <h2>Create</h2>
+		<h2>Create</h2>
         <p>Use this section to create new content.</p>
-            <div class="load-group">
-                <label for="videoUpload" class="upload-btn">Upload Vídeo</label>
+			<form>
+                <label for="videoUpload" class="flex column">Upload Vídeo
                 <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
-                <input type="file" id="videoUpload" accept="video/*">
-            </div>
-            <div class="load-group">
-                <label for="srtUpload" class="upload-btn">Upload SRT</label>
+                <input type="file" id="videoUpload" accept="video/*"></label>
+                <label for="srtUpload" class="flex column" class="upload-btn">Upload SRT
                 <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
-                <input type="file" id="srtUpload" accept=".srt">
-            </div>
-
-            <div class="botoes-container">
-                <button id="btn-open" onclick="openContent();">Continuar 👉</button>
-            </div>
+                <input type="file" id="srtUpload" accept=".srt"></label>
+                <button class="general-btn flex row" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+            </form>
     </section>
 
+    <!-- Search -->
     <section id="search">
       <h2>Search</h2>
       <p>Use this section to search content.</p>
     </section>
 
+    <!-- Notifications -->
     <section id="notifications">
       <h2>Notifications</h2>
       <p>Here are your notifications.</p>
     </section>
 
+    <!-- You -->
     <section id="you">
       <h2>You</h2>
       <p>This section is about your profile.</p>
                       
-      <div class="botoes-container">
-        <a href="#" onclick="showSection('myProfile')">
-            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Meu Perfil</span></a>
-        <a href="#" id="btn-myPosts" onclick="showSection('myPosts')">
-            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Minhas Postagens</span></a>
+      <div>
+        <button class="flex column general-btn" onclick="showSection('myProfile')">
+            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Perfil</span></button>
+        <button class="flex column general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
+            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Postagens</span></button>
       </div>
     
     </section>
@@ -505,84 +564,52 @@ input[type="radio"] {
     </section>
     
     <!-- Subsections -->
-    <section id="login-screen" class="login-screen-container">
-        <div class="login-card">
-            <h2>Entrar</h2>
-            <form id="login-form">
-                <input type="email" id="email-login" placeholder="E-mail" required>
-                <input type="password" id="password-login" placeholder="Senha" required>
-                <p id="login-message"></p>
-                <button type="submit" class="login-button">Entrar</button>
-            </form>
-        </div>
-    </section>
-    
     <section id="myProfile">
-      <h2>My Account</h2>
-      <p>Use this section to see and edit your profile.</p>
-      <div class="header-content"  id="header-content">
-      
-        <div class="user-buttons">
-            <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
-
-			<div class="">
-				<button id="btnLogin" class="btnLogin" onclick="showSection('login-screen')">Entrar</button><hr>
-            	<button id="logout-button" class="" onclick="handleLogout()" >Sair</button>
-            </div>
-            
+		<h2>My Account</h2>
+		<p>Use this section to see and edit your profile.</p>
+        <div class="flex column" >
+          <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
+          <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+          <span>____________________________________</span>
+          <button class="general-btn" id="logout-button" onclick="handleLogout()">Sair</button>
         </div>
-      </div>
-    </section>
+	</section>
     
-    <section id="postLesson">
-      <h2>Post</h2>
-      <p>Use this section to post.</p>
-                      
-      <div id="postLesson-containerBtn" class="botoes-container">
-          <button onclick="showSection('editSrt')">👈</button>
-          <button href="#" onclick="postLesson()">Postar Lição ⬆️</button>
-      </div>
-      
-      <div id="video-section-postLesson"></div>
-      
-      <button id="captureBtn" onclick="handleCaptureClick()">📸 Capturar Thumbnail</button>
-      
-      <div id="thumb-section-postLesson"></div>
-      
-      <!-- Título -->
-      <h2>Nome</h2>
-      <!-- Input de texto -->
-      <input type="text" placeholder="Digite um nome..." name="nome" />
-      
-      <!-- Título -->
-      <h2>Descrição</h2>
-      <!-- Input de texto -->
-      <input type="text" placeholder="Digite uma descrição..." name="description" />
-
-      <!-- Título -->
-      <form id="linhaForm">
-      	<h2>Adicionar à Playlist</h2>
-        <label class="" for="playlist1">
-        <input type="checkbox" id="playlist1" name="playlist" value="Playlist 1" />
-        Playlist 1
-        </label>
-        <label class="" for="playlist2">
-        <input type="checkbox" id="playlist2" name="playlist" value="Playlist 2" />
-        Playlist 2
-        </label>
-        <label class="" for="playlist3">
-        <input type="checkbox" id="playlist3" name="playlist" value="Playlist 3" />
-        Playlist 3
-        </label>
-      </form>
-      
+    <section id="login-screen">
+    	<h2>Entrar</h2>
+    	<form class="flex column" id="login-form">
+    	    <p id="login-message"></p>
+    	    <input type="email" id="email-login" placeholder="E-mail" required>
+    	    <input type="password" id="password-login" placeholder="Senha" required>
+    	    <button type="submit" class="general-btn">Iniciar Sessão</button>
+    	</form>
     </section>
     
     <section id="myPosts">
         <h2>My Lessons Posts</h2>
         <p>Use this section to see your lessons posted.</p>
-        <div id="user-post-container">
-            <!-- Os cards de vídeo do usuário serão inseridos aqui -->
+        <div id="user-post-container" id="myPosts-post-container">
+        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-myPosts" class="thumb-section" onclick="showSoloPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-myPosts" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="general-btn" onclick="openContent();">✎ Editar</span>
+                      <span class="general-btn" onclick="openContent();" style="color: red;">❌ Excluir</span>
+                  </div>
+              </div>
+            </div>
+            
         </div>
     </section>
 
@@ -595,102 +622,97 @@ input[type="radio"] {
       <!-- Criadas -->
       <h2>Partidas Criadas</h2>
       <p>Use this section to see all matches waiting a second player.</p>
-    </section>
-    
-    <!----------->
-    <!--editSrt-->
-    <!----------->
-    <section id="editSrt">
-      <div id="save-area">
-          <span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-          <p>💾 Salvar</p>
-          <div class="btn-container">
-              <button onclick="copyToClipboard()">📋 Copiar</button>
-              <button onclick="downSrt()">⬇️ Download</button>
-              <button onclick="showSRT()">🧾 Exibir</button>
-          </div>
-      </div><!--save-area-->
-      
-      <!-- Div para exibir o nome do arquivo da legenda -->
-      <div id="subtitleName"></div>
-        
-      <div id="video-section-editor"></div>
-      
-      <div id="navigation-controls-previewMode"></div>
-
-      <div class="" id="editor">
-        <label>Início</label>
-        <div class="time-controls">
-          <input id="editStart">
-          <button onclick="adjustTime('start',  -TIME_STEP)">−</button>
-          <button onclick="adjustTime('start', +TIME_STEP)">+</button>
-
-          <button onclick="undo()">↩</button>
-          <button onclick="redo()">↪</button>
-        </div>
-
-        <label>Fim</label>
-        <div class="time-controls">
-          <input id="editEnd">
-          <button onclick="adjustTime('end', -TIME_STEP)">−</button>
-          <button onclick="adjustTime('end', +TIME_STEP)">+</button>
-
-          <button onclick="addSegment()">☰ ➕️</button>
-          <button onclick="removeSegment()">☰ ➖</button>
-        </div>
-
-        <label>Texto</label>
-        <textarea id="editText" rows="3"></textarea>
-
-        <button id="btn-save" onclick="showSave()">💾</button>
-        <button onclick="prevLine()">◀◀</button>
-        <button onclick="playLine()">▶</button>
-        <button onclick="nextLine()">▶▶</button>
-        <button id="btn-load" onclick="showSection('postLesson')">👉</button>
-
-        <p id="btn-config" onclick="showConfig()">⚙ Editar em Lote</p>
-
-        <div id="config-area">
-            <span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-            <div class="time-controls">
-              <input id="editStack" placeholder="0.05">
-              <button onclick="showEarlier()">Adiantar</button>
-              <button onclick="showLater()">Atrasar</button>
+      <div class="post-container" id="multi-post-container">
+	  <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-challenge" class="thumb-section" onclick="showMultiPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
             </div>
+            
+            <div id="info-content-challenge" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
 
-            <form id="linhaForm">
-              <label class="radio-option">
-                <input type="radio" name="opcao-linha" value="all" checked>
-                Todas as linhas
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="opcao-linha" value="current">
-                Apenas linha atual
-              </label>
-
-              <label class="radio-option">
-                <input type="radio" name="opcao-linha" value="from-current">
-                Linha selecionada e próximas linhas
-              </label>
-            </form>
-            <hr>
+              <div class="video-text">
+                  <span class="video-title" onclick="showMultiPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                  </div>
+              </div>
+            </div>
         </div>
-      </div><!--editor-->
-
-      <div class="segmentsArea" id="segments-area">
-      	  <label>Lista de Legendas</label>
-          <div id="segments"></div>
       </div>
     </section>
+	<section id="postLesson">
+		<h2>Post</h2>
+		<p>Use this section to post.</p>
+		<div class="flex column" id="video-section-postLesson">
+          <!-- O vídeo de postagem ou edição será inserido aqui -->
+          <video id="videoPlayer-postLesson" controls crossorigin="anonymous">
+              <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+          </video>
+		</div>
+      	<div class="flex row" id="postLesson-containerBtn">
+      	    <button class="general-btn" onclick="showSection('editSrt')">👈</button>
+      		  <button class="general-btn" onclick="handleCaptureClick()">Thumbnail 📸</button>
+      	    <button class="general-btn" onclick="postLesson()">Postar 🛰️</button>
+      	</div>
+      
+      <div class="flex row" id="thumb-section-postLesson">
+      	<img class="channel-pic" alt="captured thumb" hidden>
+        <form class="flex column">
+            <!-- Título -->
+            <input type="text" placeholder="Digite o nome o vídeo..." name="nome">
 
-	<section id="play" class="content-row">
-		<div id="video-section-play"></div>
+            <!-- Descrição -->
+            <textarea type="text" placeholder="Digite uma descrição..." name="description"></textarea>
+        </form>
+      </div>
+      <p>______________</p>
 
-      	<div id="buttons">
-      		<button id="repetir" class="control-button" style="background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
-      		<button id="lerFrase" class="control-button" style="background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
-      		<button id="traduzir-btn" class="control-button" style="background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
-      		<button id="desistir" class="control-button" style="background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+      <!-- Playlist -->
+      <form class="flex column" id="playlistForm">
+          <h4>Adicionar à Playlist</h4>
+          <div class="flex column"  id="playlist-checkbox-container" style="width: 150px;">
+              <p>Carregando...</p>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="all" checked>
+                  Playlist 1
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="current">
+                  Playlist 2
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="from-current">
+                  Playlist 3
+              </label>
+          </div>
+          
+          <div class="flex row" id="new-playlist-name-area" style="display: none;">
+          <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
+          <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
+			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
+			<button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
+			<button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
+          </div>
+          
+      </form> 
+    </section>
+	<section id="play">
+		<div id="video-section-play">
+          <video id="videoPlayer-play" controls crossorigin="anonymous">
+                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+          </video>
+        </div>
+
+      	<div class="flex row">
+      		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
+ font-weight: bold; background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+      		<button class="general-btn" id="desistir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
 		</div>
 
 		<div class="phrase-container" id="frase"></div>
@@ -699,8 +721,103 @@ input[type="radio"] {
             <div class="word-container" id="palavras"></div>
         </div>
         
-        <div id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+        <div class="flex row" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
     </section>
+  <!----------->
+  <!--editSrt-->
+  <!----------->
+  <section id="editSrt">
+    <div id="save-area">
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <p>💾 Salvar</p>
+        <div class="flex row">
+            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
+            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
+            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
+        </div>
+    </div><!--save-area-->
+      
+	<div id="subtitleName">
+    	<!-- Div para exibir o nome do arquivo da legenda -->
+	</div>
+    
+	<div class="column-area" id="video-section-editor">
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+	</div>
+
+	<div id="editor">
+	<div class="flex row">
+    	<button id="btn-save" onclick="showSave()">💾</button>
+    	<button onclick="undo()">↩</button>
+    	<button onclick="redo()">↪</button>
+    	<button id="btn-config" onclick="showConfig()">⚙</button>
+    	<button onclick="addSegment()">|+</button>
+    	<button onclick="removeSegment()">|−</button>
+    	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
+	</div>
+	<form class="flex row" style="gap: 0; padding: 0;">
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
+          Início
+          <input type="text" id="editStart" placeholder="00:00:000">
+        </div>
+        <div class="flex column">
+          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
+        </div>
+      </label>
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
+          Fim
+          <input id="editEnd"  placeholder="00:00:000">
+        </div>
+        <div class="flex column">
+          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
+        </div>
+      </label>
+    </form>
+    <form>
+      <label class="flex row">Texto
+          <textarea type="text" id="editText" rows="3"></textarea>
+      </label>
+    </form>
+    </div><!--editor-->
+    <div class="flex row" id="navigation-controls-previewMode">
+		<button onclick="prevLine()">⏮︎</button>
+		<button onclick="playLine()">⏯︎</button>
+		<button onclick="nextLine()">⏭︎</button>
+	</div>
+	<div class="column-area" id="config-area">
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+     	<p>⚙ Editar em lote</p>
+         <form class="flex row">
+           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
+           <input id="editStack" placeholder="0.05">
+           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
+		</form>
+		<form class="flex column" id="linhaForm" style="width: 300px;">
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="all" checked>
+				Todas as linhas
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="current">
+				Apenas linha atual
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="from-current">
+				Linha selecionada e próximas linhas
+			</label>
+		</form>
+	</div><!--config-area-->
+    <div class="segmentsArea flex column" id="segments-area">
+    	  <span>Lista de Legendas</span>
+        <div id="segments"></div>
+    </div>
+	</section>
   </main>  
 
   <footer id="main-footer">
@@ -716,497 +833,484 @@ input[type="radio"] {
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
     <a href="#" onclick="showSection('challenge')">
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
-  </footer>
-
-  <footer id="preview-footer" style="display: none;">
-    <a href="#" onclick="startSoloMode()">
+    <a href="#" id="preview-footer-solo" onclick="startSoloMode()">
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
-    <a href="#" onclick="startMultiMode()">
+    <a href="#" id="preview-footer-challenging" onclick="startCreateMode()">
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Aceitar Desafio</span></a>
   </footer>
 
 <script>
-// --- variaveis do banco de dado ---
+// 1. A variável "estado" (começa como 'editor')
+let currentEditMode = 'editor';
 
-let currentLessonForMatch = null; // Armazena a lição selecionada para o desafio
-let currentMatchId = null;        // Armazena o ID da partida atual que o host criou/entrou
+// Variável para controlar se já está carregando
+let isLoadingThumbnails = false;
 
-let showVideoArea = true;
-let showEditorArea = true;
-let showSegmentsArea = true;
-let showSaveArea = false;
-let showLoadArea = false;
-let showConfigArea = false;
-let showLobbyArea = false;
-let showPreviewMode = false;
+// Cache global de lições
+let lessonsCache = [];
+let isCacheLoaded = false;
 
-// Variáveis do Editor SRT
-let srtData = [];
-let currentSegment = null;
-let undoStack = [];
-let redoStack = [];
-let subtitleName = "";
-let stopTimeout = null;
-let isBatchEditing = false;
-const TIME_STEP = 0.1;
+const DB_NAME = 'lessonsDB';
+const STORE_NAME = 'lessons';
 
-// Variáveis de performance
-const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
-let segmentStartTime = null;
-let totalProjectedTime = 0;
-let performanceUpdateInterval = null;
-
-/**
- * Array para armazenar as palavras selecionadas na ordem
- */
-let selectedWords = [];
-
-/**
- * Variável para controlar o índice do segmento atual
- */
-let currentSegmentIndex = 0;
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Performance --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-/**
- * Inicia o cronômetro do segmento
- */
-function startSegmentTimer() {
-  const currentSegment = srtData[currentSegmentIndex];
-  
-  if (!currentSegment) return;
-  
-  // Conta total de letras na frase
-  const totalLetters = currentSegment.text.replace(/\s+/g, '').length;
-  
-  // Calcula tempo projetado
-  totalProjectedTime = totalLetters * TIME_PER_LETTER;
-  
-  // Marca o tempo de início
-  segmentStartTime = Date.now();
-  
-  // Inicia atualização contínua da performance (a cada 100ms)
-  if (performanceUpdateInterval) {
-    clearInterval(performanceUpdateInterval);
-  }
-  
-  performanceUpdateInterval = setInterval(() => {
-    updatePerformanceDisplay();
-  }, 100); // Atualiza 10x por segundo
-  
-  console.log(`⏱️ Timer iniciado: ${totalLetters} letras = ${totalProjectedTime.toFixed(2)}s projetados`);
-}
-
-/**
- * Para o cronômetro de performance
- */
-function stopSegmentTimer() {
-  if (performanceUpdateInterval) {
-    clearInterval(performanceUpdateInterval);
-    performanceUpdateInterval = null;
-    console.log('⏹️ Timer parado');
-  }
-}
-
-/**
- * Atualiza o display de performance em tempo real
- */
-function updatePerformanceDisplay() {
-  const performanceElement = document.getElementById('host-performance');
-  
-  // Para se não estivermos na seção play
-  if (!performanceElement || !segmentStartTime) return;
-  
-  const currentSegment = srtData[currentSegmentIndex];
-  if (!currentSegment) return;
-  
-  // Obtém dados do progresso
-  const wordsCompleted = selectedWords.length;
-  const totalWords = currentSegment.text.split(/\s+/).filter(w => w.trim().length > 0).length;
-  const elapsedTime = (Date.now() - segmentStartTime) / 1000; // segundos
-  
-  // Calcula o tempo projetado total baseado na velocidade atual
-  let projectedTotalTime;
-  
-  if (wordsCompleted > 0) {
-    // Calcula tempo médio por palavra até agora
-    const avgTimePerWord = elapsedTime / wordsCompleted;
-    const remainingWords = totalWords - wordsCompleted;
-    projectedTotalTime = elapsedTime + (remainingWords * avgTimePerWord);
-  } else {
-    // Se nenhuma palavra foi completada, usa uma estimativa inicial
-    projectedTotalTime = elapsedTime * totalWords;
-  }
-  
-  // Calcula a performance (tempo ideal / tempo projetado) * 100
-  let performanceScore = (totalProjectedTime / projectedTotalTime) * 100;
-  
-  // Sanitiza valores inválidos
-  if (!isFinite(performanceScore) || performanceScore > 1000) {
-    performanceScore = 100;
-  }
-  
-  // Escolhe emoji baseado na performance
-  let emoji = '👍'; // Padrão: bom
-  if (performanceScore < 75) emoji = '🐢';      // Lento
-  else if (performanceScore < 100) emoji = '🤔'; // Médio
-  else if (performanceScore > 125) emoji = '🚀'; // Excelente
-  
-  // Define a cor baseada na performance
-  let color = '#4caf50'; // Verde (bom)
-  if (performanceScore < 80) color = '#ff9800'; // Laranja (médio)
-  if (performanceScore < 60) color = '#f44336'; // Vermelho (baixo)
-  if (performanceScore > 125) color = '#00e676'; // Verde brilhante (excelente)
-  
-  // Atualiza o display
-  performanceElement.innerHTML = `
-    <span style="font-weight: bold; color: ${color};">
-      ${performanceScore.toFixed(1)}%
-    </span> ${emoji}
-  `;
-  
-  performanceElement.style.cssText = `
-    font-size: 16px;
-    text-align: center;
-    margin: 10px 0;
-    transition: color 0.3s ease;
-  `;
-  
-  console.log(`📊 Performance: ${performanceScore.toFixed(1)}% | Palavras: ${wordsCompleted}/${totalWords} | Tempo: ${elapsedTime.toFixed(1)}s`);
-}
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Cache de Lições --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-const lessonCache = new Map();
-const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas
-
-function isCacheValid(fileId) {
-  if (!lessonCache.has(fileId)) return false;
-  
-  const cached = lessonCache.get(fileId);
-  const now = Date.now();
-  
-  if (now - cached.timestamp > CACHE_EXPIRY) {
-    console.log(`⏰ Cache expirado para: ${fileId}`);
-    lessonCache.delete(fileId);
-    return false;
-  }
-  
-  return true;
-}
-
-async function saveLessonToCache(fileId, videoFile, srtFile, thumb) {
-  console.log("--- Salvando lição no cache ---");
-  
-  try {
-    const videoUrl = getBackblazePublicUrl(videoFile.fileId);
-    const videoResponse = await fetch(videoUrl);
-    const videoBlob = await videoResponse.blob();
-    
-    const srtUrl = getBackblazePublicUrl(srtFile.fileId);
-    const srtResponse = await fetch(srtUrl);
-    const srtContent = await srtResponse.text();
-    
-    lessonCache.set(fileId, {
-      videoBlob: videoBlob,
-      srtContent: srtContent,
-      videoFileName: videoFile.fileName,
-      srtFileName: srtFile.fileName,
-      thumbUrl: getBackblazePublicUrl(thumb.fileId),
-      timestamp: Date.now()
-    });
-    
-    console.log(`✅ Lição salva no cache: ${fileId}`);
-  } catch (error) {
-    console.error("❌ Erro ao salvar no cache:", error);
-    throw error;
-  }
-}
-
-function loadLessonFromCache(fileId) {
-  if (!isCacheValid(fileId)) return null;
-  return lessonCache.get(fileId);
-}
-
-function loadVideoFromCache(videoBlob, fileName) {
-  const videoElement = document.getElementById('videoPlayer');
-  if (!videoElement) throw new Error('videoPlayer não encontrado');
-  
-  const blobUrl = URL.createObjectURL(videoBlob);
-  videoElement.src = blobUrl;
-  console.log(`✅ Vídeo do cache carregado: ${fileName}`);
-}
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// GERENCIAMENTO DE SEÇÕES 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-// Lista de elementos com condições
-const elements = [
-  {
-    id: "lobby",
-    content: ``,
-    condition: () => showLobbyArea
-  },
-  {
-    id: "video-content",
-    content: `
-	<video id="videoPlayer" controls>
-			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-	</video>
-    `,
-    condition: () => showVideoArea
-  },
-  {
-    id: "thumb-content",
-    className: "thumb-section",
-    content: `
-	<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
-    `,
-    condition: () => showVideoArea
-  },
-  {
-    id: "info-content",
-    className: "info-content",
-    content: `
-		<div class="channel-pic">
-			<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
-		</div>
-        
-		<div class="video-text">
-			<h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">{post.videoName}</h3>
-			<div class="video-meta">
-				<span class="channel-name">channel-name</span>
-				<span class="performance">95%</span>
-				<span class="video-edit" onclick="event.stopPropagation();" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
-    	    </div>
-    	</div>
-    `,
-    condition: () => true
-  },
-  {
-    id: "editor",
-    content: `
-    
-    `,
-    condition: () => showEditorArea
-  },
-  {
-    id: "segments-area",
-    content: ``,
-    condition: () => showSegmentsArea
-  },
-  {
-    id: "navigation-controls",
-    content: `
-    <button onclick="prevLine()">◀◀</button>
-    <button onclick="playLine()">▶</button>
-    <button onclick="nextLine()">▶▶</button>
-    `,
-    condition: () => showPreviewMode
-  },
-  {
-    id: "save-area",
-    content: "", 
-    condition: () => showSaveArea
-  },
-  {
-    id: "load-area",
-    content: "",
-    condition: () => showLoadArea
-  },
-  {
-    id: "config-area",
-    content: "",
-    condition: () => showConfigArea
-  },
-  {
-    id: "main-footer",
-    content: "", // Já existe no HTML
-    displayType: "flex", // O display que ele deve ter quando visível
-    condition: () => {// REGRA 1: Esconder se o modo preview estiver ativo
-      // REGRA 1: Esconder se o modo preview estiver ativo
-      if (showPreviewMode) {
-          return false;
-      }
-      const activeEl = document.querySelector('section.active');
-      if (!activeEl) return true; // Padrão: mostrar
-      const id = activeEl.id;
-      const noFooterSections = ['editSrt', 'login-screen', 'postLesson'];
-      const previewSections = ['play'];
-      
-      // Mostrar apenas se NÃO estiver nas listas de ocultar ou preview
-      return !noFooterSections.includes(id) && !previewSections.includes(id);
-    }
-  },
-  {
-    id: "preview-footer",
-    content: "", // Já existe no HTML
-    displayType: "flex", // O display que ele deve ter quando visível
-    condition: () => {
-    	// Mostra APENAS se a variável showPreviewMode for true.
-        return showPreviewMode;
-        
-        const activeEl = document.querySelector('section.active');
-        const id = activeEl.id;
-      	const noFooterSections = ['home', 'login-screen', 'postLesson'];
-      	return !noFooterSections.includes(id) && !previewSections.includes(id);
-    }
-  },
-  {
-    id: "host-performance",
-    content: "",
-    condition: () => true
-  },
+// Seções que devem exibir thumbnails
+const SECTIONS_WITH_THUMBNAILS = [
+  'home',
+  'myPosts',
+  'subscriptions',
+  'challenge'
 ];
 
-// Lista de sections com condições
-const sections = [
-  { id: "home", condition: () => true },
-  { id: "search", condition: () => true },
-  { id: "notifications", condition: () => true },
-  { id: "you", condition: () => true },
-  { id: "subscriptions", condition: () => true },
-  { id: "create", condition: () => true },
-  { id: "postLesson", condition: () => true },
-  { id: "editSrt", condition: () => true },
-  { id: "myProfile", condition: () => true },
-  { id: "myPosts", condition: () => true },
-  { id: "login-screen", condition: () => true },
-  { id: "play", condition: () => true },
-  { id: "challenge", condition: () => true },
+// Seleciona os elementos Header
+const textArea = document.getElementById('text-area');
+const iconsRight = document.getElementById('icons-right');
+const performanceArea = document.getElementById('performance-area');
+
+// Seleciona os elementos Edit Srt
+const videoSection = document.getElementById('video-section-editor');
+const editor = document.getElementById('editor');
+const segmentsArea = document.getElementById('segments-area');
+const saveArea = document.getElementById('save-area');
+const configArea = document.getElementById('config-area');
+
+// const lobby = document.getElementById('lobby'); // Removido para evitar erro de redeclaração
+const footer = document.getElementById('main-footer');
+
+// Seleciona todos os links <a> dentro de #main-footer que NÃO têm um atributo 'id'
+const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+
+// Playlist Area (DECLARAÇÕES GLOBAIS)
+const newPlaylistArea = document.getElementById('new-playlist-name-area');
+const btnShowNewPlaylist = document.getElementById('btn-show-new-playlist-area');
+const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
+
+// Seletor para o contêiner exbir Playlists
+const playlistContainer = document.getElementById('playlist-checkbox-container');
+
+// Defina aqui todas as seções que usam a navegação principal
+const mainNavSections = [
+  'home', 
+  'subscriptions', 
+  'you', 
+  'challenge', 
+  'create', 
+  'search', 
+  'notifications', 
+  'myProfile', 
+  'myPosts', 
+  'login-screen'
 ];
 
-// Lista de posições para elementos compartilhados (podem aparecer em várias seções)
-// Fará com que o script injete o elmento no container/div correto quando a seção estiver ativa
-const positions = [
-  { key: "video-content", after: ["video-section-editor", "video-section-postLesson", "video-section-play"] },
-  { key: "thumb-content", after: ["thumb-section-home", "thumb-section-postLesson"] },
-  { key: "info-content", after: ["info-content-home"] },
-  { key: "navigation-controls", after: ["navigation-controls-previewMode"] },
-  { key: "host-performance", after: ["performance"], global: true },
-];
+// Estado global da aplicação
+const appState = {
+  video: {
+    url: null,
+    file: null,
+    blob: null
+  },
+  subtitle: {
+    url: null,
+    file: null,
+    name: 'legendas.srt',
+    data: [] // srtData
+  },
+  thumbnail: {
+    blob: null,
+    url: null
+  },
+  currentSection: 'home'
+};
+	
+// Configuração centralizada de elementos
+const SELECTORS = {
+  // VÍDEOS: Sempre começar com "videoPlayer"
+  videos: 'video[id^="videoPlayer"]',
 
-// Renderiza seções e elementos
-function renderPage() {
-  // Encontra a seção ativa
-  const activeSection = document.querySelector('section.active');
+  // THUMBNAILS: Sempre começar com "thumb-section"
+  thumbnails: '[id^="thumb-section"] img',
+	
+  subtitleDisplays: '[id^="subtitleName"]',
+  segmentAreas: '[id^="segments-area"]'
+};
 
-  // Renderiza elementos posicionados
-  elements.forEach(element => {
-    const shouldShow = element.condition();
-    if (!shouldShow) {
-      // Se não deve mostrar, esconde o elemento se existir
-      const existing = document.getElementById(element.id);
-      if (existing) existing.style.display = 'none';
-      return;
-    }
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --------------- Bloco Fx ----------------
+//
+// Somente controla visibilidade e
+// chama outras funções.
+// Não mudar essas responsabilidades.
+//
+// --------- Visbilidade e Chamadas --------
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+	
+// Mantem um estado global e propaga 
+// as mudanças para todos os elementos
+// relevantes quando o estado mudar.
+function updateAllElements(selector, updateFn) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach(updateFn);
+  console.log(`✅ ${elements.length} elemento(s) atualizado(s) [${selector}]`);
+}
 
-    const pos = positions.find(p => p.key === element.id);
-    if (!pos) {
-      // Se não tem posição definida, apenas controla visibilidade
-      const existing = document.getElementById(element.id);
-      if (existing) {
-        existing.style.display = element.displayType || 'block'; 
-      }
-      return;
-    }
-
-    // Procura o container correto
-    let container = null;
-    for (const targetId of pos.after) {
-      let candidate = null;
-      
-      // **MUDANÇA**: Se o elemento pode estar fora de seções (como no header)
-      if (pos.global) {
-        // Procura no documento inteiro
-        candidate = document.getElementById(targetId);
-      } else {
-        // Procura apenas dentro da seção ativa
-        if (activeSection) {
-          candidate = activeSection.querySelector(`#${targetId}`);
-        }
-      }
-      
-      if (candidate) {
-        container = candidate;
-        break;
-      }
-    }
-    
-    if (!container) return;
-
-    let existing = document.getElementById(element.id);
-    if (!existing) {
-      const div = document.createElement('div');
-  
-      // Aplica a classe na div injetada
-      if (element.className) {
-        div.className = element.className;
-      }
-      
-      div.id = element.id;
-      div.innerHTML = element.content;
-      container.appendChild(div);
-    } else {
-      container.appendChild(existing);
-      existing.style.display = "block";
-    }
+// Uso:
+function updateAllVideos(source) {
+  updateAllElements(SELECTORS.videos, (video) => {
+    video.src = source;
+    video.load();
   });
+  appState.video.url = source;
 }
 
-// Botão para mostrar/ocultar seções
-function showSection(sectionId) {
-  // ================================================
-  // <<< Lista de flags para resetar ao mudar de section >>>
-  showPreviewMode = false;
-  showLobbyArea = false;
-  
-  // Para o timer de performance ao sair da seção play
-  if (sectionId !== 'play') {
-    stopSegmentTimer();
-  }
-  // ================================================
-  const section = sections.find(s => s.id === sectionId);
-  
-  // Se a seção não existe ou a condição dela é falsa, não faça nada
-  if (!section || !section.condition()) {
-    return; // Sai da função sem alterar nada
-  }
-  
-  sections.forEach(s => {
-    const el = document.getElementById(s.id);
-    if (el) el.classList.remove("active");
+function updateAllThumbnails(imageUrl) {
+  updateAllElements(SELECTORS.thumbnails, (img) => {
+    img.src = imageUrl;
+    img.hidden = false;
   });
+  appState.thumbnail.url = imageUrl;
+}
+
+// Sincronizar dados ao mudar de seção
+function syncStateToSection(sectionId) {
+  // Sincroniza vídeo se houver
+  if (appState.video.url || appState.video.blob) {
+    const source = appState.video.blob || appState.video.url;
+    updateAllVideos(source);
+  }
   
+  // Sincroniza thumbnail se houver
+  if (appState.thumbnail.url) {
+    updateAllThumbnails(appState.thumbnail.url);
+  }
+}
+	
+// Função principal para alternar seções
+async function showSection(sectionId) {
+  // Esconde todas as seções
+  const sections = document.querySelectorAll("main section");
+  sections.forEach(sec => sec.classList.remove("active"));
+
+  // Exibe a seção desejada
   const target = document.getElementById(sectionId);
-  if (target) target.classList.add("active");
+  if (target) {
+    target.classList.add("active");
+  }
+
+  // SINCRONIZA o estado ao trocar de seção (NOVO)
+  syncStateToSection(sectionId);
   
-  renderPage();
+  // Renderiza thumbnails se a seção precisar
+  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId)) {
+    // Garante que o cache está carregado antes de renderizar
+    if (!isCacheLoaded) {
+      await loadLessonsToCache();
+    }
+    renderThumbnailsFromCache(sectionId);
+  }
+  
+  updateElementForSection(sectionId);
 }
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// ----- Bloco Fx | Login e AppWrite ----- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-const DATABASE_ID = "68ed87df000874c3e85a";
-const MATCHES_COLLECTION_ID = "68fb595d00158868bf7c";
+/**
+ * Esta função atualiza a UI com base no modo
+ */
+function setEditorMode(mode) {
+    // Atualiza a variável de estado
+    currentEditMode = mode; 
+    console.log("Modo alterado para:", currentEditMode);
+
+    // 2. Seleciona os elementos do seu HTML
+    const editorDiv = document.getElementById('editor');
+    const navPreview = document.getElementById('navigation-controls-previewMode');
+    
+    // Botões do footer (baseado no seu HTML)
+    const footerSolo = document.getElementById('preview-footer-solo');
+    const footerChallenging = document.getElementById('preview-footer-challenging');
+    const footerChallenges = document.getElementById('preview-footer-challenges');
+
+    // 3. Lógica para esconder/mostrar
+  	hideMainNavigation();
+	closeLoadSaveArea();
+    
+    // Primeiro, esconde tudo para "limpar"
+    // (Oculta as partes que mudam)
+    if (editorDiv) editorDiv.style.display = 'none';
+    if (navPreview) navPreview.style.display = 'none';
+    if (footerSolo) footerSolo.style.display = 'none';
+    if (footerChallenging) footerChallenging.style.display = 'none';
+    if (footerChallenges) footerChallenges.style.display = 'none';
+
+    // Agora, mostra apenas o que é necessário para o modo
+    
+    if (mode === 'editor') {
+        // Mostra o editor
+        if (editorDiv) editorDiv.style.display = 'block';
+        if (navPreview) navPreview.style.display = 'block';
+        
+    } else if (mode === 'previewSolo') {
+        // Mostra navegação e botões de "Solo" e "Desafiar"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
+        if (footerChallenging) footerChallenging.style.display = 'flex';
+        
+    } else if (mode === 'previewMulti') {
+        // Mostra navegação e botão "Aceitar Desafio"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerChallenges) footerChallenges.style.display = 'flex';
+    }
+}
+
+function openContent() {
+	hideFooter();
+	setEditorMode('editor');
+    showSection('editSrt');
+	renderSegments();
+    loadContent();
+}
+
+function showSoloPreview() {
+    showFooter(); // Garante que o footer apareça para os botões
+	hideAcceptChallenge();
+	setEditorMode('previewSolo');
+    showSection('editSrt');
+}
+
+function showMultiPreview() {
+    showFooter(); // Garante que o footer apareça para os botões
+	hideSoloAndChallenging();
+	setEditorMode('previewMulti');
+    showSection('editSrt');
+}
+
+/**
+ * Oculta os links de navegação principais (Home, Subscriptions, You, Desafios)
+ * que estão no footer, deixando os botões contextuais (Solo, Desafiar, etc.)
+ */
+function hideMainNavigation() {
+  // Oculta cada um desses links
+  mainNavLinks.forEach(link => {
+    link.style.display = 'none';
+  });
+}
+
+/**
+ * Exibe a navegação principal (Home, Subs, You, Desafios)
+ * e esconde os botões contextuais (Solo, Desafiar, Aceitar).
+ */
+function showMainNavigation() {
+  // 1. Esconde os botões contextuais
+  hideSoloAndChallenging();
+  hideAcceptChallenge();
+  
+  // 2. Garante que o footer esteja visível
+  showFooter();
+
+  // 3. Define a variável
+  const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+  
+  // 4. Mostra os links de navegação principais
+  mainNavLinks.forEach(link => {
+    link.style.display = 'flex';
+  });
+}
+
+/**
+ * Decide o que o footer deve mostrar com base na seção ativa.
+ * Também gerencia a visibilidade do lobby.
+ */
+function updateElementForSection(sectionId) {
+
+  // Oculta elementoss do header em play
+  if (!iconsRight || !textArea)
+  return; // segurança caso não existam
+  
+  // --- LÓGICA DE OCULTAR PLAYLIST ---
+  // Apenas tenta esconder a área da Playlist se a função existir
+  // E se não estiver na seção postLesson.
+  if (sectionId !== "postLesson" && typeof hideAddPlaylistArea === 'function') {
+      hideAddPlaylistArea();
+  }
+  // ----------------------------------
+    
+  if (sectionId === "play") {
+    iconsRight.style.display = "none";
+    textArea.style.display = "none";
+    performanceArea.style.display = "";
+  } else {
+    iconsRight.style.display = "";
+    textArea.style.display = "";
+    performanceArea.style.display = "none";
+  }
+
+  // Manipula elementoss do footer
+  // Verifica se a seção atual está na lista principal
+  if (mainNavSections.includes(sectionId)) {
+    // Se sim, mostra a navegação principal (Home, Subs, etc.)
+    showMainNavigation();
+  } 
+  
+  // LÓGICA DO LOBBY: Oculta o lobby se a nova seção NÃO for 'challenge'
+  const lobby = document.getElementById('lobby');
+  if (sectionId !== 'challenge') {
+    if (lobby) {
+      lobby.style.display = 'none';
+    }
+  }
+}
+
+/**
+ * Oculta os botões "Solo" e "Desafiar".
+ */
+function hideSoloAndChallenging() {
+  const btnSolo = document.getElementById('preview-footer-solo');
+  const btnChallenging = document.getElementById('preview-footer-challenging');
+
+  if (btnSolo) {
+    btnSolo.style.display = 'none';
+  }
+  if (btnChallenging) {
+    btnChallenging.style.display = 'none';
+  }
+}
+
+/**
+ * Oculta o botão "Aceitar Desafio".
+ */
+function hideAcceptChallenge() {
+  const btnAccept = document.getElementById('preview-footer-challenges');
+  
+  if (btnAccept) {
+    btnAccept.style.display = 'none';
+  }
+}
+
+/**
+ *  Oculta o footer principal.
+ */
+function hideFooter() {  
+  if (footer) {
+    footer.style.display = 'none';
+  }
+}
+
+/**
+ *  Mostra o footer principal.
+ */
+function showFooter() {  
+  if (footer) {
+    footer.style.display = 'flex';
+  }
+}
+
+/**
+ * Mostra a tela de "Salvar", escondendo o editor principal.
+ */
+function showSave() {
+  // Esconde as partes principais do editor
+  if (videoSection) videoSection.style.display = 'none';
+  if (editor) editor.style.display = 'none';
+  if (segmentsArea) segmentsArea.style.display = 'none';
+  
+  // Esconde outros paineis
+  if (configArea) configArea.style.display = 'none';
+  
+  // Mostra o painel de salvar
+  if (saveArea) saveArea.style.display = 'block';
+}
+
+/**
+ * Fecha os paineis "Salvar" ou "Config" e retorna ao editor principal.
+ */
+function closeLoadSaveArea() {
+  // Mostra as partes principais do editor
+  if (videoSection) videoSection.style.display = 'block';
+  if (editor) editor.style.display = 'block';
+  if (segmentsArea) segmentsArea.style.display = 'block';
+
+  // Esconde os paineis
+  if (saveArea) saveArea.style.display = 'none';
+  if (configArea) configArea.style.display = 'none';
+}
+
+/**
+ * Mostra o painel de "Configurações" (Editar em Lote).
+ */
+function showConfig() {
+  // Seleciona os elementos
+  const configArea = document.getElementById('config-area');
+  const saveArea = document.getElementById('save-area');
+
+  // Esconde o painel de salvar (para não sobrepor)
+  if (saveArea) saveArea.style.display = 'none';
+  
+  // Mostra o painel de config
+  if (configArea) configArea.style.display = 'block';
+}
+
+function startSoloMode() {
+  hideFooter();
+  showSection('play');
+}
+
+/**
+ * LÓGICA DO LOBBY: Chamado ao clicar em "Desafiar".
+ * Mostra o lobby e a seção de desafio.
+ */
+function startCreateMode() {
+  const lobby = document.getElementById('lobby');
+  if (lobby) lobby.style.display = 'block'; // CORRIGIDO: Mostra o lobby
+  showSection('challenge');
+}
+
+/**
+ * LÓGICA DO LOBBY: Função para esconder o lobby (se necessário).
+ */
+function endCreateMode() {
+  const lobby = document.getElementById('lobby');
+  if (lobby) lobby.style.display = 'none'; // CORRIGIDO: Esconde o lobby
+}
+
+function startMultiMode() {
+  hideFooter();
+  showSection('play');
+}
+
+// Playlist Area
+function showNewPlaylistNameArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'flex'; // Use 'flex' ou 'block'
+    btnShowNewPlaylist.style.display = 'none';
+    newPlaylistNameInput.focus();
+  }
+}
+
+function hideAddPlaylistArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'none';
+    btnShowNewPlaylist.style.display = 'flex'; // Mostra o botão de 
+    newPlaylistNameInput.value = '';
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Login ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
 // Configuração do Appwrite
-const client = new Appwrite.Client()
-    .setEndpoint('https://nyc.cloud.appwrite.io/v1')
-    .setProject('68ebe8640000ca7c860b');
+const PLAYLISTS_DATABASE_ID = "68ed87df000874c3e85a"; 
+const PLAYLISTS_COLLECTION_ID = "playlists";
 
-// Inicialização dos módulos (agora client já existe)
-const { Databases, ID } = Appwrite;
+const client = new Appwrite.Client()
+        .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+        .setProject('68ebe8640000ca7c860b');
+
+// Inicialização dos módulos (ID e Databases são necessários para a playlist)
+const { Databases, ID, Permission, Role } = Appwrite;
 const databases = new Databases(client);
 const account = new Appwrite.Account(client);
 
-// Seletores de elementos HTML (TODOS JUNTOS AQUI)
-
+// Seletores de elementos HTML 
 const btnLoginHeader = document.getElementById('btnLogin');
 
 const loginForm = document.getElementById('login-form');
@@ -1274,7 +1378,7 @@ loginForm.addEventListener('submit', async (e) => {
         // Salva no cache
         localStorage.setItem('userEmail', user.email);
         renderUIForAuthState(true, user.email);
-        showSection('myPosts');
+        showSection('you');
     } catch (error) {
         loginMessage.textContent = 'Erro no login: ' + error.message;
     } finally {
@@ -1320,6 +1424,7 @@ function renderUIForAuthState(isLoggedIn, userEmail = '') {
         logoutButton.style.display = 'block';
     	iconCreate.style.display = 'block';
 	    btnMyPosts.style.display = 'flex';
+        fetchUserPlaylists();
     } else {
         // Mostra apenas botão entrar
         btnLoginHeader.style.display = 'block';
@@ -1338,66 +1443,50 @@ async function showProfile() {
     }
 }
 
-checkAuthStatus();
-
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // ----- Bloco Fx | Loading ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
-let isLoading = false;
-
+/**
+ * Mostra o overlay de loading
+ * @param {string} message - Mensagem a ser exibida (opcional)
+ */
 function showLoading(message = 'Carregando...') {
     const overlay = document.getElementById('loadingOverlay');
     const text = document.getElementById('loadingText');
     if (text) text.textContent = message;
     if (overlay) overlay.classList.add('active');
-    isLoading = true;
 }
 
+/**
+ * Esconde o overlay de loading
+ */
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.classList.remove('active');
-    isLoading = false;
 }
-
-// Inicializa
-document.addEventListener("DOMContentLoaded", () => {
-  renderPage();
-  showSection("home");
-  loadAndDisplayThumbnails();
-});
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// ----- Bloco Fx | Edit Srt ----- 
+// --- Bloco Fx | EditSrt --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-function showSave() {
-    showVideoArea = false;
-    showEditorArea = false;
-    showSegmentsArea = false;
-    showLoadArea = false;
-    showSaveArea = true;
-    showConfigArea = false;
-    renderPage();
-}
+const srtData = [
+  { id: 1, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
+  { id: 2, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
+  { id: 3, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." }
+];
 
-function closeLoadSaveArea() {
-    showVideoArea = true;
-	showEditorArea = true;
-    showSegmentsArea = true;
-    showSaveArea = false;
-    showLoadArea = false;
-    showConfigArea = false;
-    renderPage();
-}
-
-function showConfig() {
-    showConfigArea = true;
-    showSaveArea = false;
-    showLoadArea = false;
-    renderPage();
-}
+let currentSegment = null;
+let undoStack = [];
+let redoStack = [];
+let stopTimeout = null; // auxiliar para playLine()
+let TIME_STEP = 0.1; // segundos
+let isBatchEditing = false; // para edição em lote
+let subtitleName = "legendas.srt";  // Nome padrão caso não seja carregado nenhum arquivo
 
 
+// ====================================
+// --- Funções de Navegação (Views) ---
+// ====================================
 function renderSegments() {
   const container = document.getElementById("segments");
   container.innerHTML = "";  // Limpa a lista de segmentos
@@ -1427,11 +1516,7 @@ function openEditor(id) {
   currentSegment = srtData.find(s => s.id === id);
   if (!currentSegment) return;
 
-  // Só mostra o editor se NÃO estivermos no modo preview
-  if (!showPreviewMode) { 
-    document.getElementById("editor").style.display = "block";
-  }
-  
+  document.getElementById("editor").style.display = "block";
   document.getElementById("editStart").value = currentSegment.start;
   document.getElementById("editEnd").value = currentSegment.end;
   document.getElementById("editText").value = currentSegment.text;
@@ -1709,7 +1794,7 @@ function prevLine() {
     stopTimeout = null;
   }
   
-  const videoElement = document.getElementById("videoPlayer");
+  const videoElement = document.getElementById("videoPlayer-editSrt");
   if (videoElement && !videoElement.paused) {
     videoElement.pause();
   }
@@ -1730,7 +1815,7 @@ function nextLine() {
     stopTimeout = null;
   }
   
-  const videoElement = document.getElementById("videoPlayer");
+  const videoElement = document.getElementById("videoPlayer-editSrt");
   if (videoElement && !videoElement.paused) {
     videoElement.pause();
   }
@@ -1821,158 +1906,52 @@ function shiftSelectedLines(delta) {
   if (currentSegment) updateEditorFields(currentSegment);
 }
 
-// ======================
-// Inicializar
-// ======================
-function init() {
-	showLoadArea();
-	renderSegments();
-}
-
-init();
-
 // ==================================
-// 📁 Funções de Carregamento
+// Funções de Carregamento
 // ==================================
-function editSrt() {
-  console.log("");
-  showVideoArea = true;
-  showEditorArea = true;
-  showSegmentsArea = true;
-  showLoadArea = false;
-  showSaveArea = false;
-  showConfigArea = false;
-  showPreviewMode = false;
-  
-  renderPage();
-  showSection('editSrt');
-}
-
-function openContent() {
-  console.log("=== INÍCIO openContent() ===");
-  
-  // Captura os valores dos inputs
+function loadContent() {
   const videoInput = document.getElementById("videoUrl").value.trim();
   const videoUpload = document.getElementById("videoUpload").files[0];
-  console.log("Video URL input:", videoInput);
-  console.log("Video Upload file:", videoUpload);
 
   const srtInput = document.getElementById("srtUrl").value.trim();
   const srtUpload = document.getElementById("srtUpload").files[0];
-  console.log("SRT URL input:", srtInput);
-  console.log("SRT Upload file:", srtUpload);
 
-  // === IMPORTANTE: Muda para a seção editSrt PRIMEIRO ===
-  // Isso garante que o elemento videoPlayer seja criado
-  console.log("--- Mudando para seção 'editSrt' ANTES de carregar ---");
-  editSrt();
-  
-  // Aguarda um momento para garantir que o DOM foi atualizado
-  setTimeout(() => {
-    console.log("--- Timeout executado, tentando carregar conteúdo ---");
-    
-    // Verifica se o elemento de vídeo existe AGORA
-    const videoElement = document.getElementById("videoPlayer");
-    console.log("Elemento videoPlayer encontrado?", videoElement !== null);
-    
-    if (!videoElement) {
-      console.error("❌ ERRO CRÍTICO: videoPlayer ainda não existe!");
-      alert("Erro: Elemento de vídeo não encontrado. Tente novamente.");
-      return;
-    }
+  // Carregar o vídeo em TODAS as seções (CORRIGIDO)
+  if (videoUpload) {
+    const videoURL = URL.createObjectURL(videoUpload);
+    appState.video.file = videoUpload;
+    appState.video.blob = videoURL;
+    updateAllVideos(videoURL); // Usa a função de sincronização
+  } else if (videoInput) {
+    appState.video.url = videoInput;
+    updateAllVideos(videoInput); // Usa a função de sincronização
+  }
 
-    // === CARREGAR O VÍDEO ===
-    console.log("--- Tentando carregar vídeo ---");
-    if (videoUpload) {
-      // Se foi feito upload de arquivo
-      console.log("Carregando vídeo via UPLOAD de arquivo:", videoUpload.name);
-      const videoURL = URL.createObjectURL(videoUpload);
-      console.log("URL do vídeo criada:", videoURL);
-      videoElement.src = videoURL;
-      console.log("Vídeo carregado com sucesso via upload!");
-    } else if (videoInput) {
-      // Se foi colada uma URL
-      console.log("Carregando vídeo via URL:", videoInput);
-      videoElement.src = videoInput;
-      console.log("Vídeo carregado com sucesso via URL!");
-    } else {
-      console.warn("⚠️ AVISO: Nenhum vídeo foi fornecido (nem upload nem URL)");
-    }
+  // Carregar a legenda
+  if (srtUpload) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      parseSRT(e.target.result);
+      
+      appState.subtitle.name = srtUpload.name;
+      appState.subtitle.file = srtUpload;
+      document.getElementById("subtitleName").textContent = srtUpload.name;
+    };
+    reader.readAsText(srtUpload);
+  } else if (srtInput) {
+    fetch(srtInput)
+      .then(res => res.text())
+      .then(text => {
+        parseSRT(text);
 
-    // === CARREGAR A LEGENDA ===
-    console.log("--- Tentando carregar legenda ---");
-    if (srtUpload) {
-      // Se foi feito upload de arquivo SRT
-      console.log("Carregando SRT via UPLOAD de arquivo:", srtUpload.name);
-      const reader = new FileReader();
-      
-      reader.onload = function (e) {
-        console.log("FileReader onload disparado");
-        console.log("Conteúdo do SRT (primeiros 200 caracteres):", e.target.result.substring(0, 200));
-        
-        // Processa o conteúdo do SRT
-        parseSRT(e.target.result);
-        console.log("parseSRT() executado. Total de segmentos:", srtData.length);
-        
-        // Atualizar o nome da legenda carregada
-        subtitleName = srtUpload.name;
-        const subtitleNameElement = document.getElementById("subtitleName");
-        if (subtitleNameElement) {
-          subtitleNameElement.textContent = subtitleName;
-          console.log("Nome da legenda atualizado:", subtitleName);
-        } else {
-          console.warn("⚠️ Elemento subtitleName não encontrado");
-        }
-      };
-      
-      reader.onerror = function(e) {
-        console.error("❌ ERRO ao ler arquivo SRT:", e);
-      };
-      
-      reader.readAsText(srtUpload);
-      console.log("FileReader.readAsText() iniciado");
-      
-    } else if (srtInput) {
-      // Se foi colada uma URL do SRT
-      console.log("Carregando SRT via URL:", srtInput);
-      
-      fetch(srtInput)
-        .then(res => {
-          console.log("Fetch response status:", res.status);
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.text();
-        })
-        .then(text => {
-          console.log("SRT baixado via URL (primeiros 200 caracteres):", text.substring(0, 200));
-          
-          // Processa o conteúdo do SRT
-          parseSRT(text);
-          console.log("parseSRT() executado. Total de segmentos:", srtData.length);
+        appState.subtitle.name = srtInput.split("/").pop();
+        appState.subtitle.url = srtInput;
+        document.getElementById("subtitleName").textContent = appState.subtitle.name;
+      })
+      .catch(err => alert("Erro ao carregar SRT por URL: " + err.message));
+  }
 
-          // Atualizar o nome da legenda carregada (com URL)
-          subtitleName = srtInput.split("/").pop();
-          const subtitleNameElement = document.getElementById("subtitleName");
-          if (subtitleNameElement) {
-            subtitleNameElement.textContent = subtitleName;
-            console.log("Nome da legenda atualizado:", subtitleName);
-          } else {
-            console.warn("⚠️ Elemento subtitleName não encontrado");
-          }
-        })
-        .catch(err => {
-          console.error("❌ ERRO ao carregar SRT por URL:", err);
-          alert("Erro ao carregar SRT por URL: " + err.message);
-        });
-        
-    } else {
-      console.warn("⚠️ AVISO: Nenhuma legenda foi fornecida (nem upload nem URL)");
-    }
-    
-    console.log("=== FIM openContent() ===");
-    
-  }, 100); // Aguarda 100ms para o DOM atualizar
+  closeLoadSaveArea();
 }
 
 // Função para interpretar o conteúdo .srt para srtData
@@ -2010,7 +1989,6 @@ function parseSRT(content) {
   undoStack = [];
   redoStack = [];
   renderSegments();
-  
 }
 
 // Exibir SRT
@@ -2081,7 +2059,7 @@ function playLine() {
     return;
   }
 
-  const videoElement = document.getElementById("videoPlayer");
+  const videoElement = document.getElementById("videoPlayer-editSrt");
   if (!videoElement || !videoElement.src) {
     alert("Carregue um vídeo primeiro!");
     return;
@@ -2114,11 +2092,155 @@ function playLine() {
   });
 }
 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Função Principal de Criação de Playlist -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+async function saveNewPlaylistName() {
+    const playlistName = newPlaylistNameInput.value.trim();
+
+    if (!playlistName) {
+        alert("Por favor, digite um nome para a playlist.");
+        return;
+    }
+
+    showLoading('Criando nova playlist...');
+
+    try {
+        // 1. Obter o ID do usuário logado (necessário para a permissão de escrita)
+        const user = await account.get();
+        const userId = user.$id;
+
+        // 2. Definir as permissões: Somente o criador pode ler e escrever
+        const permissions = [
+            Permission.read(Role.user(userId)),
+            Permission.write(Role.user(userId)),
+        ];
+
+        // 3. Criar o documento no Appwrite
+        const newPlaylist = await databases.createDocument(
+            PLAYLISTS_DATABASE_ID, 
+            PLAYLISTS_COLLECTION_ID,
+            ID.unique(), // ID único gerado pelo Appwrite
+            {
+                userId: userId,
+                playlistName: playlistName,
+                // O campo playlistDescription é opcional e não estamos usando aqui
+            },
+            permissions // Aplicar as permissões
+        );
+
+        console.log('Playlist criada com sucesso:', newPlaylist);
+        alert(`Playlist "${playlistName}" criada!`);
+        
+        // Esconder a área de input após o sucesso
+        hideAddPlaylistArea();
+    	await fetchUserPlaylists();
+        
+        // TODO: Você deve adicionar aqui a lógica para
+        // 1. Atualizar a lista de checkboxes de playlists na UI.
+
+    } catch (error) {
+        console.error('Erro ao criar a playlist:', error);
+        alert('Falha ao criar a playlist. Verifique se as permissões e IDs estão corretos.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Funções de Exibição de Playlists do Appwrite -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * 1. Renderiza os elementos de checkbox no formulário com base nos dados.
+ * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
+ */
+/**
+ * Renderiza os elementos de checkbox no formulário com base nos dados.
+ * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
+ */
+function renderPlaylists(playlists) {
+    if (!playlistContainer) return;
+
+    // Limpa o conteúdo existente
+    playlistContainer.innerHTML = '';
+
+    if (playlists.length === 0) {
+        playlistContainer.innerHTML = '<p>Você não possui playlists.</p>';
+        return;
+    }
+    
+    // Contêiner flexível opcional para melhor alinhamento
+    // const listWrapper = document.createElement('div');
+    // listWrapper.className = 'playlist-list-wrapper'; // Você pode criar um estilo para este wrapper
+    
+    playlists.forEach(playlist => {
+        const playlistId = playlist.$id;
+        const playlistName = playlist.playlistName;
+
+        // 1. Cria o elemento LABEL
+        const label = document.createElement('label');
+        // Seu CSS .playlistForm label aplica-se a esta tag
+
+        // 2. Cria o INPUT (checkbox)
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = `playlist-${playlistId}`;
+        input.name = 'playlist';
+        input.value = playlistId;
+
+        // 3. Adiciona input e texto à label
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(` ${playlistName}`));
+        
+        // 4. Adiciona a label ao contêiner principal
+        playlistContainer.appendChild(label);
+        
+        // Em vez de <br>, usar margin-bottom no CSS é mais limpo.
+        // Já está no seu CSS: .playlistForm label { margin-bottom: 15px; }
+    });
+    
+    // Se você usou o listWrapper opcional:
+    // playlistContainer.appendChild(listWrapper);
+}
+
+/**
+ * 2. Busca as playlists do usuário logado no Appwrite.
+ * Nota: Isso só deve ser chamado se o usuário estiver autenticado.
+ */
+async function fetchUserPlaylists() {
+    showLoading('Buscando suas playlists...');
+    
+    try {
+        const user = await account.get();
+        const userId = user.$id;
+
+        // Filtra os documentos onde o 'userId' é igual ao ID do usuário logado.
+        const response = await databases.listDocuments(
+            PLAYLISTS_DATABASE_ID,
+            PLAYLISTS_COLLECTION_ID,
+            [
+                Appwrite.Query.equal('userId', userId),
+                Appwrite.Query.orderDesc('$createdAt') // Opcional: ordenar pelas mais recentes
+            ]
+        );
+
+        renderPlaylists(response.documents);
+
+    } catch (error) {
+        console.error('Erro ao buscar playlists:', error);
+        playlistContainer.innerHTML = '<p style="color:red;">Não foi possível carregar as playlists.</p>';
+    } finally {
+        hideLoading();
+    }
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 //  - Bloco Fx | Thumbnail -
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 function handleCaptureClick() {
-  const video = document.getElementById('videoPlayer'); // ID correto do vídeo
+  const video = document.getElementById('videoPlayer-postLesson'); // Corrigido o ID
   
   if (!video) {
     console.error('Elemento de vídeo não encontrado.');
@@ -2134,47 +2256,36 @@ function handleCaptureClick() {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
 
-  // Define as dimensões do canvas para corresponder às do vídeo
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
-  // Desenha o frame atual do vídeo no canvas
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // Converte o conteúdo do canvas para Blob
   canvas.toBlob((blob) => {
-    // Armazena o Blob globalmente
     if (blob) {
-      capturedThumbnailBlob = blob;
+      window.capturedThumbnailBlob = blob; // Torna global
       console.log('Thumbnail Blob capturado com sucesso!');
 
-      // Converte o blob para uma URL de dados (imagem base64)
       const imageDataURL = URL.createObjectURL(blob);
 
-      // Cria um novo elemento de imagem para a thumbnail
-      const thumbnailImg = document.createElement('img');
-      thumbnailImg.src = imageDataURL;
-      thumbnailImg.alt = 'Thumbnail Capturada';
-      thumbnailImg.style.maxWidth = '100%';
-      thumbnailImg.style.height = 'auto';
-      thumbnailImg.style.borderRadius = '8px';
+      // Encontra a imagem que já existe no HTML
+      const thumbnailImg = document.querySelector('#thumb-section-postLesson img');
 
-      // Encontra o contêiner onde a thumbnail será exibida
-      const thumbContentDiv = document.getElementById('thumb-content');
-
-      if (thumbContentDiv) {
-        // Limpa qualquer conteúdo anterior e adiciona a nova thumbnail
-        thumbContentDiv.innerHTML = '';
-        thumbContentDiv.appendChild(thumbnailImg);
+      if (thumbnailImg) {
+        // Atualiza a imagem existente
+        thumbnailImg.src = imageDataURL;
+        thumbnailImg.hidden = false; // Torna visível
+        thumbnailImg.style.maxWidth = '200px';
+        thumbnailImg.style.height = 'auto';
       } else {
-        console.error('Elemento com ID "thumb-content" não encontrado.');
+        console.error('Elemento de imagem não encontrado.');
         alert('Erro: Container da thumbnail não encontrado.');
       }
     } else {
       console.error('Falha ao gerar Blob da thumbnail.');
       alert('Erro ao capturar a thumbnail.');
     }
-  }, 'image/jpeg', 0.9); // Usa o formato JPEG com qualidade de 90%
+  }, 'image/jpeg', 0.9);
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -2246,27 +2357,32 @@ async function uploadFileToBackblaze(file, fileName, uploadData) {
 async function getVideoBlob() {
   console.log("--- Obtendo Blob do vídeo ---");
   
-  const videoElement = document.getElementById('videoPlayer');
-  
-  if (!videoElement || !videoElement.src) {
-    throw new Error('Vídeo não carregado');
+  // CORRIGIDO: Usa o arquivo original do appState
+  if (appState.video.file) {
+    console.log("Usando arquivo de vídeo carregado (File object)");
+    console.log(`✅ Blob do vídeo obtido: ${(appState.video.file.size / 1024 / 1024).toFixed(2)} MB`);
+    return appState.video.file;
   }
   
-  // Se o vídeo foi carregado via upload (blob URL), precisa buscar novamente
-  if (videoElement.src.startsWith('blob:')) {
+  // Se foi carregado via blob URL (raro, mas possível)
+  if (appState.video.blob) {
     console.log("Vídeo é um blob local, buscando conteúdo...");
-    const response = await fetch(videoElement.src);
+    const response = await fetch(appState.video.blob);
     const blob = await response.blob();
     console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
     return blob;
   }
   
-  // Se o vídeo foi carregado via URL externa, precisa fazer fetch
-  console.log("Vídeo é uma URL externa, fazendo fetch...");
-  const response = await fetch(videoElement.src);
-  const blob = await response.blob();
-  console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
-  return blob;
+  // Se foi carregado via URL externa
+  if (appState.video.url) {
+    console.log("Vídeo é uma URL externa, fazendo fetch...");
+    const response = await fetch(appState.video.url);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  throw new Error('Nenhum vídeo foi carregado');
 }
 
 /**
@@ -2284,12 +2400,19 @@ function getSrtBlob() {
  * Gera nome base a partir do nome do SRT (sem extensão)
  */
 function getBaseName() {
-  if (!subtitleName) {
-    // Fallback: usa timestamp se não houver nome
-    return `lesson_${Date.now()}`;
+  // CORRIGIDO: Usa o nome do appState
+  if (appState.subtitle.name && appState.subtitle.name !== 'legendas.srt') {
+    // Remove a extensão .srt
+    return appState.subtitle.name.replace(/\.srt$/i, '');
   }
-  // Remove a extensão .srt
-  return subtitleName.replace(/\.srt$/i, '');
+  
+  // Se não houver nome personalizado, usa o nome do vídeo
+  if (appState.video.file && appState.video.file.name) {
+    return appState.video.file.name.replace(/\.[^/.]+$/, ''); // Remove qualquer extensão
+  }
+  
+  // Fallback: usa timestamp se não houver nome
+  return `lesson_${Date.now()}`;
 }
 
 /**
@@ -2308,12 +2431,13 @@ async function postLesson() {
       throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
     }
     
-    if (!capturedThumbnailBlob) {
+    // CORRIGIDO: Verifica se há thumbnail capturada
+    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob) {
       throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
     }
     
-    const videoElement = document.getElementById('videoPlayer');
-    if (!videoElement || !videoElement.src) {
+    // CORRIGIDO: Verifica se há vídeo no appState
+    if (!appState.video.file && !appState.video.blob && !appState.video.url) {
       throw new Error('Nenhum vídeo carregado.');
     }
     
@@ -2335,7 +2459,7 @@ async function postLesson() {
     showLoading('Preparando arquivos...');
     const videoBlob = await getVideoBlob();
     const srtBlob = getSrtBlob();
-    const thumbBlob = capturedThumbnailBlob;
+    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob; // CORRIGIDO
     
     console.log("✅ Todos os arquivos preparados");
     
@@ -2372,7 +2496,12 @@ async function postLesson() {
     
     hideLoading();
     alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
-    location.reload();
+    // location.reload(); desativado por enquanto
+    
+    // NOVO: Atualiza o cache antes de recarregar
+    await refreshLessonsCache();
+    
+    showSection('home');
     
     // TODO: Salvar esses IDs no banco de dados
     // TODO: Exibir os arquivos na página
@@ -2439,49 +2568,236 @@ function getBackblazePublicUrl(fileId) {
 }
 
 /**
- * Renderiza as thumbnails nos elementos existentes (thumb-content e info-content)
+ * Agrupa arquivos por nome base (sem extensão)
+ * Retorna um objeto com { baseName: { video, srt, thumb } }
  */
-function renderThumbnails(thumbnails) {
-  console.log("--- Renderizando thumbnails ---");
-  console.log("Total de thumbnails:", thumbnails.length);
+function groupFilesByLesson(files) {
+  const lessons = {};
   
-  const container = document.getElementById('home-post-container');
+  files.forEach(file => {
+    // Remove a extensão para obter o nome base
+    const baseName = file.fileName.replace(/\.(mp4|srt|jpg|jpeg|png)$/i, '');
+    
+    if (!lessons[baseName]) {
+      lessons[baseName] = {
+        baseName: baseName,
+        video: null,
+        srt: null,
+        thumb: null
+      };
+    }
+    
+    // Identifica o tipo do arquivo
+    const fileName = file.fileName.toLowerCase();
+    if (fileName.endsWith('.mp4')) {
+      lessons[baseName].video = file;
+    } else if (fileName.endsWith('.srt')) {
+      lessons[baseName].srt = file;
+    } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
+      lessons[baseName].thumb = file;
+    }
+  });
+  
+  // Retorna apenas lições que têm pelo menos a thumbnail
+  return Object.values(lessons).filter(lesson => lesson.thumb);
+}
+
+/**
+ * Carrega uma lição específica (vídeo + SRT + thumb) do Backblaze
+ * e guarda o conteúdo em cache após o primeiro carregamento
+ */
+async function previewLesson(lesson) {
+  console.log("--- Preview da lição ---", lesson.baseName);
+  showLoading('Carregando lição...');
+
+  try {
+    // 1️⃣ Verifica no IndexedDB
+    const cached = await getLessonFromDB(lesson.baseName);
+    // Usa o timestamp do envio do vídeo, fallback para data atual
+    const currentTimestamp = lesson.video?.uploadTimestamp || Date.now();
+
+    if (cached && cached.timestamp === currentTimestamp) {
+      console.log("✅ Usando cache do IndexedDB:", lesson.baseName);
+      
+      // Usa URLs locais via blobs cacheados
+      const videoUrl = URL.createObjectURL(cached.videoBlob);
+      appState.video.url = videoUrl;
+      updateAllVideos(videoUrl);
+
+      parseSRT(cached.srtText);
+      updateAllThumbnails(URL.createObjectURL(cached.thumbBlob));
+
+    } else {
+      console.log("⬇️ Baixando nova versão da lição:", lesson.baseName);
+
+      // URLs públicas do Backblaze
+      const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+      const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
+      const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+
+      // Faz o download dos arquivos
+      const [videoBlob, srtText, thumbBlob] = await Promise.all([
+        fetch(videoUrl).then(r => r.blob()),
+        fetch(srtUrl).then(r => r.text()),
+        fetch(thumbUrl).then(r => r.blob())
+      ]);
+
+      // Atualiza o player e thumbnail com objetos locais
+      const localVideoUrl = URL.createObjectURL(videoBlob);
+      appState.video.url = localVideoUrl;
+      updateAllVideos(localVideoUrl);
+
+      parseSRT(srtText);
+
+      updateAllThumbnails(URL.createObjectURL(thumbBlob));
+
+      // Salva no IndexedDB para uso futuro
+      await saveLessonToDB({
+        baseName: lesson.baseName,
+        timestamp: currentTimestamp,
+        videoBlob,
+        srtText,
+        thumbBlob
+      });
+
+      console.log("📦 Lição salva no IndexedDB:", lesson.baseName);
+    }
+
+    hideLoading();
+    showSoloPreview();
+
+  } catch (err) {
+    console.error("❌ Erro ao carregar preview:", err);
+    hideLoading();
+    alert('Erro ao carregar lição: ' + err.message);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Sistema de Cache de Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// helpers para IndexedDB
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'baseName' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getLessonFromDB(baseName) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.get(baseName);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveLessonToDB(lessonData) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.put(lessonData);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Carrega as lições UMA VEZ e salva em cache
+ */
+async function loadLessonsToCache() {
+  if (isCacheLoaded) {
+    console.log("📦 Cache já carregado, pulando...");
+    return lessonsCache;
+  }
+  
+  console.log("=== Carregando lições para o cache ===");
+  
+  try {
+    showLoading('Carregando lições...');
+    
+    // 1. Lista todos os arquivos
+    const allFiles = await listBackblazeFiles();
+    
+    // 2. Agrupa arquivos por lição (nome base)
+    lessonsCache = groupFilesByLesson(allFiles);
+    isCacheLoaded = true;
+    
+    console.log(`✅ Cache carregado: ${lessonsCache.length} lições`);
+    
+    hideLoading();
+    
+    return lessonsCache;
+    
+  } catch (error) {
+    console.error("❌ ERRO ao carregar cache:", error);
+    hideLoading();
+    throw error;
+  }
+}
+
+/**
+ * Renderiza thumbnails a partir do cache para uma seção específica
+ */
+function renderThumbnailsFromCache(sectionId) {
+  console.log(`--- Renderizando thumbnails para: ${sectionId} ---`);
+  console.log(`Cache carregado: ${isCacheLoaded}, Total de lições: ${lessonsCache.length}`);
+  
+  // Mapeia o ID da seção para o ID do container
+  const containerMap = {
+    'home': 'home-post-container',
+    'myPosts': 'user-post-container',
+    'subscriptions': 'subscriptions-post-container',
+    'challenge': 'multi-post-container'
+  };
+  
+  const containerId = containerMap[sectionId];
+  const container = document.getElementById(containerId);
   
   if (!container) {
-    console.error('Container user-post-container não encontrado');
+    console.error(`Container ${containerId} não encontrado para seção ${sectionId}`);
     return;
   }
   
   // Limpa o container
   container.innerHTML = '';
   
-  if (thumbnails.length === 0) {
-    container.innerHTML = '<p style="color: #888;">Nenhuma thumbnail encontrada.</p>';
+  if (!isCacheLoaded) {
+    container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Carregando lições...</p>';
     return;
   }
   
-  // Cria um card para cada thumbnail usando os elementos existentes
-  thumbnails.forEach((thumb, index) => {
-    // Nome sem extensão
-    const displayName = thumb.fileName.replace(/\.(jpg|jpeg|png)$/i, '');
-    
-    // Gera a URL pública usando o fileId
-    const thumbnailUrl = getBackblazePublicUrl(thumb.fileId);
-    
-    // Log no console
-    console.log(`[${index + 1}] Thumbnail:`, {
-      fileName: thumb.fileName,
-      displayName: displayName,
-      fileId: thumb.fileId,
-      url: thumbnailUrl,
-      size: `${(thumb.contentLength / 1024).toFixed(2)} KB`
-    });
+  if (lessonsCache.length === 0) {
+    container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição encontrada.</p>';
+    return;
+  }
+  
+  // Filtra lições se necessário
+  let lessonsToRender = lessonsCache;
+  
+  // Renderiza cada lição
+  lessonsToRender.forEach((lesson, index) => {
+    const displayName = lesson.baseName;
+    const thumbnailUrl = getBackblazePublicUrl(lesson.thumb.fileId);
     
     // Cria o wrapper do post
     const postWrapper = document.createElement('div');
     postWrapper.className = 'post-item';
     postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
-    postWrapper.onclick = () => previewLesson(thumb);
+    postWrapper.onclick = () => previewLesson(lesson);
     
     // Cria a thumb-section
     const thumbSection = document.createElement('div');
@@ -2499,11 +2815,10 @@ function renderThumbnails(thumbnails) {
       </div>
       
       <div class="video-text">
-        <h3 class="video-title" onclick="previewLesson()" style="cursor: pointer;">${displayName}</h3>
+        <span class="video-title" style="cursor: pointer;">${displayName}</span>
         <div class="video-meta">
           <span class="channel-name">Meu Canal</span>
           <span class="performance">95%</span>
-          <span class="video-edit" onclick="event.stopPropagation(); editLesson('${thumb.fileId}');" style="cursor: pointer; color: #6d28d9; font-weight: bold;">Editar</span>
         </div>
       </div>
     `;
@@ -2516,736 +2831,42 @@ function renderThumbnails(thumbnails) {
     container.appendChild(postWrapper);
   });
   
-  console.log(`✅ ${thumbnails.length} thumbnails renderizadas`);
-  console.log("--- Fim da renderização ---");
+  console.log(`✅ ${lessonsToRender.length} lições renderizadas em ${sectionId}`);
 }
 
 /**
- * Função principal para carregar e exibir thumbnails
+ * Força atualização do cache (após upload de nova lição)
  */
-async function loadAndDisplayThumbnails() {
-  console.log("=== INÍCIO loadAndDisplayThumbnails() ===");
+async function refreshLessonsCache() {
+  console.log("🔄 Forçando atualização do cache...");
+  isCacheLoaded = false;
+  lessonsCache = [];
+  await loadLessonsToCache();
   
-  try {
-    showLoading('Carregando thumbnails...');
-    
-    // 1. Lista todos os arquivos
-    const allFiles = await listBackblazeFiles();
-    
-    // 2. Filtra apenas as thumbnails
-    const thumbnails = filterThumbnails(allFiles);
-    
-    // 3. Renderiza na página usando os elementos existentes
-    renderThumbnails(thumbnails);
-    
-    hideLoading();
-    
-    return thumbnails;
-    
-  } catch (error) {
-    console.error("❌ ERRO em loadAndDisplayThumbnails():", error);
-    hideLoading();
-    
-    const container = document.getElementById('user-post-container');
-    if (container) {
-      container.innerHTML = `
-        <p style="color: #ff6b6b; text-align: center; padding: 20px;">
-          ❌ Erro ao carregar thumbnails: ${error.message}
-        </p>
-      `;
-    }
-    
-    throw error;
-  } finally {
-    console.log("=== FIM loadAndDisplayThumbnails() ===");
+  // Re-renderiza a seção atual se for uma seção com thumbnails
+  const currentSection = document.querySelector('section.active');
+  if (currentSection && SECTIONS_WITH_THUMBNAILS.includes(currentSection.id)) {
+    renderThumbnailsFromCache(currentSection.id);
   }
 }
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Carregar Lição do Servidor --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-/**
- * Busca o arquivo de vídeo correspondente à thumbnail
- */
-function findVideoFile(thumbFileName, allFiles) {
-  const baseName = thumbFileName.replace(/\.(jpg|jpeg|png)$/i, '');
-  const videoFileName = `${baseName}.mp4`;
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Inicializar --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+async function init() {
+  checkAuthStatus();
+  endCreateMode();
   
-  console.log(`Procurando vídeo: ${videoFileName}`);
+  // Carrega o cache ANTES de mostrar qualquer seção
+  await loadLessonsToCache();
   
-  const videoFile = allFiles.find(file => file.fileName === videoFileName);
-  
-  if (videoFile) {
-    console.log("✅ Vídeo encontrado:", videoFile.fileName);
-  } else {
-    console.warn("⚠️ Vídeo não encontrado para:", thumbFileName);
-  }
-  
-  return videoFile || null;
+  // Agora mostra a home com as thumbnails já carregadas
+  showSection('home');
 }
 
-/**
- * Busca o arquivo SRT correspondente à thumbnail
- */
-function findSrtFile(thumbFileName, allFiles) {
-  const baseName = thumbFileName.replace(/\.(jpg|jpeg|png)$/i, '');
-  const srtFileName = `${baseName}.srt`;
-  
-  console.log(`Procurando SRT: ${srtFileName}`);
-  
-  const srtFile = allFiles.find(file => file.fileName === srtFileName);
-  
-  if (srtFile) {
-    console.log("✅ SRT encontrado:", srtFile.fileName);
-  } else {
-    console.warn("⚠️ SRT não encontrado para:", thumbFileName);
-  }
-  
-  return srtFile || null;
-}
-
-/**
- * Baixa e carrega o conteúdo do SRT
- */
-async function loadSrtContent(fileId) {
-  console.log("--- Baixando SRT do servidor ---");
-  
-  const srtUrl = getBackblazePublicUrl(fileId);
-  console.log("URL do SRT:", srtUrl);
-  
-  const response = await fetch(srtUrl);
-  
-  if (!response.ok) {
-    throw new Error(`Erro ao baixar SRT: ${response.statusText}`);
-  }
-  
-  const content = await response.text();
-  console.log(`✅ SRT baixado: ${content.length} caracteres`);
-  
-  return content;
-}
-
-/**
- * Carrega vídeo no elemento videoPlayer
- */
-function loadVideoPlayer(fileId, fileName) {
-  console.log("--- Carregando vídeo no player ---");
-  
-  const videoUrl = getBackblazePublicUrl(fileId);
-  console.log("URL do vídeo:", videoUrl);
-  
-  const videoElement = document.getElementById('videoPlayer');
-  
-  if (!videoElement) {
-    throw new Error('Elemento videoPlayer não encontrado');
-  }
-  
-  videoElement.src = videoUrl;
-  console.log(`✅ Vídeo carregado: ${fileName}`);
-}
-
-/**
- * Carrega SRT no editor
- */
-function loadSrtEditor(content, fileName) {
-  console.log("--- Carregando SRT no editor ---");
-  
-  parseSRT(content);
-  console.log(`✅ SRT processado: ${srtData.length} segmentos`);
-  
-  subtitleName = fileName;
-  const subtitleNameElement = document.getElementById("subtitleName");
-  if (subtitleNameElement) {
-    subtitleNameElement.textContent = fileName;
-    console.log("✅ Nome da legenda atualizado:", fileName);
-  }
-  
-  renderSegments();
-}
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Load Lesson From Server (com Cache) --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-/**
- * Carrega lição do servidor (ou cache)
- */
-async function loadLessonFromServer(thumb) {
-  console.log("=== INÍCIO loadLessonFromServer() (com cache) ===");
-  
-  try {
-    const fileId = thumb.fileId;
-    const cached = loadLessonFromCache(fileId);
-    
-    if (cached) {
-      console.log("🚀 Carregando do CACHE (rápido)");
-      showLoading('Carregando do cache...');
-      
-      await loadVideoFromCacheAsync(cached.videoBlob, cached.videoFileName);
-      loadSrtEditor(cached.srtContent, cached.srtFileName);
-      
-      hideLoading();
-      
-      // Aguarda um frame para garantir renderização
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      
-      if (srtData.length > 0) {
-        openEditor(srtData[0].id);
-      }
-
-      return { /* ... */ };
-    }
-    
-    // Carregamento do servidor
-    showLoading('Carregando lição...');
-    const allFiles = await listBackblazeFiles();
-    
-    const videoFile = findVideoFile(thumb.fileName, allFiles);
-    const srtFile = findSrtFile(thumb.fileName, allFiles);
-    
-    if (!videoFile || !srtFile) {
-      throw new Error('Arquivos não encontrados');
-    }
-    
-    showLoading('Carregando vídeo...');
-    await loadVideoPlayerAsync(videoFile.fileId, videoFile.fileName);
-    
-    showLoading('Carregando legenda...');
-    const srtContent = await loadSrtContent(srtFile.fileId);
-    loadSrtEditor(srtContent, srtFile.fileName);
-    
-    showLoading('Salvando no cache...');
-    await saveLessonToCache(fileId, videoFile, srtFile, thumb);
-    
-    hideLoading();
-    
-    // Aguarda um frame para garantir renderização
-    await new Promise(resolve => requestAnimationFrame(resolve));
-    
-    if (srtData.length > 0) {
-      openEditor(srtData[0].id);
-    }
-    
-    return { /* ... */ };
-    
-  } catch (error) {
-    console.error("❌ ERRO:", error);
-    hideLoading();
-    alert('❌ Erro: ' + error.message);
-    throw error;
-  }
-}
-
-// Nova função assíncrona para carregar vídeo
-function loadVideoPlayerAsync(fileId, fileName) {
-  return new Promise((resolve, reject) => {
-    console.log("--- Carregando vídeo no player ---");
-    
-    const videoUrl = getBackblazePublicUrl(fileId);
-    const videoElement = document.getElementById('videoPlayer');
-    
-    if (!videoElement) {
-      reject(new Error('videoPlayer não encontrado'));
-      return;
-    }
-    
-    // Aguarda o vídeo carregar metadados
-    videoElement.onloadedmetadata = () => {
-      console.log(`✅ Vídeo carregado: ${fileName}`);
-      resolve();
-    };
-    
-    videoElement.onerror = () => {
-      reject(new Error('Erro ao carregar vídeo'));
-    };
-    
-    videoElement.src = videoUrl;
-  });
-}
-
-// Nova função assíncrona para carregar vídeo do cache
-function loadVideoFromCacheAsync(videoBlob, fileName) {
-  return new Promise((resolve, reject) => {
-    const videoElement = document.getElementById('videoPlayer');
-    
-    if (!videoElement) {
-      reject(new Error('videoPlayer não encontrado'));
-      return;
-    }
-    
-    const blobUrl = URL.createObjectURL(videoBlob);
-    
-    videoElement.onloadedmetadata = () => {
-      console.log(`✅ Vídeo do cache carregado: ${fileName}`);
-      resolve();
-    };
-    
-    videoElement.onerror = () => {
-      reject(new Error('Erro ao carregar vídeo do cache'));
-    };
-    
-    videoElement.src = blobUrl;
-  });
-}
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | PreviewMode --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-/**
- * Preview de lição (carrega do servidor)
- */
-async function previewLesson(thumb) {
-  currentLessonForMatch = thumb;
-  
-  // Define TODAS as flags de visibilidade
-  showVideoArea = true;
-  showEditorArea = false;
-  showSegmentsArea = true;
-  showSaveArea = false;
-  showLoadArea = false;
-  showConfigArea = false;
-  
-  showSection('editSrt'); 
-  
-  showPreviewMode = true;
-  
-  renderPage();
-  
-  await loadLessonFromServer(thumb);   
-}
-
-/**
- * Função placeholder para editar (você pode implementar depois)
- */
-function editLesson(fileId) {
-  console.log("Editar lição:", fileId);
-  // TODO: Implementar edição
-}
-
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Play --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-/**
- * Aguarda a renderização completa e toca o áudio
- */
-async function waitForRenderAndPlay() {
-  console.log("--- Aguardando renderização completa ---");
-  
-  // Aguarda um frame para garantir que o DOM foi atualizado
-  await new Promise(resolve => requestAnimationFrame(resolve));
-  
-  // Verifica se o vídeo está pronto
-  const videoElement = document.getElementById("videoPlayer");
-  
-  if (!videoElement) {
-    console.error("❌ videoPlayer não encontrado");
-    return;
-  }
-  
-  // Se o vídeo não estiver pronto, aguarda
-  if (videoElement.readyState < 2) {
-    console.log("⏳ Aguardando vídeo carregar...");
-    await new Promise(resolve => {
-      videoElement.addEventListener('loadeddata', resolve, { once: true });
-    });
-  }
-  
-  console.log("✅ Renderização completa, tocando áudio...");
-  
-  // Agora sim, toca o trecho
-  playLine();
-}
-
-/**
- * Embaralha um array (Fisher-Yates shuffle)
- */
-function shuffleArray(array) {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-/**
- * Injeta o primeiro trecho da SRT com palavras embaralhadas (ATUALIZADO)
- */
-async function injectFirstSegmentShuffled() {
-  console.log("--- Injetando primeiro trecho embaralhado ---");
-  
-  // Reseta o índice e array de palavras
-  currentSegmentIndex = 0;
-  selectedWords = [];
-  
-  if (!srtData || srtData.length === 0) {
-    console.warn("⚠️ Nenhuma legenda carregada");
-    return;
-  }
-  
-  // Carrega o primeiro segmento (que já vai chamar playLine)
-  await loadNextSegment();
-}
-
-/**
- * Move palavra para o container de frase
- */
-function moveWordToPhrase(wordButton, word) {
-  console.log("Tentando mover palavra:", word);
-  
-  // Verifica se é a próxima palavra correta
-  if (!isNextWord(word)) {
-    console.log("❌ Palavra incorreta! Não é a próxima da sequência.");
-    
-    // Feedback visual de erro
-    wordButton.style.background = 'linear-gradient(to bottom, #ff5e91, #E91E63)';
-    setTimeout(() => {
-      wordButton.style.background = 'linear-gradient(to bottom, #6d28d9, #5b21b6)';
-    }, 300);
-    
-    return;
-  }
-  
-  console.log("✅ Palavra correta! Movendo...");
-  
-  const fraseContainer = document.getElementById('frase');
-  
-  if (!fraseContainer) {
-    console.error("❌ Elemento 'frase' não encontrado");
-    return;
-  }
-  
-  selectedWords.push(word);
-  wordButton.remove();
-  
-  const phraseButton = document.createElement('button');
-  phraseButton.className = 'phrase-word-button';
-  phraseButton.textContent = word;
-  phraseButton.style.cssText = `
-    padding: 12px 20px;
-    margin: 8px;
-    background: linear-gradient(to bottom, #4caf50, #45a049);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-  `;
-  
-  fraseContainer.appendChild(phraseButton);
-  
-  console.log("Frase atual:", selectedWords.join(' '));
-  
-  // Verifica se a frase está completa
-  checkIfPhraseComplete();
-}
-
-/**
- * Verifica se a palavra clicada é a próxima correta da frase (ATUALIZADO PARA PALAVRAS DUPLICADAS)
- */
-/**
- * Verifica se a palavra clicada é a próxima correta da frase (LÓGICA DE POSIÇÃO ESTRITA)
- */
-function isNextWord(word) {
-  // Pega o segmento atual
-  const currentSegment = srtData[currentSegmentIndex];
-  
-  // Pega a frase correta, dividida em palavras (equivale ao 'palavrasOriginais' do seu exemplo)
-  const correctWords = currentSegment.text
-    .split(/\s+/)
-    .filter(w => w.trim().length > 0);
-  
-  // O número de palavras já selecionadas é o índice da próxima palavra correta
-  // (equivale ao 'indiceAtual' do seu exemplo)
-  const nextIndex = selectedWords.length;
-  
-  // Se a frase já foi completada, não aceite mais palavras
-  if (nextIndex >= correctWords.length) {
-    return false;
-  }
-  
-  // Pega a próxima palavra esperada na ordem correta (equivale ao 'palavraEsperada')
-  const palavraEsperada = correctWords[nextIndex];
-  
-  // Compara a palavra clicada ('word') com a palavra esperada na posição exata
-  return word === palavraEsperada;
-}
-
-/**
- * Verifica se a frase está completa e mostra a próxima (ATUALIZADA PARA ASYNC)
- */
-function checkIfPhraseComplete() {
-  const currentSegment = srtData[currentSegmentIndex];
-  
-  const correctWords = currentSegment.text
-    .split(/\s+/)
-    .filter(w => w.trim().length > 0);
-  
-  if (selectedWords.length === correctWords.length) {
-    console.log("🎉 Frase completa!");
-    
-    // Para o timer de performance
-    stopSegmentTimer();
-    
-    // Última atualização da performance (mostra resultado final)
-    updatePerformanceDisplay();
-    
-    setTimeout(async () => {
-      currentSegmentIndex++;
-      
-      if (currentSegmentIndex < srtData.length) {
-        console.log(`Carregando segmento ${currentSegmentIndex + 1}...`);
-        await loadNextSegment();
-      } else {
-        console.log("🏆 Todas as frases completadas!");
-        showCompletionMessage();
-      }
-    }, 1000);
-  }
-}
-
-/**
- * Carrega o próximo segmento (ATUALIZADO COM VERIFICAÇÃO ROBUSTA)
- */
-async function loadNextSegment() {
-  // Limpa o array de palavras selecionadas
-  selectedWords = [];
-  
-  // Pega o próximo segmento
-  const nextSegment = srtData[currentSegmentIndex];
-  console.log("Próximo trecho:", nextSegment);
-  
-  // Define como segmento atual (para playLine funcionar)
-  currentSegment = nextSegment;
-  
-  // Encontra os containers
-  const palavrasContainer = document.getElementById('palavras');
-  const fraseContainer = document.getElementById('frase');
-  
-  if (!palavrasContainer || !fraseContainer) {
-    console.error("❌ Containers não encontrados");
-    return;
-  }
-  
-  // Limpa os containers
-  palavrasContainer.innerHTML = '';
-  fraseContainer.innerHTML = '';
-  
-  // Separa o texto em palavras
-  const words = nextSegment.text
-    .split(/\s+/)
-    .filter(word => word.trim().length > 0);
-  
-  // Embaralha as palavras
-  const shuffledWords = shuffleArray(words);
-  console.log("Palavras embaralhadas:", shuffledWords);
-  
-  // Cria botões para cada palavra
-  shuffledWords.forEach((word) => {
-    const wordButton = document.createElement('button');
-    wordButton.className = 'word-button';
-    wordButton.textContent = word;
-    wordButton.style.cssText = `
-      padding: 12px 20px;
-      margin: 8px;
-      background: linear-gradient(to bottom, #6d28d9, #5b21b6);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 8px rgba(109, 40, 217, 0.3);
-    `;
-    
-    // Efeitos hover
-    wordButton.onmouseenter = () => {
-      wordButton.style.transform = 'translateY(-2px)';
-      wordButton.style.boxShadow = '0 4px 12px rgba(109, 40, 217, 0.5)';
-    };
-    
-    wordButton.onmouseleave = () => {
-      wordButton.style.transform = 'translateY(0)';
-      wordButton.style.boxShadow = '0 2px 8px rgba(109, 40, 217, 0.3)';
-    };
-    
-    // Ação ao clicar
-    wordButton.onclick = () => {
-      moveWordToPhrase(wordButton, word);
-    };
-    
-    palavrasContainer.appendChild(wordButton);
-  });
-  
-  // Atualiza o progresso
-  updateProgress();
-  
-  console.log(`✅ Segmento ${currentSegmentIndex + 1} carregado`);
-  
-  // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR (ROBUSTA)
-  await waitForRenderAndPlay();
-  
-  // ⏱️ INICIA O CRONÔMETRO DE PERFORMANCE
-  startSegmentTimer();
-}
-
-/**
- * Atualiza o display de progresso
- */
-function updateProgress() {
-  const progressElement = document.getElementById('progresso');
-  
-  if (progressElement) {
-    progressElement.textContent = `Progresso: ${currentSegmentIndex + 1} de ${srtData.length}`;
-  }
-}
-
-/**
- * Mostra mensagem de conclusão
- */
-function showCompletionMessage() {
-  const fraseContainer = document.getElementById('frase');
-  const palavrasContainer = document.getElementById('palavras');
-  
-  if (fraseContainer) {
-    fraseContainer.innerHTML = '<h2 style="color: #4caf50;">🏆 Parabéns! Você completou todas as frases!</h2>';
-  }
-  
-  if (palavrasContainer) {
-    palavrasContainer.innerHTML = '';
-  }
-}
-
-/**
- * Inicia o modo solo
- */
-function startSoloMode() {
-  console.log("=== INÍCIO startPlayMode() ===");
-  
-  // Injeta o primeiro trecho se estivermos no modo play
-  injectFirstSegmentShuffled();
-  
-  showSection('play');  // ✅ Muda para a seção play
-}
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// --- Bloco Fx | Multiplayer (Criação de Partida) ---
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
-/**
- * Inicia o modo multi
- */
-function startMultiMode() {
-  console.log("=== INÍCIO startSoloMode() ===");
-  showSection('challenge');
-  showLobbyArea = true;
-  
-  renderPage();    
-}
-
-/**
- * Cria uma nova partida no servidor Appwrite.
- * Esta função é chamada internamente por startMultiMode().
- */
-async function createMatchOnServer() {
-    console.log("--- Iniciando criação de partida ---");
-    
-    if (!currentLessonForMatch) {
-        throw new Error("Nenhuma lição selecionada para o desafio.");
-    }
-
-    // 1. Obter o ID do Host (usuário logado)
-    let host;
-    try {
-        host = await account.get();
-    } catch (error) {
-        console.error("Erro ao buscar usuário:", error);
-        alert("Você precisa estar logado para criar um desafio.");
-        showSection('login-screen'); // Redireciona para o login
-        return null; // Para a execução
-    }
-
-    const hostId = host.$id;
-
-    // 2. Preparar os dados da partida
-    // Remove a extensão (.jpg, .png) do fileName para obter o lessonName
-    const lessonName = currentLessonForMatch.fileName.replace(/\.(jpg|jpeg|png)$/i, '');
-    
-    // Pega o fileId da thumbnail para exibir no lobby do oponente
-    // **NOTA:** Adicione um campo 'thumbFileId' (string) na sua coleção Appwrite
-    const thumbFileId = currentLessonForMatch.fileId; 
-
-    const matchData = {
-        hostId: hostId,
-        lessonName: lessonName,
-        thumbFileId: thumbFileId, // Importante para o lobby do oponente
-        status: "waiting",
-        currentSentenceIndex: 0
-        // O Appwrite irá preencher $id, $createdAt, $updatedAt
-        // Os outros campos (opponentId, performances, etc.) ficarão nulos
-    };
-
-    // 3. Criar o documento no Appwrite
-    try {
-        console.log("Enviando dados para criar partida:", matchData);
-        const newMatch = await databases.createDocument(
-            DATABASE_ID,
-            MATCHES_COLLECTION_ID,
-            ID.unique(), // Gera um ID único para a partida
-            matchData
-        );
-
-        console.log("✅ Partida criada com sucesso:", newMatch);
-        return newMatch; // Retorna a partida criada
-
-    } catch (error) {
-      console.error("❌ Erro ao criar documento da partida:", error);
-      const message = error?.message ?? "Erro desconhecido";
-      const code = error?.code ? " (código " + error.code + ")" : "";
-	  alert("Falha ao criar a partida no servidor: " + message + code);
-
-	}
-}
-
-/**
- * (VERSÃO ATUALIZADA) Inicia o modo multi, cria a partida e entra no lobby.
- * Esta função SUBSTITUI a sua startMultiMode() original.
- */
-async function startMultiMode() {
-  console.log("=== INÍCIO startMultiMode() ===");
-  showLoading("Criando partida...");
-
-  try {
-    // 1. Tenta criar a partida no servidor
-    const match = await createMatchOnServer();
-
-    // 2. Se conseguir, navega para o lobby
-    if (match) {
-        currentMatchId = match.$id; // Guarda o ID da partida
-        
-        showSection('challenge');   // Vai para a tela de desafios
-        showLobbyArea = true;       // Mostra o "Aguardando oponente..."
-        renderPage();
-        
-        // 3. (PRÓXIMO PASSO) Começa a escutar por atualizações nesta partida
-        // subscribeToMatchUpdates(currentMatchId); // (Você implementará isso depois)
-        console.log(`--- Host aguardando oponente na partida: ${currentMatchId} ---`);
-    }
-  } catch (error) {
-    console.error("❌ Falha ao iniciar modo multi:", error);
-    alert(error.message);
-    
-    // Se der erro (ex: não logado), volta para a tela de preview
-    showPreviewMode = true;
-    renderPage();
-  } finally {
-    hideLoading();
-  }
-}
+document.addEventListener('DOMContentLoaded', () => {
+	init();
+});
 
 </script>
 </body>
