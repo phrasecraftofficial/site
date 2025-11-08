@@ -1731,7 +1731,7 @@ function prevLine() {
     stopTimeout = null;
   }
   
-  const videoElement = document.getElementById("videoPlayer");
+  const videoElement = document.getElementById("videoPlayer-editSrt");
   if (videoElement && !videoElement.paused) {
     videoElement.pause();
   }
@@ -1752,7 +1752,7 @@ function nextLine() {
     stopTimeout = null;
   }
   
-  const videoElement = document.getElementById("videoPlayer");
+  const videoElement = document.getElementById("videoPlayer-editSrt");
   if (videoElement && !videoElement.paused) {
     videoElement.pause();
   }
@@ -1856,9 +1856,9 @@ function loadContent() {
   // Carregar o vídeo
   if (videoUpload) {
     const videoURL = URL.createObjectURL(videoUpload);
-    document.getElementById("videoPlayer").src = videoURL;
+    document.getElementById("videoPlayer-editSrt").src = videoURL;
   } else if (videoInput) {
-    document.getElementById("videoPlayer").src = videoInput;
+    document.getElementById("videoPlayer-editSrt").src = videoInput;
   }
 
   // Carregar a legenda
@@ -1993,7 +1993,7 @@ function playLine() {
     return;
   }
 
-  const videoElement = document.getElementById("videoPlayer");
+  const videoElement = document.getElementById("videoPlayer-editSrt");
   if (!videoElement || !videoElement.src) {
     alert("Carregue um vídeo primeiro!");
     return;
