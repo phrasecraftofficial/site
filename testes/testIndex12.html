@@ -216,6 +216,10 @@ button:hover {
 	background-color: #bbb;
 	color: #000;
 }
+/* Efeito de clique */
+button:active {
+  transform: scale(0.95);
+}
 .general-btn { 
     background-color: transparent; 
     border: none; 
@@ -2848,6 +2852,316 @@ async function refreshLessonsCache() {
   if (currentSection && SECTIONS_WITH_THUMBNAILS.includes(currentSection.id)) {
     renderThumbnailsFromCache(currentSection.id);
   }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Play --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Aguarda a renderização completa e toca o áudio
+ */
+async function waitForRenderAndPlay() {
+  console.log("--- Aguardando renderização completa ---");
+  
+  // Aguarda um frame para garantir que o DOM foi atualizado
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  
+  // Verifica se o vídeo está pronto
+  const videoElement = document.getElementById("videoPlayer");
+  
+  if (!videoElement) {
+    console.error("❌ videoPlayer não encontrado");
+    return;
+  }
+  
+  // Se o vídeo não estiver pronto, aguarda
+  if (videoElement.readyState < 2) {
+    console.log("⏳ Aguardando vídeo carregar...");
+    await new Promise(resolve => {
+      videoElement.addEventListener('loadeddata', resolve, { once: true });
+    });
+  }
+  
+  console.log("✅ Renderização completa, tocando áudio...");
+  
+  // Agora sim, toca o trecho
+  playLine();
+}
+
+/**
+ * Embaralha um array (Fisher-Yates shuffle)
+ */
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * Injeta o primeiro trecho da SRT com palavras embaralhadas (ATUALIZADO)
+ */
+async function injectFirstSegmentShuffled() {
+  console.log("--- Injetando primeiro trecho embaralhado ---");
+  
+  // Reseta o índice e array de palavras
+  currentSegmentIndex = 0;
+  selectedWords = [];
+  
+  if (!srtData || srtData.length === 0) {
+    console.warn("⚠️ Nenhuma legenda carregada");
+    return;
+  }
+  
+  // Carrega o primeiro segmento (que já vai chamar playLine)
+  await loadNextSegment();
+}
+
+/**
+ * Move palavra para o container de frase
+ */
+function moveWordToPhrase(wordButton, word) {
+  console.log("Tentando mover palavra:", word);
+  
+  // Verifica se é a próxima palavra correta
+  if (!isNextWord(word)) {
+    console.log("❌ Palavra incorreta! Não é a próxima da sequência.");
+    
+    // Feedback visual de erro
+    wordButton.style.background = 'linear-gradient(to bottom, #ff5e91, #E91E63)';
+    setTimeout(() => {
+      wordButton.style.background = 'linear-gradient(to bottom, #6d28d9, #5b21b6)';
+    }, 300);
+    
+    return;
+  }
+  
+  console.log("✅ Palavra correta! Movendo...");
+  
+  const fraseContainer = document.getElementById('frase');
+  
+  if (!fraseContainer) {
+    console.error("❌ Elemento 'frase' não encontrado");
+    return;
+  }
+  
+  selectedWords.push(word);
+  wordButton.remove();
+  
+  const phraseButton = document.createElement('button');
+  phraseButton.className = 'phrase-word-button';
+  phraseButton.textContent = word;
+  phraseButton.style.cssText = `
+  	width: auto;
+    color: #fff;
+    padding: 0 10px;
+    margin: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+  `;
+  
+  fraseContainer.appendChild(phraseButton);
+  
+  console.log("Frase atual:", selectedWords.join(' '));
+  
+  // Verifica se a frase está completa
+  checkIfPhraseComplete();
+}
+
+/**
+ * Verifica se a palavra clicada é a próxima correta da frase (ATUALIZADO PARA PALAVRAS DUPLICADAS)
+ */
+/**
+ * Verifica se a palavra clicada é a próxima correta da frase (LÓGICA DE POSIÇÃO ESTRITA)
+ */
+function isNextWord(word) {
+  // Pega o segmento atual
+  const currentSegment = srtData[currentSegmentIndex];
+  
+  // Pega a frase correta, dividida em palavras (equivale ao 'palavrasOriginais' do seu exemplo)
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+  
+  // O número de palavras já selecionadas é o índice da próxima palavra correta
+  // (equivale ao 'indiceAtual' do seu exemplo)
+  const nextIndex = selectedWords.length;
+  
+  // Se a frase já foi completada, não aceite mais palavras
+  if (nextIndex >= correctWords.length) {
+    return false;
+  }
+  
+  // Pega a próxima palavra esperada na ordem correta (equivale ao 'palavraEsperada')
+  const palavraEsperada = correctWords[nextIndex];
+  
+  // Compara a palavra clicada ('word') com a palavra esperada na posição exata
+  return word === palavraEsperada;
+}
+
+/**
+ * Verifica se a frase está completa e mostra a próxima (ATUALIZADA PARA ASYNC)
+ */
+function checkIfPhraseComplete() {
+  const currentSegment = srtData[currentSegmentIndex];
+  
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+  
+  if (selectedWords.length === correctWords.length) {
+    console.log("🎉 Frase completa!");
+    
+    // Para o timer de performance
+    stopSegmentTimer();
+    
+    // Última atualização da performance (mostra resultado final)
+    updatePerformanceDisplay();
+    
+    setTimeout(async () => {
+      currentSegmentIndex++;
+      
+      if (currentSegmentIndex < srtData.length) {
+        console.log(`Carregando segmento ${currentSegmentIndex + 1}...`);
+        await loadNextSegment();
+      } else {
+        console.log("🏆 Todas as frases completadas!");
+        showCompletionMessage();
+      }
+    }, 1000);
+  }
+}
+
+/**
+ * Carrega o próximo segmento (ATUALIZADO COM VERIFICAÇÃO ROBUSTA)
+ */
+async function loadNextSegment() {
+  // Limpa o array de palavras selecionadas
+  selectedWords = [];
+  
+  // Pega o próximo segmento
+  const nextSegment = srtData[currentSegmentIndex];
+  console.log("Próximo trecho:", nextSegment);
+  
+  // Define como segmento atual (para playLine funcionar)
+  currentSegment = nextSegment;
+  
+  // Encontra os containers
+  const palavrasContainer = document.getElementById('palavras');
+  const fraseContainer = document.getElementById('frase');
+  
+  if (!palavrasContainer || !fraseContainer) {
+    console.error("❌ Containers não encontrados");
+    return;
+  }
+  
+  // Limpa os containers
+  palavrasContainer.innerHTML = '';
+  fraseContainer.innerHTML = '';
+  
+  // Separa o texto em palavras
+  const words = nextSegment.text
+    .split(/\s+/)
+    .filter(word => word.trim().length > 0);
+  
+  // Embaralha as palavras
+  const shuffledWords = shuffleArray(words);
+  console.log("Palavras embaralhadas:", shuffledWords);
+  
+  // Cria botões para cada palavra
+  shuffledWords.forEach((word) => {
+    const wordButton = document.createElement('button');
+    wordButton.className = 'word-button';
+    wordButton.textContent = word;
+    wordButton.style.cssText = `      
+      width: auto;
+      color: #fff;
+      padding: 0 10px;
+      margin: 4px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(109, 40, 217, 0.3);
+    `;
+    
+    // Efeitos hover
+    wordButton.onmouseenter = () => {
+      wordButton.style.transform = 'translateY(-2px)';
+      wordButton.style.boxShadow = '0 4px 12px rgba(109, 40, 217, 0.5)';
+    };
+    
+    wordButton.onmouseleave = () => {
+      wordButton.style.transform = 'translateY(0)';
+      wordButton.style.boxShadow = '0 2px 8px rgba(109, 40, 217, 0.3)';
+    };
+    
+    // Ação ao clicar
+    wordButton.onclick = () => {
+      moveWordToPhrase(wordButton, word);
+    };
+    
+    palavrasContainer.appendChild(wordButton);
+  });
+  
+  // Atualiza o progresso
+  updateProgress();
+  
+  console.log(`✅ Segmento ${currentSegmentIndex + 1} carregado`);
+  
+  // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR (ROBUSTA)
+  await waitForRenderAndPlay();
+  
+  // ⏱️ INICIA O CRONÔMETRO DE PERFORMANCE
+  startSegmentTimer();
+}
+
+/**
+ * Atualiza o display de progresso
+ */
+function updateProgress() {
+  const progressElement = document.getElementById('progresso');
+  
+  if (progressElement) {
+    progressElement.textContent = `Progresso: ${currentSegmentIndex + 1} de ${srtData.length}`;
+  }
+}
+
+/**
+ * Mostra mensagem de conclusão
+ */
+function showCompletionMessage() {
+  const fraseContainer = document.getElementById('frase');
+  const palavrasContainer = document.getElementById('palavras');
+  
+  if (fraseContainer) {
+    fraseContainer.innerHTML = '<h2 style="color: #4caf50;">🏆 Parabéns! Você completou todas as frases!</h2>';
+  }
+  
+  if (palavrasContainer) {
+    palavrasContainer.innerHTML = '';
+  }
+}
+
+/**
+ * Inicia o modo solo
+ */
+function startSoloMode() {
+  console.log("=== INÍCIO startPlayMode() ===");
+  
+  // Injeta o primeiro trecho se estivermos no modo play
+  injectFirstSegmentShuffled();
+  
+  showSection('play');  // ✅ Muda para a seção play
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
