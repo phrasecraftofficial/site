@@ -859,6 +859,20 @@ let isCacheLoaded = false;
 const DB_NAME = 'lessonsDB';
 const STORE_NAME = 'lessons';
 
+/* Variáveis globais do modo Play
+*/
+// Array para armazenar as palavras selecionadas na ordem
+let selectedWords = [];
+
+// Variável para controlar o índice do segmento atual
+
+// Variáveis de performance
+const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
+let segmentStartTime = null;
+let totalProjectedTime = 0;
+let performanceUpdateInterval = null;
+let currentSegmentIndex = 0;
+
 // Seções que devem exibir thumbnails
 const SECTIONS_WITH_THUMBNAILS = [
   'home',
@@ -2855,8 +2869,162 @@ async function refreshLessonsCache() {
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Performance --- 
+// Necessário para o bloco Play
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Inicia o cronômetro do segmento
+ */
+function startSegmentTimer() {
+  const currentSegment = srtData[currentSegmentIndex];
+  
+  if (!currentSegment) return;
+  
+  // Conta total de letras na frase
+  const totalLetters = currentSegment.text.replace(/\s+/g, '').length;
+  
+  // Calcula tempo projetado
+  totalProjectedTime = totalLetters * TIME_PER_LETTER;
+  
+  // Marca o tempo de início
+  segmentStartTime = Date.now();
+  
+  // Inicia atualização contínua da performance (a cada 100ms)
+  if (performanceUpdateInterval) {
+    clearInterval(performanceUpdateInterval);
+  }
+  
+  performanceUpdateInterval = setInterval(() => {
+    updatePerformanceDisplay();
+  }, 100); // Atualiza 10x por segundo
+  
+  console.log(`⏱️ Timer iniciado: ${totalLetters} letras = ${totalProjectedTime.toFixed(2)}s projetados`);
+}
+
+/**
+ * Para o cronômetro de performance
+ */
+function stopSegmentTimer() {
+  if (performanceUpdateInterval) {
+    clearInterval(performanceUpdateInterval);
+    performanceUpdateInterval = null;
+    console.log('⏹️ Timer parado');
+  }
+}
+
+/**
+ * Atualiza o display de performance em tempo real
+ */
+function updatePerformanceDisplay() {
+  const performanceElement = document.getElementById('host-performance');
+  
+  // Para se não estivermos na seção play
+  if (!performanceElement || !segmentStartTime) return;
+  
+  const currentSegment = srtData[currentSegmentIndex];
+  if (!currentSegment) return;
+  
+  // Obtém dados do progresso
+  const wordsCompleted = selectedWords.length;
+  const totalWords = currentSegment.text.split(/\s+/).filter(w => w.trim().length > 0).length;
+  const elapsedTime = (Date.now() - segmentStartTime) / 1000; // segundos
+  
+  // Calcula o tempo projetado total baseado na velocidade atual
+  let projectedTotalTime;
+  
+  if (wordsCompleted > 0) {
+    // Calcula tempo médio por palavra até agora
+    const avgTimePerWord = elapsedTime / wordsCompleted;
+    const remainingWords = totalWords - wordsCompleted;
+    projectedTotalTime = elapsedTime + (remainingWords * avgTimePerWord);
+  } else {
+    // Se nenhuma palavra foi completada, usa uma estimativa inicial
+    projectedTotalTime = elapsedTime * totalWords;
+  }
+  
+  // Calcula a performance (tempo ideal / tempo projetado) * 100
+  let performanceScore = (totalProjectedTime / projectedTotalTime) * 100;
+  
+  // Sanitiza valores inválidos
+  if (!isFinite(performanceScore) || performanceScore > 1000) {
+    performanceScore = 100;
+  }
+  
+  // Escolhe emoji baseado na performance
+  let emoji = '👍'; // Padrão: bom
+  if (performanceScore < 75) emoji = '🐢';      // Lento
+  else if (performanceScore < 100) emoji = '🤔'; // Médio
+  else if (performanceScore > 125) emoji = '🚀'; // Excelente
+  
+  // Define a cor baseada na performance
+  let color = '#4caf50'; // Verde (bom)
+  if (performanceScore < 80) color = '#ff9800'; // Laranja (médio)
+  if (performanceScore < 60) color = '#f44336'; // Vermelho (baixo)
+  if (performanceScore > 125) color = '#00e676'; // Verde brilhante (excelente)
+  
+  // Atualiza o display
+  performanceElement.innerHTML = `
+    <span style="font-weight: bold; color: ${color};">
+      ${performanceScore.toFixed(1)}%
+    </span> ${emoji}
+  `;
+  
+  performanceElement.style.cssText = `
+    font-size: 16px;
+    text-align: center;
+    margin: 10px 0;
+    transition: color 0.3s ease;
+  `;
+  
+  // console.log(`📊 Performance: ${performanceScore.toFixed(1)}% | Palavras: ${wordsCompleted}/${totalWords} | Tempo: ${elapsedTime.toFixed(1)}s`);
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Play --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Função específica para tocar linha no modo Play
+ */
+function playLineInPlayMode() {
+  if (!currentSegment) {
+    console.warn("⚠️ Nenhum segmento atual definido");
+    return;
+  }
+
+  const videoElement = document.getElementById("videoPlayer-play");
+  if (!videoElement || !videoElement.src) {
+    console.error("❌ Vídeo não carregado no modo Play");
+    return;
+  }
+
+  // Limpa qualquer timeout anterior
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+
+  // Pausa o vídeo se estiver tocando
+  if (!videoElement.paused) {
+    videoElement.pause();
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+
+  // Aguarda um frame antes de iniciar
+  requestAnimationFrame(() => {
+    videoElement.currentTime = startTime;
+    videoElement.play();
+
+    // Configura timeout para pausar no fim
+    stopTimeout = setTimeout(() => {
+      videoElement.pause();
+      stopTimeout = null;
+    }, (endTime - startTime) * 1000);
+  });
+}
+
 /**
  * Aguarda a renderização completa e toca o áudio
  */
@@ -2867,10 +3035,10 @@ async function waitForRenderAndPlay() {
   await new Promise(resolve => requestAnimationFrame(resolve));
   
   // Verifica se o vídeo está pronto
-  const videoElement = document.getElementById("videoPlayer");
+  const videoElement = document.getElementById("videoPlayer-play");
   
   if (!videoElement) {
-    console.error("❌ videoPlayer não encontrado");
+    console.error("❌ videoPlayer-play não encontrado");
     return;
   }
   
@@ -2885,7 +3053,7 @@ async function waitForRenderAndPlay() {
   console.log("✅ Renderização completa, tocando áudio...");
   
   // Agora sim, toca o trecho
-  playLine();
+  playLineInPlayMode();
 }
 
 /**
@@ -3152,16 +3320,58 @@ function showCompletionMessage() {
   }
 }
 
+// ✅ Função utilitária
+function onClick(id, handler) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.warn(`Elemento com id="${id}" não encontrado.`);
+    return;
+  }
+  el.addEventListener('click', handler);
+}
+
+// ✅ Uso simples e limpo
+
+// Botão "Tocar Trecho" - Repete o áudio do segmento atual
+onClick('repetir', () => {
+  playLineInPlayMode();
+  console.log('Tradução iniciada (placeholder)');
+});
+
+// ➕ Adicionar quantos forem necessário
+// onClick('outro-botao', outraFuncao);
+
 /**
- * Inicia o modo solo
+ * Botão "Tocar Lento" - Toca em velocidade reduzida
+ */
+
+
+/**
+ * Botão "Traduzir" - Mostra a frase completa (placeholder)
+ */
+
+
+/**
+ * Botão "Passar" - Pula para o próximo segmento
+ */
+    
+/**
+ * Função CORRIGIDA para iniciar o modo solo
  */
 function startSoloMode() {
-  console.log("=== INÍCIO startPlayMode() ===");
+  console.log("=== INÍCIO startSoloMode() ===");
   
-  // Injeta o primeiro trecho se estivermos no modo play
-  injectFirstSegmentShuffled();
+  // IMPORTANTE: Esconde o footer ANTES de mudar de seção
+  hideFooter();
   
-  showSection('play');  // ✅ Muda para a seção play
+  // IMPORTANTE: Muda para a seção play ANTES de injetar
+  showSection('play');
+  
+  // Aguarda um frame para garantir que a seção está ativa
+  requestAnimationFrame(() => {
+    // Agora injeta o primeiro trecho
+    injectFirstSegmentShuffled();
+  });
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
