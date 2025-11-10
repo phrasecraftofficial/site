@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Simples com Player de Áudio</title>
+    <style>
+:root {
+  --primary-dark: #0f0f23;
+  --secondary-dark: #1a1a2e;
+  --tertiary-dark: #16213e;
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --accent-color: #667eea;
+  --accent-hover: #7c8efc;
+  --text-primary: #e0e6ed;
+  --text-secondary: #c0c4c9;
+  --text-muted: #a0a6b0;
+  --success-color: #1abc9c;
+  --success-dark: #16a085;
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --shadow-primary: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 8px 20px rgba(102, 126, 234, 0.5);
+  --transition-base: all 0.3s ease;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 50%, var(--tertiary-dark) 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Estilos Específicos do Aplicativo de Aprendizado */
+
+#learning-app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background: var(--bg-glass);
+  border-radius: 20px;
+  box-shadow: var(--shadow-primary);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--border-glass);
+}
+
+#level-selection, #chapter-selection, #content-display {
+  padding: 20px;
+  text-align: center;
+}
+
+.hidden {
+  display: none !important;
+}
+
+h1 {
+  margin-bottom: 30px;
+  font-size: 2.2rem;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  text-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Estilos para Níveis e Capítulos (Botões de Seleção) */
+
+.level-list, .chapter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+  min-height: 50vh;
+}
+
+.level-button, .chapter-button {
+  padding: 15px 25px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: 2px solid var(--accent-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: var(--transition-base);
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--text-primary);
+  text-align: left;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.level-button::before, .chapter-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.level-button:hover::before, .chapter-button:hover::before {
+  left: 100%;
+}
+
+.level-button:hover, .chapter-button:hover {
+  background: linear-gradient(90deg, var(--accent-color) 0%, #764ba2 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: transparent;
+}
+
+/* Estilos para o Botão Voltar */
+
+.back-button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  margin-bottom: 25px;
+  transition: var(--transition-base);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.back-button:hover {
+  background: linear-gradient(135deg, #7a8085 0%, #65696e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(108, 117, 125, 0.4);
+}
+
+/* Estilos para Áudio e Texto (content-display) */
+
+.content-box {
+  text-align: left;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 15px;
+  border: 1px solid var(--border-glass);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.content-box h2 {
+  background: linear-gradient(45deg, var(--success-color), var(--success-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+#lesson-text {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border-left: 5px solid var(--success-color);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Estilo para o player fixo no rodapé */
+.footer-player {
+  position: fixed;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  width: 100%;
+  background-color: #333;
+  gap: 10px;
+  padding: 5px 10px;
+  box-sizing: border-box; /* Garante que o padding não aumente a largura total */
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* Sombra para dar um efeito de elevação */
+}
+
+#audio-player {
+  width: 75%;
+  border-radius: 25%;
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+
+/* CSS para os emojis */
+.emoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
+  background: none; /* Remove qualquer gradiente ou cor de fundo */
+  -webkit-background-clip: initial; /* Reseta o recorte do fundo */
+  background-clip: initial;
+  -webkit-text-fill-color: initial; /* Reseta a cor de preenchimento do texto */
+  text-shadow: none; /* Remove qualquer sombra de texto */
+  display: inline-block; /* Ajuda a evitar problemas de alinhamento vertical */
+}
+
+/* Media Queries para Responsividade */
+@media only screen and (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+
+  #learning-app {
+    padding: 10px;
+    margin: 10px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  .level-button, .chapter-button {
+    font-size: 1rem;
+    padding: 12px 20px;
+  }
+
+  .content-box {
+    padding: 20px;
+  }
+
+  .content-box h2 {
+    font-size: 1.5rem;
+  }
+
+  #lesson-text {
+    font-size: 1rem;
+  }
+}
+    </style>
+</head>
+<body>
+<div id="learning-app">
+    <div id="level-selection">
+    	<h1>Plataforma de Aprendizado de Idiomas</h1>
+        <p>_____________________</p>
+        <h2>Escolha um Nível <span class="emoji">🚀</span></h2>
+        <div class="level-list">
+            <button class="level-button" onclick="showChapters('Stage 1 - Freshman 👶')">Stage 1 - Freshman 👶</button>
+            <button class="level-button" onclick="showChapters('Stage 2 - Sophomore 🎓')">Stage 2 - Sophomore 🎓</button>
+            <button class="level-button" onclick="showChapters('Stage 3 - Junior 🧠')">Stage 3 - Junior 🧠</button>
+        </div>
+    </div>
+    
+    <div id="chapter-selection" class="hidden">
+        <h1 id="chapter-title">[Nome do Nível]</h1>
+        <button class="back-button" onclick="showLevels()">Voltar aos Níveis</button>
+        <div class="chapter-list"></div>
+    </div>
+
+    <div id="content-display" class="hidden">
+        <h1 id="content-title">[Nome do Capítulo]</h1>
+        <button class="back-button" onclick="showChapters('Iniciante')">Voltar aos Capítulos</button>
+        
+        <div class="content-box">
+            <h2><span class="emoji">📝</span> Texto</h2>
+            <p id="lesson-text">
+            </p>
+        </div>
+    </div>
+</div>
+
+    <!-- Player de áudio fixo no rodapé -->
+    <div class="footer-player" id="audio-player-container">
+        <h2><span class="emoji">🎧</span> Áudio</h2>
+        <audio id="audio-player" controls>
+            <source src="" type="audio/mpeg">
+            Seu navegador não suporta o elemento de áudio.
+        </audio>
+    </div>
+<script>
+// 𒅂𒅂𒅂𒅂𒅂𒅂𒅂𒅂𒅂
+// Bloco | Inicio
+// 𒅂𒅂𒅂𒅂𒅂𒅂𒅂𒅂𒅂
+const courseData = {
+    'Stage 1 - Freshman 👶': [
+        { 
+            title: 'Capítulo 1: Saudações Básicas', 
+            audio: 'https://f005.backblazeb2.com/file/Trilha/Chapter-1.-Welcome-%26-Nationalities.mp4', 
+            subtitle: 'https://f005.backblazeb2.com/file/Trilha/Chapter-1.-Welcome-%26-Nationalities.srt' // Nova propriedade
+        },
+        { 
+            title: 'Capítulo 2: Apresentações', 
+            audio: 'audio/iniciante_cap2.mp3', 
+            subtitle: 'texto/iniciante_cap2.srt'
+        },
+        { 
+            title: 'Capítulo 3: Números e Cores', 
+            audio: 'audio/iniciante_cap3.mp3', 
+            subtitle: 'texto/iniciante_cap3.srt'
+        }
+    ],
+    'Stage 2 - Sophomore 🎓': [
+        { 
+            title: 'Capítulo 4: Rotina Diária', 
+            audio: 'audio/intermediario_cap4.mp3', 
+            text: 'Eu levanto às sete horas da manhã, tomo café da manhã e vou para o trabalho. À noite, eu gosto de ler um livro.',
+            subtitle: 'texto/intermediario_cap4.srt'
+        },
+        { 
+            title: 'Capítulo 5: Fazendo Compras', 
+            audio: 'audio/intermediario_cap5.mp3', 
+            subtitle: 'texto/intermediario_cap5.srt'
+        }
+    ],
+    'Stage 3 - Junior 🧠': [
+        { 
+            title: 'Capítulo 6: Discussão de Notícias', 
+            audio: 'audio/avancado_cap6.mp3', 
+            subtitle: 'texto/avancado_cap6.srt'
+        },
+        { 
+            title: 'Capítulo 7: Expressões Idiomáticas', 
+            audio: 'audio/avancado_cap7.mp3', 
+            subtitle: 'texto/avancado_cap7.srt'
+        }
+    ]
+};
+
+let currentLevel = ''; // Variável para rastrear o nível atualmente selecionado
+
+// --- Funções de Navegação (Views) ---
+
+/**
+ * Exibe a tela de seleção de Níveis e oculta as outras.
+ */
+function showLevels() {
+    document.getElementById('level-selection').classList.remove('hidden');
+    document.getElementById('chapter-selection').classList.add('hidden');
+    document.getElementById('content-display').classList.add('hidden');
+    document.getElementById('audio-player-container').classList.add('hidden');
+}
+
+/**
+ * Exibe a tela de seleção de Capítulos para um Nível específico.
+ * @param {string} level O nome do Nível clicado ('Iniciante', 'Intermediário', etc.).
+ */
+function showChapters(level) {
+    currentLevel = level;
+    document.getElementById('level-selection').classList.add('hidden');
+    document.getElementById('chapter-selection').classList.remove('hidden');
+    document.getElementById('content-display').classList.add('hidden');
+    document.getElementById('audio-player-container').classList.add('hidden');
+    
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
+    
+    // Usa a expressão para encontrar qualquer emoji na string 'level' e envolvê-lo
+    // com a span que remove a formatação.
+    const formattedLevel = level.replace(emojiRegex, '<span class="emoji">$&</span>');
+
+    // Atualiza o título
+    document.getElementById('chapter-title').innerHTML = `${formattedLevel} <span class="emoji">📚</span>`;
+
+    // Preenche a lista de capítulos
+    const chapterListDiv = document.querySelector('#chapter-selection .chapter-list');
+    chapterListDiv.innerHTML = ''; // Limpa os capítulos anteriores
+
+    courseData[level].forEach((chapter, index) => {
+        const chapterButton = document.createElement('button');
+        chapterButton.className = 'chapter-button';
+        chapterButton.textContent = chapter.title;
+        chapterButton.onclick = () => showContent(level, index); // Passa o nível e o índice
+        chapterListDiv.appendChild(chapterButton);
+    });
+
+    // Atualiza o botão de voltar para garantir que volte para a tela de Níveis
+    document.querySelector('#chapter-selection .back-button').onclick = showLevels;
+}
+
+// 冨冨冨冨冨冨冨冨冨
+// Bloco Fx | Link Srt
+// 冨冨冨冨冨冨冨冨冨
+
+/**
+ * Converte o formato de tempo do SRT (HH:MM:SS,ms) para segundos.
+ * @param {string} timeString O tempo no formato SRT.
+ * @returns {number} O tempo total em segundos.
+ */
+function srtTimeToSeconds(timeString) {
+    const parts = timeString.split(/[:,]/);
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    const seconds = parseInt(parts[2], 10) || 0;
+    const milliseconds = parseInt(parts[3], 10) || 0;
+    return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+}
+
+/**
+ * Analisa o conteúdo de um arquivo SRT e o transforma em um array de objetos.
+ * @param {string} srtContent O conteúdo completo do arquivo .srt.
+ * @returns {Array<{startTime: number, endTime: number, text: Array<string>}>}
+ */
+function parseSrt(srtContent) {
+    const subtitles = [];
+    const blocks = srtContent.trim().split(/\n\s*\n/); // Divide em blocos de legenda
+
+    for (const block of blocks) {
+        const lines = block.split('\n');
+        // Garante que o bloco tenha pelo menos a linha do tempo e uma linha de texto
+        if (lines.length >= 2) { 
+            const timeLine = lines[1];
+            const timeMatch = timeLine.match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+            
+            if (timeMatch) {
+                const startTime = srtTimeToSeconds(timeMatch[1]);
+                const endTime = srtTimeToSeconds(timeMatch[2]);
+                
+                // CORRIGIDO: Mantém as linhas de texto como um array, em vez de juntá-las.
+                const textLines = lines.slice(2);
+                
+                subtitles.push({ startTime, endTime, text: textLines });
+            }
+        }
+    }
+    return subtitles;
+}
+
+/**
+ * Exibe a tela de Áudio e Texto (Conteúdo) para um Capítulo específico.
+ * Cria legendas clicáveis, toca apenas o trecho selecionado e o destaca.
+ * @param {string} level O Nível do capítulo.
+ * @param {number} chapterIndex O índice do capítulo dentro do array do Nível.
+ */
+async function showContent(level, chapterIndex) {
+    const chapter = courseData[level][chapterIndex];
+
+    document.getElementById('level-selection').classList.add('hidden');
+    document.getElementById('chapter-selection').classList.add('hidden');
+    document.getElementById('content-display').classList.remove('hidden');
+    document.getElementById('audio-player-container').classList.remove('hidden');
+
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
+    const formattedLevel = level.replace(emojiRegex, '<span class="emoji">$&</span>');
+    document.getElementById('content-title').innerHTML = `${formattedLevel} <span class="emoji">🗣️</span>`;
+
+    const audioPlayer = document.getElementById('audio-player');
+    const lessonTextElement = document.getElementById('lesson-text');
+    
+    // Reset
+    audioPlayer.src = chapter.audio;
+    audioPlayer.ontimeupdate = null;
+    lessonTextElement.innerHTML = 'Carregando texto...';
+
+    // NOVO: Variável para controlar quando o áudio deve parar.
+    // Inicia como null, indicando que não há parada programada.
+    let stopAtTime = null;
+
+    if (chapter.subtitle) {
+        try {
+            const response = await fetch(chapter.subtitle);
+            if (!response.ok) throw new Error('Falha ao carregar o arquivo de legenda.');
+            
+            const srtContent = await response.text();
+            const subtitles = parseSrt(srtContent);
+            
+            lessonTextElement.innerHTML = '';
+
+            subtitles.forEach((sub, index) => {
+                const blockContainer = document.createElement('div');
+                blockContainer.className = 'subtitle-block';
+                blockContainer.id = `sub-block-${index}`;
+                blockContainer.dataset.startTime = sub.startTime;
+
+                // ALTERADO: O evento de clique agora também define o 'stopAtTime'.
+                blockContainer.onclick = () => {
+                    audioPlayer.currentTime = sub.startTime;
+                    stopAtTime = sub.endTime; // Define o tempo exato para parar
+                    audioPlayer.play();
+                };
+
+                sub.text.forEach(lineText => {
+                    const lineElement = document.createElement('span');
+                    lineElement.textContent = lineText;
+                    lineElement.className = 'subtitle-line'; 
+                    blockContainer.appendChild(lineElement); 
+                });
+                
+                lessonTextElement.appendChild(blockContainer);
+            });
+
+            // ALTERADO: 'ontimeupdate' agora tem duas responsabilidades:
+            // 1. Parar o áudio no tempo certo.
+            // 2. Destacar a linha ativa.
+            audioPlayer.ontimeupdate = () => {
+                const currentTime = audioPlayer.currentTime;
+
+                // 1. Lógica para PARAR o áudio
+                if (stopAtTime && currentTime >= stopAtTime) {
+                    audioPlayer.pause();
+                    stopAtTime = null; // Reseta a variável para não interferir na reprodução normal
+                }
+
+                // 2. Lógica para DESTACAR a linha
+                let activeBlockIndex = -1;
+                for (let i = 0; i < subtitles.length; i++) {
+                    if (currentTime >= subtitles[i].startTime && currentTime <= subtitles[i].endTime) {
+                        activeBlockIndex = i;
+                        break;
+                    }
+                }
+                
+                const allBlocks = lessonTextElement.querySelectorAll('.subtitle-block');
+                allBlocks.forEach((block, index) => {
+                    if (index === activeBlockIndex) {
+                        block.classList.add('active-line');
+                    } else {
+                        block.classList.remove('active-line');
+                    }
+                });
+            };
+            
+        } catch (error) {
+            console.error('Erro ao processar o arquivo SRT:', error);
+            lessonTextElement.textContent = 'Não foi possível carregar o texto da lição.';
+        }
+    } else {
+        lessonTextElement.textContent = chapter.text || 'Nenhum texto disponível.';
+    }
+
+    document.querySelector('#content-display .back-button').onclick = () => showChapters(currentLevel);
+}
+
+// --- Inicialização ---
+
+// Garante que a tela inicial seja a de Níveis ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializa o player de áudio com um placeholder para evitar erro de src vazio
+    const audioPlayer = document.getElementById('audio-player');
+    if (audioPlayer) {
+        audioPlayer.src = ''; 
+    }
+    
+    showLevels(); 
+});
+
+    </script>
+    </script>
+
+</body>
+</html>
