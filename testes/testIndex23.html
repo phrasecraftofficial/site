@@ -879,6 +879,12 @@ const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
 let wordStartTime = null; // Tempo de início da palavra atual
 let currentWordIdealTime = 0; // Tempo ideal para a palavra atual
 let performanceUpdateInterval = null;
+  
+// O "piso" de performance
+const DECAY_THRESHOLD = 10.0; 
+
+// A taxa de "punição" didática (0.1% por segundo)
+const DECAY_RATE_PER_SECOND = 0.1;
 
 // Seções que devem exibir thumbnails
 const SECTIONS_WITH_THUMBNAILS = [
@@ -2973,6 +2979,11 @@ function startWordTimer(word) {
   // Marca o tempo de início
   wordStartTime = Date.now();
   
+  // --- NOVO: Reseta o estado do "slow decay" ---
+  window.decayStartTime = null;
+  window.performanceAtDecayStart = null;
+  // --- FIM DA ADIÇÃO ---
+  
   // Inicia atualização contínua da performance (a cada 50ms)
   if (performanceUpdateInterval) {
     clearInterval(performanceUpdateInterval);
@@ -2997,21 +3008,57 @@ function stopWordTimer() {
 
 /**
  * Calcula a performance da palavra atual em tempo real
+ * (Versão combinada: 100+Bonus com Slow Decay)
  */
 function getCurrentWordPerformance() {
   if (!wordStartTime || currentWordIdealTime === 0) {
     return 100;
   }
+
+  // --- LÓGICA DE DECAIMENTO LENTO ---
   
+  // 1. O modo "slow decay" JÁ FOI ATIVADO?
+  if (window.decayStartTime) {
+    // Calcula há quantos segundos o modo de decaimento começou
+    const decayElapsedTime = (Date.now() - window.decayStartTime) / 1000;
+    
+    // Calcula a nova performance
+    // Ex: 70% - (5 segundos * 0.1) = 69.5%
+    let performance = window.performanceAtDecayStart - (decayElapsedTime * DECAY_RATE_PER_SECOND);
+    
+    // Garante que não caia abaixo de 0
+    return Math.max(0, performance);
+  }
+
+  // --- LÓGICA 100 + BÔNUS (SUA PREFERIDA) ---
+  
+  // 2. Se NÃO, calcula a performance "real" com a sua lógica
   const elapsedTime = (Date.now() - wordStartTime) / 1000; // segundos
+  const timeDiff = currentWordIdealTime - elapsedTime;
+  const performanceBonus = (timeDiff / currentWordIdealTime) * 100;
   
-  // Performance = (tempo ideal / tempo decorrido) * 100
-  let performance = (currentWordIdealTime / elapsedTime) * 100;
+  // A performance final é 100% (base) + o bônus/penalidade
+  let realPerformance = 100 + performanceBonus;
   
-  // Limita entre 0% e 200%
-  performance = Math.max(0, Math.min(200, performance));
-  
-  return performance;
+  // Limita o teto a 200% (importante para o início do timer)
+  realPerformance = Math.min(200, realPerformance);
+
+  // --- O PONTO DE TRANSIÇÃO ---
+
+  // 3. A performance "real" ACABOU DE CAIR abaixo do limiar?
+  if (realPerformance <= DECAY_THRESHOLD) {
+    // SIM! Ativa o modo "slow decay" AGORA
+    window.decayStartTime = Date.now(); // Marca a hora
+    
+    // Salva a performance exata de quando cruzou (ex: 69.9%)
+    window.performanceAtDecayStart = realPerformance; 
+    
+    return realPerformance; // Retorna esse valor (o último antes do "piso")
+  }
+
+  // 4. Se chegou aqui, a performance é > 70% e o "slow decay" está inativo.
+  //    Apenas retorna a performance real.
+  return realPerformance;
 }
 
 /**
@@ -3071,7 +3118,7 @@ function updateWordPerformance() {
   const accumulatedPerformance = window.allWordPerformances.reduce((sum, p) => sum + p, 0) / window.allWordPerformances.length;
   
   // Escolhe emoji baseado na performance acumulada
-  let emoji = '📈'; // Padrão: bom
+  let emoji = '🧠'; // Padrão: bom
   if (accumulatedPerformance < 70) emoji = '🐢'; // Lento
   else if (accumulatedPerformance < 90) emoji = '🐌'; // Lento
   else if (accumulatedPerformance < 95) emoji = '🎯'; // Médio
