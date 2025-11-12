@@ -3019,6 +3019,7 @@ function getCurrentWordPerformance() {
  */
 function updatePerformanceDisplay() {
   const performanceElement = document.getElementById('word-performance');
+  performanceElement.classList.add('flex', 'column');
   
   if (!performanceElement || !wordStartTime) return;
   
