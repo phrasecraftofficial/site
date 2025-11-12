@@ -872,6 +872,7 @@ const STORE_NAME = 'lessons';
 */
 // Array para armazenar as palavras selecionadas na ordem
 let selectedWords = [];
+let currentSegmentIndex = 0;
 
 // Variáveis de performance
 const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
@@ -1105,6 +1106,19 @@ async function updateElementForSection(sectionId) { // <-- Tornou-se ASYNC
     if (currentMatchId && playerRole) {
       console.log("Jogador saindo da partida em andamento");
       await handlePlayerLeavingMatch();
+    } else {
+      // ✅ ADICIONE: Se não é multiplayer, apenas limpa as variáveis
+      console.log("Saindo do modo solo, limpando variáveis...");
+      currentMatchId = null;
+      playerRole = null;
+      currentSegmentIndex = 0;
+      selectedWords = [];
+      
+      // Para timers de performance
+      if (performanceUpdateInterval) {
+        clearInterval(performanceUpdateInterval);
+        performanceUpdateInterval = null;
+      }
     }
   }
   
@@ -3340,9 +3354,6 @@ function checkIfPhraseComplete() {
   if (selectedWords.length === correctWords.length) {
     console.log("🎉 Frase completa!");
     
-    // Para o timer de performance
-    stopSegmentTimer();
-    
     // Última atualização da performance (mostra resultado final)
     updatePerformanceDisplay();
     
@@ -3520,8 +3531,15 @@ onClick('repetir', () => {
 function startSoloMode() {
   console.log("=== INÍCIO startSoloMode() ===");
   
-  // Reseta o acumulador de performances
-  window.allWordPerformances = [];
+  // 🔥 CRÍTICO: Limpa variáveis de multiplayer
+  currentMatchId = null;
+  playerRole = null;
+  currentLessonForMatch = null; // Opcional, mas recomendado
+  
+  // Reseta o acumulador de performances (se usar)
+  if (window.allWordPerformances) {
+    window.allWordPerformances = [];
+  }
   
   // IMPORTANTE: Esconde o footer ANTES de mudar de seção
   hideFooter();
