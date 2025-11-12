@@ -873,14 +873,11 @@ const STORE_NAME = 'lessons';
 // Array para armazenar as palavras selecionadas na ordem
 let selectedWords = [];
 
-// Variável para controlar o índice do segmento atual
-
 // Variáveis de performance
 const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
-let segmentStartTime = null;
-let totalProjectedTime = 0;
+let wordStartTime = null; // Tempo de início da palavra atual
+let currentWordIdealTime = 0; // Tempo ideal para a palavra atual
 let performanceUpdateInterval = null;
-let currentSegmentIndex = 0;
 
 // Seções que devem exibir thumbnails
 const SECTIONS_WITH_THUMBNAILS = [
@@ -2943,45 +2940,64 @@ async function refreshLessonsCache() {
 // --- Bloco Fx | Performance --- 
 // Necessário para o bloco Play
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+  
+// Acumulador de performances
+if (!window.segmentPerformances) {
+  window.segmentPerformances = [];
+}
 
 /**
- * Inicia o cronômetro do segmento
+ * Inicia o cronômetro para uma palavra específica
  */
-function startSegmentTimer() {
-  const currentSegment = srtData[currentSegmentIndex];
+function startWordTimer(word) {
+  // Conta apenas letras (remove espaços e pontuação)
+  const letterCount = word.replace(/[^a-zA-ZÀ-ÿ]/g, '').length;
   
-  if (!currentSegment) return;
-  
-  // Conta total de letras na frase
-  const totalLetters = currentSegment.text.replace(/\s+/g, '').length;
-  
-  // Calcula tempo projetado
-  totalProjectedTime = totalLetters * TIME_PER_LETTER;
+  // Calcula tempo ideal para esta palavra
+  currentWordIdealTime = letterCount * TIME_PER_LETTER;
   
   // Marca o tempo de início
-  segmentStartTime = Date.now();
+  wordStartTime = Date.now();
   
-  // Inicia atualização contínua da performance (a cada 100ms)
+  // Inicia atualização contínua da performance (a cada 50ms)
   if (performanceUpdateInterval) {
     clearInterval(performanceUpdateInterval);
   }
   
   performanceUpdateInterval = setInterval(() => {
     updatePerformanceDisplay();
-  }, 100); // Atualiza 10x por segundo
+  }, 50); // Atualiza 20x por segundo para fluidez
   
-  console.log(`⏱️ Timer iniciado: ${totalLetters} letras = ${totalProjectedTime.toFixed(2)}s projetados`);
+  console.log(`⏱️ Timer iniciado para palavra "${word}": ${letterCount} letras = ${currentWordIdealTime.toFixed(2)}s`);
 }
 
 /**
  * Para o cronômetro de performance
  */
-function stopSegmentTimer() {
+function stopWordTimer() {
   if (performanceUpdateInterval) {
     clearInterval(performanceUpdateInterval);
     performanceUpdateInterval = null;
-    console.log('⏹️ Timer parado');
   }
+}
+
+/**
+ * Calcula a performance da palavra atual em tempo real
+ */
+function getCurrentWordPerformance() {
+  if (!wordStartTime || currentWordIdealTime === 0) {
+    return 100;
+  }
+  
+  const elapsedTime = (Date.now() - wordStartTime) / 1000; // segundos
+  
+  // Performance = (tempo ideal / tempo decorrido) * 100
+  let performance = (currentWordIdealTime / elapsedTime) * 100;
+  
+  // Limita entre 0% e 200% (permite até 2x melhor que o esperado)
+  performance = Math.max(0, Math.min(200, performance));
+  
+  return performance;
 }
 
 /**
@@ -2989,39 +3005,10 @@ function stopSegmentTimer() {
  */
 function updatePerformanceDisplay() {
   const performanceElement = document.getElementById('word-performance');
-  performanceElement.classList.add('flex', 'column');
   
-  // Para se não estivermos na seção play
-  if (!performanceElement || !segmentStartTime) return;
+  if (!performanceElement || !wordStartTime) return;
   
-  const currentSegment = srtData[currentSegmentIndex];
-  if (!currentSegment) return;
-  
-  // Obtém dados do progresso
-  const wordsCompleted = selectedWords.length;
-  const totalWords = currentSegment.text.split(/\s+/).filter(w => w.trim().length > 0).length;
-  const elapsedTime = (Date.now() - segmentStartTime) / 1000; // segundos
-  
-  // Calcula o tempo projetado total baseado na velocidade atual
-  let projectedTotalTime;
-  
-  if (wordsCompleted > 0) {
-    // Calcula tempo médio por palavra até agora
-    const avgTimePerWord = elapsedTime / wordsCompleted;
-    const remainingWords = totalWords - wordsCompleted;
-    projectedTotalTime = elapsedTime + (remainingWords * avgTimePerWord);
-  } else {
-    // Se nenhuma palavra foi completada, usa uma estimativa inicial
-    projectedTotalTime = elapsedTime * totalWords;
-  }
-  
-  // Calcula a performance (tempo ideal / tempo projetado) * 100
-  let performanceScore = (totalProjectedTime / projectedTotalTime) * 100;
-  
-  // Sanitiza valores inválidos
-  if (!isFinite(performanceScore) || performanceScore > 1000) {
-    performanceScore = 100;
-  }
+  const performanceScore = getCurrentWordPerformance();
   
   // Escolhe emoji baseado na performance
   let emoji = '👍'; // Padrão: bom
@@ -3048,8 +3035,6 @@ function updatePerformanceDisplay() {
     margin: 10px 0;
     transition: color 0.3s ease;
   `;
-  
-  // console.log(`📊 Performance: ${performanceScore.toFixed(1)}% | Palavras: ${wordsCompleted}/${totalWords} | Tempo: ${elapsedTime.toFixed(1)}s`);
 }
 
 /**
@@ -3063,50 +3048,18 @@ function updateWordPerformance() {
     return;
   }
   
-  const currentSegment = srtData[currentSegmentIndex];
-  if (!currentSegment) return;
+  // Pega a performance da palavra que acabou de ser clicada
+  const currentWordPerformance = getCurrentWordPerformance();
   
-  // Obtém dados do progresso
-  const wordsCompleted = selectedWords.length;
-  const totalWords = currentSegment.text.split(/\s+/).filter(w => w.trim().length > 0).length;
-  const elapsedTime = (Date.now() - segmentStartTime) / 1000; // segundos
-  
-  // Calcula o tempo projetado total baseado na velocidade atual
-  let projectedTotalTime;
-  
-  if (wordsCompleted > 0) {
-    const avgTimePerWord = elapsedTime / wordsCompleted;
-    const remainingWords = totalWords - wordsCompleted;
-    projectedTotalTime = elapsedTime + (remainingWords * avgTimePerWord);
-  } else {
-    projectedTotalTime = elapsedTime * totalWords;
+  // Adiciona ao array de performances
+  if (!window.allWordPerformances) {
+    window.allWordPerformances = [];
   }
   
-  // Calcula a performance do segmento atual
-  const totalLetters = currentSegment.text.replace(/\s+/g, '').length;
-  const idealTime = totalLetters * TIME_PER_LETTER;
-  let segmentPerformance = (idealTime / projectedTotalTime) * 100;
-  
-  // Sanitiza valores inválidos
-  if (!isFinite(segmentPerformance) || segmentPerformance > 1000) {
-    segmentPerformance = 100;
-  }
-  
-  // Calcula a média acumulada de todos os segmentos completados
-  if (!window.segmentPerformances) {
-    window.segmentPerformances = [];
-  }
-  
-  // Se o segmento foi completado, adiciona à lista
-  if (wordsCompleted === totalWords && !window.segmentPerformances[currentSegmentIndex]) {
-    window.segmentPerformances[currentSegmentIndex] = segmentPerformance;
-  }
+  window.allWordPerformances.push(currentWordPerformance);
   
   // Calcula a média acumulada
-  const completedPerformances = window.segmentPerformances.filter(p => p !== undefined);
-  const accumulatedPerformance = completedPerformances.length > 0
-    ? completedPerformances.reduce((sum, p) => sum + p, 0) / completedPerformances.length
-    : segmentPerformance;
+  const accumulatedPerformance = window.allWordPerformances.reduce((sum, p) => sum + p, 0) / window.allWordPerformances.length;
   
   // Define a cor baseada na performance acumulada
   let color = '#4caf50'; // Verde (bom)
@@ -3128,7 +3081,27 @@ function updateWordPerformance() {
     transition: color 0.3s ease;
   `;
   
-  console.log(`📊 Performance Acumulada: ${accumulatedPerformance.toFixed(1)}% (${completedPerformances.length} segmentos)`);
+  console.log(`📊 Performance Palavra: ${currentWordPerformance.toFixed(1)}% | Acumulada: ${accumulatedPerformance.toFixed(1)}% (${window.allWordPerformances.length} palavras)`);
+}
+
+/**
+ * Retorna a próxima palavra esperada
+ */
+function getNextExpectedWord() {
+  const currentSegment = srtData[currentSegmentIndex];
+  if (!currentSegment) return null;
+  
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+  
+  const nextIndex = selectedWords.length;
+  
+  if (nextIndex >= correctWords.length) {
+    return null;
+  }
+  
+  return correctWords[nextIndex];
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -3265,6 +3238,9 @@ function moveWordToPhrase(wordButton, word) {
     console.error("❌ Elemento 'frase' não encontrado");
     return;
   }
+  
+  // Para o timer da palavra anterior
+  stopWordTimer();
 
   // SE FOR JOGO MULTIPLAYER
     if (currentMatchId) {
@@ -3300,6 +3276,12 @@ function moveWordToPhrase(wordButton, word) {
   
       // Atualiza a performance acumulada
       updateWordPerformance();
+  
+      // Inicia timer da próxima palavra
+      const nextWord = getNextExpectedWord();
+      if (nextWord) {
+        startWordTimer(nextWord);
+      }
       
     	// Verifica se a frase está completa
     	checkIfPhraseComplete();
@@ -3385,6 +3367,9 @@ async function loadNextSegment() {
   // Limpa o array de palavras selecionadas
   selectedWords = [];
   
+  // Para qualquer timer anterior
+  stopWordTimer();
+  
   // Pega o próximo segmento
   const nextSegment = srtData[currentSegmentIndex];
   console.log("Próximo trecho:", nextSegment);
@@ -3455,16 +3440,16 @@ async function loadNextSegment() {
   // Atualiza o progresso
   updateProgress();
   
-  // Inicializa o display de performance acumulada
-  updateWordPerformance();
-  
   console.log(`✅ Segmento ${currentSegmentIndex + 1} carregado`);
   
   // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR (ROBUSTA)
   await waitForRenderAndPlay();
   
-  // ⏱️ INICIA O CRONÔMETRO DE PERFORMANCE
-  startSegmentTimer();
+  // ⏱️ INICIA O CRONÔMETRO DA PRIMEIRA PALAVRA
+  const firstWord = words[0];
+  if (firstWord) {
+    startWordTimer(firstWord);
+  }
 }
 
 /**
@@ -3534,6 +3519,9 @@ onClick('repetir', () => {
  */
 function startSoloMode() {
   console.log("=== INÍCIO startSoloMode() ===");
+  
+  // Reseta o acumulador de performances
+  window.allWordPerformances = [];
   
   // IMPORTANTE: Esconde o footer ANTES de mudar de seção
   hideFooter();
