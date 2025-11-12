@@ -3008,7 +3008,7 @@ function getCurrentWordPerformance() {
   // Performance = (tempo ideal / tempo decorrido) * 100
   let performance = (currentWordIdealTime / elapsedTime) * 100;
   
-  // Limita entre 0% e 200% (permite até 2x melhor que o esperado)
+  // Limita entre 0% e 200%
   performance = Math.max(0, Math.min(200, performance));
   
   return performance;
@@ -3025,10 +3025,16 @@ function updatePerformanceDisplay() {
   const performanceScore = getCurrentWordPerformance();
   
   // Escolhe emoji baseado na performance
-  let emoji = '👍'; // Padrão: bom
-  if (performanceScore < 75) emoji = '🐢';      // Lento
-  else if (performanceScore < 100) emoji = '🤔'; // Médio
-  else if (performanceScore > 125) emoji = '🚀'; // Excelente
+  let emoji = '📈'; // Padrão: bom
+  if (performanceScore < 70) emoji = '🐢'; // Lento
+  else if (performanceScore < 90) emoji = '🐌'; // Lento
+  else if (performanceScore < 95) emoji = '🎯'; // Lento
+  else if (performanceScore < 100) emoji = '🎉'; // Médio
+  else if (performanceScore < 105) emoji = '🏆'; // Médio
+  else if (performanceScore < 110) emoji = '⭐'; // Médio
+  else if (performanceScore < 120) emoji = '✈️'; // Médio
+  else if (performanceScore < 130) emoji = '🔥'; // Médio
+  else if (performanceScore > 135) emoji = '🚀'; // Excelente
   
   // Define a cor baseada na performance
   let color = '#4caf50'; // Verde (bom)
