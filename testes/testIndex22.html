@@ -164,11 +164,13 @@ body.footer-hidden main {
   display: flex;
   justify-content: center; /* centraliza horizontalmente */
   align-items: center;     /* centraliza verticalmente */
+  text-align: center;
   max-width: 600px;
+}
+.gap, h4, h3, h2, p {
   gap: 10px;
   padding: 10px;
   margin-bottom: 20px;
-  text-align: center;
 }
 .row, h4, h3, h2, p {
   margin: 0 auto;
@@ -461,14 +463,16 @@ label input[type="checkbox"] {
       </div>
     </div>
     
-	<div class="performance-area" id="performance-area">
-      <div class="text-area">
+	<div class="flex row gap" id="performance-area">
+      <div class="flex column">
+        <span id="">Jogador 1</span>
         <span id="host-performance">100%</span>
       </div>
-      <div class="text-area">
-        <span id="dinamic-icon"> 🚀 </span>
+      <div class="flex column">
+        <span id="word-performance"></span>
       </div>
-      <div class="text-area">
+      <div class="flex column">
+        <span id="">Jogador 2</span>
         <span id="opponent-performance">100%</span>
       </div>
     </div>
@@ -2984,7 +2988,8 @@ function stopSegmentTimer() {
  * Atualiza o display de performance em tempo real
  */
 function updatePerformanceDisplay() {
-  const performanceElement = document.getElementById('host-performance');
+  const performanceElement = document.getElementById('word-performance');
+  performanceElement.classList.add('flex', 'column');
   
   // Para se não estivermos na seção play
   if (!performanceElement || !segmentStartTime) return;
