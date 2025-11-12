@@ -3025,29 +3025,17 @@ function updatePerformanceDisplay() {
   
   const performanceScore = getCurrentWordPerformance();
   
-  // Escolhe emoji baseado na performance
-  let emoji = '📈'; // Padrão: bom
-  if (performanceScore < 70) emoji = '🐢'; // Lento
-  else if (performanceScore < 90) emoji = '🐌'; // Lento
-  else if (performanceScore < 95) emoji = '🎯'; // Lento
-  else if (performanceScore < 100) emoji = '🎉'; // Médio
-  else if (performanceScore < 105) emoji = '🏆'; // Médio
-  else if (performanceScore < 110) emoji = '⭐'; // Médio
-  else if (performanceScore < 120) emoji = '✈️'; // Médio
-  else if (performanceScore < 130) emoji = '🔥'; // Médio
-  else if (performanceScore > 135) emoji = '🚀'; // Excelente
-  
   // Define a cor baseada na performance
   let color = '#4caf50'; // Verde (bom)
   if (performanceScore < 80) color = '#ff9800'; // Laranja (médio)
   if (performanceScore < 60) color = '#f44336'; // Vermelho (baixo)
   if (performanceScore > 125) color = '#00e676'; // Verde brilhante (excelente)
   
-  // Atualiza o display
+  // Atualiza o display (apenas o percentual)
   performanceElement.innerHTML = `
     <span style="font-weight: bold; color: ${color};">
       ${performanceScore.toFixed(1)}%
-    </span> ${emoji}
+    </span>
   `;
   
   performanceElement.style.cssText = `
@@ -3082,17 +3070,29 @@ function updateWordPerformance() {
   // Calcula a média acumulada
   const accumulatedPerformance = window.allWordPerformances.reduce((sum, p) => sum + p, 0) / window.allWordPerformances.length;
   
+  // Escolhe emoji baseado na performance acumulada
+  let emoji = '📈'; // Padrão: bom
+  if (accumulatedPerformance < 70) emoji = '🐢'; // Lento
+  else if (accumulatedPerformance < 90) emoji = '🐌'; // Lento
+  else if (accumulatedPerformance < 95) emoji = '🎯'; // Médio
+  else if (accumulatedPerformance < 100) emoji = '🎉'; // Médio
+  else if (accumulatedPerformance < 105) emoji = '🏆'; // Médio
+  else if (accumulatedPerformance < 110) emoji = '⭐'; // Médio
+  else if (accumulatedPerformance < 120) emoji = '✈️'; // Médio
+  else if (accumulatedPerformance < 130) emoji = '🔥'; // Médio
+  else if (accumulatedPerformance > 135) emoji = '🚀'; // Excelente
+
   // Define a cor baseada na performance acumulada
   let color = '#4caf50'; // Verde (bom)
   if (accumulatedPerformance < 80) color = '#ff9800'; // Laranja (médio)
   if (accumulatedPerformance < 60) color = '#f44336'; // Vermelho (baixo)
   if (accumulatedPerformance > 125) color = '#00e676'; // Verde brilhante (excelente)
   
-  // Atualiza o display (apenas o percentual)
+  // Atualiza o display (percentual + emoji)
   wordPerformanceElement.innerHTML = `
     <span style="font-weight: bold; color: ${color};">
       ${accumulatedPerformance.toFixed(1)}%
-    </span>
+    </span> ${emoji}
   `;
   
   wordPerformanceElement.style.cssText = `
