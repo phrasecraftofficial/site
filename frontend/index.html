@@ -1,0 +1,4499 @@
+<!-- atualiza a performance acumulada -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhraseCraft</title>
+  <script src="https://unpkg.com/dexie@4/dist/dexie.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
+<style>
+/* Reset básico */ 
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+} 
+body { 
+    font-family: "Roboto", Arial, sans-serif; 
+    background-color: #0b0404; 
+    color: #e0e0e0; 
+    line-height: 1.54;
+}
+main {
+  padding: 62px 0 62px 0; /* altura do footer e do header */
+}
+/* todas escondidas */
+section { 
+	display: none;
+} 
+/* visível */
+section.active { 
+	display: block; 
+}   
+/* Estilos gerais para Header e Footer */
+header, footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: #000;
+  padding: 0 16px;
+  color: #fff;
+  user-select: none;
+  z-index: 1000;
+}
+  /* ===============  */
+ /*      Header      */
+/* ===============  */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid #222;
+}
+/* Logo à esquerda */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+/* Performance centralizado no header */
+.performance-area {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-area img {
+  background: #fff; 
+  color: #000;  
+  border-radius: 15%;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+.icon {
+  width: 24px; 
+  height: 24px;
+}
+/* Ícones à direita */
+.icons-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.icons-right a {
+  color: #6d28d9;
+  text-decoration: none;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+.icons-right svg, header svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Centralização interna dos textos e ícones */
+.text-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+  /* ===============  */
+ /*      Footer      */
+/* ===============  */
+#main-footer {
+  bottom: 0;
+  height: 56px;
+  border-top: 1px solid #222;
+  justify-content: space-around;
+  align-items: center;
+}
+#main-footer a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+#main-footer a svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Texto do footer */
+#main-footer span {
+  font-size: 10px;
+  user-select: none;
+}
+body.footer-hidden main {
+  padding-bottom: 0;
+}
+/* Adaptativo para telas pequenas */
+@media screen and (max-width: 600px) {
+  header {
+    padding: 0 8px;
+  }
+  #main-footer a {
+    font-size: 8px;
+    gap: 2px;
+  }
+  #main-footer a svg {
+    width: 20px;
+    height: 20px;
+  }
+  #preview-footer {
+    height: 48px;
+  }
+}  
+/* --- Classes de layout simplificadas --- */
+.flex, h4, h3, h2, p {
+  display: flex;
+  justify-content: center; /* centraliza horizontalmente */
+  align-items: center;     /* centraliza verticalmente */
+  text-align: center;
+  max-width: 600px;
+}
+.gap, h4, h3, h2, p {
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+.row, h4, h3, h2, p {
+  margin: 0 auto;
+  flex-direction: row;
+}
+.column {
+  margin: 0 auto;
+  flex-direction: column;
+}
+input, textarea {
+    border: 1px solid #555; 
+    border-radius: 4px; 
+    padding: 10px 12px; 
+    font-size: 14px; 
+    width: 250px; 
+    max-width: 400px; 
+    background-color: #121212; 
+    color: #e0e0e0; 
+    transition: border-color 0.2s ease; 
+} 
+input:focus, textarea:focus { 
+    border-color: #3ea6ff; 
+    outline: none; 
+}
+#editEnd, #editStart, #editStack {
+    width: 90px;
+}
+input[type="radio"] {
+    width: 16px; 
+    max-width: 16px; 
+} 
+button {
+	width: 30px;
+	height: 30px;
+	font-size: 18px;
+	white-space: nowrap;
+	cursor: pointer;
+	border: none; 
+	background-color: #263238; 
+	color: #3ea6ff;
+	border-radius: 8px; 
+	transition: background 0.2s;
+}
+button:hover {
+	background-color: #bbb;
+	color: #000;
+}
+/* Efeito de clique */
+button:active {
+  transform: scale(0.95);
+}
+.general-btn { 
+    background-color: transparent; 
+    border: none; 
+    color: #3ea6ff;
+    font-weight: 500;
+  	white-space: nowrap; 
+    cursor: pointer; 
+    padding: 8px 12px;
+	border-radius: 8px;  
+    transition: background-color 0.2s ease; 
+	width: auto; 
+	max-width: 150px;
+	height: auto;
+    margin-bottom: 15px;
+}
+.general-btn:hover { 
+	background-color: #00111b; 
+	color: #fff;
+}
+/*thumb-section*/
+.video-section, .thumb-section { 
+  width: 100%;
+  height: auto;
+}
+
+video, .thumb-section img {
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+/* info-content */
+.info-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px 0 5px;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Texto do vídeo */
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Título do vídeo */
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 5px 0 5px 8px;
+  text-align: left;
+}
+
+/* Linha com nome do canal, desempenho e editar */
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 5px 8px;
+  font-size: 14px;
+}
+
+/* Imagem do canal */
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 1px 0 20px 0;
+}
+
+/* Nome do canal */
+.channel-name {
+  color: #bbbbbb;
+  margin-bottom: 15px;
+}
+
+/* Desempenho (percentual) */
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Botão Editar */
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+/* Playlist Item */
+label {
+	display: flex;
+	align-self: flex-start;
+}
+label input[type="checkbox"] {
+    /* Usando accent-color para estilizar a cor do 'check' (suporte varia) */
+    accent-color: gray; /* Cor secundária de destaque */
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid #5a5a5a; /* Borda para contraste */
+    background-color: #333333; /* Fundo do checkbox */
+    cursor: pointer;
+}
+  /*=================*/
+ /* Loading Overlay */
+/*=================*/
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #333;
+    border-top: 4px solid #6d28d9;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* ================================== */
+/* Estilo para a Lista de Legendas */
+/* ================================== */
+/* ================================== */
+.segmentsArea {
+	padding: 10px; 
+    max-height: 50vh; /* ou a altura que preferir */
+    overflow-y: auto;
+    width: 100%;
+    max-width: 600px;
+}
+
+.segment { 
+  background: #1a1a1a;
+  padding: 10px; 
+  border-radius: 10px; 
+  margin: 5px 0; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.segment:hover:not(.segment-selected) {
+  background: #334450;
+  border-left-color: #3ea6ff;
+}
+
+.segment-selected {
+  background: #1e3a4f;
+  border-left-color: #6d28d9;
+}
+
+/* Scrollbar customizada */
+.segmentsArea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.segmentsArea::-webkit-scrollbar-track {
+  background: #0b0404;
+}
+
+.segmentsArea::-webkit-scrollbar-thumb {
+  background: #3ea6ff;
+  border-radius: 4px;
+}
+
+.segmentsArea::-webkit-scrollbar-thumb:hover {
+  background: #6d28d9;
+}
+
+/* Para telas pequenas */
+@media screen and (max-width: 600px) {
+  .segmentsArea {
+    max-height: 50vh; /* Mais espaço em telas pequenas */
+  }
+  
+  .segment {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+/* Telas muito pequenas */
+@media screen and (max-width: 400px) {
+  .general-btn {
+    font-size: 14px;
+    padding: 5px 6px;
+  }
+}
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">Carregando...</div>
+  </div>
+  <header>
+    <div class="logo-area" onclick="showSection('home')">
+      <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
+      <div class="text-area" id="text-area">
+        <span>PhraseCraft</span>
+      </div>
+    </div>
+    
+	<div class="flex row gap" id="performance-area">
+      <div class="flex column">
+        <span id="">Jogador 1</span>
+        <span id="host-performance">100%</span>
+      </div>
+      <div class="flex column">
+        <span id="word-performance"></span>
+      </div>
+      <div class="flex column">
+        <span id="">Jogador 2</span>
+        <span id="opponent-performance">100%</span>
+      </div>
+    </div>
+    
+    <div class="icons-right" id="icons-right">
+      <!-- Create -->
+      <a href="#" id="icon-create" onclick="showSection('create')">
+        <svg class="icon" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
+        </svg>
+      </a>
+      <!-- Search -->
+      <a href="#" onclick="showSection('search')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
+      </a>
+      <!-- Notifications -->
+      <a href="#" onclick="showSection('notifications')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      </a>
+    </div>
+  </header>
+
+<main>
+    <!-- Seções -->
+    <section id="home">
+        <h2>Home</h2>
+        <p>Welcome to the home section.</p>
+        <div class="post-container" id="home-post-container">
+
+        <div class="card">        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-home" class="thumb-section" onclick="showSoloPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-home" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                  </div>
+              </div>
+            </div>
+        </div>
+            
+        </div>
+    </section>
+
+    <section id="create">
+		<h2>Create</h2>
+        <p>Use this section to create new content.</p>
+			<form>
+                <label for="videoUpload" class="flex column">Upload Vídeo
+                <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
+                <input type="file" id="videoUpload" accept="video/*"></label>
+                <label for="srtUpload" class="flex column" class="upload-btn">Upload SRT
+                <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
+                <input type="file" id="srtUpload" accept=".srt"></label>
+                <button class="general-btn flex row" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+            </form>
+    </section>
+
+    <!-- Search -->
+    <section id="search">
+      <h2>Search</h2>
+      <p>Use this section to search content.</p>
+    </section>
+
+    <!-- Notifications -->
+    <section id="notifications">
+      <h2>Notifications</h2>
+      <p>Here are your notifications.</p>
+    </section>
+
+    <!-- You -->
+    <section id="you">
+      <h2>You</h2>
+      <p>This section is about your profile.</p>
+                      
+      <div>
+        <button class="flex column general-btn" onclick="showSection('myProfile')">
+            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Perfil</span></button>
+        <button class="flex column general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
+            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Postagens</span></button>
+      </div>
+    
+    </section>
+
+    <section id="subscriptions">
+      <h2>Subscriptions</h2>
+      <p>See all your subscriptions here.</p>
+      <!-- ✅ ADICIONE ESTE CONTAINER -->
+      <div class="post-container" id="subscriptions-post-container">
+          <!-- As thumbnails serão inseridas aqui -->
+      </div>
+    </section>
+    
+    <!-- Subsections -->
+    <section id="myProfile">
+		<h2>My Account</h2>
+		<p>Use this section to see and edit your profile.</p>
+        <div class="flex column" >
+          <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
+          <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+          <span>____________________________________</span>
+          <button class="general-btn" id="logout-button" onclick="handleLogout()">Sair</button>
+        </div>
+	</section>
+    
+    <section id="login-screen">
+    	<h2>Entrar</h2>
+    	<form class="flex column" id="login-form">
+    	    <p id="login-message"></p>
+    	    <input type="email" id="email-login" placeholder="E-mail" required>
+    	    <input type="password" id="password-login" placeholder="Senha" required>
+    	    <button type="submit" class="general-btn">Iniciar Sessão</button>
+    	</form>
+    </section>
+    
+    <section id="myPosts">
+        <h2>My Lessons Posts</h2>
+        <p>Use this section to see your lessons posted.</p>
+        <div id="user-post-container" id="myPosts-post-container">
+        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-myPosts" class="thumb-section" onclick="showSoloPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-myPosts" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="general-btn" onclick="openContent();">✎ Editar</span>
+                      <span class="general-btn" onclick="openContent();" style="color: red;">❌ Excluir</span>
+                  </div>
+              </div>
+            </div>
+            
+        </div>
+    </section>
+
+    <section id="challenge" class="">
+      <!-- Lobby Area -->
+      <div id="lobby">
+      	<p>Aguardando oponente...</p>
+      	<p>Ao sair dessa tela a partida sera excluída.</p>
+      </div>
+      
+      <!-- Criadas -->
+      <h2>Partidas Criadas</h2>
+      <p>Use this section to see all matches waiting a second player.</p>
+      <div class="post-container" id="multi-post-container">
+	  <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-challenge" class="thumb-section" onclick="showMultiPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-challenge" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showMultiPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                  </div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </section>
+	<section id="postLesson">
+		<h2>Post</h2>
+		<p>Use this section to post.</p>
+		<div class="flex column" id="video-section-postLesson">
+          <!-- O vídeo de postagem ou edição será inserido aqui -->
+          <video id="videoPlayer-postLesson" controls crossorigin="anonymous">
+              <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+          </video>
+		</div>
+      	<div class="flex row" id="postLesson-containerBtn">
+      	    <button class="general-btn" onclick="showSection('editSrt')">👈</button>
+      		  <button class="general-btn" onclick="handleCaptureClick()">Thumbnail 📸</button>
+      	    <button class="general-btn" onclick="postLesson()">Postar 🛰️</button>
+      	</div>
+      
+      <div class="flex row" id="thumb-section-postLesson">
+      	<img class="channel-pic" alt="captured thumb" hidden>
+        <form class="flex column">
+            <!-- Título -->
+            <input type="text" placeholder="Digite o nome o vídeo..." name="nome">
+
+            <!-- Descrição -->
+            <textarea type="text" placeholder="Digite uma descrição..." name="description"></textarea>
+        </form>
+      </div>
+      <p>______________</p>
+
+      <!-- Playlist -->
+      <form class="flex column" id="playlistForm">
+          <h4>Adicionar à Playlist</h4>
+          <div class="flex column"  id="playlist-checkbox-container" style="width: 150px;">
+              <p>Carregando...</p>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="all" checked>
+                  Playlist 1
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="current">
+                  Playlist 2
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="from-current">
+                  Playlist 3
+              </label>
+          </div>
+          
+          <div class="flex row" id="new-playlist-name-area" style="display: none;">
+          <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
+          <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
+			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
+			<button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
+			<button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
+          </div>
+          
+      </form> 
+    </section>
+	<section id="play">
+		<div id="video-section-play">
+          <video id="videoPlayer-play" controls crossorigin="anonymous">
+                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+          </video>
+        </div>
+
+      	<div class="flex row">
+      		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
+ font-weight: bold; background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+      		<button class="general-btn" id="desistir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+		</div>
+
+		<div class="phrase-container" id="frase"></div>
+
+        <div class="word-button-wrapper">
+            <div class="word-container" id="palavras"></div>
+        </div>
+        
+        <div class="flex row" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+    </section>
+  <!----------->
+  <!--editSrt-->
+  <!----------->
+  <section id="editSrt">
+    <div id="save-area">
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <p>💾 Salvar</p>
+        <div class="flex row">
+            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
+            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
+            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
+        </div>
+    </div><!--save-area-->
+      
+	<div id="subtitleName">
+    	<!-- Div para exibir o nome do arquivo da legenda -->
+	</div>
+    
+	<div class="column-area" id="video-section-editor">
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+	</div>
+
+	<div id="editor">
+	<div class="flex row">
+    	<button id="btn-save" onclick="showSave()">💾</button>
+    	<button onclick="undo()">↩</button>
+    	<button onclick="redo()">↪</button>
+    	<button id="btn-config" onclick="showConfig()">⚙</button>
+    	<button onclick="addSegment()">|+</button>
+    	<button onclick="removeSegment()">|−</button>
+    	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
+	</div>
+	<form class="flex row" style="gap: 0; padding: 0;">
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
+          Início
+          <input type="text" id="editStart" placeholder="00:00:000">
+        </div>
+        <div class="flex column">
+          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
+        </div>
+      </label>
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
+          Fim
+          <input id="editEnd"  placeholder="00:00:000">
+        </div>
+        <div class="flex column">
+          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
+        </div>
+      </label>
+    </form>
+    <form>
+      <label class="flex row">Texto
+          <textarea type="text" id="editText" rows="3"></textarea>
+      </label>
+    </form>
+    </div><!--editor-->
+    <div class="flex row" id="navigation-controls-previewMode">
+		<button onclick="prevLine()">⏮︎</button>
+		<button onclick="playLine()">⏯︎</button>
+		<button onclick="nextLine()">⏭︎</button>
+	</div>
+	<div class="column-area" id="config-area">
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+     	<p>⚙ Editar em lote</p>
+         <form class="flex row">
+           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
+           <input id="editStack" placeholder="0.05">
+           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
+		</form>
+		<form class="flex column" id="linhaForm" style="width: 300px;">
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="all" checked>
+				Todas as linhas
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="current">
+				Apenas linha atual
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="from-current">
+				Linha selecionada e próximas linhas
+			</label>
+		</form>
+	</div><!--config-area-->
+    <div class="segmentsArea flex column" id="segments-area">
+    	  <span>Lista de Legendas</span>
+        <div id="segments"></div>
+    </div>
+	</section>
+  </main>  
+
+  <footer id="main-footer">
+    <a href="#" onclick="showSection('home')">
+      <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#" onclick="showSection('subscriptions')">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
+      <span>Subscriptions</span>
+    </a>
+    <a href="#" onclick="showSection('you')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
+    <a href="#" onclick="loadAndDisplayMatches()">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
+    <a href="#" id="preview-footer-solo" onclick="startSoloMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
+    <a href="#" id="preview-footer-challenging" onclick="startCreateMode()">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Aceitar Desafio</span></a>
+  </footer>
+
+<script>
+// 1. A variável "estado" (começa como 'editor')
+let currentEditMode = 'editor';
+
+// Variável para controlar se já está carregando
+let isLoadingThumbnails = false;
+
+// Cache global de lições
+let lessonsCache = [];
+let isCacheLoaded = false;
+
+const DB_NAME = 'lessonsDB';
+const STORE_NAME = 'lessons';
+
+/* Variáveis globais do modo Play
+*/
+// Array para armazenar as palavras selecionadas na ordem
+let selectedWords = [];
+let currentSegmentIndex = 0;
+
+// Variáveis de performance
+const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
+let wordStartTime = null; // Tempo de início da palavra atual
+let currentWordIdealTime = 0; // Tempo ideal para a palavra atual
+let performanceUpdateInterval = null;
+  
+// O "piso" de performance
+const DECAY_THRESHOLD = 10.0; 
+
+// A taxa de "punição" didática (0.1% por segundo)
+const DECAY_RATE_PER_SECOND = 0.1;
+
+// Seções que devem exibir thumbnails
+const SECTIONS_WITH_THUMBNAILS = [
+  'home',
+  'myPosts',
+  'subscriptions',
+  'challenge'
+];
+
+// Seleciona os elementos Header
+const textArea = document.getElementById('text-area');
+const iconsRight = document.getElementById('icons-right');
+const performanceArea = document.getElementById('performance-area');
+
+// Seleciona os elementos Edit Srt
+const videoSection = document.getElementById('video-section-editor');
+const editor = document.getElementById('editor');
+const segmentsArea = document.getElementById('segments-area');
+const saveArea = document.getElementById('save-area');
+const configArea = document.getElementById('config-area');
+
+// const lobby = document.getElementById('lobby'); // Removido para evitar erro de redeclaração
+const footer = document.getElementById('main-footer');
+
+// Seleciona todos os links <a> dentro de #main-footer que NÃO têm um atributo 'id'
+const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+
+// Playlist Area (DECLARAÇÕES GLOBAIS)
+const newPlaylistArea = document.getElementById('new-playlist-name-area');
+const btnShowNewPlaylist = document.getElementById('btn-show-new-playlist-area');
+const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
+
+// Seletor para o contêiner exbir Playlists
+const playlistContainer = document.getElementById('playlist-checkbox-container');
+
+// Defina aqui todas as seções que usam a navegação principal
+const mainNavSections = [
+  'home', 
+  'subscriptions', 
+  'you', 
+  'challenge', 
+  'create', 
+  'search', 
+  'notifications', 
+  'myProfile', 
+  'myPosts', 
+  'login-screen'
+];
+
+// Estado global da aplicação
+const appState = {
+  video: {
+    url: null,
+    file: null,
+    blob: null
+  },
+  subtitle: {
+    url: null,
+    file: null,
+    name: 'legendas.srt',
+    data: [] // srtData
+  },
+  thumbnail: {
+    blob: null,
+    url: null
+  },
+  currentSection: 'home'
+};
+	
+// Configuração centralizada de elementos
+const SELECTORS = {
+  // VÍDEOS: Sempre começar com "videoPlayer"
+  videos: 'video[id^="videoPlayer"]',
+
+  // THUMBNAILS: Sempre começar com "thumb-section"
+  thumbnails: '[id^="thumb-section"] img',
+	
+  subtitleDisplays: '[id^="subtitleName"]',
+  segmentAreas: '[id^="segments-area"]'
+};
+
+// Variáveis de estado do multiplayer
+let currentLessonForMatch = null; // Armazena a lição selecionada para o desafio
+let currentMatchId = null; // Armazena o ID da partida atual
+let showLobbyArea = false; // Controla se o lobby está visível
+
+// Variável para guardar a função de "unsubscribe" do Realtime
+let unsubscribeMatch = null;
+
+// 'host' ou 'opponent'
+let playerRole = null;
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --------------- Bloco Fx ----------------
+//
+// Somente controla visibilidade e
+// chama outras funções.
+// Não mudar essas responsabilidades.
+//
+// --------- Visbilidade e Chamadas --------
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+	
+// Mantem um estado global e propaga 
+// as mudanças para todos os elementos
+// relevantes quando o estado mudar.
+function updateAllElements(selector, updateFn) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach(updateFn);
+  console.log(`✅ ${elements.length} elemento(s) atualizado(s) [${selector}]`);
+}
+
+// Uso:
+function updateAllVideos(source) {
+  updateAllElements(SELECTORS.videos, (video) => {
+    video.src = source;
+    video.load();
+  });
+  appState.video.url = source;
+}
+
+function updateAllThumbnails(imageUrl) {
+  updateAllElements(SELECTORS.thumbnails, (img) => {
+    img.src = imageUrl;
+    img.hidden = false;
+  });
+  appState.thumbnail.url = imageUrl;
+}
+
+// Sincronizar dados ao mudar de seção
+function syncStateToSection(sectionId) {
+  // Sincroniza vídeo se houver
+  if (appState.video.url || appState.video.blob) {
+    const source = appState.video.blob || appState.video.url;
+    updateAllVideos(source);
+  }
+  
+  // Sincroniza thumbnail se houver
+  if (appState.thumbnail.url) {
+    updateAllThumbnails(appState.thumbnail.url);
+  }
+}
+
+/**
+ * Função que deve ser chamada ao mudar de seção ou sair da tela de ***desafio***
+ * Se sair da tela 'challenge' e houver partida criada, apaga a partida
+ * Usa as flags currentMatchId e currentLessonForMatch para decidir
+ */
+
+// Função principal para alternar seções
+async function showSection(sectionId) {
+    
+  // Evita processamento desnecessário se já estiver na seção
+  if (sectionId === appState.currentSection) {
+      // console.log(`Já está na seção: ${sectionId}`); // Opcional
+      return;
+  }
+
+  // Esconde todas as seções
+  const sections = document.querySelectorAll("main section");
+  sections.forEach(sec => sec.classList.remove("active"));
+
+  // Exibe a seção desejada
+  const target = document.getElementById(sectionId);
+  if (target) {
+    target.classList.add("active");
+  }
+
+  // SINCRONIZA o estado ao trocar de seção (NOVO)
+  syncStateToSection(sectionId);
+  
+  // Renderiza thumbnails se a seção precisar
+  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId)) {
+    // Garante que o cache está carregado antes de renderizar
+    if (!isCacheLoaded) {
+      await loadLessonsToCache();
+    }
+    renderThumbnailsFromCache(sectionId);
+  }
+  
+  // CHAMA A FUNÇÃO DE ATUALIZAÇÃO (AGORA ASYNC)
+  await updateElementForSection(sectionId); // <-- Precisa de await
+  
+  // ATUALIZA O ESTADO GLOBAL *APÓS* A VERIFICAÇÃO
+  appState.currentSection = sectionId;
+  // console.log("Nova seção ativa:", appState.currentSection); // Opcional
+}
+
+/**
+ * Decide o que o footer deve mostrar com base na seção ativa.
+ * Também gerencia a visibilidade do lobby.
+ */
+async function updateElementForSection(sectionId) { // <-- Tornou-se ASYNC
+
+  // Oculta elementoss do header em play
+  if (!iconsRight || !textArea)
+  return; // segurança caso não existam
+  
+  // --- LÓGICA DE OCULTAR PLAYLIST ---
+  // Apenas tenta esconder a área da Playlist se a função existir
+  // E se não estiver na seção postLesson.
+  if (sectionId !== "postLesson" && typeof hideAddPlaylistArea === 'function') {
+      hideAddPlaylistArea();
+  }
+  // ----------------------------------
+
+  // Manipula elementos do footer
+  // Verifica se a seção atual está na lista principal
+  if (mainNavSections.includes(sectionId)) {
+    // Se sim, mostra a navegação principal (Home, Subs, etc.)
+    showMainNavigation();
+  }
+    
+  if (sectionId === "play") {
+    iconsRight.style.display = "none";
+    textArea.style.display = "none";
+    performanceArea.style.display = "";
+  } else {
+    iconsRight.style.display = "";
+    textArea.style.display = "";
+    performanceArea.style.display = "none";
+  }
+  
+  // Detecta saída da seção 'play' durante partida multiplayer
+  if (appState.currentSection === 'play' && sectionId !== 'play') {
+    if (currentMatchId && playerRole) {
+      console.log("Jogador saindo da partida em andamento");
+      await handlePlayerLeavingMatch();
+    } else {
+      // ✅ ADICIONE: Se não é multiplayer, apenas limpa as variáveis
+      console.log("Saindo do modo solo, limpando variáveis...");
+      currentMatchId = null;
+      playerRole = null;
+      currentSegmentIndex = 0;
+      selectedWords = [];
+      
+      // Para timers de performance
+      if (performanceUpdateInterval) {
+        clearInterval(performanceUpdateInterval);
+        performanceUpdateInterval = null;
+      }
+    }
+  }
+  
+  // LÓGICA DO LOBBY (COMBINADA)
+  // Se a nova seção NÃO FOR 'challenge', faz a limpeza
+  if (sectionId !== 'challenge') {
+    
+    // 1. Limpa a UI: Oculta o lobby
+    const lobby = document.getElementById('lobby');
+    if (lobby) {
+      lobby.style.display = 'none';
+    }
+    
+    // 2. Limpa o Servidor: Verifica se está SAINDO do 'challenge' e se há partida
+    // (appState.currentSection é a seção anterior)
+    if (appState.currentSection === 'challenge' && currentMatchId && !window.isJoiningMatch && sectionId !== 'play') { // <-- ADICIONADO: && sectionId !== 'play'
+        console.log("Usuário (Host) está abandonando o lobby, deletando partida...");
+        await deleteMatchOnServer(currentMatchId); // Agora funciona, pois a função é async 
+        
+        // Limpar variáveis de estado relevantes
+        currentLessonForMatch = null;
+        currentMatchId = null;
+        showLobbyArea = false;
+        window.pendingMatch = null;
+        console.log("Usuário saiu da tela de desafio. Partida excluída automaticamente.");
+    }
+  }
+}
+
+/**
+ * Esta função atualiza a UI com base no modo
+ */
+function setEditorMode(mode) {
+    // Atualiza a variável de estado
+    currentEditMode = mode; 
+    console.log("Modo alterado para:", currentEditMode);
+
+    // 2. Seleciona os elementos do seu HTML
+    const editorDiv = document.getElementById('editor');
+    const navPreview = document.getElementById('navigation-controls-previewMode');
+    
+    // Botões do footer (baseado no seu HTML)
+    const footerSolo = document.getElementById('preview-footer-solo');
+    const footerChallenging = document.getElementById('preview-footer-challenging');
+    const footerChallenges = document.getElementById('preview-footer-challenges');
+
+    // 3. Lógica para esconder/mostrar
+  	hideMainNavigation();
+	closeLoadSaveArea();
+    
+    // Primeiro, esconde tudo para "limpar"
+    // (Oculta as partes que mudam)
+    if (editorDiv) editorDiv.style.display = 'none';
+    if (navPreview) navPreview.style.display = 'none';
+    if (footerSolo) footerSolo.style.display = 'none';
+    if (footerChallenging) footerChallenging.style.display = 'none';
+    if (footerChallenges) footerChallenges.style.display = 'none';
+
+    // Agora, mostra apenas o que é necessário para o modo
+    
+    if (mode === 'editor') {
+        // Mostra o editor
+        if (editorDiv) editorDiv.style.display = 'block';
+        if (navPreview) navPreview.style.display = 'block';
+        
+    } else if (mode === 'previewSolo') {
+        // Mostra navegação e botões de "Solo" e "Desafiar"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
+        if (footerChallenging) footerChallenging.style.display = 'flex';
+        
+    } else if (mode === 'previewMulti') {
+        // Mostra navegação e botão "Aceitar Desafio"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerChallenges) footerChallenges.style.display = 'flex';
+    }
+}
+
+function openContent() {
+	hideFooter();
+	setEditorMode('editor');
+    showSection('editSrt');
+	renderSegments();
+    loadContent();
+}
+
+function showSoloPreview() {
+    showFooter(); // Garante que o footer apareça para os botões
+	hideAcceptChallenge();
+	setEditorMode('previewSolo');
+    showSection('editSrt');
+}
+
+function showMultiPreview() {
+    showFooter(); // Garante que o footer apareça para os botões
+	hideSoloAndChallenging();
+	setEditorMode('previewMulti');
+    showSection('editSrt');
+}
+
+/**
+ * Oculta os links de navegação principais (Home, Subscriptions, You, Desafios)
+ * que estão no footer, deixando os botões contextuais (Solo, Desafiar, etc.)
+ */
+function hideMainNavigation() {
+  // Oculta cada um desses links
+  mainNavLinks.forEach(link => {
+    link.style.display = 'none';
+  });
+}
+
+/**
+ * Exibe a navegação principal (Home, Subs, You, Desafios)
+ * e esconde os botões contextuais (Solo, Desafiar, Aceitar).
+ */
+function showMainNavigation() {
+  // 1. Esconde os botões contextuais
+  hideSoloAndChallenging();
+  hideAcceptChallenge();
+  
+  // 2. Garante que o footer esteja visível
+  showFooter();
+
+  // 3. Define a variável
+  const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+  
+  // 4. Mostra os links de navegação principais
+  mainNavLinks.forEach(link => {
+    link.style.display = 'flex';
+  });
+}
+
+/**
+ * Oculta os botões "Solo" e "Desafiar".
+ */
+function hideSoloAndChallenging() {
+  const btnSolo = document.getElementById('preview-footer-solo');
+  const btnChallenging = document.getElementById('preview-footer-challenging');
+
+  if (btnSolo) {
+    btnSolo.style.display = 'none';
+  }
+  if (btnChallenging) {
+    btnChallenging.style.display = 'none';
+  }
+}
+
+/**
+ * Oculta o botão "Aceitar Desafio".
+ */
+function hideAcceptChallenge() {
+  const btnAccept = document.getElementById('preview-footer-challenges');
+  
+  if (btnAccept) {
+    btnAccept.style.display = 'none';
+  }
+}
+
+/**
+ *  Oculta o footer principal.
+ */
+function hideFooter() {  
+  if (footer) {
+    footer.style.display = 'none';
+  }
+}
+
+/**
+ *  Mostra o footer principal.
+ */
+function showFooter() {  
+  if (footer) {
+    footer.style.display = 'flex';
+  }
+}
+
+/**
+ * Mostra a tela de "Salvar", escondendo o editor principal.
+ */
+function showSave() {
+  // Esconde as partes principais do editor
+  if (videoSection) videoSection.style.display = 'none';
+  if (editor) editor.style.display = 'none';
+  if (segmentsArea) segmentsArea.style.display = 'none';
+  
+  // Esconde outros paineis
+  if (configArea) configArea.style.display = 'none';
+  
+  // Mostra o painel de salvar
+  if (saveArea) saveArea.style.display = 'block';
+}
+
+/**
+ * Fecha os paineis "Salvar" ou "Config" e retorna ao editor principal.
+ */
+function closeLoadSaveArea() {
+  // Mostra as partes principais do editor
+  if (videoSection) videoSection.style.display = 'block';
+  if (editor) editor.style.display = 'block';
+  if (segmentsArea) segmentsArea.style.display = 'block';
+
+  // Esconde os paineis
+  if (saveArea) saveArea.style.display = 'none';
+  if (configArea) configArea.style.display = 'none';
+}
+
+/**
+ * Mostra o painel de "Configurações" (Editar em Lote).
+ */
+function showConfig() {
+  // Seleciona os elementos
+  const configArea = document.getElementById('config-area');
+  const saveArea = document.getElementById('save-area');
+
+  // Esconde o painel de salvar (para não sobrepor)
+  if (saveArea) saveArea.style.display = 'none';
+  
+  // Mostra o painel de config
+  if (configArea) configArea.style.display = 'block';
+}
+
+function startSoloMode() {
+  hideFooter();
+  showSection('play');
+}
+
+/**
+ * LÓGICA DO LOBBY: Chamado ao clicar em "Desafiar".
+ * Mostra o lobby e a seção de desafio.
+ */
+function startCreateMode() {
+  const lobby = document.getElementById('lobby');
+  if (lobby) lobby.style.display = 'block'; // CORRIGIDO: Mostra o lobby
+  startMultiMode();
+}
+
+/**
+ * LÓGICA DO LOBBY: Função para esconder o lobby (se necessário).
+ */
+function endCreateMode() {
+  const lobby = document.getElementById('lobby');
+  if (lobby) lobby.style.display = 'none'; // CORRIGIDO: Esconde o lobby
+}
+
+function startMultiMode() {
+  hideFooter();
+  showSection('play');
+}
+
+// Playlist Area
+function showNewPlaylistNameArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'flex'; // Use 'flex' ou 'block'
+    btnShowNewPlaylist.style.display = 'none';
+    newPlaylistNameInput.focus();
+  }
+}
+
+function hideAddPlaylistArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'none';
+    btnShowNewPlaylist.style.display = 'flex'; // Mostra o botão de 
+    newPlaylistNameInput.value = '';
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Login ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// Configuração do Appwrite
+const PLAYLISTS_DATABASE_ID = "68ed87df000874c3e85a"; 
+const PLAYLISTS_COLLECTION_ID = "playlists";
+
+// DATABASE
+const DATABASE_ID = "68ed87df000874c3e85a";
+const MATCHES_COLLECTION_ID = "68fb595d00158868bf7c";
+
+const client = new Appwrite.Client()
+        .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+        .setProject('68ebe8640000ca7c860b');
+
+// Inicialização dos módulos (ID e Databases são necessários para a playlist)
+const { Databases, ID, Permission, Role, Query } = Appwrite;
+const databases = new Databases(client);
+const account = new Appwrite.Account(client);
+
+// Seletores de elementos HTML 
+const btnLoginHeader = document.getElementById('btnLogin');
+
+const loginForm = document.getElementById('login-form');
+const logoutButton = document.getElementById('logout-button');
+const userEmailDisplay = document.getElementById('user-email-display');
+const iconCreate = document.getElementById('icon-create');
+const btnMyPosts = document.getElementById('btn-myPosts');
+
+const loginMessage = document.getElementById('login-message');
+
+// Função para verificar o status de login
+let isCheckingAuth = false;
+
+async function checkAuthStatus() {
+    // Verifica se já há uma sessão em cache
+    const cachedEmail = localStorage.getItem('userEmail');
+    if (cachedEmail) {
+        renderUIForAuthState(true, cachedEmail);
+        showSection('myPosts');
+        return;
+    }
+    
+    showLoading('Carregando...');
+    console.log('Verificando sessão...')
+    
+    try {
+        const user = await account.get();
+        // Salva o email no cache
+        localStorage.setItem('userEmail', user.email);
+        renderUIForAuthState(true, user.email);
+        showSection('myPosts');
+    } catch (error) {
+    	console.log('Usuário não está logando. Direcinando para "home"...')
+        // Remove cache se houver erro
+        localStorage.removeItem('userEmail');
+        renderUIForAuthState(false);
+        showSection('home');
+    } finally {
+        hideLoading();
+    }
+}
+    
+// Evento de submissão do formulário de login
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email-login').value;
+    const password = document.getElementById('password-login').value;
+    loginMessage.textContent = '';
+    
+    showLoading('Entrando...');
+    
+    try {
+        // Primeiro tenta deletar qualquer sessão existente
+        try {
+            await account.deleteSession('current');
+        } catch (error) {
+            // Ignora erro se não houver sessão ativa
+        }
+        
+        // Agora cria a nova sessão
+        await account.createEmailPasswordSession(email, password);
+        
+        // Atualiza a interface
+        const user = await account.get();
+        // Salva no cache
+        localStorage.setItem('userEmail', user.email);
+        renderUIForAuthState(true, user.email);
+        showSection('you');
+    } catch (error) {
+        loginMessage.textContent = 'Erro no login: ' + error.message;
+    } finally {
+        hideLoading();
+    }
+});
+
+// Função de logout
+function handleLogout() {
+    showLoading('Saindo...');
+    
+    account.deleteSession('current')
+        .then(() => {
+            localStorage.removeItem('userEmail');
+            renderUIForAuthState(false);
+            showSection('home');
+        })
+        .catch((error) => {
+            console.error('Erro ao fazer logout:', error);
+        })
+        .finally(() => {
+            hideLoading();
+        });
+}
+    
+/* Função para renderizar a interface de
+    ** acordo com o estado de autenticação */
+function renderUIForAuthState(isLoggedIn, userEmail = '') {
+    // Esconde tudo primeiro
+    iconCreate.style.display = 'none';
+    btnMyPosts.style.display = 'none';
+    btnLoginHeader.style.display = 'none';
+    logoutButton.style.display = 'none';
+    userEmailDisplay.style.display = 'none';
+    
+    // Garantir que a tela de login seja escondida
+    document.getElementById('login-screen').classList.remove('active');
+
+    if (isLoggedIn) {
+        // Mostra email e botão sair
+        userEmailDisplay.textContent = userEmail;
+        userEmailDisplay.style.display = 'block';
+        logoutButton.style.display = 'block';
+    	iconCreate.style.display = 'block';
+	    btnMyPosts.style.display = 'flex';
+        fetchUserPlaylists();
+    } else {
+        // Mostra apenas botão entrar
+        btnLoginHeader.style.display = 'block';
+    }
+}
+
+// Função para mostrar perfil ou tela de login
+async function showProfile() {
+    try {
+        const user = await account.get();
+        // Se conseguiu pegar o usuário, está logado
+        showSection('myProfile');
+    } catch (error) {
+        // Se deu erro, não está logado
+        showSection('login-screen');
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Loading ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Mostra o overlay de loading
+ * @param {string} message - Mensagem a ser exibida (opcional)
+ */
+function showLoading(message = 'Carregando...') {
+    const overlay = document.getElementById('loadingOverlay');
+    const text = document.getElementById('loadingText');
+    if (text) text.textContent = message;
+    if (overlay) overlay.classList.add('active');
+}
+
+/**
+ * Esconde o overlay de loading
+ */
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | EditSrt --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+const srtData = [
+  { id: 1, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
+  { id: 2, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
+  { id: 3, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." }
+];
+
+let currentSegment = null;
+let undoStack = [];
+let redoStack = [];
+let stopTimeout = null; // auxiliar para playLine()
+let TIME_STEP = 0.1; // segundos
+let isBatchEditing = false; // para edição em lote
+let subtitleName = "legendas.srt";  // Nome padrão caso não seja carregado nenhum arquivo
+
+
+// ====================================
+// --- Funções de Navegação (Views) ---
+// ====================================
+function renderSegments() {
+  const container = document.getElementById("segments");
+  container.innerHTML = "";  // Limpa a lista de segmentos
+
+  srtData.forEach(seg => {
+    const div = document.createElement("div");
+    div.className = "segment";
+    div.setAttribute('data-id', seg.id);
+    
+    // Adiciona classe ao segmento selecionado
+    if (seg.id === currentSegment?.id) {
+      div.classList.add("segment-selected");
+    }
+    
+    // Define o conteúdo do segmento
+    div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
+    
+    // Define a ação de clicar no segmento
+    div.onclick = () => openEditor(seg.id);
+    
+    // Adiciona o segmento ao container
+    container.appendChild(div);
+  });
+}
+
+function openEditor(id) {
+  currentSegment = srtData.find(s => s.id === id);
+  if (!currentSegment) return;
+
+  document.getElementById("editor").style.display = "block";
+  document.getElementById("editStart").value = currentSegment.start;
+  document.getElementById("editEnd").value = currentSegment.end;
+  document.getElementById("editText").value = currentSegment.text;
+
+  document.getElementById("editStart").oninput = e => handleChange("start", e.target.value);
+  document.getElementById("editEnd").oninput = e => handleChange("end", e.target.value);
+  document.getElementById("editText").oninput = e => handleChange("text", e.target.value);
+  
+  // Remove a classe de todos os segmentos
+  document.querySelectorAll('.segment').forEach(item => {
+    item.classList.remove('segment-selected');
+  });
+  
+  // Adiciona a classe apenas ao segmento atual
+  const itemAtivo = document.querySelector(`[data-id="${id}"]`);
+  if (itemAtivo) {
+    itemAtivo.classList.add('segment-selected');
+  }
+  
+  scrollToSegment(id);
+  
+  setTimeout(() => playLine(), 500);
+}
+
+function handleChange(field, newValue) {
+  if (!currentSegment) return;
+  const oldValue = currentSegment[field];
+  if (oldValue === newValue) return;
+
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  undoStack.push({ 
+    type: "edit",
+    id: currentSegment.id, 
+    field, 
+    oldValue, 
+    newValue,
+    segmentBackup: oldSegment // backup completo do segmento
+  });
+  redoStack = [];
+  currentSegment[field] = newValue;
+  renderSegments();
+}
+
+function adjustTime(field, deltaSeconds) {
+  if (!currentSegment) return;
+
+  const oldValue = currentSegment[field];
+  const newValue = shiftTime(oldValue, deltaSeconds);
+
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const prev = srtData[idx - 1];
+  const next = srtData[idx + 1];
+
+  const toMs = t => {
+    const [h, m, rest] = t.split(":");
+    const [s, ms] = rest.split(",");
+    return (+h * 3600 + +m * 60 + +s) * 1000 + +ms;
+  };
+
+  const newMs = toMs(newValue);
+  const startMs = toMs(currentSegment.start);
+  const endMs = toMs(currentSegment.end);
+
+  if (field === "start" && prev && newMs <= toMs(prev.end) + 0) return;
+  if (field === "end" && next && newMs >= toMs(next.start) - 0) return;
+  if (field === "start" && newMs >= endMs - 0) return;
+  if (field === "end" && newMs <= startMs + 0) return;
+  
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  if (!isBatchEditing) {
+    undoStack.push({ 
+      type: "edit",
+      id: currentSegment.id, 
+      field, 
+      oldValue, 
+      newValue,
+      segmentBackup: oldSegment
+    });
+    redoStack = [];
+  }
+
+  redoStack = [];
+
+  currentSegment[field] = newValue;
+  updateEditorFields(currentSegment);
+  renderSegments();
+}
+
+function shiftTime(timeStr, delta) {
+  // "00:00:04,500" → soma delta (em segundos)
+  const [h, m, rest] = timeStr.split(":");
+  const [s, ms] = rest.split(",");
+  let totalMs = (+h * 3600 + +m * 60 + +s) * 1000 + +ms + delta * 1000;
+
+  if (totalMs < 0) totalMs = 0;
+  const hours = Math.floor(totalMs / 3600000);
+  const minutes = Math.floor((totalMs % 3600000) / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const millis = Math.floor(totalMs % 1000);
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)},${pad(millis, 3)}`;
+}
+
+function pad(num, size=2) {
+  return num.toString().padStart(size, "0");
+}
+
+// ======================
+// ↩ | ↪ | ☰ ➖ | ☰ ➕️
+// ======================
+function undo() {
+  if (!undoStack.length) return;
+  const last = undoStack.pop();
+  redoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de antes da adição
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de antes da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.oldValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  const last = redoStack.pop();
+  undoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de depois da adição
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de depois da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.newValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function addSegment() {
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  let insertIndex = srtData.length;
+  if (currentSegment) {
+    const idx = srtData.findIndex(s => s.id === currentSegment.id);
+    insertIndex = idx + 1;
+  }
+
+  const newId = insertIndex + 1;
+  const newSegment = {
+    id: newId,
+    start: "00:00:00,000",
+    end: "00:00:00,000",
+    text: "Novo trecho"
+  };
+  
+  srtData.splice(insertIndex, 0, newSegment);
+  
+  // Renumera os IDs a partir do ponto de inserção
+  for (let i = insertIndex + 1; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "add",
+    segment: { ...newSegment },
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: insertIndex
+  });
+  redoStack = [];
+
+  currentSegment = newSegment;
+  renderSegments();
+  openEditor(currentSegment.id);
+}
+
+function removeSegment() {
+  if (!currentSegment) return;
+  if (srtData.length === 1) return alert("Não é possível remover o único segmento.");
+
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const removedSegment = { ...srtData[idx] };
+  srtData.splice(idx, 1);
+
+  // Renumera os IDs após a remoção
+  for (let i = idx; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "remove",
+    segment: removedSegment,
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: idx
+  });
+  redoStack = [];
+
+  currentSegment = srtData[idx] || srtData[idx - 1] || null;
+
+  renderSegments();
+  if (currentSegment) openEditor(currentSegment.id);
+  else document.getElementById("editor").style.display = "none";
+}
+
+function updateEditorFields(seg) {
+  document.getElementById("editStart").value = seg.start;
+  document.getElementById("editEnd").value = seg.end;
+  document.getElementById("editText").value = seg.text;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); }
+  if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
+});
+
+
+// ======================
+// ◀◀ | ▶▶
+// ======================
+function prevLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("videoPlayer-editSrt");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx > 0) {
+    openEditor(srtData[idx - 1].id);
+    scrollToSegment(srtData[idx - 1].id);
+  }
+}
+
+function nextLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("videoPlayer-editSrt");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx < srtData.length - 1) {
+    openEditor(srtData[idx + 1].id);
+    scrollToSegment(srtData[idx + 1].id);
+  }
+}
+
+function scrollToSegment(id) {
+  const segmentsContainer = document.getElementById("segments-area");
+  const segments = document.querySelectorAll(".segment");
+  
+  // Encontra o elemento do segmento pelo índice (id - 1)
+  const targetSegment = segments[id - 1];
+  
+  if (targetSegment && segmentsContainer) {
+    // Usando scrollIntoView para centralizar o segmento
+    targetSegment.scrollIntoView({
+      behavior: 'smooth',  // Animação suave
+      block: 'center'      // Centraliza verticalmente
+    });
+  }
+}
+
+// ======================
+// Etidar e lote
+// ======================
+function showEarlier() {
+  shiftSelectedLines(-getCurrentStep());
+}
+
+function showLater() {
+  shiftSelectedLines(+getCurrentStep());
+}
+
+function getCurrentStep() {
+  const input = document.getElementById("editStack").value.trim().replace(",", ".");
+  const step = parseFloat(input);
+  return isNaN(step) || step <= 0 ? TIME_STEP : step;
+}
+
+function shiftSelectedLines(delta) {
+  const selected = document.querySelector('input[name="opcao-linha"]:checked');
+  const value = selected ? selected.value : "current";
+
+  const stateBefore = srtData.map(s => ({ ...s }));
+  const prevSegment = currentSegment;
+
+  if (value === "all") {
+    isBatchEditing = true;
+    srtData.forEach(seg => {
+      currentSegment = seg;
+      adjustTime("start", delta);
+      adjustTime("end", delta);
+    });
+    isBatchEditing = false;
+  } else if (value === "from-current" && currentSegment) {
+    const startIdx = srtData.findIndex(s => s.id === currentSegment.id);
+    if (startIdx >= 0) {
+      isBatchEditing = true;
+      for (let i = startIdx; i < srtData.length; i++) {
+        currentSegment = srtData[i];
+        adjustTime("start", delta);
+        adjustTime("end", delta);
+      }
+      isBatchEditing = false;
+    }
+  } else if (value === "current" && currentSegment) {
+    adjustTime("start", delta);
+    adjustTime("end", delta);
+  }
+
+  const stateAfter = srtData.map(s => ({ ...s }));
+
+  undoStack.push({
+    type: "edit-multiple",
+    delta,
+    stateBefore,
+    stateAfter
+  });
+  redoStack = [];
+
+  currentSegment = prevSegment;
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+// ==================================
+// Funções de Carregamento
+// ==================================
+function loadContent() {
+  const videoInput = document.getElementById("videoUrl").value.trim();
+  const videoUpload = document.getElementById("videoUpload").files[0];
+
+  const srtInput = document.getElementById("srtUrl").value.trim();
+  const srtUpload = document.getElementById("srtUpload").files[0];
+
+  // Carregar o vídeo em TODAS as seções (CORRIGIDO)
+  if (videoUpload) {
+    const videoURL = URL.createObjectURL(videoUpload);
+    appState.video.file = videoUpload;
+    appState.video.blob = videoURL;
+    updateAllVideos(videoURL); // Usa a função de sincronização
+  } else if (videoInput) {
+    appState.video.url = videoInput;
+    updateAllVideos(videoInput); // Usa a função de sincronização
+  }
+
+  // Carregar a legenda
+  if (srtUpload) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      parseSRT(e.target.result);
+      
+      appState.subtitle.name = srtUpload.name;
+      appState.subtitle.file = srtUpload;
+      document.getElementById("subtitleName").textContent = srtUpload.name;
+    };
+    reader.readAsText(srtUpload);
+  } else if (srtInput) {
+    fetch(srtInput)
+      .then(res => res.text())
+      .then(text => {
+        parseSRT(text);
+
+        appState.subtitle.name = srtInput.split("/").pop();
+        appState.subtitle.url = srtInput;
+        document.getElementById("subtitleName").textContent = appState.subtitle.name;
+      })
+      .catch(err => alert("Erro ao carregar SRT por URL: " + err.message));
+  }
+
+  closeLoadSaveArea();
+}
+
+// Função para interpretar o conteúdo .srt para srtData
+function parseSRT(content) {
+  const lines = content.split(/\r?\n/);
+  const segments = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const id = parseInt(lines[i++]);
+    const time = lines[i++];
+
+    if (!time || !time.includes("-->")) continue;
+
+    const [start, end] = time.split("-->").map(s => s.trim().replace(".", ","));
+    let text = "";
+
+    while (i < lines.length && lines[i].trim() !== "") {
+      text += lines[i++] + "\n";
+    }
+
+    segments.push({
+      id,
+      start,
+      end,
+      text: text.trim()
+    });
+
+    while (i < lines.length && lines[i].trim() === "") i++;
+  }
+
+  srtData.length = 0;
+  srtData.push(...segments);
+  currentSegment = null;
+  undoStack = [];
+  redoStack = [];
+  renderSegments();
+}
+
+// Exibir SRT
+function showSRT() {
+  const srt = generateSRT();
+  const novaAba = window.open("", "_blank");
+
+  if (novaAba) {
+    novaAba.document.write(`<pre>${srt.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`);
+    novaAba.document.title = "SRT Gerado";
+    novaAba.document.close();
+  } else {
+    alert("Não foi possível abrir nova aba. Verifique se o bloqueador de pop-up está ativo.");
+  }
+}
+
+
+function generateSRT() {
+  return srtData.map(seg => {
+    return `${seg.id}\n${seg.start} --> ${seg.end}\n${seg.text}`;
+  }).join("\n\n");
+}
+
+function copyToClipboard() {
+  const text = generateSRT();
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Legendas copiadas para a área de transferência.");
+  });
+}
+
+function downSrt() {
+  // Verifique se o nome da legenda está configurado corretamente
+  if (!subtitleName) {
+    alert("Erro: Nome da legenda não encontrado.");
+    return;
+  }
+
+  const blob = new Blob([generateSRT()], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = subtitleName;  // Usando o nome da legenda carregada
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Função auxiliar para playLine()
+// converter o tempo no formato 
+// SRT (hh:mm:ss,SSS) para segundos
+function parseTime(timeString) {
+  const timeParts = timeString.split(/[:,]/);  // Separar por ":" e ","
+  const hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10);
+  const seconds = parseInt(timeParts[2], 10);
+  const milliseconds = parseInt(timeParts[3], 10);
+
+  // Converter tudo para segundos
+  return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+}
+
+// Busca os tempos de início e fim da legenda atual e 
+// usa o vídeo (ou áudio) para tocar o trecho
+function playLine() {
+  if (!currentSegment) {
+    alert("Nenhum trecho selecionado.");
+    return;
+  }
+
+  const videoElement = document.getElementById("videoPlayer-editSrt");
+  if (!videoElement || !videoElement.src) {
+    alert("Carregue um vídeo primeiro!");
+    return;
+  }
+
+  // **CRÍTICO: Limpa qualquer timeout anterior**
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+
+  // Pausa o vídeo se estiver tocando
+  if (!videoElement.paused) {
+    videoElement.pause();
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+
+  // Aguarda um frame antes de iniciar (garante que pause foi processado)
+  requestAnimationFrame(() => {
+    videoElement.currentTime = startTime;
+    videoElement.play();
+
+    // Configura novo timeout para pausar no fim
+    stopTimeout = setTimeout(() => {
+      videoElement.pause();
+      stopTimeout = null;
+    }, (endTime - startTime) * 1000);
+  });
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Função Principal de Criação de Playlist -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+async function saveNewPlaylistName() {
+    const playlistName = newPlaylistNameInput.value.trim();
+
+    if (!playlistName) {
+        alert("Por favor, digite um nome para a playlist.");
+        return;
+    }
+
+    showLoading('Criando nova playlist...');
+
+    try {
+        // 1. Obter o ID do usuário logado (necessário para a permissão de escrita)
+        const user = await account.get();
+        const userId = user.$id;
+
+        // 2. Definir as permissões: Somente o criador pode ler e escrever
+        const permissions = [
+            Permission.read(Role.user(userId)),
+            Permission.write(Role.user(userId)),
+        ];
+
+        // 3. Criar o documento no Appwrite
+        const newPlaylist = await databases.createDocument(
+            PLAYLISTS_DATABASE_ID, 
+            PLAYLISTS_COLLECTION_ID,
+            ID.unique(), // ID único gerado pelo Appwrite
+            {
+                userId: userId,
+                playlistName: playlistName,
+                // O campo playlistDescription é opcional e não estamos usando aqui
+            },
+            permissions // Aplicar as permissões
+        );
+
+        console.log('Playlist criada com sucesso:', newPlaylist);
+        alert(`Playlist "${playlistName}" criada!`);
+        
+        // Esconder a área de input após o sucesso
+        hideAddPlaylistArea();
+    	await fetchUserPlaylists();
+        
+        // TODO: Você deve adicionar aqui a lógica para
+        // 1. Atualizar a lista de checkboxes de playlists na UI.
+
+    } catch (error) {
+        console.error('Erro ao criar a playlist:', error);
+        alert('Falha ao criar a playlist. Verifique se as permissões e IDs estão corretos.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Funções de Exibição de Playlists do Appwrite -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * 1. Renderiza os elementos de checkbox no formulário com base nos dados.
+ * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
+ */
+/**
+ * Renderiza os elementos de checkbox no formulário com base nos dados.
+ * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
+ */
+function renderPlaylists(playlists) {
+    if (!playlistContainer) return;
+
+    // Limpa o conteúdo existente
+    playlistContainer.innerHTML = '';
+
+    if (playlists.length === 0) {
+        playlistContainer.innerHTML = '<p>Você não possui playlists.</p>';
+        return;
+    }
+    
+    // Contêiner flexível opcional para melhor alinhamento
+    // const listWrapper = document.createElement('div');
+    // listWrapper.className = 'playlist-list-wrapper'; // Você pode criar um estilo para este wrapper
+    
+    playlists.forEach(playlist => {
+        const playlistId = playlist.$id;
+        const playlistName = playlist.playlistName;
+
+        // 1. Cria o elemento LABEL
+        const label = document.createElement('label');
+        // Seu CSS .playlistForm label aplica-se a esta tag
+
+        // 2. Cria o INPUT (checkbox)
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = `playlist-${playlistId}`;
+        input.name = 'playlist';
+        input.value = playlistId;
+
+        // 3. Adiciona input e texto à label
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(` ${playlistName}`));
+        
+        // 4. Adiciona a label ao contêiner principal
+        playlistContainer.appendChild(label);
+        
+        // Em vez de <br>, usar margin-bottom no CSS é mais limpo.
+        // Já está no seu CSS: .playlistForm label { margin-bottom: 15px; }
+    });
+    
+    // Se você usou o listWrapper opcional:
+    // playlistContainer.appendChild(listWrapper);
+}
+
+/**
+ * 2. Busca as playlists do usuário logado no Appwrite.
+ * Nota: Isso só deve ser chamado se o usuário estiver autenticado.
+ */
+async function fetchUserPlaylists() {
+    showLoading('Buscando suas playlists...');
+    
+    try {
+        const user = await account.get();
+        const userId = user.$id;
+
+        // Filtra os documentos onde o 'userId' é igual ao ID do usuário logado.
+        const response = await databases.listDocuments(
+            PLAYLISTS_DATABASE_ID,
+            PLAYLISTS_COLLECTION_ID,
+            [
+                Appwrite.Query.equal('userId', userId),
+                Appwrite.Query.orderDesc('$createdAt') // Opcional: ordenar pelas mais recentes
+            ]
+        );
+
+        renderPlaylists(response.documents);
+
+    } catch (error) {
+        console.error('Erro ao buscar playlists:', error);
+        playlistContainer.innerHTML = '<p style="color:red;">Não foi possível carregar as playlists.</p>';
+    } finally {
+        hideLoading();
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+//  - Bloco Fx | Thumbnail -
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+function handleCaptureClick() {
+  const video = document.getElementById('videoPlayer-postLesson'); // Corrigido o ID
+  
+  if (!video) {
+    console.error('Elemento de vídeo não encontrado.');
+    alert('Vídeo não encontrado. Certifique-se de ter carregado um vídeo.');
+    return;
+  }
+
+  if (!video.src || video.readyState < 2) {
+    alert('Aguarde o vídeo carregar completamente antes de capturar a thumbnail.');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  canvas.toBlob((blob) => {
+    if (blob) {
+      window.capturedThumbnailBlob = blob; // Torna global
+      console.log('Thumbnail Blob capturado com sucesso!');
+
+      const imageDataURL = URL.createObjectURL(blob);
+
+      // Encontra a imagem que já existe no HTML
+      const thumbnailImg = document.querySelector('#thumb-section-postLesson img');
+
+      if (thumbnailImg) {
+        // Atualiza a imagem existente
+        thumbnailImg.src = imageDataURL;
+        thumbnailImg.hidden = false; // Torna visível
+        thumbnailImg.style.maxWidth = '200px';
+        thumbnailImg.style.height = 'auto';
+      } else {
+        console.error('Elemento de imagem não encontrado.');
+        alert('Erro: Container da thumbnail não encontrado.');
+      }
+    } else {
+      console.error('Falha ao gerar Blob da thumbnail.');
+      alert('Erro ao capturar a thumbnail.');
+    }
+  }, 'image/jpeg', 0.9);
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Upload Backblaze --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Obtém URL de upload do Backblaze via função Appwrite
+ */
+async function getBackblazeUploadUrl() {
+  console.log("--- Obtendo URL de upload do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',  // ID da sua função
+    JSON.stringify({}),
+    false // síncrono
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha na execução da função: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  
+  if (!data.uploadUrl || !data.authorizationToken) {
+    throw new Error('Erro ao obter URL de upload');
+  }
+  
+  console.log("✅ URL de upload obtida com sucesso");
+  return data;
+}
+
+/**
+ * Faz upload de um arquivo para o Backblaze
+ */
+async function uploadFileToBackblaze(file, fileName, uploadData) {
+  console.log(`--- Fazendo upload de: ${fileName} ---`);
+  console.log(`Tamanho do arquivo: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+  
+  const headers = {
+    'Authorization': uploadData.authorizationToken,
+    'X-Bz-File-Name': encodeURIComponent(fileName),
+    'Content-Type': file.type || 'b2/x-auto',
+    'X-Bz-Content-Sha1': 'do_not_verify',
+  };
+  
+  const uploadResponse = await fetch(uploadData.uploadUrl, {
+    method: 'POST',
+    headers: headers,
+    body: file,
+  });
+  
+  if (!uploadResponse.ok) {
+    throw new Error(`Erro no upload de ${fileName}: ${uploadResponse.statusText}`);
+  }
+  
+  const uploadResult = await uploadResponse.json();
+  console.log(`✅ Upload de ${fileName} concluído!`, uploadResult);
+  
+  return uploadResult;
+}
+
+/**
+ * Converte vídeo do videoPlayer para Blob
+ */
+async function getVideoBlob() {
+  console.log("--- Obtendo Blob do vídeo ---");
+  
+  // CORRIGIDO: Usa o arquivo original do appState
+  if (appState.video.file) {
+    console.log("Usando arquivo de vídeo carregado (File object)");
+    console.log(`✅ Blob do vídeo obtido: ${(appState.video.file.size / 1024 / 1024).toFixed(2)} MB`);
+    return appState.video.file;
+  }
+  
+  // Se foi carregado via blob URL (raro, mas possível)
+  if (appState.video.blob) {
+    console.log("Vídeo é um blob local, buscando conteúdo...");
+    const response = await fetch(appState.video.blob);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  // Se foi carregado via URL externa
+  if (appState.video.url) {
+    console.log("Vídeo é uma URL externa, fazendo fetch...");
+    const response = await fetch(appState.video.url);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  throw new Error('Nenhum vídeo foi carregado');
+}
+
+/**
+ * Converte SRT data para Blob
+ */
+function getSrtBlob() {
+  console.log("--- Criando Blob do SRT ---");
+  const srtContent = generateSRT();
+  const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+  console.log(`✅ Blob do SRT criado: ${blob.size} bytes`);
+  return blob;
+}
+
+/**
+ * Gera nome base a partir do nome do SRT (sem extensão)
+ */
+function getBaseName() {
+  // CORRIGIDO: Usa o nome do appState
+  if (appState.subtitle.name && appState.subtitle.name !== 'legendas.srt') {
+    // Remove a extensão .srt
+    return appState.subtitle.name.replace(/\.srt$/i, '');
+  }
+  
+  // Se não houver nome personalizado, usa o nome do vídeo
+  if (appState.video.file && appState.video.file.name) {
+    return appState.video.file.name.replace(/\.[^/.]+$/, ''); // Remove qualquer extensão
+  }
+  
+  // Fallback: usa timestamp se não houver nome
+  return `lesson_${Date.now()}`;
+}
+
+/**
+ * Função principal para postar a lição
+ */
+async function postLesson() {
+  console.log("=== INÍCIO postLesson() ===");
+  
+  try {
+    showLoading('Preparando upload...');
+    
+    // 1. Validações
+    console.log("--- Validando dados ---");
+    
+    if (!srtData || srtData.length === 0) {
+      throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
+    }
+    
+    // CORRIGIDO: Verifica se há thumbnail capturada
+    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob) {
+      throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
+    }
+    
+    // CORRIGIDO: Verifica se há vídeo no appState
+    if (!appState.video.file && !appState.video.blob && !appState.video.url) {
+      throw new Error('Nenhum vídeo carregado.');
+    }
+    
+    console.log("✅ Validações passaram");
+    
+    // 2. Gera nomes dos arquivos baseados no SRT
+    const baseName = getBaseName();
+    const videoFileName = `${baseName}.mp4`;
+    const srtFileName = `${baseName}.srt`;
+    const thumbFileName = `${baseName}.jpg`;
+    
+    console.log("--- Nomes dos arquivos ---");
+    console.log("Base name:", baseName);
+    console.log("Video:", videoFileName);
+    console.log("SRT:", srtFileName);
+    console.log("Thumb:", thumbFileName);
+    
+    // 3. Prepara os arquivos
+    showLoading('Preparando arquivos...');
+    const videoBlob = await getVideoBlob();
+    const srtBlob = getSrtBlob();
+    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob; // CORRIGIDO
+    
+    console.log("✅ Todos os arquivos preparados");
+    
+    // 4. Faz upload dos 3 arquivos
+    const uploadResults = {
+      video: null,
+      srt: null,
+      thumb: null
+    };
+    
+    // Upload do vídeo
+    showLoading('Enviando vídeo... (1/3)');
+    const videoUploadData = await getBackblazeUploadUrl();
+    uploadResults.video = await uploadFileToBackblaze(videoBlob, videoFileName, videoUploadData);
+    
+    // Upload do SRT
+    showLoading('Enviando legenda... (2/3)');
+    const srtUploadData = await getBackblazeUploadUrl();
+    uploadResults.srt = await uploadFileToBackblaze(srtBlob, srtFileName, srtUploadData);
+    
+    // Upload da thumbnail
+    showLoading('Enviando thumbnail... (3/3)');
+    const thumbUploadData = await getBackblazeUploadUrl();
+    uploadResults.thumb = await uploadFileToBackblaze(thumbBlob, thumbFileName, thumbUploadData);
+    
+    console.log("=== UPLOADS CONCLUÍDOS ===");
+    console.log("Video ID:", uploadResults.video.fileId);
+    console.log("SRT ID:", uploadResults.srt.fileId);
+    console.log("Thumb ID:", uploadResults.thumb.fileId);
+    
+    // 5. Exibe resultado no console (por enquanto)
+    console.log("--- RESULTADO FINAL ---");
+    console.log(JSON.stringify(uploadResults, null, 2));
+    
+    hideLoading();
+    alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
+    // location.reload(); desativado por enquanto
+    
+    // NOVO: Atualiza o cache antes de recarregar
+    await refreshLessonsCache();
+    
+    showSection('home');
+    
+    // TODO: Salvar esses IDs no banco de dados
+    // TODO: Exibir os arquivos na página
+    
+    return uploadResults;
+    
+  } catch (error) {
+    console.error("❌ ERRO em postLesson():", error);
+    hideLoading();
+    alert('❌ Erro ao postar lição: ' + error.message);
+    throw error;
+  } finally {
+    console.log("=== FIM postLesson() ===");
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Listar Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Lista todos os arquivos do bucket via função Appwrite
+ */
+async function listBackblazeFiles() {
+  console.log("--- Listando arquivos do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',
+    JSON.stringify({ action: 'list' }),
+    false
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha ao listar arquivos: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  console.log("✅ Arquivos listados:", data.files?.length || 0);
+  
+  return data.files || [];
+}
+
+/**
+ * Filtra apenas as thumbnails (arquivos .jpg/.jpeg/.png)
+ */
+function filterThumbnails(files) {
+  const thumbs = files.filter(file => {
+    const name = file.fileName.toLowerCase();
+    return name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+  });
+  
+  console.log(`✅ Thumbnails encontradas: ${thumbs.length}`);
+  return thumbs;
+}
+
+/**
+ * Gera URL pública para arquivo do Backblaze usando o fileId
+ */
+function getBackblazePublicUrl(fileId) {
+  return `https://f005.backblazeb2.com/b2api/v1/b2_download_file_by_id?fileId=${fileId}`;
+}
+
+/**
+ * Agrupa arquivos por nome base (sem extensão)
+ * Retorna um objeto com { baseName: { video, srt, thumb } }
+ */
+function groupFilesByLesson(files) {
+  const lessons = {};
+  
+  files.forEach(file => {
+    // Remove a extensão para obter o nome base
+    const baseName = file.fileName.replace(/\.(mp4|srt|jpg|jpeg|png)$/i, '');
+    
+    if (!lessons[baseName]) {
+      lessons[baseName] = {
+        baseName: baseName,
+        video: null,
+        srt: null,
+        thumb: null
+      };
+    }
+    
+    // Identifica o tipo do arquivo
+    const fileName = file.fileName.toLowerCase();
+    if (fileName.endsWith('.mp4')) {
+      lessons[baseName].video = file;
+    } else if (fileName.endsWith('.srt')) {
+      lessons[baseName].srt = file;
+    } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
+      lessons[baseName].thumb = file;
+    }
+  });
+  
+  // Retorna apenas lições que têm pelo menos a thumbnail
+  return Object.values(lessons).filter(lesson => lesson.thumb);
+}
+
+/**
+ * Carrega uma lição específica (vídeo + SRT + thumb) do Backblaze
+ * e guarda o conteúdo em cache após o primeiro carregamento
+ */
+async function previewLesson(lesson) {
+  console.log("--- Preview da lição ---", lesson.baseName);
+  
+  // Indica para o botão "Desafiar" 
+  // no footer qual a lição está 
+  // sendo visualizada no preview.
+  currentLessonForMatch = lesson;
+  
+  showLoading('Carregando lição...');
+
+  try {
+    // 1️⃣ Verifica no IndexedDB
+    const cached = await getLessonFromDB(lesson.baseName);
+    // Usa o timestamp do envio do vídeo, fallback para data atual
+    const currentTimestamp = lesson.video?.uploadTimestamp || Date.now();
+
+    if (cached && cached.timestamp === currentTimestamp) {
+      console.log("✅ Usando cache do IndexedDB:", lesson.baseName);
+      
+      // Usa URLs locais via blobs cacheados
+      const videoUrl = URL.createObjectURL(cached.videoBlob);
+      appState.video.url = videoUrl;
+      updateAllVideos(videoUrl);
+
+      parseSRT(cached.srtText);
+      updateAllThumbnails(URL.createObjectURL(cached.thumbBlob));
+
+    } else {
+      console.log("⬇️ Baixando nova versão da lição:", lesson.baseName);
+
+      // URLs públicas do Backblaze
+      const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+      const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
+      const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+
+      // Faz o download dos arquivos
+      const [videoBlob, srtText, thumbBlob] = await Promise.all([
+        fetch(videoUrl).then(r => r.blob()),
+        fetch(srtUrl).then(r => r.text()),
+        fetch(thumbUrl).then(r => r.blob())
+      ]);
+
+      // Atualiza o player e thumbnail com objetos locais
+      const localVideoUrl = URL.createObjectURL(videoBlob);
+      appState.video.url = localVideoUrl;
+      updateAllVideos(localVideoUrl);
+
+      parseSRT(srtText);
+
+      updateAllThumbnails(URL.createObjectURL(thumbBlob));
+
+      // Salva no IndexedDB para uso futuro
+      await saveLessonToDB({
+        baseName: lesson.baseName,
+        timestamp: currentTimestamp,
+        videoBlob,
+        srtText,
+        thumbBlob
+      });
+
+      console.log("📦 Lição salva no IndexedDB:", lesson.baseName);
+    }
+
+    hideLoading();
+    showSoloPreview();
+
+  } catch (err) {
+    console.error("❌ Erro ao carregar preview:", err);
+    hideLoading();
+    alert('Erro ao carregar lição: ' + err.message);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Sistema de Cache de Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// helpers para IndexedDB
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'baseName' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getLessonFromDB(baseName) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.get(baseName);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveLessonToDB(lessonData) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.put(lessonData);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Carrega as lições UMA VEZ e salva em cache
+ */
+async function loadLessonsToCache() {
+  if (isCacheLoaded) {
+    console.log("📦 Cache já carregado, pulando...");
+    return lessonsCache;
+  }
+  
+  console.log("=== Carregando lições para o cache ===");
+  
+  try {
+    showLoading('Carregando lições...');
+    
+    // 1. Lista todos os arquivos
+    const allFiles = await listBackblazeFiles();
+    
+    // 2. Agrupa arquivos por lição (nome base)
+    lessonsCache = groupFilesByLesson(allFiles);
+    isCacheLoaded = true;
+    
+    console.log(`✅ Cache carregado: ${lessonsCache.length} lições`);
+    
+    hideLoading();
+    
+    return lessonsCache;
+    
+  } catch (error) {
+    console.error("❌ ERRO ao carregar cache:", error);
+    hideLoading();
+    throw error;
+  }
+}
+
+/**
+ * Renderiza thumbnails a partir do cache para uma seção específica
+ */
+function renderThumbnailsFromCache(sectionId) {
+  console.log(`--- Renderizando thumbnails para: ${sectionId} ---`);
+  console.log(`Cache carregado: ${isCacheLoaded}, Total de lições: ${lessonsCache.length}`);
+  
+  // Mapeia o ID da seção para o ID do container
+  const containerMap = {
+    'home': 'home-post-container',
+    'subscriptions': 'subscriptions-post-container',
+  };
+  
+  const containerId = containerMap[sectionId];
+  const container = document.getElementById(containerId);
+  
+  if (!container) {
+    console.error(`Container ${containerId} não encontrado para seção ${sectionId}`);
+    return;
+  }
+  
+  // Limpa o container
+  container.innerHTML = '';
+  
+  if (!isCacheLoaded) {
+    container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Carregando lições...</p>';
+    return;
+  }
+  
+  if (lessonsCache.length === 0) {
+    container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição encontrada.</p>';
+    return;
+  }
+  
+  // Filtra lições se necessário
+  let lessonsToRender = lessonsCache;
+  
+  // Renderiza cada lição
+  lessonsToRender.forEach((lesson, index) => {
+    const displayName = lesson.baseName;
+    const thumbnailUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+    
+    // Cria o wrapper do post
+    const postWrapper = document.createElement('div');
+    postWrapper.className = 'post-item';
+    postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
+    postWrapper.onclick = () => previewLesson(lesson);
+    
+    // Cria a thumb-section
+    const thumbSection = document.createElement('div');
+    thumbSection.className = 'thumb-section';
+    thumbSection.innerHTML = `
+      <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+    `;
+    
+    // Cria a info-content
+    const infoContent = document.createElement('div');
+    infoContent.className = 'info-content';
+    infoContent.innerHTML = `
+      <div class="channel-pic">
+        <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+      </div>
+      
+      <div class="video-text">
+        <span class="video-title" style="cursor: pointer;">${displayName}</span>
+        <div class="video-meta">
+          <span class="channel-name">Meu Canal</span>
+          <span class="performance">95%</span>
+        </div>
+      </div>
+    `;
+    
+    // Monta o post completo
+    postWrapper.appendChild(thumbSection);
+    postWrapper.appendChild(infoContent);
+    
+    // Adiciona ao container
+    container.appendChild(postWrapper);
+  });
+  
+  console.log(`✅ ${lessonsToRender.length} lições renderizadas em ${sectionId}`);
+}
+
+/**
+ * Força atualização do cache (após upload de nova lição)
+ */
+async function refreshLessonsCache() {
+  console.log("🔄 Forçando atualização do cache...");
+  isCacheLoaded = false;
+  lessonsCache = [];
+  await loadLessonsToCache();
+  
+  // Re-renderiza a seção atual se for uma seção com thumbnails
+  const currentSection = document.querySelector('section.active');
+  if (currentSection && SECTIONS_WITH_THUMBNAILS.includes(currentSection.id)) {
+    renderThumbnailsFromCache(currentSection.id);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Performance --- 
+// Necessário para o bloco Play
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+  
+// Acumulador de performances
+if (!window.segmentPerformances) {
+  window.segmentPerformances = [];
+}
+
+/**
+ * Inicia o cronômetro para uma palavra específica
+ */
+function startWordTimer(word) {
+  // Conta apenas letras (remove espaços e pontuação)
+  const letterCount = word.replace(/[^a-zA-ZÀ-ÿ]/g, '').length;
+  
+  // Calcula tempo ideal para esta palavra
+  currentWordIdealTime = letterCount * TIME_PER_LETTER;
+  
+  // Marca o tempo de início
+  wordStartTime = Date.now();
+  
+  // --- NOVO: Reseta o estado do "slow decay" ---
+  window.decayStartTime = null;
+  window.performanceAtDecayStart = null;
+  // --- FIM DA ADIÇÃO ---
+  
+  // Inicia atualização contínua da performance (a cada 50ms)
+  if (performanceUpdateInterval) {
+    clearInterval(performanceUpdateInterval);
+  }
+  
+  performanceUpdateInterval = setInterval(() => {
+    updatePerformanceDisplay();
+  }, 50); // Atualiza 20x por segundo para fluidez
+  
+  console.log(`⏱️ Timer iniciado para palavra "${word}": ${letterCount} letras = ${currentWordIdealTime.toFixed(2)}s`);
+}
+
+/**
+ * Para o cronômetro de performance
+ */
+function stopWordTimer() {
+  if (performanceUpdateInterval) {
+    clearInterval(performanceUpdateInterval);
+    performanceUpdateInterval = null;
+  }
+}
+
+/**
+ * Calcula a performance da palavra atual em tempo real
+ * (Versão combinada: 100+Bonus com Slow Decay)
+ */
+function getCurrentWordPerformance() {
+  if (!wordStartTime || currentWordIdealTime === 0) {
+    return 100;
+  }
+
+  // --- LÓGICA DE DECAIMENTO LENTO ---
+  
+  // 1. O modo "slow decay" JÁ FOI ATIVADO?
+  if (window.decayStartTime) {
+    // Calcula há quantos segundos o modo de decaimento começou
+    const decayElapsedTime = (Date.now() - window.decayStartTime) / 1000;
+    
+    // Calcula a nova performance
+    // Ex: 70% - (5 segundos * 0.1) = 69.5%
+    let performance = window.performanceAtDecayStart - (decayElapsedTime * DECAY_RATE_PER_SECOND);
+    
+    // Garante que não caia abaixo de 0
+    return Math.max(0, performance);
+  }
+
+  // --- LÓGICA 100 + BÔNUS (SUA PREFERIDA) ---
+  
+  // 2. Se NÃO, calcula a performance "real" com a sua lógica
+  const elapsedTime = (Date.now() - wordStartTime) / 1000; // segundos
+  const timeDiff = currentWordIdealTime - elapsedTime;
+  const performanceBonus = (timeDiff / currentWordIdealTime) * 100;
+  
+  // A performance final é 100% (base) + o bônus/penalidade
+  let realPerformance = 100 + performanceBonus;
+  
+  // Limita o teto a 200% (importante para o início do timer)
+  realPerformance = Math.min(200, realPerformance);
+
+  // --- O PONTO DE TRANSIÇÃO ---
+
+  // 3. A performance "real" ACABOU DE CAIR abaixo do limiar?
+  if (realPerformance <= DECAY_THRESHOLD) {
+    // SIM! Ativa o modo "slow decay" AGORA
+    window.decayStartTime = Date.now(); // Marca a hora
+    
+    // Salva a performance exata de quando cruzou (ex: 69.9%)
+    window.performanceAtDecayStart = realPerformance; 
+    
+    return realPerformance; // Retorna esse valor (o último antes do "piso")
+  }
+
+  // 4. Se chegou aqui, a performance é > 70% e o "slow decay" está inativo.
+  //    Apenas retorna a performance real.
+  return realPerformance;
+}
+
+/**
+ * Atualiza o display de performance em tempo real
+ */
+function updatePerformanceDisplay() {
+  const performanceElement = document.getElementById('word-performance');
+  performanceElement.classList.add('flex', 'column');
+  
+  if (!performanceElement || !wordStartTime) return;
+  
+  const performanceScore = getCurrentWordPerformance();
+  
+  // Define a cor baseada na performance
+  let color = '#4caf50'; // Verde (bom)
+  if (performanceScore < 80) color = '#ff9800'; // Laranja (médio)
+  if (performanceScore < 60) color = '#f44336'; // Vermelho (baixo)
+  if (performanceScore > 125) color = '#00e676'; // Verde brilhante (excelente)
+  
+  // Atualiza o display (apenas o percentual)
+  performanceElement.innerHTML = `
+    <span style="font-weight: bold; color: ${color};">
+      ${performanceScore.toFixed(1)}%
+    </span>
+  `;
+  
+  performanceElement.style.cssText = `
+    font-size: 16px;
+    text-align: center;
+    margin: 10px 0;
+    transition: color 0.3s ease;
+  `;
+}
+
+/**
+ * Acumula e atualiza a performance acumulada da lição
+ */
+function updateWordPerformance() {
+  const wordPerformanceElement = document.getElementById('host-performance');
+  
+  if (!wordPerformanceElement) {
+    console.warn('Elemento word-performance não encontrado');
+    return;
+  }
+  
+  // Pega a performance da palavra que acabou de ser clicada
+  const currentWordPerformance = getCurrentWordPerformance();
+  
+  // Adiciona ao array de performances
+  if (!window.allWordPerformances) {
+    window.allWordPerformances = [];
+  }
+  
+  window.allWordPerformances.push(currentWordPerformance);
+  
+  // Calcula a média acumulada
+  const accumulatedPerformance = window.allWordPerformances.reduce((sum, p) => sum + p, 0) / window.allWordPerformances.length;
+  
+  // Escolhe emoji baseado na performance acumulada
+  let emoji = '🧠'; // Padrão: bom
+  if (accumulatedPerformance < 70) emoji = '🐢'; // Lento
+  else if (accumulatedPerformance < 90) emoji = '🐌'; // Lento
+  else if (accumulatedPerformance < 95) emoji = '🎯'; // Médio
+  else if (accumulatedPerformance < 100) emoji = '🎉'; // Médio
+  else if (accumulatedPerformance < 105) emoji = '🏆'; // Médio
+  else if (accumulatedPerformance < 110) emoji = '⭐'; // Médio
+  else if (accumulatedPerformance < 120) emoji = '✈️'; // Médio
+  else if (accumulatedPerformance < 130) emoji = '🔥'; // Médio
+  else if (accumulatedPerformance > 135) emoji = '🚀'; // Excelente
+
+  // Define a cor baseada na performance acumulada
+  let color = '#4caf50'; // Verde (bom)
+  if (accumulatedPerformance < 80) color = '#ff9800'; // Laranja (médio)
+  if (accumulatedPerformance < 60) color = '#f44336'; // Vermelho (baixo)
+  if (accumulatedPerformance > 125) color = '#00e676'; // Verde brilhante (excelente)
+  
+  // Atualiza o display (percentual + emoji)
+  wordPerformanceElement.innerHTML = `
+    <span style="font-weight: bold; color: ${color};">
+      ${accumulatedPerformance.toFixed(1)}%
+    </span> ${emoji}
+  `;
+  
+  wordPerformanceElement.style.cssText = `
+    font-size: 16px;
+    text-align: center;
+    margin: 10px 0;
+    transition: color 0.3s ease;
+  `;
+  
+  console.log(`📊 Performance Palavra: ${currentWordPerformance.toFixed(1)}% | Acumulada: ${accumulatedPerformance.toFixed(1)}% (${window.allWordPerformances.length} palavras)`);
+}
+
+/**
+ * Retorna a próxima palavra esperada
+ */
+function getNextExpectedWord() {
+  const currentSegment = srtData[currentSegmentIndex];
+  if (!currentSegment) return null;
+  
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+  
+  const nextIndex = selectedWords.length;
+  
+  if (nextIndex >= correctWords.length) {
+    return null;
+  }
+  
+  return correctWords[nextIndex];
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Play --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Função específica para tocar linha no modo Play
+ */
+function playLineInPlayMode() {
+  if (!currentSegment) {
+    console.warn("⚠️ Nenhum segmento atual definido");
+    return;
+  }
+
+  const videoElement = document.getElementById("videoPlayer-play");
+  if (!videoElement || !videoElement.src) {
+    console.error("❌ Vídeo não carregado no modo Play");
+    return;
+  }
+
+  // Limpa qualquer timeout anterior
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+
+  // Pausa o vídeo se estiver tocando
+  if (!videoElement.paused) {
+    videoElement.pause();
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+
+  // Aguarda um frame antes de iniciar
+  requestAnimationFrame(() => {
+    videoElement.currentTime = startTime;
+    videoElement.play();
+
+    // Configura timeout para pausar no fim
+    stopTimeout = setTimeout(() => {
+      videoElement.pause();
+      stopTimeout = null;
+    }, (endTime - startTime) * 1000);
+  });
+}
+
+/**
+ * Aguarda a renderização completa e toca o áudio
+ */
+async function waitForRenderAndPlay() {
+  console.log("--- Aguardando renderização completa ---");
+  
+  // Aguarda um frame para garantir que o DOM foi atualizado
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  
+  // Verifica se o vídeo está pronto
+  const videoElement = document.getElementById("videoPlayer-play");
+  
+  if (!videoElement) {
+    console.error("❌ videoPlayer-play não encontrado");
+    return;
+  }
+  
+  // Se o vídeo não estiver pronto, aguarda
+  if (videoElement.readyState < 2) {
+    console.log("⏳ Aguardando vídeo carregar...");
+    await new Promise(resolve => {
+      videoElement.addEventListener('loadeddata', resolve, { once: true });
+    });
+  }
+  
+  console.log("✅ Renderização completa, tocando áudio...");
+  
+  // Agora sim, toca o trecho
+  playLineInPlayMode();
+}
+
+/**
+ * Embaralha um array (Fisher-Yates shuffle)
+ */
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * Injeta o primeiro trecho da SRT com palavras embaralhadas (ATUALIZADO)
+ */
+async function injectFirstSegmentShuffled() {
+  console.log("--- Injetando primeiro trecho embaralhado ---");
+  
+  // Reseta o índice e array de palavras
+  currentSegmentIndex = 0;
+  selectedWords = [];
+  
+  if (!srtData || srtData.length === 0) {
+    console.warn("⚠️ Nenhuma legenda carregada");
+    return;
+  }
+  
+  // Carrega o primeiro segmento (que já vai chamar playLine)
+  await loadNextSegment();
+}
+
+/**
+ * Move palavra para o container de frase
+ */
+function moveWordToPhrase(wordButton, word) {
+  console.log("Tentando mover palavra:", word);
+  
+  // Verifica se é a próxima palavra correta
+  if (!isNextWord(word)) {
+    console.log("❌ Palavra incorreta! Não é a próxima da sequência.");
+    
+    // Feedback visual de erro
+    wordButton.style.background = 'linear-gradient(to bottom, #ff5e91, #E91E63)';
+    setTimeout(() => {
+      wordButton.style.background = 'linear-gradient(to bottom, #6d28d9, #5b21b6)';
+    }, 300);
+	  
+    return;
+  }
+  
+  console.log("✅ Palavra correta! Movendo...");
+  
+  const fraseContainer = document.getElementById('frase');
+  
+  if (!fraseContainer) {
+    console.error("❌ Elemento 'frase' não encontrado");
+    return;
+  }
+  
+  // Para o timer da palavra anterior
+  stopWordTimer();
+
+  // SE FOR JOGO MULTIPLAYER
+    if (currentMatchId) {
+        // Apenas CHAMA O BLOCO FX de envio.
+        // Não move a palavra localmente!
+        // A atualização da UI virá pelo 'handleMatchUpdate' (Bloco de Escuta)
+        sendWordToMatch(word);
+
+    } else {
+		  selectedWords.push(word);
+		  wordButton.remove();
+		  
+		  const phraseButton = document.createElement('button');
+		  phraseButton.className = 'phrase-word-button';
+		  phraseButton.textContent = word;
+		  phraseButton.style.cssText = `
+		  	width: auto;
+		    color: #fff;
+		    padding: 0 10px;
+		    margin: 4px;
+		    background: transparent;
+		    border: none;
+		    border-radius: 8px;
+		    font-size: 16px;
+		    cursor: pointer;
+		    transition: all 0.3s ease;
+		    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+		  `;
+		  
+		  fraseContainer.appendChild(phraseButton);
+		  
+		  console.log("Frase atual:", selectedWords.join(' '));
+  
+      // Atualiza a performance acumulada
+      updateWordPerformance();
+  
+      // Inicia timer da próxima palavra
+      const nextWord = getNextExpectedWord();
+      if (nextWord) {
+        startWordTimer(nextWord);
+      }
+      
+    	// Verifica se a frase está completa
+    	checkIfPhraseComplete();
+	}
+}
+
+/**
+ * Verifica se a palavra clicada é a próxima correta da frase (ATUALIZADO PARA PALAVRAS DUPLICADAS)
+ */
+/**
+ * Verifica se a palavra clicada é a próxima correta da frase (LÓGICA DE POSIÇÃO ESTRITA)
+ */
+function isNextWord(word) {
+  // Pega o segmento atual
+  const currentSegment = srtData[currentSegmentIndex];
+  
+  // Pega a frase correta, dividida em palavras (equivale ao 'palavrasOriginais' do seu exemplo)
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+  
+  // O número de palavras já selecionadas é o índice da próxima palavra correta
+  // (equivale ao 'indiceAtual' do seu exemplo)
+  const nextIndex = selectedWords.length;
+  
+  // Se a frase já foi completada, não aceite mais palavras
+  if (nextIndex >= correctWords.length) {
+    return false;
+  }
+  
+  // Pega a próxima palavra esperada na ordem correta (equivale ao 'palavraEsperada')
+  const palavraEsperada = correctWords[nextIndex];
+  
+  // Compara a palavra clicada ('word') com a palavra esperada na posição exata
+  return word === palavraEsperada;
+}
+
+/**
+ * Verifica se a frase está completa e mostra a próxima (ATUALIZADA PARA ASYNC)
+ */
+function checkIfPhraseComplete() {
+  // NOVO: Trava para modo multiplayer
+  if (currentMatchId) {
+      // Em multiplayer, o servidor é a fonte da verdade.
+      // A lógica de avanço está em 'sendWordToMatch' e 'handleMatchUpdate'.
+      return; 
+  }
+
+  // Lógica antiga (Modo Solo)
+  const currentSegment = srtData[currentSegmentIndex];
+  
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+  
+  if (selectedWords.length === correctWords.length) {
+    console.log("🎉 Frase completa!");
+    
+    // Última atualização da performance (mostra resultado final)
+    updatePerformanceDisplay();
+    
+    setTimeout(async () => {
+      currentSegmentIndex++;
+      
+      if (currentSegmentIndex < srtData.length) {
+        console.log(`Carregando segmento ${currentSegmentIndex + 1}...`);
+        await loadNextSegment();
+      } else {
+        console.log("🏆 Todas as frases completadas!");
+        showCompletionMessage();
+      }
+    }, 1000);
+  }
+}
+
+/**
+ * Carrega o próximo segmento (ATUALIZADO COM VERIFICAÇÃO ROBUSTA)
+ */
+async function loadNextSegment() {
+  // Limpa o array de palavras selecionadas
+  selectedWords = [];
+  
+  // Para qualquer timer anterior
+  stopWordTimer();
+  
+  // Pega o próximo segmento
+  const nextSegment = srtData[currentSegmentIndex];
+  console.log("Próximo trecho:", nextSegment);
+  
+  // Define como segmento atual (para playLine funcionar)
+  currentSegment = nextSegment;
+  
+  // Encontra os containers
+  const palavrasContainer = document.getElementById('palavras');
+  const fraseContainer = document.getElementById('frase');
+  
+  if (!palavrasContainer || !fraseContainer) {
+    console.error("❌ Containers não encontrados");
+    return;
+  }
+  
+  // Limpa os containers
+  palavrasContainer.innerHTML = '';
+  fraseContainer.innerHTML = '';
+  
+  // Separa o texto em palavras
+  const words = nextSegment.text
+    .split(/\s+/)
+    .filter(word => word.trim().length > 0);
+  
+  // Embaralha as palavras
+  const shuffledWords = shuffleArray(words);
+  console.log("Palavras embaralhadas:", shuffledWords);
+  
+  // Cria botões para cada palavra
+  shuffledWords.forEach((word) => {
+    const wordButton = document.createElement('button');
+    wordButton.className = 'word-button';
+    wordButton.textContent = word;
+    wordButton.style.cssText = `      
+      width: auto;
+      color: #fff;
+      padding: 0 10px;
+      margin: 4px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(109, 40, 217, 0.3);
+    `;
+    
+    // Efeitos hover
+    wordButton.onmouseenter = () => {
+      wordButton.style.transform = 'translateY(-2px)';
+      wordButton.style.boxShadow = '0 4px 12px rgba(109, 40, 217, 0.5)';
+    };
+    
+    wordButton.onmouseleave = () => {
+      wordButton.style.transform = 'translateY(0)';
+      wordButton.style.boxShadow = '0 2px 8px rgba(109, 40, 217, 0.3)';
+    };
+    
+    // Ação ao clicar
+    wordButton.onclick = () => {
+      moveWordToPhrase(wordButton, word);
+    };
+    
+    palavrasContainer.appendChild(wordButton);
+  });
+  
+  // Atualiza o progresso
+  updateProgress();
+  
+  console.log(`✅ Segmento ${currentSegmentIndex + 1} carregado`);
+  
+  // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR (ROBUSTA)
+  await waitForRenderAndPlay();
+  
+  // ⏱️ INICIA O CRONÔMETRO DA PRIMEIRA PALAVRA
+  const firstWord = words[0];
+  if (firstWord) {
+    startWordTimer(firstWord);
+  }
+}
+
+/**
+ * Atualiza o display de progresso
+ */
+function updateProgress() {
+  const progressElement = document.getElementById('progresso');
+  
+  if (progressElement) {
+    progressElement.textContent = `Progresso: ${currentSegmentIndex + 1} de ${srtData.length}`;
+  }
+}
+
+/**
+ * Mostra mensagem de conclusão
+ */
+function showCompletionMessage() {
+  const fraseContainer = document.getElementById('frase');
+  const palavrasContainer = document.getElementById('palavras');
+  
+  if (fraseContainer) {
+    fraseContainer.innerHTML = '<h2 style="color: #4caf50;">🏆 Parabéns! Você completou todas as frases!</h2>';
+  }
+  
+  if (palavrasContainer) {
+    palavrasContainer.innerHTML = '';
+  }
+}
+
+// ✅ Função utilitária
+function onClick(id, handler) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.warn(`Elemento com id="${id}" não encontrado.`);
+    return;
+  }
+  el.addEventListener('click', handler);
+}
+
+// ✅ Uso simples e limpo
+
+// Botão "Tocar Trecho" - Repete o áudio do segmento atual
+onClick('repetir', () => {
+  playLineInPlayMode();
+  console.log('Tradução iniciada (placeholder)');
+});
+
+// ➕ Adicionar quantos forem necessário
+// onClick('outro-botao', outraFuncao);
+
+/**
+ * Botão "Tocar Lento" - Toca em velocidade reduzida
+ */
+
+
+/**
+ * Botão "Traduzir" - Mostra a frase completa (placeholder)
+ */
+
+
+/**
+ * Botão "Passar" - Pula para o próximo segmento
+ */
+    
+/**
+ * Função CORRIGIDA para iniciar o modo solo
+ */
+function startSoloMode() {
+  console.log("=== INÍCIO startSoloMode() ===");
+  
+  // 🔥 CRÍTICO: Limpa variáveis de multiplayer
+  currentMatchId = null;
+  playerRole = null;
+  currentLessonForMatch = null; // Opcional, mas recomendado
+  
+  // Reseta o acumulador de performances (se usar)
+  if (window.allWordPerformances) {
+    window.allWordPerformances = [];
+  }
+  
+  // IMPORTANTE: Esconde o footer ANTES de mudar de seção
+  hideFooter();
+  
+  // IMPORTANTE: Muda para a seção play ANTES de injetar
+  showSection('play');
+  
+  // Aguarda um frame para garantir que a seção está ativa
+  requestAnimationFrame(() => {
+    // Agora injeta o primeiro trecho
+    injectFirstSegmentShuffled();
+  });
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Multiplayer (Criação de Partida) ---
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Cria uma nova partida no servidor Appwrite.
+ * Esta função é chamada internamente por startMultiMode().
+ */
+async function createMatchOnServer() {
+    console.log("--- Iniciando criação de partida ---");
+    
+    if (!currentLessonForMatch) {
+        throw new Error("Nenhuma lição selecionada para o desafio.");
+    }
+
+    // 1. Obter o ID do Host (usuário logado)
+    let host;
+    try {
+        host = await account.get();
+    } catch (error) {
+        console.error("Erro ao buscar usuário:", error);
+        alert("Você precisa estar logado para criar um desafio.");
+        showSection('login-screen');
+        return null;
+    }
+
+    const hostId = host.$id;
+
+    // 2. Preparar os dados da partida
+    const lessonName = currentLessonForMatch.baseName; // ✅ CORRIGIDO
+    const thumbFileId = currentLessonForMatch.thumb.fileId; // ✅ CORRIGIDO
+
+    const matchData = {
+        hostId: hostId,
+        lessonName: lessonName,
+        thumbFileId: thumbFileId,
+        status: "waiting",
+        currentSentenceIndex: 0,
+        currentSentenceWords: "",
+        hostPerformance: 100,
+        opponentPerformance: 100
+    };
+
+    // 3. Criar o documento no Appwrite
+    try {
+        console.log("Enviando dados para criar partida:", matchData);
+        const newMatch = await databases.createDocument(
+            DATABASE_ID,
+            MATCHES_COLLECTION_ID,
+            ID.unique(),
+            matchData
+        );
+
+        console.log("✅ Partida criada com sucesso:", newMatch);
+        return newMatch;
+
+    } catch (error) {
+        console.error("❌ Erro ao criar documento da partida:", error);
+        const message = error?.message ?? "Erro desconhecido";
+        const code = error?.code ? " (código " + error.code + ")" : "";
+        alert("Falha ao criar a partida no servidor: " + message + code);
+        return null;
+    }
+}
+
+/**
+ * (VERSÃO ATUALIZADA) Inicia o modo multi, cria a partida e entra no lobby.
+ */
+async function startMultiMode() {
+  console.log("=== INÍCIO startMultiMode() ===");
+  showLoading("Criando partida...");
+
+  try {
+    // Excluir partidas antigas do host antes de criar uma nova
+    await deleteExistingMatchesOfHost();
+    
+    const match = await createMatchOnServer();
+
+    if (match) {
+        currentMatchId = match.$id;
+        playerRole = 'host'; // Define papel do jogador
+        
+        const lobby = document.getElementById('lobby');
+        if (lobby) lobby.style.display = 'block';
+        
+        showSection('challenge');
+        
+        console.log(`--- Host aguardando oponente na partida: ${currentMatchId} ---`);
+        
+        subscribeToMatch(currentMatchId);
+		subscribeToMatchUpdates(currentMatchId);
+    }
+  } catch (error) {
+    console.error("❌ Falha ao iniciar modo multi:", error);
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
+}
+	
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Listar Partidas Multiplayer do Appwrite ---
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Lista todas as partidas com status "waiting" do Appwrite
+ */
+async function listWaitingMatches() {
+  console.log("--- Listando partidas aguardando oponente ---");
+  
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      MATCHES_COLLECTION_ID,
+      [
+        // Filtra apenas partidas com status "waiting"
+        // Nota: Você precisa criar um índice no Appwrite para o campo 'status'
+        // Vá em Database > Matches Collection > Indexes > Create Index
+        // Key: status, Type: key, Order: ASC
+      ]
+    );
+    
+    // Filtra manualmente se não tiver índice criado ainda
+    const waitingMatches = response.documents.filter(match => match.status === 'waiting');
+    
+    console.log(`✅ ${waitingMatches.length} partidas encontradas`);
+    return waitingMatches;
+    
+  } catch (error) {
+    console.error("❌ Erro ao listar partidas:", error);
+    throw error;
+  }
+}
+
+/**
+ * Renderiza as partidas no container multi-post-container
+ */
+function renderMatchesList(matches) {
+  console.log("--- Renderizando lista de partidas ---");
+  console.log("Total de partidas:", matches.length);
+  
+  const container = document.getElementById('multi-post-container');
+  
+  if (!container) {
+    console.error('Container multi-post-container não encontrado');
+    return;
+  }
+  
+  // Limpa o container
+  container.innerHTML = '';
+  
+  if (matches.length === 0) {
+    container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma partida disponível no momento.</p>';
+    return;
+  }
+  
+  // Cria um card para cada partida
+  matches.forEach((match, index) => {
+    console.log(`[${index + 1}] Partida:`, {
+      id: match.$id,
+      lessonName: match.lessonName,
+      hostId: match.hostId,
+      thumbFileId: match.thumbFileId
+    });
+    
+    // Gera a URL da thumbnail usando o thumbFileId
+    const thumbnailUrl = getBackblazePublicUrl(match.thumbFileId);
+    
+    // Cria o wrapper do post
+    const postWrapper = document.createElement('div');
+    postWrapper.className = 'post-item';
+    postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
+    postWrapper.onclick = () => joinMatch(match);
+    
+    // Cria a thumb-section
+    const thumbSection = document.createElement('div');
+    thumbSection.className = 'thumb-section';
+    thumbSection.innerHTML = `
+      <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+    `;
+    
+    // Cria a info-content
+    const infoContent = document.createElement('div');
+    infoContent.className = 'info-content';
+    infoContent.innerHTML = `
+      <div class="channel-pic">
+        <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+      </div>
+      
+      <div class="video-text">
+        <h3 class="video-title" style="cursor: pointer;">${match.lessonName}</h3>
+        <div class="video-meta">
+          <span class="channel-name">Aguardando oponente</span>
+          <span class="performance" style="color: #ffa94d;">🎮 Entrar</span>
+          <span class="video-edit" style="cursor: pointer; color: #6d28d9; font-weight: bold; opacity: 0.5;">ID: ${match.$id.substring(0, 8)}</span>
+        </div>
+      </div>
+    `;
+    
+    // Monta o post completo
+    postWrapper.appendChild(thumbSection);
+    postWrapper.appendChild(infoContent);
+    
+    // Adiciona ao container
+    container.appendChild(postWrapper);
+  });
+  
+  console.log(`✅ ${matches.length} partidas renderizadas`);
+  console.log("--- Fim da renderização ---");
+}
+
+/**
+ * Função chamada quando o usuário clica em uma partida para entrar.
+ * AGORA VAI DIRETO PARA O JOGO, PULANDO O PREVIEW.
+*/
+async function joinMatch(match) {
+  console.log("=== Entrando direto na partida ===");
+  console.log("Partida selecionada:", match);
+  
+  window.isJoiningMatch = true;
+  
+  try {
+    showLoading('Entrando na partida...');
+    
+    const fullLesson = lessonsCache.find(l => l.baseName === match.lessonName);
+    if (!fullLesson) {
+      throw new Error(`Lição "${match.lessonName}" não encontrada no cache.`);
+    }
+
+    const cached = await getLessonFromDB(fullLesson.baseName);
+    const currentTimestamp = fullLesson.video?.uploadTimestamp || Date.now();
+
+    if (cached && cached.timestamp === currentTimestamp) {
+      console.log("Usando dados da lição do cache (IndexedDB)");
+      const videoUrl = URL.createObjectURL(cached.videoBlob);
+      appState.video.url = videoUrl;
+      updateAllVideos(videoUrl);
+      parseSRT(cached.srtText);
+    } else {
+      console.log("Baixando dados da lição...");
+      const videoUrl = getBackblazePublicUrl(fullLesson.video.fileId);
+      const srtUrl = getBackblazePublicUrl(fullLesson.srt.fileId);
+
+      const [videoBlob, srtText] = await Promise.all([
+        fetch(videoUrl).then(r => r.blob()),
+        fetch(srtUrl).then(r => r.text()),
+      ]);
+
+      const localVideoUrl = URL.createObjectURL(videoBlob);
+      appState.video.url = localVideoUrl;
+      updateAllVideos(localVideoUrl);
+      parseSRT(srtText);
+      await saveLessonToDB({ baseName: fullLesson.baseName, timestamp: currentTimestamp, videoBlob, srtText, thumbBlob: videoBlob });
+    }
+    console.log("✅ Dados da lição carregados.");
+
+    const opponent = await account.get();
+    const opponentId = opponent.$id;
+    
+    const updatedMatch = await databases.updateDocument(
+      DATABASE_ID,
+      MATCHES_COLLECTION_ID,
+      match.$id,
+      {
+        opponentId: opponentId,
+        status: 'playing',
+        currentPlayerId: opponentId
+      }
+    );
+    
+    console.log("✅ Partida atualizada para 'playing':", updatedMatch);
+    
+    currentMatchId = match.$id; // Agora define o ID da partida
+    playerRole = 'opponent'; // Define papel do jogador
+    
+    // IMPORTANTE: Opponent também precisa escutar a partida
+    subscribeToMatch(currentMatchId);
+    
+    startSoloMode();
+	subscribeToMatchUpdates(currentMatchId); //
+    
+    hideLoading();
+    
+  } catch (error) {
+    console.error("❌ Erro ao entrar na partida:", error);
+    hideLoading();
+    alert("Erro ao entrar na partida: " + error.message);
+  } finally {
+    window.isJoiningMatch = false;
+  }
+}
+
+/**
+ * Confirma a entrada na partida após o preview
+ * Esta função deve ser chamada quando o usuário clicar em "Desafiar" no preview-footer
+ */
+async function confirmJoinMatch() {
+  console.log("=== Confirmando entrada na partida ===");
+  
+  // Ativa o modo preview multi (esconde botões Solo/Desafiar)
+  showPreviewModeMulti = true;
+
+  // Verifica se há uma partida pendente
+  if (!window.pendingMatch) {
+    console.error("❌ Nenhuma partida pendente encontrada");
+    alert("Erro: Nenhuma partida selecionada.");
+    return;
+  }
+  
+  const match = window.pendingMatch;
+  
+  try {
+    showLoading('Entrando na partida...');
+    
+    // 1. Obtém o ID do oponente novamente (por segurança)
+    const opponent = await account.get();
+    const opponentId = opponent.$id;
+    
+    // 2. Atualiza o documento da partida para adicionar o oponente
+    const updatedMatch = await databases.updateDocument(
+      DATABASE_ID,
+      MATCHES_COLLECTION_ID,
+      match.$id,
+      {
+        opponentId: opponentId,
+        status: 'playing'
+      }
+    );
+    
+    console.log("✅ Partida atualizada:", updatedMatch);
+    
+    // 3. Guarda o ID da partida
+    currentMatchId = match.$id;
+    
+    // 4. Limpa a partida pendente
+    window.pendingMatch = null;
+    
+    // 5. Inicia o modo de jogo
+    startSoloMode(); // Por enquanto usa o modo solo (você adaptará para multiplayer depois)
+    
+    hideLoading();
+    
+  } catch (error) {
+    console.error("❌ Erro ao entrar na partida:", error);
+    hideLoading();
+    alert("Erro ao entrar na partida: " + error.message);
+  }
+}
+
+/**
+ * Carrega e exibe as partidas disponíveis
+ */
+async function loadAndDisplayMatches() {
+  console.log("=== INÍCIO loadAndDisplayMatches() ===");
+  
+  try {
+    showLoading('Carregando partidas...');
+    
+    // Excluir partidas antigas do host antes de criar uma nova
+    await deleteExistingMatchesOfHost();
+    
+    // 1. Lista as partidas do Appwrite
+    const matches = await listWaitingMatches();
+    
+    // 2. Renderiza na página
+    renderMatchesList(matches);
+    
+    hideLoading();
+    showSection('challenge');
+    return matches;
+    
+  } catch (error) {
+    console.error("❌ ERRO em loadAndDisplayMatches():", error);
+    hideLoading();
+    
+    const container = document.getElementById('multi-post-container');
+    if (container) {
+      container.innerHTML = `
+        <p style="color: #ff6b6b; text-align: center; padding: 20px;">
+          ❌ Erro ao carregar partidas: ${error.message}
+        </p>
+      `;
+    }
+    
+    throw error;
+  } finally {
+    console.log("=== FIM loadAndDisplayMatches() ===");
+  }
+}
+
+/**
+* Deleta uma partida existente no servidor Appwrite pelo ID
+*/
+async function deleteMatchOnServer(matchId) {
+  try {
+    console.log("Deletando partida existente no servidor, ID:", matchId);
+    await databases.deleteDocument(DATABASE_ID, MATCHES_COLLECTION_ID, matchId);
+    console.log("Partida deletada com sucesso:", matchId);
+
+    // (NOVO) Para de "escutar" o canal, pois a partida não existe mais
+    if (unsubscribeMatch) {
+        console.log("Fechando canal de escuta (Realtime).");
+        unsubscribeMatch();
+        unsubscribeMatch = null;
+    }
+
+  } catch (error) {
+    console.error("Erro ao deletar partida:", error);
+  }
+}
+
+/**
+ * Função para limpar todas as partidas criadas pelo usuário antes de criar nova
+ * Faz uma busca por partidas do host atual com status 'waiting' e as deleta
+ */
+async function deleteExistingMatchesOfHost() {
+  try {
+    const host = await account.get();
+    const hostId = host.$id;
+
+    // 1. Buscar TODAS as partidas criadas pelo host (que tenham índice 'hostId')
+    //    (Assumindo que você tenha um índice para 'hostId')
+    const response = await databases.listDocuments(DATABASE_ID, MATCHES_COLLECTION_ID, [
+      Appwrite.Query.equal('hostId', hostId)
+      // Removido: Appwrite.Query.equal('status', 'waiting') para evitar erro de índice composto
+    ]);
+
+    // 2. Filtrar manualmente as partidas "abandonadas" (status 'waiting')
+    const matchesToDelete = response.documents.filter(match => match.status === 'waiting');
+
+    // 3. Deletar as partidas encontradas
+    for (const match of matchesToDelete) {
+      await deleteMatchOnServer(match.$id);
+    }
+
+    if (matchesToDelete.length > 0) {
+      console.log(`Foram deletadas ${matchesToDelete.length} partidas antigas do host.`);
+    } else {
+      console.log("Nenhuma partida antiga encontrada para deletar.");
+    }
+  } catch (error) {
+    console.error("Erro ao deletar partidas antigas do host:", error);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Partida em Andamento --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Host começa a "escutar" a partida em tempo real
+ */
+/**
+ * Ambos os jogadores começam a "escutar" a partida em tempo real
+ */
+function subscribeToMatch(matchId) {
+    console.log(`[${playerRole}] Escutando a partida: ${matchId}`);
+
+    // Limpa qualquer escuta anterior para evitar duplicatas
+    if (unsubscribeMatch) {
+        unsubscribeMatch();
+        unsubscribeMatch = null;
+    }
+
+    // Define o "canal" exato que queremos ouvir
+    const channel = `databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}`;
+
+    // Inicia a inscrição
+    unsubscribeMatch = client.subscribe(channel, (response) => {
+        console.log(`[${playerRole}] [Realtime] Evento recebido:`, response);
+
+        const newStatus = response.payload.status;
+
+        // HOST: Espera oponente entrar
+        if (playerRole === 'host' && newStatus === 'playing') {
+            console.log("✅ Oponente entrou! Iniciando partida para o Host...");
+            startHostGame();
+        }
+        
+        // AMBOS: Se alguém saiu da partida
+        if (newStatus === 'left') {
+            console.log(`⚠️ [${playerRole}] Outro jogador saiu da partida`);
+            
+            // Cancela a escuta
+            if (unsubscribeMatch) {
+                unsubscribeMatch();
+                unsubscribeMatch = null;
+            }
+            
+            // Deleta a partida (já que é o segundo a sair)
+            deleteMatchOnServer(matchId).then(() => {
+                // Redireciona para home
+                alert('O outro jogador saiu da partida.');
+                showFooter();
+                showSection('home');
+                
+                // Limpa variáveis
+                currentMatchId = null;
+                playerRole = null;
+                currentLessonForMatch = null;
+            });
+        }
+    });
+}
+
+/**
+ * (NOVO) Inicia o jogo para o Host (chamado pelo Realtime)
+*/
+// Substitua a função startHostGame() completa (linha ~1244)
+async function startHostGame() {
+    if (!currentLessonForMatch) {
+        console.error("Host não sabe qual lição carregar (currentLessonForMatch está nulo)");
+        return;
+    }
+    
+    showLoading("Oponente encontrado! Carregando...");
+
+    try {
+        const lesson = currentLessonForMatch;
+        const cached = await getLessonFromDB(lesson.baseName);
+        const currentTimestamp = lesson.video?.uploadTimestamp || Date.now();
+
+        if (cached && cached.timestamp === currentTimestamp) {
+            console.log("[Host] Usando dados da lição do cache (IndexedDB)");
+            const videoUrl = URL.createObjectURL(cached.videoBlob);
+            appState.video.url = videoUrl;
+            updateAllVideos(videoUrl);
+            parseSRT(cached.srtText);
+        } else {
+            console.log("[Host] Baixando dados da lição...");
+            const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+            const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
+
+            const [videoBlob, srtText] = await Promise.all([
+                fetch(videoUrl).then(r => r.blob()),
+                fetch(srtUrl).then(r => r.text()),
+            ]);
+
+            const localVideoUrl = URL.createObjectURL(videoBlob);
+            appState.video.url = localVideoUrl;
+            updateAllVideos(localVideoUrl);
+            parseSRT(srtText);
+            
+            const thumbBlob = await fetch(getBackblazePublicUrl(lesson.thumb.fileId)).then(r => r.blob());
+            await saveLessonToDB({ baseName: lesson.baseName, timestamp: currentTimestamp, videoBlob, srtText, thumbBlob });
+        }
+        console.log("[Host] ✅ Dados da lição carregados.");
+
+        playerRole = 'host'; // Garante que o papel está definido
+        startSoloMode();
+        
+        hideLoading();
+
+    } catch (error) {
+        console.error("❌ Erro ao iniciar jogo do Host:", error);
+        hideLoading();
+        alert("Erro ao carregar os dados da partida: " + error.message);
+    }
+}
+
+/**
+ * Lida com a saída de um jogador da partida em andamento
+ */
+async function handlePlayerLeavingMatch() {
+  if (!currentMatchId || !playerRole) {
+    console.log("Nenhuma partida ativa para processar saída");
+    return;
+  }
+
+  console.log(`[${playerRole}] Saindo da partida: ${currentMatchId}`);
+  
+  try {
+    // Busca o estado atual da partida
+    const match = await databases.getDocument(
+      DATABASE_ID,
+      MATCHES_COLLECTION_ID,
+      currentMatchId
+    );
+    
+    if (match.status === 'left') {
+      // Segundo jogador a sair - DELETA a partida
+      console.log("Segundo jogador saindo - Deletando partida");
+      await deleteMatchOnServer(currentMatchId);
+      
+    } else if (match.status === 'playing') {
+      // Primeiro jogador a sair - Atualiza status para 'left'
+      console.log("Primeiro jogador saindo - Atualizando status para 'left'");
+      await databases.updateDocument(
+        DATABASE_ID,
+        MATCHES_COLLECTION_ID,
+        currentMatchId,
+        {
+          status: 'left'
+        }
+      );
+    }
+    
+  } catch (error) {
+    console.error("Erro ao processar saída da partida:", error);
+  } finally {
+    // Limpa variáveis locais
+    currentMatchId = null;
+    playerRole = null;
+    currentLessonForMatch = null;
+  }
+}
+
+	/**
+ * (NOVO BLOCO FX) Inscreve-se para TODAS as atualizações da partida (lobby e jogo).
+ */
+function subscribeToMatchUpdates(matchId) {
+    console.log(`[Realtime] Escutando partida: ${matchId}`);
+
+    // Limpa qualquer escuta anterior
+    if (unsubscribeMatch) {
+        unsubscribeMatch();
+        unsubscribeMatch = null;
+    }
+
+    const channel = `databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}`;
+
+    unsubscribeMatch = client.subscribe(channel, (response) => {
+        console.log("[Realtime] Evento recebido:", response.payload);
+        
+        // Chama o handler central para processar a atualização
+        handleMatchUpdate(response.payload);
+    });
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Atualiza dados da partida --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * (BLOCO FX ATUALIZADO) Processa as atualizações recebidas da partida.
+ * AGORA REAGE AO AVANÇO DE SENTENÇA.
+ */
+async function handleMatchUpdate(payload) {
+    // 1. Oponente entrou (Lógica do Host no Lobby)
+    if (appState.currentSection === 'challenge' && payload.status === 'playing') {
+        console.log("✅ Oponente entrou! Iniciando partida para o Host...");
+        startHostGame(); 
+        return; 
+    }
+
+    // 2. Lógica de Jogo (Atualização de palavras e turnos)
+    if (appState.currentSection === 'play') {
+
+        // 2a. JOGO TERMINOU
+        if (payload.status === 'finished') {
+            console.log("🏆 Jogo terminado!");
+            showCompletionMessage(); // Mostra msg de parabéns
+            if (unsubscribeMatch) unsubscribeMatch(); // Para de escutar
+            currentMatchId = null; // Finaliza a partida local
+            return;
+        }
+
+        // 2b. OPONENTE SAIU
+        if (payload.status === 'left') {
+            alert("O oponente saiu da partida.");
+            handlePlayerLeavingMatch(); // Limpa a partida
+            showSection('home');
+            return;
+        }
+
+        // 2c. ATUALIZAÇÃO NORMAL DE JOGO (playing)
+        
+        // A. Verifica se a SENTENÇA AVANÇOU
+        if (payload.currentSentenceIndex > currentSegmentIndex) {
+            console.log("Servidor avançou a sentença. Carregando próximo segmento...");
+            currentSegmentIndex = payload.currentSentenceIndex; // Sincroniza índice local
+            
+            // loadNextSegment limpa a frase, os botões e carrega o novo segmento
+            await loadNextSegment(); 
+        
+        } else {
+            // B. Foi apenas uma ATUALIZAÇÃO DE PALAVRA
+            const fraseContainer = document.getElementById('frase');
+            const palavras = payload.currentSentenceWords ? payload.currentSentenceWords.split(' ').filter(p => p) : [];
+            
+            // Recria a frase
+            fraseContainer.innerHTML = '';
+            palavras.forEach(word => {
+                const phraseButton = document.createElement('button');
+                phraseButton.className = 'phrase-word-button';
+                phraseButton.textContent = word;
+                // (Adicione seu estilo CSS aqui se necessário)
+                phraseButton.style.cssText = `
+                    width: auto; color: #fff; padding: 0 10px; margin: 4px; 
+                    background: transparent; border: none; border-radius: 8px; 
+                    font-size: 16px; cursor: pointer; transition: all 0.3s ease; 
+                    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+                `;
+                fraseContainer.appendChild(phraseButton);
+            });
+            
+            // Atualiza estado local
+            selectedWords = palavras;
+
+            // Remove o botão usado da lista de escolhas
+            if (palavras.length > 0) {
+                const lastWordUsed = palavras[palavras.length - 1];
+                const wordButtons = document.querySelectorAll('#palavras .word-button');
+                for (const btn of wordButtons) {
+                    // ATENÇÃO: Se houver palavras duplicadas, isso pode remover a errada.
+                    // Uma lógica mais robusta usaria IDs únicos por botão.
+                    // Mas para a maioria dos casos, isso funciona:
+                    if (btn.textContent === lastWordUsed) {
+                        btn.remove();
+                        break; // Remove apenas o primeiro que encontrar
+                    }
+                }
+            }
+        }
+        
+        // C. Lógica de TURNOS (Roda em ambos os casos: avanço ou palavra)
+        const myId = (await account.get()).$id;
+        const palavrasContainer = document.getElementById('palavras');
+        
+        if (payload.currentPlayerId === myId) {
+            console.log("É a minha vez!");
+            palavrasContainer.style.opacity = 1;
+            palavrasContainer.style.pointerEvents = 'auto';
+        } else {
+            console.log("Aguardando oponente...");
+            palavrasContainer.style.opacity = 0.5;
+            palavrasContainer.style.pointerEvents = 'none';
+        }
+    } // ← FIM DO IF (appState.currentSection === 'play')
+    
+    // D. Atualiza a PERFORMANCE DO OPONENTE na UI (SEMPRE, independente da seção)
+    const opponentPerformanceElement = document.getElementById('opponent-performance');
+    if (opponentPerformanceElement && playerRole) {
+        const opponentPerf = playerRole === 'host' ? payload.opponentPerformance : payload.hostPerformance;
+        
+        if (opponentPerf !== undefined) {
+            // Escolhe emoji baseado na performance do oponente
+            let emoji = '🧠'; // Padrão
+            if (opponentPerf < 70) emoji = '🐢';
+            else if (opponentPerf < 90) emoji = '🐌';
+            else if (opponentPerf < 95) emoji = '🎯';
+            else if (opponentPerf < 100) emoji = '🎉';
+            else if (opponentPerf < 105) emoji = '🏆';
+            else if (opponentPerf < 110) emoji = '⭐';
+            else if (opponentPerf < 120) emoji = '✈️';
+            else if (opponentPerf < 130) emoji = '🔥';
+            else if (opponentPerf > 135) emoji = '🚀';
+            
+            // Define a cor
+            let color = '#4caf50';
+            if (opponentPerf < 80) color = '#ff9800';
+            if (opponentPerf < 60) color = '#f44336';
+            if (opponentPerf > 125) color = '#00e676';
+            
+            opponentPerformanceElement.innerHTML = `
+                <span style="font-weight: bold; color: ${color};">
+                    ${opponentPerf.toFixed(1)}%
+                </span> ${emoji}
+            `;
+        }
+    }
+}
+  
+/**
+ * (BLOCO FX ATUALIZADO) Envia a palavra selecionada, passa o turno E ENVIA A PERFORMANCE.
+ * AGORA VERIFICA SE A FRASE FOI CONCLUÍDA.
+ */
+async function sendWordToMatch(word) {
+    if (!currentMatchId) return; // Não é jogo multi
+
+    console.log(`Enviando palavra: ${word}`);
+    showLoading('Enviando...'); // Feedback
+    
+    try {
+        // 1. Pega o estado ATUAL da partida
+        const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+        const myId = (await account.get()).$id;
+
+        // 2. Segurança: Verifica se é realmente meu turno
+        if (match.currentPlayerId !== myId) {
+            console.warn("Não é meu turno!");
+            hideLoading();
+            return;
+        }
+
+        // 3. CAPTURA A PERFORMANCE DA PALAVRA ATUAL
+        const currentWordPerformance = getCurrentWordPerformance();
+        console.log(`📊 Performance da palavra "${word}": ${currentWordPerformance.toFixed(1)}%`);
+
+        // 4. Monta os novos dados
+        const newWords = (match.currentSentenceWords ? match.currentSentenceWords + " " : "") + word;
+        
+        // 5. Pega a frase correta localmente
+        const correctSegment = srtData[match.currentSentenceIndex];
+        const correctWords = correctSegment.text.split(/\s+/).filter(w => w.trim().length > 0);
+
+        // 6. Determina qual campo de performance atualizar (host ou opponent)
+        const performanceField = (playerRole === 'host') ? 'hostPerformance' : 'opponentPerformance';
+        
+        // 7. Calcula a PERFORMANCE ACUMULADA
+        // Pega a performance acumulada existente no servidor
+        const currentAccumulatedPerformance = match[performanceField] || 100;
+        
+        // Adiciona a performance da palavra ao array local (para calcular média)
+        if (!window.allWordPerformances) {
+            window.allWordPerformances = [];
+        }
+        window.allWordPerformances.push(currentWordPerformance);
+        
+        // Calcula a nova performance acumulada (média de todas as palavras)
+        const newAccumulatedPerformance = window.allWordPerformances.reduce((sum, p) => sum + p, 0) / window.allWordPerformances.length;
+        
+        console.log(`📈 Performance acumulada atualizada: ${newAccumulatedPerformance.toFixed(1)}% (${window.allWordPerformances.length} palavras)`);
+
+        // 8. Prepara o payload de atualização
+        let updatePayload = {
+            [performanceField]: newAccumulatedPerformance // Atualiza a performance acumulada
+        };
+
+        // 9. Verifica se a frase está completa
+        if (newWords.split(' ').length === correctWords.length) {
+            // === FRASE COMPLETA ===
+            console.log("Frase completa! Avançando para o próximo índice.");
+            
+            // Verifica se o jogo terminou
+            if (match.currentSentenceIndex + 1 >= srtData.length) {
+                // JOGO TERMINOU
+                updatePayload = {
+                    ...updatePayload, // Mantém a performance
+                    status: 'finished', // Sinaliza fim de jogo
+                    currentSentenceWords: newWords // Envia a última frase completa
+                };
+            } else {
+                // PRÓXIMA FRASE
+                updatePayload = {
+                    ...updatePayload, // Mantém a performance
+                    currentSentenceWords: "", // Reseta as palavras
+                    currentSentenceIndex: match.currentSentenceIndex + 1, // Avança o índice
+                    // O oponente (ou quem não jogou por último) começa a próxima
+                    currentPlayerId: match.opponentId === myId ? match.hostId : match.opponentId 
+                };
+            }
+
+        } else {
+            // === FRASE INCOMPLETA ===
+            console.log("Palavra enviada, passando o turno.");
+            // Passa o turno para o outro jogador
+            const nextPlayerId = (myId === match.hostId) ? match.opponentId : match.hostId;
+            updatePayload = {
+                ...updatePayload, // Mantém a performance
+                currentSentenceWords: newWords,
+                currentPlayerId: nextPlayerId
+            };
+        }
+
+        // 10. Atualiza o documento no servidor
+        await databases.updateDocument(
+            DATABASE_ID,
+            MATCHES_COLLECTION_ID,
+            currentMatchId,
+            updatePayload // Envia o payload com a performance
+        );
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error("Erro ao enviar jogada:", error);
+        hideLoading();
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Inicializar --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+async function init() {
+  checkAuthStatus();
+  endCreateMode();
+  
+  // Carrega o cache ANTES de mostrar qualquer seção
+  await loadLessonsToCache();
+  
+  // Agora mostra a home com as thumbnails já carregadas
+  showSection('home');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	init();
+});
+</script>
+</body>
+</html>
