@@ -1,7 +1,7 @@
 <!-- 
-atualiza a performance 
-acumulada para 
-os 2 jogadores -->
+envia o host (desafiador) para play 
+, mas o oponnent (desafiado) nao
+-->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -853,7 +853,7 @@ label input[type="checkbox"] {
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
     <a href="#" id="preview-footer-challenging" onclick="startCreateMode()">
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
-    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()">
+    <a href="#" id="preview-footer-challenges" onclick="confirmJoinMatch()">
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Aceitar Desafio</span></a>
   </footer>
 
@@ -882,6 +882,7 @@ const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
 let wordStartTime = null; // Tempo de início da palavra atual
 let currentWordIdealTime = 0; // Tempo ideal para a palavra atual
 let performanceUpdateInterval = null;
+let opponentPerformance = 100;
   
 // O "piso" de performance
 const DECAY_THRESHOLD = 10.0; 
@@ -1176,7 +1177,7 @@ function setEditorMode(mode) {
 
     // 3. Lógica para esconder/mostrar
   	hideMainNavigation();
-	closeLoadSaveArea();
+	  closeLoadSaveArea();
     
     // Primeiro, esconde tudo para "limpar"
     // (Oculta as partes que mudam)
@@ -1209,23 +1210,23 @@ function setEditorMode(mode) {
 function openContent() {
 	hideFooter();
 	setEditorMode('editor');
-    showSection('editSrt');
+  showSection('editSrt');
 	renderSegments();
-    loadContent();
+  loadContent();
 }
 
 function showSoloPreview() {
-    showFooter(); // Garante que o footer apareça para os botões
+  showFooter(); // Garante que o footer apareça para os botões
 	hideAcceptChallenge();
 	setEditorMode('previewSolo');
-    showSection('editSrt');
+  showSection('editSrt');
 }
 
 function showMultiPreview() {
-    showFooter(); // Garante que o footer apareça para os botões
+  showFooter(); // Garante que o footer apareça para os botões
 	hideSoloAndChallenging();
 	setEditorMode('previewMulti');
-    showSection('editSrt');
+  showSection('editSrt');
 }
 
 /**
@@ -1357,12 +1358,12 @@ function startSoloMode() {
 /**
  * LÓGICA DO LOBBY: Chamado ao clicar em "Desafiar".
  * Mostra o lobby e a seção de desafio.
- */
 function startCreateMode() {
   const lobby = document.getElementById('lobby');
   if (lobby) lobby.style.display = 'block'; // CORRIGIDO: Mostra o lobby
   startMultiMode();
 }
+ */
 
 /**
  * LÓGICA DO LOBBY: Função para esconder o lobby (se necessário).
@@ -2708,61 +2709,44 @@ function groupFilesByLesson(files) {
 }
 
 /**
- * Carrega uma lição específica (vídeo + SRT + thumb) do Backblaze
- * e guarda o conteúdo em cache após o primeiro carregamento
+ * Preview para lições normais (Home, Subscriptions)
  */
-async function previewLesson(lesson) {
-  console.log("--- Preview da lição ---", lesson.baseName);
+async function previewLessonSolo(lesson) {
+  console.log("=== Preview Solo ===", lesson.baseName);
   
-  // Indica para o botão "Desafiar" 
-  // no footer qual a lição está 
-  // sendo visualizada no preview.
   currentLessonForMatch = lesson;
   
-  showLoading('Carregando lição...');
+  showLoading('Carregando preview...');
 
   try {
-    // 1️⃣ Verifica no IndexedDB
     const cached = await getLessonFromDB(lesson.baseName);
-    // Usa o timestamp do envio do vídeo, fallback para data atual
     const currentTimestamp = lesson.video?.uploadTimestamp || Date.now();
 
     if (cached && cached.timestamp === currentTimestamp) {
-      console.log("✅ Usando cache do IndexedDB:", lesson.baseName);
-      
-      // Usa URLs locais via blobs cacheados
+      console.log("✔ Usando dados do cache!");
       const videoUrl = URL.createObjectURL(cached.videoBlob);
       appState.video.url = videoUrl;
       updateAllVideos(videoUrl);
-
       parseSRT(cached.srtText);
       updateAllThumbnails(URL.createObjectURL(cached.thumbBlob));
-
     } else {
-      console.log("⬇️ Baixando nova versão da lição:", lesson.baseName);
-
-      // URLs públicas do Backblaze
+      console.log("⚠ Baixando do servidor...");
       const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
       const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
       const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
 
-      // Faz o download dos arquivos
       const [videoBlob, srtText, thumbBlob] = await Promise.all([
         fetch(videoUrl).then(r => r.blob()),
         fetch(srtUrl).then(r => r.text()),
         fetch(thumbUrl).then(r => r.blob())
       ]);
 
-      // Atualiza o player e thumbnail com objetos locais
       const localVideoUrl = URL.createObjectURL(videoBlob);
       appState.video.url = localVideoUrl;
       updateAllVideos(localVideoUrl);
-
       parseSRT(srtText);
-
       updateAllThumbnails(URL.createObjectURL(thumbBlob));
 
-      // Salva no IndexedDB para uso futuro
       await saveLessonToDB({
         baseName: lesson.baseName,
         timestamp: currentTimestamp,
@@ -2770,17 +2754,86 @@ async function previewLesson(lesson) {
         srtText,
         thumbBlob
       });
-
-      console.log("📦 Lição salva no IndexedDB:", lesson.baseName);
     }
-
-    hideLoading();
+    
+    // Mostra preview solo
     showSoloPreview();
+    hideLoading();
 
   } catch (err) {
-    console.error("❌ Erro ao carregar preview:", err);
+    console.error("❌ Erro ao carregar preview solo:", err);
     hideLoading();
     alert('Erro ao carregar lição: ' + err.message);
+  }
+}
+
+/**
+ * Preview para partidas multiplayer (Challenge)
+ */
+async function previewLessonMulti(match) {
+  console.log("=== Preview Multiplayer ===", match.lessonName);
+  
+  // Guarda partida para aceitar depois
+  window.pendingMatch = match;
+  
+  // Busca a lição completa no cache
+  const lesson = lessonsCache.find(l => l.baseName === match.lessonName);
+  
+  if (!lesson) {
+    alert(`Lição "${match.lessonName}" não encontrada no cache.`);
+    return;
+  }
+  
+  currentLessonForMatch = lesson;
+  
+  showLoading('Carregando preview...');
+
+  try {
+    const cached = await getLessonFromDB(lesson.baseName);
+    const currentTimestamp = lesson.video?.uploadTimestamp || Date.now();
+
+    if (cached && cached.timestamp === currentTimestamp) {
+      console.log("✔ Usando dados do cache!");
+      const videoUrl = URL.createObjectURL(cached.videoBlob);
+      appState.video.url = videoUrl;
+      updateAllVideos(videoUrl);
+      parseSRT(cached.srtText);
+      updateAllThumbnails(URL.createObjectURL(cached.thumbBlob));
+    } else {
+      console.log("⚠ Baixando do servidor...");
+      const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+      const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
+      const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+
+      const [videoBlob, srtText, thumbBlob] = await Promise.all([
+        fetch(videoUrl).then(r => r.blob()),
+        fetch(srtUrl).then(r => r.text()),
+        fetch(thumbUrl).then(r => r.blob())
+      ]);
+
+      const localVideoUrl = URL.createObjectURL(videoBlob);
+      appState.video.url = localVideoUrl;
+      updateAllVideos(localVideoUrl);
+      parseSRT(srtText);
+      updateAllThumbnails(URL.createObjectURL(thumbBlob));
+
+      await saveLessonToDB({
+        baseName: lesson.baseName,
+        timestamp: currentTimestamp,
+        videoBlob,
+        srtText,
+        thumbBlob
+      });
+    }
+    
+    // Mostra preview multi (com botão aceitar)
+    showMultiPreview();
+    hideLoading();
+
+  } catch (err) {
+    console.error("❌ Erro ao carregar preview multi:", err);
+    hideLoading();
+    alert('Erro ao carregar partida: ' + err.message);
   }
 }
 
@@ -2906,7 +2959,7 @@ function renderThumbnailsFromCache(sectionId) {
     const postWrapper = document.createElement('div');
     postWrapper.className = 'post-item';
     postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
-    postWrapper.onclick = () => previewLesson(lesson);
+    postWrapper.onclick = () => previewLessonSolo(lesson);
     
     // Cria a thumb-section
     const thumbSection = document.createElement('div');
@@ -3096,12 +3149,9 @@ function updatePerformanceDisplay() {
   `;
 }
 
-/**
- * Acumula e atualiza a performance acumulada da lição
- */
+/** Atualiza o display de performance local e envia para o servidor conforme o role */
 function updateWordPerformance() {
   const wordPerformanceElement = document.getElementById('host-performance');
-  
   if (!wordPerformanceElement) {
     console.warn('Elemento word-performance não encontrado');
     return;
@@ -3152,6 +3202,27 @@ function updateWordPerformance() {
     transition: color 0.3s ease;
   `;
   
+
+
+  // Envia performance para o servidor no campo correto
+  if (currentMatchId && playerRole) {
+    const fieldToUpdate = (playerRole === 'host') ? 'hostPerformance' : 'opponentPerformance';
+
+    // Atualiza no servidor o campo de performance do jogador
+    databases.updateDocument(
+      DATABASE_ID,
+      MATCHES_COLLECTION_ID,
+      currentMatchId,
+      {
+        [fieldToUpdate]: accumulatedPerformance
+      }
+    ).then(() => {
+      console.log(`[${playerRole}] Performance enviada: ${accumulatedPerformance.toFixed(1)}% para campo ${fieldToUpdate}`);
+    }).catch(err => {
+      console.error(`Erro ao enviar performance:`, err);
+    });
+  }
+
   console.log(`📊 Performance Palavra: ${currentWordPerformance.toFixed(1)}% | Acumulada: ${accumulatedPerformance.toFixed(1)}% (${window.allWordPerformances.length} palavras)`);
 }
 
@@ -3617,7 +3688,7 @@ function startSoloMode() {
 
 /**
  * Cria uma nova partida no servidor Appwrite.
- * Esta função é chamada internamente por startMultiMode().
+ * Esta função é chamada internamente por startCreateMode().
  */
 async function createMatchOnServer() {
     console.log("--- Iniciando criação de partida ---");
@@ -3677,8 +3748,8 @@ async function createMatchOnServer() {
 /**
  * (VERSÃO ATUALIZADA) Inicia o modo multi, cria a partida e entra no lobby.
  */
-async function startMultiMode() {
-  console.log("=== INÍCIO startMultiMode() ===");
+async function startCreateMode() {
+  console.log("=== EXECUTANDO startCreateMode() ===");
   showLoading("Criando partida...");
 
   try {
@@ -3686,7 +3757,7 @@ async function startMultiMode() {
     await deleteExistingMatchesOfHost();
     
     const match = await createMatchOnServer();
-
+  
     if (match) {
         currentMatchId = match.$id;
         playerRole = 'host'; // Define papel do jogador
@@ -3699,13 +3770,13 @@ async function startMultiMode() {
         console.log(`--- Host aguardando oponente na partida: ${currentMatchId} ---`);
         
         subscribeToMatch(currentMatchId);
-		subscribeToMatchUpdates(currentMatchId);
+		    subscribeToMatchUpdates(currentMatchId);
     }
   } catch (error) {
-    console.error("❌ Falha ao iniciar modo multi:", error);
-    alert(error.message);
+      console.error("❌ Falha ao iniciar modo create:", error);
+      alert(error.message);
   } finally {
-    hideLoading();
+      hideLoading();
   }
 }
 	
@@ -3745,6 +3816,7 @@ async function listWaitingMatches() {
 
 /**
  * Renderiza as partidas no container multi-post-container
+ * AGORA BUSCA DADOS DO CACHE ANTES DE BAIXAR
  */
 function renderMatchesList(matches) {
   console.log("--- Renderizando lista de partidas ---");
@@ -3757,7 +3829,7 @@ function renderMatchesList(matches) {
     return;
   }
   
-  // Limpa o container
+  // Limpa o container da partida
   container.innerHTML = '';
   
   if (matches.length === 0) {
@@ -3774,23 +3846,47 @@ function renderMatchesList(matches) {
       thumbFileId: match.thumbFileId
     });
     
-    // Gera a URL da thumbnail usando o thumbFileId
-    const thumbnailUrl = getBackblazePublicUrl(match.thumbFileId);
+    // 🔥 BUSCA: Busca a lição completa do cache usando match.lessonName
+    const fullLesson = lessonsCache.find(l => l.baseName === match.lessonName);
     
-    // Cria o wrapper do post
+    if (fullLesson) {
+      console.log(`✅ Lição "${match.lessonName}" encontrada no cache`);
+    } else {
+      console.warn(`⚠️ Lição "${match.lessonName}" NÃO encontrada no cache`);
+    }
+    
+    // Gera a URL da thumbnail
+    // Prioriza o cache, mas usa o thumbFileId do match como fallback
+    let thumbnailUrl;
+    if (fullLesson && fullLesson.thumb) {
+      thumbnailUrl = getBackblazePublicUrl(fullLesson.thumb.fileId);
+    } else {
+      thumbnailUrl = getBackblazePublicUrl(match.thumbFileId);
+    }
+    
+    // Cria o wrapper do post da partida
     const postWrapper = document.createElement('div');
     postWrapper.className = 'post-item';
     postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
-    postWrapper.onclick = () => joinMatch(match);
     
-    // Cria a thumb-section
+    postWrapper.onclick = () => {
+      if (fullLesson) {
+        console.log("Usando dados do cache para preview");
+        previewLessonMulti(match); // ✅ ALTERADO
+      } else {
+        console.warn("Lição não encontrada no cache, baixando do servidor");
+        previewLessonMulti(match); // ✅ ALTERADO (funciona igual)
+      }
+    };
+    
+    // Cria a thumb-section da partida
     const thumbSection = document.createElement('div');
     thumbSection.className = 'thumb-section';
     thumbSection.innerHTML = `
       <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
     `;
     
-    // Cria a info-content
+    // Cria a info-content da partida
     const infoContent = document.createElement('div');
     infoContent.className = 'info-content';
     infoContent.innerHTML = `
@@ -3802,17 +3898,17 @@ function renderMatchesList(matches) {
         <h3 class="video-title" style="cursor: pointer;">${match.lessonName}</h3>
         <div class="video-meta">
           <span class="channel-name">Aguardando oponente</span>
-          <span class="performance" style="color: #ffa94d;">🎮 Entrar</span>
+          <span class="performance" style="color: #ffa94d;">🎮 Visualizar</span>
           <span class="video-edit" style="cursor: pointer; color: #6d28d9; font-weight: bold; opacity: 0.5;">ID: ${match.$id.substring(0, 8)}</span>
         </div>
       </div>
     `;
     
-    // Monta o post completo
+    // Monta o post completo da partida
     postWrapper.appendChild(thumbSection);
     postWrapper.appendChild(infoContent);
     
-    // Adiciona ao container
+    // Adiciona ao container da partida
     container.appendChild(postWrapper);
   });
   
@@ -3822,7 +3918,7 @@ function renderMatchesList(matches) {
 
 /**
  * Função chamada quando o usuário clica em uma partida para entrar.
- * AGORA VAI DIRETO PARA O JOGO, PULANDO O PREVIEW.
+ * AGORA VAI DIRETO PARA O JOGO.
 */
 async function joinMatch(match) {
   console.log("=== Entrando direto na partida ===");
@@ -3887,8 +3983,8 @@ async function joinMatch(match) {
     // IMPORTANTE: Opponent também precisa escutar a partida
     subscribeToMatch(currentMatchId);
     
-    startSoloMode();
-	subscribeToMatchUpdates(currentMatchId); //
+    startCreateMode();
+	  subscribeToMatchUpdates(currentMatchId); //
     
     hideLoading();
     
@@ -3947,7 +4043,7 @@ async function confirmJoinMatch() {
     window.pendingMatch = null;
     
     // 5. Inicia o modo de jogo
-    startSoloMode(); // Por enquanto usa o modo solo (você adaptará para multiplayer depois)
+    joinMatch(match);
     
     hideLoading();
     
