@@ -2,6 +2,7 @@
 envia o host (desafiador) para play 
 , mas o oponnent (desafiado) nao
 -->
+<!-- atualiza a performance acumulada -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1374,9 +1375,21 @@ function endCreateMode() {
 }
 
 function startMultiMode() {
+  console.log("=== INÍCIO startMultiMode() ===");
+  
+  // IMPORTANTE: Esconde o footer ANTES de mudar de seção
   hideFooter();
-  showSection('play');
+  
+  // IMPORTANTE: Muda para a seção play ANTES de injetar
+  showSection('play');
+  
+  // Aguarda um frame para garantir que a seção está ativa
+  requestAnimationFrame(() => {
+    // Agora injeta o primeiro trecho
+    injectFirstSegmentShuffled();
+  });
 }
+
 
 // Playlist Area
 function showNewPlaylistNameArea() {
@@ -3392,6 +3405,7 @@ function moveWordToPhrase(wordButton, word) {
         sendWordToMatch(word);
 
     } else {
+      console.log("❌ currentMatchId não encontrado");
 		  selectedWords.push(word);
 		  wordButton.remove();
 		  
@@ -3868,14 +3882,15 @@ function renderMatchesList(matches) {
     const postWrapper = document.createElement('div');
     postWrapper.className = 'post-item';
     postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
-    
+
+     // Ao clicar = preview
     postWrapper.onclick = () => {
       if (fullLesson) {
         console.log("Usando dados do cache para preview");
-        previewLessonMulti(match); // ✅ ALTERADO
+        previewLessonMulti(match);
       } else {
         console.warn("Lição não encontrada no cache, baixando do servidor");
-        previewLessonMulti(match); // ✅ ALTERADO (funciona igual)
+        previewLessonMulti(match);
       }
     };
     
@@ -3982,9 +3997,8 @@ async function joinMatch(match) {
     
     // IMPORTANTE: Opponent também precisa escutar a partida
     subscribeToMatch(currentMatchId);
-    
-    startCreateMode();
-	  subscribeToMatchUpdates(currentMatchId); //
+    startMultiMode(); // <-- VAI DIRETO PARA O JOGO
+	  subscribeToMatchUpdates(currentMatchId);
     
     hideLoading();
     
