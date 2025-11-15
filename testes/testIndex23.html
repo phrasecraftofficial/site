@@ -3298,6 +3298,9 @@ function moveWordToPhrase(wordButton, word) {
     return;
   }
   
+  // Para o timer da palavra anterior
+  stopWordTimer();
+  
   console.log("✅ Palavra correta! Movendo...");
   
   const fraseContainer = document.getElementById('frase');
@@ -3306,9 +3309,6 @@ function moveWordToPhrase(wordButton, word) {
     console.error("❌ Elemento 'frase' não encontrado");
     return;
   }
-  
-  // Para o timer da palavra anterior
-  stopWordTimer();
 
   // SE FOR JOGO MULTIPLAYER
     if (currentMatchId) {
