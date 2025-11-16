@@ -3562,16 +3562,37 @@ async function loadNextSegment() {
   
   console.log(`✅ Segmento ${currentSegmentIndex + 1} carregado`);
   
-  // ✅ AGORA SIM: Inicia o timer DEPOIS de criar os botões
-  const isUnlocked = palavrasContainer.style.pointerEvents !== 'none';
-  
-  if (isUnlocked) {
-      const firstCorrectWord = words[0]; 
+  // Se for modo MULTIPLAYER, verifica o turno antes de iniciar o timer
+  if (currentMatchId) {
+      try {
+          const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+          const myId = (await account.get()).$id;
+          
+          if (match.currentPlayerId === myId) {
+              // É MEU turno - desbloqueia e inicia timer
+              console.log("✅ É meu turno - iniciando timer");
+              palavrasContainer.style.opacity = 1;
+              palavrasContainer.style.pointerEvents = 'auto';
+              
+              const firstCorrectWord = words[0];
+              if (firstCorrectWord) {
+                  startWordTimer(firstCorrectWord);
+              }
+          } else {
+              // NÃO é meu turno - bloqueia
+              console.log("⏸️ Aguardando turno do oponente");
+              palavrasContainer.style.opacity = 0.5;
+              palavrasContainer.style.pointerEvents = 'none';
+          }
+      } catch (error) {
+          console.error("Erro ao verificar turno:", error);
+      }
+  } else {
+      // Modo SOLO - sempre desbloqueado
+      const firstCorrectWord = words[0];
       if (firstCorrectWord) {
           startWordTimer(firstCorrectWord);
       }
-  } else {
-      console.log("⏸️ Timer NÃO iniciado - jogador está bloqueado");
   }
   
   // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR
