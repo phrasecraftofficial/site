@@ -1,4 +1,5 @@
-<!-- exibe a play section tanto para solo quanto para multi -->
+<!-- recomeçando apenas movendo os dois jogadores para play
+-->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -897,6 +898,21 @@ const playlistContainer = document.getElementById('playlist-checkbox-container')
 // Constantes de Partida
 const MATCHES_POST_CONTAINER = 'multi-post-container'; // ID do container na seção 'challenge'
 
+// Performance
+let timerInterval = null;
+let startTime = 0;
+// CONSTANTE: Tempo base (em milissegundos) para cada letra da palavra.
+const MS_PER_LETTER = 1500; 
+// Máximo de Performance exibido. Começa em 200, diminuindo em 1 por 10ms.
+const MAX_WORD_PERFORMANCE = 200; 
+let currentWordPerformance = MAX_WORD_PERFORMANCE; 
+// O elemento de exibição de performance
+const wordPerformanceDisplay = document.getElementById('word-performance');
+
+// Variável global para armazenar a performance acumulada
+let totalPerformance = 0;
+let totalWordsCompleted = 0;
+
 // Defina aqui todas as seções que usam a navegação principal
 const mainNavSections = [
   'home', 
@@ -942,6 +958,10 @@ const SELECTORS = {
   subtitleDisplays: '[id^="subtitleName"]',
   segmentAreas: '[id^="segments-area"]'
 };
+
+
+// Variáveis de estado do multiplayer
+let currentMatchId = null; // Armazena o ID da partida atual
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --------------- Bloco Fx ----------------
@@ -1004,6 +1024,10 @@ async function showSection(sectionId) {
     if (target) {
         target.classList.add("active");
     }
+
+    // ⚠️ ADICIONE ESTAS DUAS LINHAS:
+    appState.currentSection = sectionId; // ✅ ATUALIZA O ESTADO
+    console.log(`🔄 Seção mudou para: ${sectionId}`);
 
     // SINCRONIZA o estado ao trocar de seção (NOVO)
     syncStateToSection(sectionId);
@@ -1092,27 +1116,29 @@ function showSoloPreview(lesson) {
  * @param {Object} match - O objeto da partida retornado por searchMatchesOnServer.
  */
 function showMultiPreview(match) {
-    console.log("=== Preview Multiplayer ===", match.lessonName);  
-    showFooter(); // Garante que o footer apareça para os botões
-	  hideSoloAndChallenging();
-	  setEditorMode('previewMulti');   
+    console.log("=== Preview Multiplayer ===", match.baseName);  
+    showFooter();
+    hideSoloAndChallenging();
+    setEditorMode('previewMulti');   
 
-    // 1. Carrega o SRT da lição (simulado, você precisará adaptar)
-    // Para funcionar, a lição precisa estar no cache OU você precisa de uma função
-    // para buscar a lição completa (vídeo e SRT) do Backblaze usando o ID da lição.
-    
-    // Exemplo Simples: Tenta encontrar a lição no cache pelo nome (baseName)
+    // 1. Carrega o SRT da lição
     const associatedLesson = lessonsCache.find(l => l.baseName === match.extraData.lessonName);
 
     if (associatedLesson) {
-        previewLesson(associatedLesson); // Reusa a função que carrega os dados e renderiza
+        previewLesson(associatedLesson);
     } else {
         alert("Lição associada a este desafio não encontrada no cache.");
-        // Em um sistema real, você faria um novo fetch da lição aqui
     }
     
-    // 2. Mantenha o estado da partida
-    window.currentMatch = match; // Armazena a partida para usar em startMultiMode
+    // 2. ✅ CORRIGIDO: Armazena os dados REAIS da partida
+    window.currentMatch = {
+        matchId: match.matchId,
+        hostId: match.hostId,
+        lessonName: match.extraData.lessonName,
+        status: 'waiting', // ✅ Importante: adiciona o status
+        thumbFileId: match.thumb.fileId
+    };
+    
     showSection('editSrt');
 }
 
@@ -1149,7 +1175,7 @@ function showMainNavigation() {
 }
 
 /**
- * Decide o que o footer deve mostrar com base na seção ativa.
+ * Decide quais elementos deve mostrar com base na seção ativa.
  * Também gerencia a visibilidade do lobby.
  */
 async function updateElementForSection(sectionId) {
@@ -1206,6 +1232,24 @@ async function updateElementForSection(sectionId) {
       }
   }
   // --- FIM LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
+
+  if (sectionId === 'play' && lessonsCache.length > 0) {
+    // Aguarda um frame para garantir que a seção está ativa
+    requestAnimationFrame(() => {
+        // Você precisará de uma maneira de garantir que a lição correta seja carregada aqui.
+        // Por enquanto, usa a lição já carregada no cache e inicia.
+        if (srtData.length > 0) {
+            resetAccumulatedPerformance();
+            currentSegmentIndex = 0; // Reseta o índice
+          
+            // Agora injeta o primeiro trecho
+            injectFirstSegmentShuffled();
+        } else {
+            console.error("Não há lições no cache para iniciar o modo Play.");
+        }
+    });
+    console.log(`➡️ Usuário redirecionado para a tela de Play.`);
+  }
 }
 
 /**
@@ -1328,20 +1372,32 @@ function startCreateMode() {
         return;
     }
 
-    // A. Seleciona a primeira lição do cache como exemplo
     const lesson = lessonsCache[0]; 
     
-    // B. Chama a função de criação da partida
     createMatchOnServer(
         lesson.baseName,
-        lesson.baseName, // Usando o baseName como nome da lição
+        lesson.baseName,
         lesson.thumb.fileId
-    ).catch(error => {
-        // Lidar com erros de criação de partida
+    ).then(newMatch => {
+        currentMatchId = newMatch.$id;
+        console.log(`✅ Partida criada. ID: ${currentMatchId}`);
+        
+        // ⚠️ ADICIONE ESTE LOG AQUI:
+        console.log(`🔊 HOST: Tentando se inscrever no canal da partida ${currentMatchId}...`);
+        
+        window.unsubscribeFromMatch = subscribeToMatchUpdates(newMatch.$id);
+        
+        // ⚠️ ADICIONE ESTE LOG AQUI:
+        console.log(`✅ HOST: Inscrito com sucesso!`);
+        
+        if (lobby) {
+            lobby.innerHTML = `<p>Desafio criado! ID: <b>${newMatch.$id}</b>. <br>Aguardando oponente...</p>`;
+        }
+    })
+    .catch(error => {
         console.error("Falha ao criar partida:", error);
     });
 
-    // Mantém a seção challenge visível
     showSection('challenge');
 }
 
@@ -1353,9 +1409,48 @@ function endCreateMode() {
   if (lobby) lobby.style.display = 'none'; // CORRIGIDO: Esconde o lobby
 }
 
-function startMultiMode() {
-  hideFooter();
-  showSection('play');
+async function startMultiMode() {
+    // ✅ Validação melhorada
+    if (!window.currentMatch) {
+        alert("Nenhuma partida selecionada. Por favor, selecione uma partida primeiro.");
+        showSection('challenge');
+        return;
+    }
+    
+    if (window.currentMatch.status !== 'waiting') {
+        alert("Esta partida não está mais disponível (status: " + window.currentMatch.status + ")");
+        showSection('challenge');
+        return;
+    }
+
+    try {
+        // 1. O ID da partida selecionada para aceitar está em window.currentMatch
+        currentMatchId = window.currentMatch.matchId;
+        console.log(`Desafio aceito. ID definido: ${currentMatchId}`);
+
+        // Atualiza a partida para 'playing'
+        const updatedMatch = await joinMatchOnServer(window.currentMatch.matchId);
+        
+        // Se inscreve para atualizações
+        window.unsubscribeFromMatch = subscribeToMatchUpdates(window.currentMatch.matchId);
+        
+        // Redireciona para play (sem lógica de turnos por enquanto)
+        hideFooter();
+        showSection('play');
+        
+        // Aguarda um frame e carrega o jogo
+        requestAnimationFrame(() => {
+            if (srtData.length > 0) {
+                resetAccumulatedPerformance();
+                currentSegmentIndex = 0;
+                injectFirstSegmentShuffled();
+            }
+        });
+        
+    } catch (e) {
+        console.error("Falha ao iniciar partida multi:", e);
+        alert("Erro ao aceitar o desafio: " + e.message);
+    }
 }
 
 // Playlist Area
@@ -2902,6 +2997,201 @@ async function refreshLessonsCache() {
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Performance --- 
+// Necessário para o bloco Play
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Calcula o tempo alvo (em ms) para a palavra, baseado em seu comprimento.
+ * @param {string} word - A palavra para a qual calcular o tempo.
+ * @returns {number} O tempo máximo em milissegundos.
+ */
+function getTargetTimeForWord(word) {
+    // 150ms por letra (exemplo: 'teste' tem 5 letras * 150 = 750ms)
+    return word.length * MS_PER_LETTER;
+}
+
+/**
+ * Inicia o cronômetro para a palavra atual.
+ * A performance começa no máximo e diminui a cada 10ms.
+ * @param {string} currentWord - A palavra atual para determinar o tempo limite.
+ */
+function startWordTimer(currentWord) {
+    // Para qualquer timer anterior
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+
+    const targetTimeMs = getTargetTimeForWord(currentWord);
+    // Tempo limite em segundos
+    const timeLimitSeconds = targetTimeMs / 1000;
+    
+    // A performance total a ser perdida ao longo do tempo.
+    const performanceLostPerSecond = MAX_WORD_PERFORMANCE / timeLimitSeconds; 
+    
+    // Inicia a performance no máximo
+    currentWordPerformance = MAX_WORD_PERFORMANCE;
+    startTime = Date.now();
+
+    // Atualiza a cada 10ms (mais suave para animação)
+    timerInterval = setInterval(() => {
+        const elapsedTime = (Date.now() - startTime) / 1000; // Tempo decorrido em segundos
+        
+        // Calcula a performance a ser removida
+        const performanceDecrease = elapsedTime * performanceLostPerSecond;
+        
+        // Novo valor de performance
+        const newPerformance = Math.max(0, MAX_WORD_PERFORMANCE - performanceDecrease);
+        currentWordPerformance = newPerformance;
+        
+        // Atualiza a exibição (apenas a performance da palavra)
+        updateWordPerformance(currentWordPerformance);
+    }, 10);
+}
+
+/**
+ * Para o cronômetro, retorna a performance final.
+ * @returns {number} O valor final da performance da palavra.
+ */
+function stopWordTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    return currentWordPerformance;
+}
+
+/**
+ * Atualiza a exibição da performance da palavra no header.
+ * @param {number} performanceValue - O valor atual da performance (de 0 a MAX_WORD_PERFORMANCE).
+ */
+function updateWordPerformance(performanceValue) {
+    if (!wordPerformanceDisplay) return;
+
+    const maxPerformance = typeof MAX_WORD_PERFORMANCE === 'number' && MAX_WORD_PERFORMANCE > 0 
+        ? MAX_WORD_PERFORMANCE 
+        : 100; // fallback padrão
+
+    // Garante que performanceValue está no intervalo válido
+    let clampedPerformance = Math.min(Math.max(performanceValue, 0), maxPerformance);
+
+    const percentage = (clampedPerformance / maxPerformance) * 100;
+    wordPerformanceDisplay.textContent = `${percentage.toFixed(0)}%`;
+
+    // Define cor com base na performance, evitando repetição no style
+    let color;
+    if (percentage > 50) {
+        color = '#4caf50'; // Verde
+    } else if (percentage > 25) {
+        color = '#ffc078'; // Laranja
+    } else {
+        color = '#ff5e91'; // Vermelho
+    }
+    wordPerformanceDisplay.style.color = color;
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Performance Acumulada --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * 💾 Salva a performance de uma palavra no total acumulado do modo Solo.
+ * @param {number} wordPerformance - Performance obtida na palavra (0-MAX_WORD_PERFORMANCE).
+ */
+function addWordPerformanceSolo(wordPerformance) {
+    totalWordsCompleted++;
+    totalPerformance += wordPerformance;
+    
+    console.log(`📊 Palavra ${totalWordsCompleted} (Solo): ${wordPerformance.toFixed(2)} pontos`);
+    console.log(`📊 Total acumulado (Solo): ${totalPerformance.toFixed(2)} pontos`);
+    
+    updateHostPerformanceDisplay();
+}
+
+/**
+ * 🌐 Salva a performance de uma palavra no modo Multiplayer (envia para o servidor).
+ * @param {number} wordPerformance - Performance obtida na palavra (0-MAX_WORD_PERFORMANCE).
+ */
+async function addWordPerformanceMulti(wordPerformance) {
+    // Por enquanto, apenas salva localmente (igual ao Solo)
+    console.log("📊 Modo Multi (simplificado) - salvando performance localmente");
+    addWordPerformanceSolo(wordPerformance);
+    
+    // Futura lógica para enviar a performance da palavra
+    if (currentMatchId) {
+        console.log(`Futuro: Enviaria performance ${wordPerformance.toFixed(2)} para a partida ${currentMatchId}`);
+        // Aqui você fara um joinMatchOnServer com o score e a palavra completada.
+        // await joinMatchOnServer(currentMatchId, { lastPerformance: wordPerformance });
+    }
+}
+
+/**
+ * Calcula a performance média em porcentagem (0-100%)
+ * @returns {number} Performance média em porcentagem
+ */
+function calculateAveragePerformance() {
+    if (totalWordsCompleted === 0) {
+        return 100; // Se não completou nenhuma palavra ainda, mostra 100%
+    }
+    
+    // Cada palavra pode ter no máximo MAX_WORD_PERFORMANCE (200) pontos
+    const maxPossibleScore = totalWordsCompleted * MAX_WORD_PERFORMANCE;
+    
+    // Calcula a porcentagem
+    const percentage = (totalPerformance / maxPossibleScore) * 100;
+    
+    return Math.max(0, Math.min(100, percentage)); // Garante que fica entre 0-100
+}
+
+/**
+ * Atualiza a exibição da performance do host no header
+ */
+/**
+ * Atualiza a exibição da performance do host no header
+ */
+function updateHostPerformanceDisplay() {
+    const hostPerformanceElement = document.getElementById('host-performance');
+    
+    if (hostPerformanceElement) {
+        const averagePerformance = calculateAveragePerformance();
+        
+        // Escolhe emoji baseado na performance acumulada
+        let emoji = '🧠'; // Padrão
+        if (averagePerformance < 70) emoji = '🐢'; // Muito lento
+        else if (averagePerformance < 80) emoji = '🐌'; // Lento
+        else if (averagePerformance < 85) emoji = '🎯'; // Razoável
+        else if (averagePerformance < 90) emoji = '🎉'; // Bom
+        else if (averagePerformance < 93) emoji = '🏆'; // Muito bom
+        else if (averagePerformance < 95) emoji = '⭐'; // Ótimo
+        else if (averagePerformance < 97) emoji = '✈️'; // Excelente
+        else if (averagePerformance < 99) emoji = '🔥'; // Excepcional
+        else emoji = '🚀'; // Perfeito
+        
+        // Exibe a porcentagem com o emoji
+        hostPerformanceElement.textContent = `${averagePerformance.toFixed(0)}% ${emoji}`;
+        
+        // Opcional: Mudar a cor com base na performance
+        if (averagePerformance >= 90) {
+            hostPerformanceElement.style.color = '#4caf50'; // Verde
+        } else if (averagePerformance >= 70) {
+            hostPerformanceElement.style.color = '#ffc078'; // Laranja
+        } else {
+            hostPerformanceElement.style.color = '#ff5e91'; // Vermelho
+        }
+    }
+}
+  
+/**
+ * Reseta a performance acumulada (chamar ao iniciar novo jogo)
+ */
+function resetAccumulatedPerformance() {
+    totalPerformance = 0;
+    totalWordsCompleted = 0;
+    updateHostPerformanceDisplay();
+    console.log("🔄 Performance acumulada resetada");
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Play --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 /**
@@ -2951,29 +3241,60 @@ function playLineInPlayMode() {
 */
 async function waitForRenderAndPlay() {
   console.log("--- Aguardando renderização completa ---");
-  
+
   // Aguarda um frame para garantir que o DOM foi atualizado
   await new Promise(resolve => requestAnimationFrame(resolve));
-  
-  // Verifica se o vídeo está pronto
+
   const videoElement = document.getElementById("videoPlayer-play");
-  
   if (!videoElement) {
     console.error("❌ videoPlayer-play não encontrado");
     return;
   }
-  
-  // Se o vídeo não estiver pronto, aguarda
-  if (videoElement.readyState < 2) {
-    console.log("⏳ Aguardando vídeo carregar...");
-    await new Promise(resolve => {
-      videoElement.addEventListener('loadeddata', resolve, { once: true });
+
+  // Função para esperar o carregamento do vídeo com timeout
+  function waitForVideoReady(timeoutMs = 5000) {
+    return new Promise((resolve, reject) => {
+      if (videoElement.readyState >= 2) {
+        resolve();
+        return;
+      }
+
+      const onLoadedData = () => {
+        cleanup();
+        resolve();
+      };
+
+      const onError = () => {
+        cleanup();
+        reject(new Error("Erro ao carregar o vídeo"));
+      };
+
+      const onTimeout = () => {
+        cleanup();
+        reject(new Error("Timeout ao esperar o vídeo carregar"));
+      };
+
+      function cleanup() {
+        videoElement.removeEventListener("loadeddata", onLoadedData);
+        videoElement.removeEventListener("error", onError);
+        clearTimeout(timeoutId);
+      }
+
+      videoElement.addEventListener("loadeddata", onLoadedData, { once: true });
+      videoElement.addEventListener("error", onError, { once: true });
+      const timeoutId = setTimeout(onTimeout, timeoutMs);
     });
   }
-  
+
+  try {
+    console.log("⏳ Aguardando vídeo carregar...");
+    await waitForVideoReady();
+  } catch (error) {
+    console.error("❌ " + error.message);
+    return;
+  }
+
   console.log("✅ Renderização completa, tocando áudio...");
-  
-  // Agora sim, toca o trecho
   playLineInPlayMode();
 }
 
@@ -2994,6 +3315,9 @@ function shuffleArray(array) {
 */
 async function injectFirstSegmentShuffled() {
   console.log("--- Injetando primeiro trecho embaralhado ---");
+  
+  // Inicializa a exibição da performance da palavra
+  updateWordPerformance(MAX_WORD_PERFORMANCE); // Exibe 100% no início
   
   // Reseta o índice e array de palavras
   currentSegmentIndex = 0;
@@ -3028,43 +3352,74 @@ function moveWordToPhrase(wordButton, word) {
   }
   
   console.log("✅ Palavra correta! Movendo...");
+  
+  // 1. **PARAR O TIMER E CAPTURAR A PERFORMANCE**
+  const finalPerformance = stopWordTimer();
+  console.log(`Performance obtida para "${word}": ${finalPerformance.toFixed(2)}`);
+    
+  // ✅ **REGISTRA A PERFORMANCE DA PALAVRA CORRETA**
+  // CORREÇÃO: Chamar a função correta
+  // Verifica se está na seção 'play' E se há um ID de partida
+  if (document.querySelector('section#play.active') && currentMatchId) { // << CORREÇÃO
+      // Modo Multiplayer
+      addWordPerformanceMulti(finalPerformance);
+  } else {
+      // Modo Solo ou Play sem partida ativa
+      addWordPerformanceSolo(finalPerformance);
+  }
+    
+  const fraseContainer = document.getElementById('frase');
+    
+  if (!fraseContainer) {
+      console.error("❌ Elemento 'frase' não encontrado");
+      return;
+  }
+
+  // SE FOR JOGO MULTIPLAYER
+  if (currentMatchId) { // << CORREÇÃO
+      sendWordToMatch(word);
+  } else {
+		selectedWords.push(word);
+		wordButton.remove();
+		const phraseButton = document.createElement('button');
+		phraseButton.className = 'phrase-word-button';
+		phraseButton.textContent = word;
+		phraseButton.style.cssText = `
+			width: auto;
+		  	color: #fff;
+		  	padding: 0 10px;
+		  	margin: 4px;
+		  	background: transparent;
+		  	border: none;
+		  	border-radius: 8px;
+		  	font-size: 16px;
+		  	cursor: pointer;
+		  	transition: all 0.3s ease;
+		  	box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+		`;
+		  
+		fraseContainer.appendChild(phraseButton);
+	}
+
+  console.log("Frase atual:", selectedWords.join(' '));
   
-  const fraseContainer = document.getElementById('frase');
+  // ⏱️ **INICIA O TIMER PARA A PRÓXIMA PALAVRA**
+  const currentSegment = srtData[currentSegmentIndex];
+  const correctWords = currentSegment.text
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
   
-  if (!fraseContainer) {
-    console.error("❌ Elemento 'frase' não encontrado");
-    return;
+  // Se ainda há mais palavras neste segmento, inicia o timer para a próxima
+  if (selectedWords.length < correctWords.length) {
+    const nextWord = correctWords[selectedWords.length];
+    console.log(`⏱️ Iniciando timer para próxima palavra: "${nextWord}"`);
+    startWordTimer(nextWord);
   }
-
-		  selectedWords.push(word);
-		  wordButton.remove();
-		  
-		  const phraseButton = document.createElement('button');
-		  phraseButton.className = 'phrase-word-button';
-		  phraseButton.textContent = word;
-		  phraseButton.style.cssText = `
-		  	width: auto;
-		    color: #fff;
-		    padding: 0 10px;
-		    margin: 4px;
-		    background: transparent;
-		    border: none;
-		    border-radius: 8px;
-		    font-size: 16px;
-		    cursor: pointer;
-		    transition: all 0.3s ease;
-		    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
-		  `;
-		  
-		  fraseContainer.appendChild(phraseButton);
-		  
-		  console.log("Frase atual:", selectedWords.join(' '));
-      
-    	// Verifica se a frase está completa
-    	checkIfPhraseComplete();
-	
+  
+  // Verifica se a frase está completa
+  checkIfPhraseComplete(); 
 }
-
+  
 /**
  * Verifica se a palavra clicada é a próxima correta da frase (LÓGICA DE POSIÇÃO ESTRITA)
  */
@@ -3094,51 +3449,59 @@ function isNextWord(word) {
 }
 
 /**
- * Verifica se a frase está completa e mostra a próxima (ATUALIZADA PARA ASYNC)
+ * 🎯 Função principal que verifica se a frase está completa e direciona para o modo correto.
+ */
+/**
+ * 🎯 Função principal que verifica se a frase está completa (SIMPLIFICADA)
  */
 function checkIfPhraseComplete() {
-  const currentSegment = srtData[currentSegmentIndex];
-  
-  const correctWords = currentSegment.text
-    .split(/\s+/)
-    .filter(w => w.trim().length > 0);
-  
-  if (selectedWords.length === correctWords.length) {
-    console.log("🎉 Frase completa!");
+    const currentSegment = srtData[currentSegmentIndex];
     
-    // Para o timer de performance
+    const correctWords = currentSegment.text
+        .split(/\s+/)
+        .filter(w => w.trim().length > 0);
     
-    // Última atualização da performance (mostra resultado final)
-    
-    setTimeout(async () => {
-      currentSegmentIndex++;
-      
-      if (currentSegmentIndex < srtData.length) {
-        console.log(`Carregando segmento ${currentSegmentIndex + 1}...`);
-        await loadNextSegment();
-      } else {
-        console.log("🏆 Todas as frases completadas!");
-        showCompletionMessage();
-      }
-    }, 1000);
-  }
+    // 1. Verifica se a frase foi completada
+    if (selectedWords.length === correctWords.length) {
+        console.log("🎉 Frase completa!");
+        
+        // Limpa o timer final
+        stopWordTimer();
+        
+        setTimeout(async () => {
+            currentSegmentIndex++; // Prepara para o próximo segmento
+            
+            if (currentSegmentIndex < srtData.length) {
+                // Carrega próximo segmento (solo mode apenas por enquanto)
+                console.log(`Carregando segmento ${currentSegmentIndex + 1}...`);
+                await loadNextSegment();
+            } else {
+                // Todos os segmentos completados
+                console.log("🏆 Lição finalizada!");
+                showCompletionMessage();
+            }
+        }, 1000);
+    }
+}
+
+/**
+ * 👤 Modo Solo: Carrega o próximo segmento da legenda imediatamente.
+ */
+async function checkSolo() {
+    console.log(`Carregando segmento ${currentSegmentIndex + 1} (Modo Solo)...`);
+    await loadNextSegment();
 }
 
 /**
  * Carrega o próximo segmento (ATUALIZADO COM VERIFICAÇÃO ROBUSTA)
  */
 async function loadNextSegment() {
-  // Limpa o array de palavras selecionadas
   selectedWords = [];
-  
-  // Pega o próximo segmento
   const nextSegment = srtData[currentSegmentIndex];
   console.log("Próximo trecho:", nextSegment);
   
-  // Define como segmento atual (para playLine funcionar)
   currentSegment = nextSegment;
   
-  // Encontra os containers
   const palavrasContainer = document.getElementById('palavras');
   const fraseContainer = document.getElementById('frase');
   
@@ -3147,16 +3510,14 @@ async function loadNextSegment() {
     return;
   }
   
-  // Limpa os containers
   palavrasContainer.innerHTML = '';
   fraseContainer.innerHTML = '';
   
-  // Separa o texto em palavras
+  // ✅ DECLARA 'words' ANTES de usar
   const words = nextSegment.text
     .split(/\s+/)
     .filter(word => word.trim().length > 0);
   
-  // Embaralha as palavras
   const shuffledWords = shuffleArray(words);
   console.log("Palavras embaralhadas:", shuffledWords);
   
@@ -3179,7 +3540,6 @@ async function loadNextSegment() {
       box-shadow: 0 2px 4px rgba(109, 40, 217, 0.3);
     `;
     
-    // Efeitos hover
     wordButton.onmouseenter = () => {
       wordButton.style.transform = 'translateY(-2px)';
       wordButton.style.boxShadow = '0 4px 12px rgba(109, 40, 217, 0.5)';
@@ -3190,7 +3550,6 @@ async function loadNextSegment() {
       wordButton.style.boxShadow = '0 2px 8px rgba(109, 40, 217, 0.3)';
     };
     
-    // Ação ao clicar
     wordButton.onclick = () => {
       moveWordToPhrase(wordButton, word);
     };
@@ -3198,16 +3557,22 @@ async function loadNextSegment() {
     palavrasContainer.appendChild(wordButton);
   });
   
-  // Atualiza o progresso
-  updateProgress();
-  
   console.log(`✅ Segmento ${currentSegmentIndex + 1} carregado`);
   
-  // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR (ROBUSTA)
+  // ✅ AGORA SIM: Inicia o timer DEPOIS de criar os botões
+  const isUnlocked = palavrasContainer.style.pointerEvents !== 'none';
+  
+  if (isUnlocked) {
+      const firstCorrectWord = words[0]; 
+      if (firstCorrectWord) {
+          startWordTimer(firstCorrectWord);
+      }
+  } else {
+      console.log("⏸️ Timer NÃO iniciado - jogador está bloqueado");
+  }
+  
+  // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR
   await waitForRenderAndPlay();
-  
-  // ⏱️ INICIA O CRONÔMETRO DE PERFORMANCE
-  
 }
 
 /**
@@ -3288,15 +3653,6 @@ async function createMatchOnServer(lessonId, lessonName, thumbFileId) {
         // 2. Obter o ID do usuário logado
         const user = await account.get();
         const hostId = user.$id;
-
-        // 3. Permissões
-        const permissions = [
-            // O host (criador) pode ler e escrever
-            Permission.read(Role.user(hostId)),
-            Permission.write(Role.user(hostId)),
-            // Qualquer usuário pode ler a partida (para aparecer na lista de desafios)
-            Permission.read(Role.any()),
-        ];
         
         // 4. Estrutura do documento
         const matchData = {
@@ -3315,8 +3671,7 @@ async function createMatchOnServer(lessonId, lessonName, thumbFileId) {
             DATABASE_ID,
             MATCHES_COLLECTION_ID,
             ID.unique(),
-            matchData,
-            permissions
+            matchData
         );
 
         console.log('✅ Partida criada com sucesso:', newMatch);
@@ -3345,58 +3700,354 @@ async function searchMatchesOnServer() {
     showLoading('Buscando desafios...');
 
     try {
-        // 1. Busca documentos na coleção de partidas
         const response = await databases.listDocuments(
             DATABASE_ID,
             MATCHES_COLLECTION_ID,
             [
-                // Filtra apenas partidas com status 'waiting'
                 Appwrite.Query.equal('status', 'waiting'),
-                // Opcional: ordenar pelas mais recentes
                 Appwrite.Query.orderDesc('$createdAt') 
             ]
         );
 
         const matches = response.documents;
-        console.log(`✅ ${matches.length} partidas encontradas.`);
+        console.log(`✅ ${matches.length} partidas encontradas: ${matches}`);
 
-        // 2. Transforma cada partida em um objeto compatível com lessonsCache
-        // Isso permite que renderThumbnailsFromCache seja reutilizada.
         const matchesAsLessons = matches.map(match => {
-            // Usamos o $id da partida como baseName
-            const baseName = match.$id; 
-            const thumbFileId = match.thumbFileId || 'default-thumb-id'; // Fallback se o campo estiver vazio
-
+            const thumbFileId = match.thumbFileId;
+            
+            console.log('🔍 Partida encontrada:', {
+                id: match.$id,
+                lessonName: match.lessonName,
+                thumbFileId: thumbFileId,
+                status: match.status
+            });
+        
             return {
-                baseName: match.lessonName, // Exibe o nome da lição como título
-                matchId: match.$id,         // Guarda o ID real da partida
-                hostId: match.hostId,       // Guarda o ID do criador
-                // Cria uma estrutura de thumbnail simplificada para compatibilidade
+                baseName: match.lessonName,
+                matchId: match.$id,
+                hostId: match.hostId,
                 thumb: { 
                     fileId: thumbFileId,
-                    // Gera a URL da thumbnail
                     url: getBackblazePublicUrl(thumbFileId)
                 },
-                // Adicione dados opcionais se precisar exibir host ou performance
                 extraData: {
-                    hostPerformance: match.hostPerformance,
-                    lessonName: match.lessonName
+                    hostPerformance: match.hostPerformance || 0,
+                    lessonName: match.lessonName,
+                    status: match.status,
+                    createdAt: match.$createdAt
                 }
             };
         });
         
-        console.log("Partidas formatadas para renderização.");
+        console.log(`✅ ${matchesAsLessons.length} partidas formatadas para exibição`);
         return matchesAsLessons;
 
     } catch (error) {
         console.error('❌ Erro ao buscar partidas:', error);
-        // Em caso de erro, retorna um array vazio
         return [];
     } finally {
         hideLoading();
     }
 }
-  
+
+/**
+ * 📢 Se inscreve para ouvir atualizações da partida (SIMPLIFICADO)
+ * Quando o status muda para 'playing', ambos vão para a tela de play.
+ */
+function subscribeToMatchUpdates(matchId) {
+    console.log(`📡 Conectando ao Realtime para a partida: ${matchId}`);
+    
+    const channel = `databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}`;
+    
+    // ⚠️ ADICIONE ESTE LOG:
+    console.log(`📡 Canal construído: ${channel}`);
+
+    const unsubscribe = client.subscribe(channel, async (response) => {
+        // ⚠️ MUDE ESTE LOG PARA SER MAIS DETALHADO:
+        console.log('📬 ============ EVENTO RECEBIDO ============');
+        console.log('📬 Payload:', response.payload);
+        console.log('📬 Seção atual:', appState.currentSection);
+        console.log('📬 ==========================================');
+    
+        handleMatchUpdate(response.payload);
+    });
+
+    console.log('✅ Inscrito no canal:', channel);
+    return unsubscribe;
+}
+
+/**
+ * 🔄 Atualiza uma partida no servidor.
+ * Se dataPayload for fornecido, atualiza a partida com esses dados (ex: cliques, scores).
+ * Se dataPayload for nulo, executa a lógica de "aceitar desafio" (chamado por startMultiMode).
+ * @param {string} matchId - O ID do documento da partida a ser atualizada.
+ * @param {Object} [dataPayload=null] - Um objeto opcional com os dados a serem atualizados.
+ * @returns {Promise<Object>} O documento da partida atualizada.
+ */
+async function joinMatchOnServer(matchId, dataPayload = null) {
+    if (dataPayload) {
+        // --- MODO 2: Atualização de Jogo (clique, mudança de turno) ---
+        // Não mostra loading para ser rápido (ex: cliques de palavra)
+        try {
+            const updatedMatch = await databases.updateDocument(
+                DATABASE_ID,
+                MATCHES_COLLECTION_ID,
+                matchId,
+                dataPayload
+            );
+            // Log silencioso para não poluir o console em cliques
+            // console.log(`✅ Partida ${matchId} atualizada:`, dataPayload);
+            return updatedMatch;
+        } catch (error) {
+            console.error('❌ Erro ao atualizar a partida (clique/turno):', error);
+            throw error;
+        }
+    }
+
+    // --- MODO 1: Aceitar Desafio (Lógica Original de startMultiMode) ---
+    showLoading('Aceitando desafio...');
+    
+    try {        
+        // 1. Obter o ID do usuário logado (o oponente)
+        const user = await account.get();
+        const opponentId = user.$id;
+
+        // 2. (Removida lógica de permissões que não é de update)
+
+        // 3. Obtém o documento atual para pegar o hostId
+        const existingMatch = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, matchId);
+        const hostId = existingMatch.hostId;
+
+        // 4. Dados para iniciar a partida
+        const startMatchData = {
+            status: 'playing', // Mudar o status para iniciar a partida
+            opponentId: opponentId,
+            currentPlayerId: hostId, // O host começa jogando
+            opponentPerformance: 0.0,
+          
+            // Inicializa os campos de estado do jogo (CONFORME REQUISITO)
+            currentSentenceIndex: 0, // <-- Renomeado de 'segmentIndex'
+            currentSentenceWords: "" // Começa com array vazio
+        };
+
+        // 5. Atualizar o documento
+        const updatedMatch = await databases.updateDocument(
+            DATABASE_ID,
+            MATCHES_COLLECTION_ID,
+            matchId,
+            startMatchData
+        );
+
+        console.log('✅ Partida atualizada para "playing":', updatedMatch);
+        return updatedMatch;
+
+    } catch (error) {
+        console.error('❌ Erro ao aceitar o desafio e atualizar a partida:', error);
+        alert('Falha ao aceitar o desafio.');
+        throw error;
+    } finally {
+        // Só esconde o loading se estava no MODO 1
+        if (!dataPayload) {
+            hideLoading();
+        }
+    }
+}
+
+
+/**
+ * (BLOCO FX ATUALIZADO) Processa as atualizações recebidas da partida.
+ * AGORA REAGE AO AVANÇO DE SENTENÇA.
+ */
+async function handleMatchUpdate(payload) {
+    // 1. Oponente entrou (Lógica do Host no Lobby)
+    if (appState.currentSection === 'challenge' && payload.status === 'playing') {
+        console.log("✅ Oponente entrou! Iniciando partida para o Host...");
+        
+        // Move o host para a tela de jogo
+        endCreateMode(); 
+        hideFooter();
+        showSection('play');
+        
+        // Inicializa o jogo
+        requestAnimationFrame(() => {
+            if (srtData.length > 0) {
+                resetAccumulatedPerformance();
+                currentSegmentIndex = 0;
+                injectFirstSegmentShuffled();
+            }
+        });
+        
+        return; // Importante: sai da função para não executar a lógica de play
+    }
+
+    // 2. Lógica de Jogo (Atualização de palavras e turnos)
+    if (appState.currentSection === 'play') {
+
+        // 2a. JOGO TERMINOU
+        if (payload.status === 'finished') {
+            console.log("🏆 Jogo terminado!");
+            showCompletionMessage(); // Mostra msg de parabéns
+            if (unsubscribeMatch) unsubscribeMatch(); // Para de escutar
+            currentMatchId = null; // Finaliza a partida local
+            return;
+        }
+
+        // 2b. OPONENTE SAIU
+        if (payload.status === 'left') {
+            alert("O oponente saiu da partida.");
+            handlePlayerLeavingMatch(); // Limpa a partida
+            showSection('home');
+            return;
+        }
+
+        // 2c. ATUALIZAÇÃO NORMAL DE JOGO (playing)
+        
+        // A. Verifica se a SENTENÇA AVANÇOU
+        if (payload.currentSentenceIndex > currentSegmentIndex) {
+            console.log("Servidor avançou a sentença. Carregando próximo segmento...");
+            currentSegmentIndex = payload.currentSentenceIndex; // Sincroniza índice local
+            
+            // loadNextSegment limpa a frase, os botões e carrega o novo segmento
+            await loadNextSegment(); 
+        
+        } else {
+            // B. Foi apenas uma ATUALIZAÇÃO DE PALAVRA
+            console.log(`ATUALIZAÇÃO DE PALAVRA`);
+            const fraseContainer = document.getElementById('frase');
+            const palavras = payload.currentSentenceWords ? payload.currentSentenceWords.split(' ').filter(p => p) : [];
+            
+            // Recria a frase
+            fraseContainer.innerHTML = '';
+            palavras.forEach(word => {
+                const phraseButton = document.createElement('button');
+                phraseButton.className = 'phrase-word-button';
+                phraseButton.textContent = word;
+                // (Adicione seu estilo CSS aqui se necessário)
+                phraseButton.style.cssText = `
+                    width: auto; color: #fff; padding: 0 10px; margin: 4px; 
+                    background: transparent; border: none; border-radius: 8px; 
+                    font-size: 16px; cursor: pointer; transition: all 0.3s ease; 
+                    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+                `;
+                fraseContainer.appendChild(phraseButton);
+            });
+            
+            // Atualiza estado local
+            selectedWords = palavras;
+
+            // Remove o botão usado da lista de escolhas
+            if (palavras.length > 0) {
+                const lastWordUsed = palavras[palavras.length - 1];
+                const wordButtons = document.querySelectorAll('#palavras .word-button');
+                for (const btn of wordButtons) {
+                    // ATENÇÃO: Se houver palavras duplicadas, isso pode remover a errada.
+                    // Uma lógica mais robusta usaria IDs únicos por botão.
+                    // Mas para a maioria dos casos, isso funciona:
+                    if (btn.textContent === lastWordUsed) {
+                        btn.remove();
+                        break; // Remove apenas o primeiro que encontrar
+                    }
+                }
+            }
+        }
+
+        // C. Lógica de TURNOS (Roda em ambos os casos: avanço ou palavra)
+        const myId = (await account.get()).$id;
+        const palavrasContainer = document.getElementById('palavras');
+        
+        if (payload.currentPlayerId === myId) {
+            console.log("É a minha vez!");
+            palavrasContainer.style.opacity = 1;
+            palavrasContainer.style.pointerEvents = 'auto';
+        } else {
+            console.log("Aguardando oponente...");
+            palavrasContainer.style.opacity = 0.5;
+            palavrasContainer.style.pointerEvents = 'none';
+        }
+    }
+}
+
+/**
+ * (BLOCO FX ATUALIZADO) Envia a palavra selecionada e passa o turno.
+ * AGORA VERIFICA SE A FRASE FOI CONCLUÍDA.
+ */
+async function sendWordToMatch(word) {
+    if (!currentMatchId) return; // Não é jogo multi
+
+    console.log(`Enviando palavra: ${word}`);
+    showLoading('Enviando...'); // Feedback
+    
+    try {
+        // 1. Pega o estado ATUAL da partida
+        const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+        const myId = (await account.get()).$id;
+
+        // 2. Segurança: Verifica se é realmente meu turno
+        if (match.currentPlayerId !== myId) {
+            console.warn("Não é meu turno!");
+            hideLoading();
+            return;
+        }
+
+        // 3. Monta os novos dados
+        const newWords = (match.currentSentenceWords ? match.currentSentenceWords + " " : "") + word;
+        
+        // 4. Pega a frase correta localmente
+        const correctSegment = srtData[match.currentSentenceIndex];
+        const correctWords = correctSegment.text.split(/\s+/).filter(w => w.trim().length > 0);
+
+        // 5. Prepara o payload de atualização
+        let updatePayload = {};
+
+        // 6. Verifica se a frase está completa
+        if (newWords.split(' ').length === correctWords.length) {
+            // === FRASE COMPLETA ===
+            console.log("Frase completa! Avançando para o próximo índice.");
+            
+            // Verifica se o jogo terminou
+            if (match.currentSentenceIndex + 1 >= srtData.length) {
+                // JOGO TERMINOU
+                updatePayload = {
+                    status: 'finished', // Sinaliza fim de jogo
+                    currentSentenceWords: newWords // Envia a última frase completa
+                };
+            } else {
+                // PRÓXIMA FRASE
+                updatePayload = {
+                    currentSentenceWords: "", // Reseta as palavras
+                    currentSentenceIndex: match.currentSentenceIndex + 1, // Avança o índice
+                    // O oponente (ou quem não jogou por último) começa a próxima
+                    currentPlayerId: match.opponentId === myId ? match.hostId : match.opponentId 
+                };
+            }
+
+        } else {
+            // === FRASE INCOMPLETA ===
+            console.log("Palavra enviada, passando o turno.");
+            // Passa o turno para o outro jogador
+            const nextPlayerId = (myId === match.hostId) ? match.opponentId : match.hostId;
+            updatePayload = {
+                currentSentenceWords: newWords,
+                currentPlayerId: nextPlayerId
+            };
+        }
+
+        // 7. Atualiza o documento no servidor
+        await databases.updateDocument(
+            DATABASE_ID,
+            MATCHES_COLLECTION_ID,
+            currentMatchId,
+            updatePayload // Envia o payload decidido
+        );
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error("Erro ao enviar jogada:", error);
+        hideLoading();
+    }
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
