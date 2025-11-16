@@ -3466,47 +3466,6 @@ async function checkSolo() {
 }
 
 /**
- * ⚔️ Modo Multiplayer: Envia o turno (e a pontuação final) ao servidor e aguarda o oponente.
- */
-async function checkMulti() {
-    if (!window.currentMatch || !window.currentMatch.matchId) {
-        console.error("❌ Partida Multiplayer não definida. Falha no checkMulti.");
-        await checkSolo();
-        return;
-    }
-    
-    const currentUserId = (await account.get()).$id;
-    const isHost = currentUserId === window.currentMatch.hostId;
-    const opponentId = isHost ? window.currentMatch.opponentId : window.currentMatch.hostId;
-    
-    try {
-        const dataToUpdate = {
-            currentPlayerId: opponentId,
-            currentSentenceIndex: currentSegmentIndex, // ✅ CORRIGIDO
-            currentSentenceWords: JSON.stringify([]) 
-        };
-
-        const updatedMatch = await updateMatchOnServer(
-            window.currentMatch.matchId,
-            dataToUpdate
-        );
-        
-        console.log('✅ Turno enviado ao servidor. Próximo a jogar:', updatedMatch.currentPlayerId);
-
-        const palavrasContainer = document.getElementById('palavras');
-        const fraseContainer = document.getElementById('frase');
-        if (palavrasContainer) palavrasContainer.innerHTML = '';
-        if (fraseContainer) fraseContainer.innerHTML = '<h3 style="color: #3ea6ff;">Turno do Oponente...</h3>';
-
-        setTurnState(false);
-
-    } catch (error) {
-        console.error('❌ Erro ao enviar turno para o servidor:', error);
-        alert('Falha ao enviar o turno. Verifique a conexão.');
-    }
-}
-
-/**
  * Carrega o próximo segmento (ATUALIZADO COM VERIFICAÇÃO ROBUSTA)
  */
 async function loadNextSegment() {
