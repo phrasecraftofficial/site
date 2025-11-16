@@ -1,4 +1,5 @@
 <!-- exibe a performance por palavra e acumulada -->
+<!-- exibe a play section tanto para solo quanto para multi -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3063,24 +3064,41 @@ function calculateAveragePerformance() {
 /**
  * Atualiza a exibição da performance do host no header
  */
+/**
+ * Atualiza a exibição da performance do host no header
+ */
 function updateHostPerformanceDisplay() {
     const hostPerformanceElement = document.getElementById('host-performance');
     
     if (hostPerformanceElement) {
         const averagePerformance = calculateAveragePerformance();
-        hostPerformanceElement.textContent = `${averagePerformance.toFixed(0)}%`;
+        
+        // Escolhe emoji baseado na performance acumulada
+        let emoji = '🧠'; // Padrão
+        if (averagePerformance < 70) emoji = '🐢'; // Muito lento
+        else if (averagePerformance < 80) emoji = '🐌'; // Lento
+        else if (averagePerformance < 85) emoji = '🎯'; // Razoável
+        else if (averagePerformance < 90) emoji = '🎉'; // Bom
+        else if (averagePerformance < 93) emoji = '🏆'; // Muito bom
+        else if (averagePerformance < 95) emoji = '⭐'; // Ótimo
+        else if (averagePerformance < 97) emoji = '✈️'; // Excelente
+        else if (averagePerformance < 99) emoji = '🔥'; // Excepcional
+        else emoji = '🚀'; // Perfeito
+        
+        // Exibe a porcentagem com o emoji
+        hostPerformanceElement.textContent = `${averagePerformance.toFixed(0)}% ${emoji}`;
         
         // Opcional: Mudar a cor com base na performance
-        if (averagePerformance >= 70) {
+        if (averagePerformance >= 90) {
             hostPerformanceElement.style.color = '#4caf50'; // Verde
-        } else if (averagePerformance >= 40) {
+        } else if (averagePerformance >= 70) {
             hostPerformanceElement.style.color = '#ffc078'; // Laranja
         } else {
             hostPerformanceElement.style.color = '#ff5e91'; // Vermelho
         }
     }
 }
-
+  
 /**
  * Reseta a performance acumulada (chamar ao iniciar novo jogo)
  */
