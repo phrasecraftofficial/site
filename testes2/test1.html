@@ -1,4 +1,4 @@
-<!-- ultima versão que não tem cria partidas -->
+<!-- exibe a play section tanto para solo quanto para multi -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1064,8 +1064,7 @@ function openContent() {
 
 function showSoloPreview() {
     showFooter(); // Garante que o footer apareça para os botões
-	hideAcceptChallenge();
-	setEditorMode('previewSolo');
+	  hideAcceptChallenge();
     showSection('editSrt');
 }
 
@@ -1074,9 +1073,10 @@ function showSoloPreview() {
  * @param {Object} match - O objeto da partida retornado por searchMatchesOnServer.
  */
 function showMultiPreview(match) {
+    console.log("=== Preview Multiplayer ===", match.lessonName);  
     showFooter(); // Garante que o footer apareça para os botões
-    hideSoloAndChallenging();
-    setEditorMode('previewMulti');
+	  hideSoloAndChallenging();
+	  setEditorMode('previewMulti');   
 
     // 1. Carrega o SRT da lição (simulado, você precisará adaptar)
     // Para funcionar, a lição precisa estar no cache OU você precisa de uma função
@@ -1094,7 +1094,6 @@ function showMultiPreview(match) {
     
     // 2. Mantenha o estado da partida
     window.currentMatch = match; // Armazena a partida para usar em startMultiMode
-    
     showSection('editSrt');
 }
 
@@ -2714,9 +2713,6 @@ async function previewLesson(lesson) {
     }
 
     hideLoading();
-
-    // 4️⃣ Exibe o preview
-    showSoloPreview();
 
   } catch (error) {
     console.error("❌ Erro ao carregar lição:", error);
