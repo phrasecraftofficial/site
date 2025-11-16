@@ -1,4 +1,4 @@
-<!-- performance dinamica e acumulada ok
+<!-- recomeçando apenas movendo os dois jogadores para play
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -1413,15 +1413,24 @@ async function startMultiMode() {
     }
 
     try {
+        // Atualiza a partida para 'playing'
         const updatedMatch = await updateMatchOnServer(window.currentMatch.matchId);
+        
+        // Se inscreve para atualizações
         window.unsubscribeFromMatch = subscribeToMatchUpdates(window.currentMatch.matchId);
         
+        // Redireciona para play (sem lógica de turnos por enquanto)
         hideFooter();
         showSection('play');
         
-        // ✅ NOVO: BLOQUEAR O OPONENTE AO INICIAR
-        // setTurnState(false) agora aplica o bloqueio de forma não-invasiva
-        setTurnState(false); 
+        // Aguarda um frame e carrega o jogo
+        requestAnimationFrame(() => {
+            if (srtData.length > 0) {
+                resetAccumulatedPerformance();
+                currentSegmentIndex = 0;
+                injectFirstSegmentShuffled();
+            }
+        });
         
     } catch (e) {
         console.error("Falha ao iniciar partida multi:", e);
@@ -3089,43 +3098,9 @@ function addWordPerformanceSolo(wordPerformance) {
  * @param {number} wordPerformance - Performance obtida na palavra (0-MAX_WORD_PERFORMANCE).
  */
 async function addWordPerformanceMulti(wordPerformance) {
-    // 1. Validação básica da partida
-    if (!window.currentMatch || !window.currentMatch.matchId) {
-        console.error("❌ Partida Multiplayer não definida. Usando modo Solo...");
-        addWordPerformanceSolo(wordPerformance);
-        return;
-    }
-    
-    // 2. Determina se o jogador atual é o Host ou o Opponent
-    const isHost = (await account.get()).$id === window.currentMatch.hostId;
-    const scoreField = isHost ? 'hostPerformance' : 'opponentPerformance';
-    
-    // 3. Atualiza os valores locais
-    totalWordsCompleted++;
-    totalPerformance += wordPerformance;
-    
-    // 4. Calcula a nova performance acumulada (porcentagem)
-    const newAveragePerformance = calculateAveragePerformance();
-    
-    console.log(`📊 Palavra ${totalWordsCompleted} (Multi - ${isHost ? 'Host' : 'Opponent'}): ${wordPerformance.toFixed(2)} pontos`);
-    console.log(`📊 Nova Média Acumulada: ${newAveragePerformance.toFixed(0)}%`);
-
-    // 5. Atualiza o display local
-    updateHostPerformanceDisplay();
-
-    // 6. Envia a performance total (em %) E as palavras atuais (em JSON) para o servidor
-    try {
-        const dataToUpdate = {
-            [scoreField]: newAveragePerformance, // Atualiza a performance (Host ou Opponent)
-            currentSentenceWords: JSON.stringify(selectedWords) // Envia as palavras selecionadas
-        };
-        
-        // Usa a nova função de update genérica
-        await updateMatchOnServer(window.currentMatch.matchId, dataToUpdate);
-        
-    } catch (error) {
-        console.error("❌ Erro ao enviar pontuação para o servidor:", error);
-    }
+    // Por enquanto, apenas salva localmente (igual ao Solo)
+    console.log("📊 Modo Multi (simplificado) - salvando performance localmente");
+    addWordPerformanceSolo(wordPerformance);
 }
 
 /**
@@ -3449,6 +3424,9 @@ function isNextWord(word) {
 /**
  * 🎯 Função principal que verifica se a frase está completa e direciona para o modo correto.
  */
+/**
+ * 🎯 Função principal que verifica se a frase está completa (SIMPLIFICADA)
+ */
 function checkIfPhraseComplete() {
     const currentSegment = srtData[currentSegmentIndex];
     
@@ -3456,27 +3434,20 @@ function checkIfPhraseComplete() {
         .split(/\s+/)
         .filter(w => w.trim().length > 0);
     
-    // 1. Verifica se a frase foi completada (independente do modo)
+    // 1. Verifica se a frase foi completada
     if (selectedWords.length === correctWords.length) {
         console.log("🎉 Frase completa!");
         
-        // Determina o modo
-        const isMultiplayer = document.querySelector('section#play.active') && window.currentMatch && window.currentMatch.matchId;
-
-        // Limpa o timer final de qualquer forma, pois a frase está completa
+        // Limpa o timer final
         stopWordTimer();
         
         setTimeout(async () => {
             currentSegmentIndex++; // Prepara para o próximo segmento
             
             if (currentSegmentIndex < srtData.length) {
-                // Ainda há segmentos, chama o fluxo de turno do modo correto
-                if (isMultiplayer) {
-                    await checkMulti();
-                } else {
-                    console.log("isMutiplayer não localizado!");
-                    await checkSolo();
-                }
+                // Carrega próximo segmento (solo mode apenas por enquanto)
+                console.log(`Carregando segmento ${currentSegmentIndex + 1}...`);
+                await loadNextSegment();
             } else {
                 // Todos os segmentos completados
                 console.log("🏆 Lição finalizada!");
@@ -3794,110 +3765,41 @@ async function searchMatchesOnServer() {
 }
 
 /**
- * 📢 Se inscreve para ouvir as atualizações em tempo real (Realtime) de uma partida específica.
- * Se o status da partida mudar para 'playing', os dois jogadores são movidos para a seção 'play'.
- * @param {string} matchId - O ID do documento da partida a ser observada.
+ * 📢 Se inscreve para ouvir atualizações da partida (SIMPLIFICADO)
+ * Quando o status muda para 'playing', ambos vão para a tela de play.
  */
 function subscribeToMatchUpdates(matchId) {
     console.log(`📡 Conectando ao Realtime para a partida: ${matchId}`);
     
-    // ✅ CORRIGIDO: Usa client.subscribe() diretamente
     const channel = `databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}`;
 
-    // Cria uma instância de subscribe diretamente no client
     const unsubscribe = client.subscribe(channel, async (response) => {
-      console.log('📬 Evento recebido:', response);
-      
-      // Verifica se é um evento de atualização
-      if (response.events.includes(`databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}.update`)) {
-          const updatedMatch = response.payload;
-          // AGORA O AWAIT FUNCIONA DENTRO DESTE BLOCO
-          const currentUserId = (await account.get()).$id; 
-  
-          console.log('📬 Atualização de partida recebida. Status:', updatedMatch.status);
-  
-          // --- Lógica de INÍCIO de Partida (Status 'playing') ---
-          if (updatedMatch.status === 'playing' && updatedMatch.currentPlayerId) {
-              // Se ainda não estiver na seção 'play', move para lá e inicializa
-              if (document.querySelector('section#play:not(.active)')) {
-                  console.log('▶️ Partida iniciada! Redirecionando para a tela de jogo...');
-                  endCreateMode(); 
-                  hideFooter();
-                  showSection('play');
-                  
-                  // Inicializa o jogo
-                  requestAnimationFrame(() => {
-                      if (srtData.length > 0) {
-                          resetAccumulatedPerformance();
-                          currentSegmentIndex = updatedMatch.segmentIndex || 0; 
-                          
-                          // ✅ DECISÃO DE QUEM JOGA PRIMEIRO
-                          const isMyTurn = currentUserId === updatedMatch.currentPlayerId;
-                          
-                          if (isMyTurn) {
-                            // --- Desbloquear o Jogador ---
-                            console.log("🔓 Seu Turno!");
-                            palavrasContainer.style.opacity = '1.0';
-                            palavrasContainer.style.pointerEvents = 'auto'; // Reativa cliques
-                            
-                            // Limpa a mensagem de espera e restaura o container da frase para o estado normal.
-                            if (fraseContainer.textContent.includes('Turno do Oponente')) {
-                                fraseContainer.innerHTML = ''; 
-                            }
-                        
-                            // Garante que o overlay de loading global esteja escondido
-                            hideLoading();
-                            
-                            // ✅ INICIA O TIMER QUANDO DESBLOQUEAR (se houver palavras disponíveis)
-                            if (currentSegment && srtData.length > 0) {
-                                const currentSegmentData = srtData[currentSegmentIndex];
-                                const correctWords = currentSegmentData.text.split(/\s+/).filter(w => w.trim().length > 0);
-                                const nextWordIndex = selectedWords.length; // Índice da próxima palavra esperada
-                                
-                                if (nextWordIndex < correctWords.length) {
-                                    const nextWord = correctWords[nextWordIndex];
-                                    console.log(`⏱️ Iniciando timer ao desbloquear para: "${nextWord}"`);
-                                    startWordTimer(nextWord);
-                                }
-                            }
-                            
-                        } else {
-                            // --- Bloquear o Jogador (Modo de Espera) ---
-                            console.log("🔒 Turno do Oponente. Bloqueando palavras.");
-                            
-                            // ✅ PARA O TIMER AO BLOQUEAR
-                            stopWordTimer();
-                            
-                            palavrasContainer.style.opacity = '0.4';
-                            palavrasContainer.style.pointerEvents = 'none';
-                            
-                            fraseContainer.innerHTML = '<h3 style="color: #3ea6ff; font-size: 1.2em;">Aguardando Turno do Oponente...</h3>';
+        console.log('📬 Evento recebido:', response);
+        
+        // Verifica se é um evento de atualização
+        if (response.events.includes(`databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}.update`)) {
+            const updatedMatch = response.payload;
+
+            console.log('📬 Atualização de partida recebida. Status:', updatedMatch.status);
+
+            // --- Lógica SIMPLES: Se status = 'playing', vai para play ---
+            if (updatedMatch.status === 'playing') {
+                // Se ainda não estiver na seção 'play', move para lá
+                if (document.querySelector('section#play:not(.active)')) {
+                    console.log('▶️ Partida iniciada! Redirecionando para a tela de jogo...');
+                    
+                    endCreateMode(); 
+                    hideFooter();
+                    showSection('play');
+                    
+                    // Inicializa o jogo
+                    requestAnimationFrame(() => {
+                        if (srtData.length > 0) {
+                            resetAccumulatedPerformance();
+                            currentSegmentIndex = 0;
+                            injectFirstSegmentShuffled();
                         }
-                      }
-                  });
-              }
-          }
-          
-            // --- Lógica de TROCA de Turno ---
-            if (document.querySelector('section#play.active')) {
-                const isMyTurn = currentUserId === updatedMatch.currentPlayerId;
-                
-                if (isMyTurn) {
-                    console.log('📢 É O SEU TURNO! Carregando novo segmento.');
-                    
-                    // Atualiza o índice global
-                    currentSegmentIndex = updatedMatch.segmentIndex || 0; 
-                    
-                    // Carrega o próximo segmento (desbloqueando as palavras em loadNextSegment)
-                    await loadNextSegment(); 
-                    
-                    // ✅ DESBLOQUEIA O JOGADOR
-                    setTurnState(true); 
-                } else {
-                    // O oponente enviou o turno, mas a vez é de outro jogador
-                    // (mantém o bloqueio se for o caso, setTurnState(false) é opcional aqui)
-                    // Mas para garantir o bloqueio:
-                    setTurnState(false); 
+                    });
                 }
             }
         }
