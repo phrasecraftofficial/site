@@ -1,0 +1,3036 @@
+<!-- ultima versão que não tem cria partidas -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhraseCraft</title>
+  <script src="https://unpkg.com/dexie@4/dist/dexie.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
+<style>
+/* Reset básico */ 
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+} 
+body { 
+    font-family: "Roboto", Arial, sans-serif; 
+    background-color: #0b0404; 
+    color: #e0e0e0; 
+    line-height: 1.54;
+}
+main {
+  padding: 62px 0 62px 0; /* altura do footer e do header */
+}
+/* todas escondidas */
+section { 
+	display: none;
+} 
+/* visível */
+section.active { 
+	display: block; 
+}   
+/* Estilos gerais para Header e Footer */
+header, footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: #000;
+  padding: 0 16px;
+  color: #fff;
+  user-select: none;
+  z-index: 1000;
+}
+  /* ===============  */
+ /*      Header      */
+/* ===============  */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid #222;
+}
+/* Logo à esquerda */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+/* Performance centralizado no header */
+.performance-area {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-area img {
+  background: #fff; 
+  color: #000;  
+  border-radius: 15%;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+.icon {
+  width: 24px; 
+  height: 24px;
+}
+/* Ícones à direita */
+.icons-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.icons-right a {
+  color: #6d28d9;
+  text-decoration: none;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+.icons-right svg, header svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Centralização interna dos textos e ícones */
+.text-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+  /* ===============  */
+ /*      Footer      */
+/* ===============  */
+#main-footer {
+  bottom: 0;
+  height: 56px;
+  border-top: 1px solid #222;
+  justify-content: space-around;
+  align-items: center;
+}
+#main-footer a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+#main-footer a svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Texto do footer */
+#main-footer span {
+  font-size: 10px;
+  user-select: none;
+}
+body.footer-hidden main {
+  padding-bottom: 0;
+}
+/* Adaptativo para telas pequenas */
+@media screen and (max-width: 600px) {
+  header {
+    padding: 0 8px;
+  }
+  #main-footer a {
+    font-size: 8px;
+    gap: 2px;
+  }
+  #main-footer a svg {
+    width: 20px;
+    height: 20px;
+  }
+  #preview-footer {
+    height: 48px;
+  }
+}  
+/* --- Classes de layout simplificadas --- */
+.flex, h4, h3, h2, p {
+  display: flex;
+  justify-content: center; /* centraliza horizontalmente */
+  align-items: center;     /* centraliza verticalmente */
+  max-width: 600px;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.row, h4, h3, h2, p {
+  margin: 0 auto;
+  flex-direction: row;
+}
+.column {
+  margin: 0 auto;
+  flex-direction: column;
+}
+input, textarea {
+    border: 1px solid #555; 
+    border-radius: 4px; 
+    padding: 10px 12px; 
+    font-size: 14px; 
+    width: 250px; 
+    max-width: 400px; 
+    background-color: #121212; 
+    color: #e0e0e0; 
+    transition: border-color 0.2s ease; 
+} 
+input:focus, textarea:focus { 
+    border-color: #3ea6ff; 
+    outline: none; 
+}
+#editEnd, #editStart, #editStack {
+    width: 90px;
+}
+input[type="radio"] {
+    width: 16px; 
+    max-width: 16px; 
+} 
+button {
+	width: 30px;
+	height: 30px;
+	font-size: 18px;
+	white-space: nowrap;
+	cursor: pointer;
+	border: none; 
+	background-color: #263238; 
+	color: #3ea6ff;
+	border-radius: 8px; 
+	transition: background 0.2s;
+}
+button:hover {
+	background-color: #bbb;
+	color: #000;
+}
+.general-btn { 
+    background-color: transparent; 
+    border: none; 
+    color: #3ea6ff;
+    font-weight: 500;
+  	white-space: nowrap; 
+    cursor: pointer; 
+    padding: 8px 12px;
+	border-radius: 8px;  
+    transition: background-color 0.2s ease; 
+	width: auto; 
+	max-width: 150px;
+	height: auto;
+    margin-bottom: 15px;
+}
+.general-btn:hover { 
+	background-color: #00111b; 
+	color: #fff;
+}
+/*thumb-section*/
+.video-section, .thumb-section { 
+  width: 100%;
+  height: auto;
+}
+
+video, .thumb-section img {
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+/* info-content */
+.info-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px 0 5px;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Texto do vídeo */
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Título do vídeo */
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 5px 0 5px 8px;
+  text-align: left;
+}
+
+/* Linha com nome do canal, desempenho e editar */
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 5px 8px;
+  font-size: 14px;
+}
+
+/* Imagem do canal */
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 1px 0 20px 0;
+}
+
+/* Nome do canal */
+.channel-name {
+  color: #bbbbbb;
+  margin-bottom: 15px;
+}
+
+/* Desempenho (percentual) */
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Botão Editar */
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+/* Playlist Item */
+label {
+	display: flex;
+	align-self: flex-start;
+}
+label input[type="checkbox"] {
+    /* Usando accent-color para estilizar a cor do 'check' (suporte varia) */
+    accent-color: gray; /* Cor secundária de destaque */
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid #5a5a5a; /* Borda para contraste */
+    background-color: #333333; /* Fundo do checkbox */
+    cursor: pointer;
+}
+  /*=================*/
+ /* Loading Overlay */
+/*=================*/
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #333;
+    border-top: 4px solid #6d28d9;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* ================================== */
+/* Estilo para a Lista de Legendas */
+/* ================================== */
+/* ================================== */
+.segmentsArea {
+	padding: 10px; 
+    max-height: 50vh; /* ou a altura que preferir */
+    overflow-y: auto;
+    width: 100%;
+    max-width: 600px;
+}
+
+.segment { 
+  background: #1a1a1a;
+  padding: 10px; 
+  border-radius: 10px; 
+  margin: 5px 0; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.segment:hover:not(.segment-selected) {
+  background: #334450;
+  border-left-color: #3ea6ff;
+}
+
+.segment-selected {
+  background: #1e3a4f;
+  border-left-color: #6d28d9;
+}
+
+/* Scrollbar customizada */
+.segmentsArea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.segmentsArea::-webkit-scrollbar-track {
+  background: #0b0404;
+}
+
+.segmentsArea::-webkit-scrollbar-thumb {
+  background: #3ea6ff;
+  border-radius: 4px;
+}
+
+.segmentsArea::-webkit-scrollbar-thumb:hover {
+  background: #6d28d9;
+}
+
+/* Para telas pequenas */
+@media screen and (max-width: 600px) {
+  .segmentsArea {
+    max-height: 50vh; /* Mais espaço em telas pequenas */
+  }
+  
+  .segment {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+/* Telas muito pequenas */
+@media screen and (max-width: 400px) {
+  .general-btn {
+    font-size: 14px;
+    padding: 5px 6px;
+  }
+}
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">Carregando...</div>
+  </div>
+  <header>
+    <div class="logo-area" onclick="showSection('home')">
+      <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
+      <div class="text-area" id="text-area">
+        <span>PhraseCraft</span>
+      </div>
+    </div>
+    
+	  <div class="flex row gap" id="performance-area">
+      <div class="flex column">
+        <span id="">Jogador 1</span>
+        <span id="host-performance">100%</span>
+      </div>
+      <div class="flex column">
+        <span id="word-performance"></span>
+      </div>
+      <div class="flex column">
+        <span id="">Jogador 2</span>
+        <span id="opponent-performance">100%</span>
+      </div>
+    </div>
+    
+    <div class="icons-right" id="icons-right">
+      <!-- Create -->
+      <a href="#" id="icon-create" onclick="showSection('create')">
+        <svg class="icon" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4zM11 11V9H9v2H7v2h2v2h2v-2h2v-2h-2z"/>
+        </svg>
+      </a>
+      <!-- Search -->
+      <a href="#" onclick="showSection('search')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 20l-5.8-5.8A7 7 0 1 0 4 11a7 7 0 0 0 11.2 5.6L21 20zM6 11a5 5 0 1 1 10 0a5 5 0 0 1-10 0z"/></svg>
+      </a>
+      <!-- Notifications -->
+      <a href="#" onclick="showSection('notifications')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm6-6V11c0-3.3-2.2-6-5-6V4a1 1 0 1 0-2 0v1c-2.8 0-5 2.7-5 6v5l-1.9 1.9A1 1 0 0 0 6 20h12a1 1 0 0 0 .9-1.6L18 16z"/></svg>
+      </a>
+    </div>
+  </header>
+
+<main>
+    <!-- Seções -->
+    <section id="home">
+        <h2>Home</h2>
+        <p>Welcome to the home section.</p>
+        <div class="post-container" id="home-post-container">
+
+        <div class="card">        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-home" class="thumb-section" onclick="showSoloPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-home" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                  </div>
+              </div>
+            </div>
+        </div>
+            
+        </div>
+    </section>
+
+    <section id="create">
+		<h2>Create</h2>
+        <p>Use this section to create new content.</p>
+			<form>
+                <label for="videoUpload" class="flex column">Upload Vídeo
+                <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
+                <input type="file" id="videoUpload" accept="video/*"></label>
+                <label for="srtUpload" class="flex column" class="upload-btn">Upload SRT
+                <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
+                <input type="file" id="srtUpload" accept=".srt"></label>
+                <button class="general-btn flex row" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+            </form>
+    </section>
+
+    <!-- Search -->
+    <section id="search">
+      <h2>Search</h2>
+      <p>Use this section to search content.</p>
+    </section>
+
+    <!-- Notifications -->
+    <section id="notifications">
+      <h2>Notifications</h2>
+      <p>Here are your notifications.</p>
+    </section>
+
+    <!-- You -->
+    <section id="you">
+      <h2>You</h2>
+      <p>This section is about your profile.</p>
+                      
+      <div>
+        <button class="flex column general-btn" onclick="showSection('myProfile')">
+            <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Perfil</span></button>
+        <button class="flex column general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
+            <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Postagens</span></button>
+      </div>
+    
+    </section>
+
+    <section id="subscriptions">
+      <h2>Subscriptions</h2>
+      <p>See all your subscriptions here.</p>
+    </section>
+    
+    <!-- Subsections -->
+    <section id="myProfile">
+		<h2>My Account</h2>
+		<p>Use this section to see and edit your profile.</p>
+        <div class="flex column" >
+          <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
+          <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
+          <span>____________________________________</span>
+          <button class="general-btn" id="logout-button" onclick="handleLogout()">Sair</button>
+        </div>
+	</section>
+    
+    <section id="login-screen">
+    	<h2>Entrar</h2>
+    	<form class="flex column" id="login-form">
+    	    <p id="login-message"></p>
+    	    <input type="email" id="email-login" placeholder="E-mail" required>
+    	    <input type="password" id="password-login" placeholder="Senha" required>
+    	    <button type="submit" class="general-btn">Iniciar Sessão</button>
+    	</form>
+    </section>
+    
+    <section id="myPosts">
+        <h2>My Lessons Posts</h2>
+        <p>Use this section to see your lessons posted.</p>
+        <div id="user-post-container" id="myPosts-post-container">
+        
+            <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-myPosts" class="thumb-section" onclick="showSoloPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-myPosts" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showSoloPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="general-btn" onclick="openContent();">✎ Editar</span>
+                      <span class="general-btn" onclick="openContent();" style="color: red;">❌ Excluir</span>
+                  </div>
+              </div>
+            </div>
+            
+        </div>
+    </section>
+
+    <section id="challenge" class="">
+      <!-- Lobby Area -->
+      <div id="lobby">
+      	<p>Aguardando oponente...</p>
+      </div>
+      
+      <!-- Criadas -->
+      <h2>Partidas Criadas</h2>
+      <p>Use this section to see all matches waiting a second player.</p>
+      <div class="post-container" id="multi-post-container">
+	  <!-- Os cards de vídeo serão inseridos aqui -->
+        	<div id="thumb-section-challenge" class="thumb-section" onclick="showMultiPreview()">
+				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+            </div>
+            
+            <div id="info-content-challenge" class="info-content">
+              <div class="channel-pic">
+                  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Canal" class="channel-pic">
+              </div>
+
+              <div class="video-text">
+                  <span class="video-title" onclick="showMultiPreview()" style="cursor: pointer;">{post.videoName}</span>
+                  <div class="video-meta">
+                      <span class="channel-name">channel-name</span>
+                      <span class="performance">95%</span>
+                  </div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </section>
+	<section id="postLesson">
+		<h2>Post</h2>
+		<p>Use this section to post.</p>
+		<div class="flex column" id="video-section-postLesson">
+          <!-- O vídeo de postagem ou edição será inserido aqui -->
+          <video id="videoPlayer-postLesson" controls crossorigin="anonymous">
+              <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+          </video>
+		</div>
+      	<div class="flex row" id="postLesson-containerBtn">
+      	    <button class="general-btn" onclick="showSection('editSrt')">👈</button>
+      		  <button class="general-btn" onclick="handleCaptureClick()">Thumbnail 📸</button>
+      	    <button class="general-btn" onclick="postLesson()">Postar 🛰️</button>
+      	</div>
+      
+      <div class="flex row" id="thumb-section-postLesson">
+      	<img class="channel-pic" alt="captured thumb" hidden>
+        <form class="flex column">
+            <!-- Título -->
+            <input type="text" placeholder="Digite o nome o vídeo..." name="nome">
+
+            <!-- Descrição -->
+            <textarea type="text" placeholder="Digite uma descrição..." name="description"></textarea>
+        </form>
+      </div>
+      <p>______________</p>
+
+      <!-- Playlist -->
+      <form class="flex column" id="playlistForm">
+          <h4>Adicionar à Playlist</h4>
+          <div class="flex column"  id="playlist-checkbox-container" style="width: 150px;">
+              <p>Carregando...</p>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="all" checked>
+                  Playlist 1
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="current">
+                  Playlist 2
+              </label>
+              <label class="radio-option">
+                  <input type="checkbox" name="opcao-linha" value="from-current">
+                  Playlist 3
+              </label>
+          </div>
+          
+          <div class="flex row" id="new-playlist-name-area" style="display: none;">
+          <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
+          <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
+			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
+			<button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
+			<button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
+          </div>
+          
+      </form> 
+    </section>
+	<section id="play">
+		<div id="video-section-play">
+          <video id="videoPlayer-play" controls crossorigin="anonymous">
+                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+          </video>
+        </div>
+
+      	<div class="flex row">
+      		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
+ font-weight: bold; background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
+      		<button class="general-btn" id="desistir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+		</div>
+
+		<div class="phrase-container" id="frase"></div>
+
+        <div class="word-button-wrapper">
+            <div class="word-container" id="palavras"></div>
+        </div>
+        
+        <div class="flex row" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+    </section>
+  <!----------->
+  <!--editSrt-->
+  <!----------->
+  <section id="editSrt">
+    <div id="save-area">
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <p>💾 Salvar</p>
+        <div class="flex row">
+            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
+            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
+            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
+        </div>
+    </div><!--save-area-->
+      
+	<div id="subtitleName">
+    	<!-- Div para exibir o nome do arquivo da legenda -->
+	</div>
+    
+	<div class="column-area" id="video-section-editor">
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+	</div>
+
+	<div id="editor">
+	<div class="flex row">
+    	<button id="btn-save" onclick="showSave()">💾</button>
+    	<button onclick="undo()">↩</button>
+    	<button onclick="redo()">↪</button>
+    	<button id="btn-config" onclick="showConfig()">⚙</button>
+    	<button onclick="addSegment()">|+</button>
+    	<button onclick="removeSegment()">|−</button>
+    	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
+	</div>
+	<form class="flex row" style="gap: 0; padding: 0;">
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
+          Início
+          <input type="text" id="editStart" placeholder="00:00:000">
+        </div>
+        <div class="flex column">
+          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
+        </div>
+      </label>
+      <label class="flex row" style="gap: 0; padding: 0;">
+        <div class="flex column" style="gap: 0; padding: 0;">
+          Fim
+          <input id="editEnd"  placeholder="00:00:000">
+        </div>
+        <div class="flex column">
+          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
+        </div>
+      </label>
+    </form>
+    <form>
+      <label class="flex row">Texto
+          <textarea type="text" id="editText" rows="3"></textarea>
+      </label>
+    </form>
+    </div><!--editor-->
+    <div class="flex row" id="navigation-controls-previewMode">
+		<button onclick="prevLine()">⏮︎</button>
+		<button onclick="playLine()">⏯︎</button>
+		<button onclick="nextLine()">⏭︎</button>
+	</div>
+	<div class="column-area" id="config-area">
+        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+     	<p>⚙ Editar em lote</p>
+         <form class="flex row">
+           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
+           <input id="editStack" placeholder="0.05">
+           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
+		</form>
+		<form class="flex column" id="linhaForm" style="width: 300px;">
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="all" checked>
+				Todas as linhas
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="current">
+				Apenas linha atual
+			</label>
+			<label class="radio-option" style="align-self: flex-start;">
+				<input type="radio" name="opcao-linha" value="from-current">
+				Linha selecionada e próximas linhas
+			</label>
+		</form>
+	</div><!--config-area-->
+    <div class="segmentsArea flex column" id="segments-area">
+    	  <span>Lista de Legendas</span>
+        <div id="segments"></div>
+    </div>
+	</section>
+  </main>  
+
+  <footer id="main-footer">
+    <a href="#" onclick="showSection('home')">
+      <svg viewBox="0 0 24 24"><path d="M12 3.3l8 6V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.3l8-6z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#" onclick="showSection('subscriptions')">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4V6.5l-4 4z"/></svg>
+      <span>Subscriptions</span>
+    </a>
+    <a href="#" onclick="showSection('you')">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
+    <a href="#" onclick="showSection('challenge')">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
+    <a href="#" id="preview-footer-solo" onclick="startSoloMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
+    <a href="#" id="preview-footer-challenging" onclick="startCreateMode()">
+        <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
+    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()">
+        <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Aceitar Desafio</span></a>
+  </footer>
+
+<script>
+// 1. A variável "estado" (começa como 'editor')
+let currentEditMode = 'editor';
+
+// Variável para controlar se já está carregando
+let isLoadingThumbnails = false;
+
+// Cache global de lições
+let lessonsCache = [];
+let isCacheLoaded = false;
+
+// Seções que devem exibir thumbnails
+const SECTIONS_WITH_THUMBNAILS = [
+  'home',
+  'myPosts',
+  'subscriptions',
+  'challenge'
+];
+
+// Seleciona os elementos Header
+const textArea = document.getElementById('text-area');
+const iconsRight = document.getElementById('icons-right');
+const performanceArea = document.getElementById('performance-area');
+
+// Seleciona os elementos Edit Srt
+const videoSection = document.getElementById('video-section-editor');
+const editor = document.getElementById('editor');
+const segmentsArea = document.getElementById('segments-area');
+const saveArea = document.getElementById('save-area');
+const configArea = document.getElementById('config-area');
+
+// const lobby = document.getElementById('lobby'); // Removido para evitar erro de redeclaração
+const footer = document.getElementById('main-footer');
+
+// Seleciona todos os links <a> dentro de #main-footer que NÃO têm um atributo 'id'
+const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+
+// Playlist Area (DECLARAÇÕES GLOBAIS)
+const newPlaylistArea = document.getElementById('new-playlist-name-area');
+const btnShowNewPlaylist = document.getElementById('btn-show-new-playlist-area');
+const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
+
+// Seletor para o contêiner exbir Playlists
+const playlistContainer = document.getElementById('playlist-checkbox-container');
+
+// Constantes de Partida
+const MATCHES_POST_CONTAINER = 'multi-post-container'; // ID do container na seção 'challenge'
+
+// Defina aqui todas as seções que usam a navegação principal
+const mainNavSections = [
+  'home', 
+  'subscriptions', 
+  'you', 
+  'challenge', 
+  'create', 
+  'search', 
+  'notifications', 
+  'myProfile', 
+  'myPosts', 
+  'login-screen'
+];
+
+// Estado global da aplicação
+const appState = {
+  video: {
+    url: null,
+    file: null,
+    blob: null
+  },
+  subtitle: {
+    url: null,
+    file: null,
+    name: 'legendas.srt',
+    data: [] // srtData
+  },
+  thumbnail: {
+    blob: null,
+    url: null
+  },
+  currentSection: 'home'
+};
+	
+// Configuração centralizada de elementos
+const SELECTORS = {
+  // VÍDEOS: Sempre começar com "videoPlayer"
+  videos: 'video[id^="videoPlayer"]',
+
+  // THUMBNAILS: Sempre começar com "thumb-section"
+  thumbnails: '[id^="thumb-section"] img',
+	
+  subtitleDisplays: '[id^="subtitleName"]',
+  segmentAreas: '[id^="segments-area"]'
+};
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --------------- Bloco Fx ----------------
+//
+// Somente controla visibilidade e
+// chama outras funções.
+// Não mudar essas responsabilidades.
+//
+// --------- Visbilidade e Chamadas --------
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+	
+// Mantem um estado global e propaga 
+// as mudanças para todos os elementos
+// relevantes quando o estado mudar.
+function updateAllElements(selector, updateFn) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach(updateFn);
+  console.log(`✅ ${elements.length} elemento(s) atualizado(s) [${selector}]`);
+}
+
+// Uso:
+function updateAllVideos(source) {
+  updateAllElements(SELECTORS.videos, (video) => {
+    video.src = source;
+    video.load();
+  });
+  appState.video.url = source;
+}
+
+function updateAllThumbnails(imageUrl) {
+  updateAllElements(SELECTORS.thumbnails, (img) => {
+    img.src = imageUrl;
+    img.hidden = false;
+  });
+  appState.thumbnail.url = imageUrl;
+}
+
+// Sincronizar dados ao mudar de seção
+function syncStateToSection(sectionId) {
+  // Sincroniza vídeo se houver
+  if (appState.video.url || appState.video.blob) {
+    const source = appState.video.blob || appState.video.url;
+    updateAllVideos(source);
+  }
+  
+  // Sincroniza thumbnail se houver
+  if (appState.thumbnail.url) {
+    updateAllThumbnails(appState.thumbnail.url);
+  }
+}
+	
+// Função principal para alternar seções
+async function showSection(sectionId) {
+    // Esconde todas as seções
+    const sections = document.querySelectorAll("main section");
+    sections.forEach(sec => sec.classList.remove("active"));
+
+    // Exibe a seção desejada
+    const target = document.getElementById(sectionId);
+    if (target) {
+        target.classList.add("active");
+    }
+
+    // SINCRONIZA o estado ao trocar de seção (NOVO)
+    syncStateToSection(sectionId);
+    
+    updateElementForSection(sectionId);
+}
+
+/**
+ * Esta função atualiza a UI com base no modo
+ */
+function setEditorMode(mode) {
+    // Atualiza a variável de estado
+    currentEditMode = mode; 
+    console.log("Modo alterado para:", currentEditMode);
+
+    // 2. Seleciona os elementos do seu HTML
+    const editorDiv = document.getElementById('editor');
+    const navPreview = document.getElementById('navigation-controls-previewMode');
+    
+    // Botões do footer (baseado no seu HTML)
+    const footerSolo = document.getElementById('preview-footer-solo');
+    const footerChallenging = document.getElementById('preview-footer-challenging');
+    const footerChallenges = document.getElementById('preview-footer-challenges');
+
+    // 3. Lógica para esconder/mostrar
+  	hideMainNavigation();
+	  closeLoadSaveArea();
+    
+    // Primeiro, esconde tudo para "limpar"
+    // (Oculta as partes que mudam)
+    if (editorDiv) editorDiv.style.display = 'none';
+    if (navPreview) navPreview.style.display = 'none';
+    if (footerSolo) footerSolo.style.display = 'none';
+    if (footerChallenging) footerChallenging.style.display = 'none';
+    if (footerChallenges) footerChallenges.style.display = 'none';
+
+    // Agora, mostra apenas o que é necessário para o modo
+    
+    if (mode === 'editor') {
+        // Mostra o editor
+        if (editorDiv) editorDiv.style.display = 'block';
+        if (navPreview) navPreview.style.display = 'block';
+        
+    } else if (mode === 'previewSolo') {
+        // Mostra navegação e botões de "Solo" e "Desafiar"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
+        if (footerChallenging) footerChallenging.style.display = 'flex';
+        
+    } else if (mode === 'previewMulti') {
+        // Mostra navegação e botão "Aceitar Desafio"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerChallenges) footerChallenges.style.display = 'flex';
+    }
+}
+
+function openContent() {
+	hideFooter();
+	setEditorMode('editor');
+    showSection('editSrt');
+	renderSegments();
+    loadContent();
+}
+
+function showSoloPreview() {
+    showFooter(); // Garante que o footer apareça para os botões
+	hideAcceptChallenge();
+	setEditorMode('previewSolo');
+    showSection('editSrt');
+}
+
+/**
+ * Inicia o modo de visualização para uma Partida Multiplayer
+ * @param {Object} match - O objeto da partida retornado por searchMatchesOnServer.
+ */
+function showMultiPreview(match) {
+    showFooter(); // Garante que o footer apareça para os botões
+    hideSoloAndChallenging();
+    setEditorMode('previewMulti');
+
+    // 1. Carrega o SRT da lição (simulado, você precisará adaptar)
+    // Para funcionar, a lição precisa estar no cache OU você precisa de uma função
+    // para buscar a lição completa (vídeo e SRT) do Backblaze usando o ID da lição.
+    
+    // Exemplo Simples: Tenta encontrar a lição no cache pelo nome (baseName)
+    const associatedLesson = lessonsCache.find(l => l.baseName === match.extraData.lessonName);
+
+    if (associatedLesson) {
+        previewLesson(associatedLesson); // Reusa a função que carrega os dados e renderiza
+    } else {
+        alert("Lição associada a este desafio não encontrada no cache.");
+        // Em um sistema real, você faria um novo fetch da lição aqui
+    }
+    
+    // 2. Mantenha o estado da partida
+    window.currentMatch = match; // Armazena a partida para usar em startMultiMode
+    
+    showSection('editSrt');
+}
+
+/**
+ * Oculta os links de navegação principais (Home, Subscriptions, You, Desafios)
+ * que estão no footer, deixando os botões contextuais (Solo, Desafiar, etc.)
+ */
+function hideMainNavigation() {
+  // Oculta cada um desses links
+  mainNavLinks.forEach(link => {
+    link.style.display = 'none';
+  });
+}
+
+/**
+ * Exibe a navegação principal (Home, Subs, You, Desafios)
+ * e esconde os botões contextuais (Solo, Desafiar, Aceitar).
+ */
+function showMainNavigation() {
+  // 1. Esconde os botões contextuais
+  hideSoloAndChallenging();
+  hideAcceptChallenge();
+  
+  // 2. Garante que o footer esteja visível
+  showFooter();
+
+  // 3. Define a variável
+  const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+  
+  // 4. Mostra os links de navegação principais
+  mainNavLinks.forEach(link => {
+    link.style.display = 'flex';
+  });
+}
+
+/**
+ * Decide o que o footer deve mostrar com base na seção ativa.
+ * Também gerencia a visibilidade do lobby.
+ */
+async function updateElementForSection(sectionId) {
+
+  // Oculta elementoss do header em play
+  if (!iconsRight || !textArea)
+  return; // segurança caso não existam
+  
+  // --- LÓGICA DE OCULTAR PLAYLIST ---
+  // Apenas tenta esconder a área da Playlist se a função existir
+  // E se não estiver na seção postLesson.
+  if (sectionId !== "postLesson" && typeof hideAddPlaylistArea === 'function') {
+      hideAddPlaylistArea();
+  }
+  // ----------------------------------
+    
+  if (sectionId === "play") {
+    iconsRight.style.display = "none";
+    textArea.style.display = "none";
+    performanceArea.style.display = "";
+  } else {
+    iconsRight.style.display = "";
+    textArea.style.display = "";
+    performanceArea.style.display = "none";
+  }
+
+  // Manipula elementoss do footer
+  // Verifica se a seção atual está na lista principal
+  if (mainNavSections.includes(sectionId)) {
+    // Se sim, mostra a navegação principal (Home, Subs, etc.)
+    showMainNavigation();
+  } 
+  
+  // LÓGICA DO LOBBY: Oculta o lobby se a nova seção NÃO for 'challenge'
+  const lobby = document.getElementById('lobby');
+  if (sectionId !== 'challenge') {
+    if (lobby) {
+      lobby.style.display = 'none';
+    }
+  }
+    
+  // --- LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
+  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId)) {
+      if (sectionId === 'challenge') {
+          // Se for a seção de desafios, buscamos as partidas no servidor
+          const matches = await searchMatchesOnServer();
+          renderThumbnailsFromCache(sectionId, matches);
+      } else {
+          // Para as outras seções (home, myPosts, etc.), usamos o cache de lições
+          if (!isCacheLoaded) {
+              await loadLessonsToCache();
+          }
+          renderThumbnailsFromCache(sectionId, lessonsCache);
+      }
+  }
+  // --- FIM LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
+}
+
+/**
+ * Oculta os botões "Solo" e "Desafiar".
+ */
+function hideSoloAndChallenging() {
+  const btnSolo = document.getElementById('preview-footer-solo');
+  const btnChallenging = document.getElementById('preview-footer-challenging');
+
+  if (btnSolo) {
+    btnSolo.style.display = 'none';
+  }
+  if (btnChallenging) {
+    btnChallenging.style.display = 'none';
+  }
+}
+
+/**
+ * Oculta o botão "Aceitar Desafio".
+ */
+function hideAcceptChallenge() {
+  const btnAccept = document.getElementById('preview-footer-challenges');
+  
+  if (btnAccept) {
+    btnAccept.style.display = 'none';
+  }
+}
+
+/**
+ *  Oculta o footer principal.
+ */
+function hideFooter() {  
+  if (footer) {
+    footer.style.display = 'none';
+  }
+}
+
+/**
+ *  Mostra o footer principal.
+ */
+function showFooter() {  
+  if (footer) {
+    footer.style.display = 'flex';
+  }
+}
+
+/**
+ * Mostra a tela de "Salvar", escondendo o editor principal.
+ */
+function showSave() {
+  // Esconde as partes principais do editor
+  if (videoSection) videoSection.style.display = 'none';
+  if (editor) editor.style.display = 'none';
+  if (segmentsArea) segmentsArea.style.display = 'none';
+  
+  // Esconde outros paineis
+  if (configArea) configArea.style.display = 'none';
+  
+  // Mostra o painel de salvar
+  if (saveArea) saveArea.style.display = 'block';
+}
+
+/**
+ * Fecha os paineis "Salvar" ou "Config" e retorna ao editor principal.
+ */
+function closeLoadSaveArea() {
+  // Mostra as partes principais do editor
+  if (videoSection) videoSection.style.display = 'block';
+  if (editor) editor.style.display = 'block';
+  if (segmentsArea) segmentsArea.style.display = 'block';
+
+  // Esconde os paineis
+  if (saveArea) saveArea.style.display = 'none';
+  if (configArea) configArea.style.display = 'none';
+}
+
+/**
+ * Mostra o painel de "Configurações" (Editar em Lote).
+ */
+function showConfig() {
+  // Seleciona os elementos
+  const configArea = document.getElementById('config-area');
+  const saveArea = document.getElementById('save-area');
+
+  // Esconde o painel de salvar (para não sobrepor)
+  if (saveArea) saveArea.style.display = 'none';
+  
+  // Mostra o painel de config
+  if (configArea) configArea.style.display = 'block';
+}
+
+function startSoloMode() {
+  hideFooter();
+  showSection('play');
+}
+
+/**
+ * LÓGICA DO LOBBY: Chamado ao clicar em "Desafiar".
+ * Tenta criar uma partida com a primeira lição disponível.
+ */
+function startCreateMode() {
+    const lobby = document.getElementById('lobby');
+    if (lobby) lobby.style.display = 'block'; 
+
+    if (lessonsCache.length === 0) {
+        alert("Não há lições disponíveis para desafiar.");
+        endCreateMode();
+        showSection('challenge');
+        return;
+    }
+
+    // A. Seleciona a primeira lição do cache como exemplo
+    const lesson = lessonsCache[0]; 
+    
+    // B. Chama a função de criação da partida
+    createMatchOnServer(
+        lesson.baseName,
+        lesson.baseName, // Usando o baseName como nome da lição
+        lesson.thumb.fileId
+    ).catch(error => {
+        // Lidar com erros de criação de partida
+        console.error("Falha ao criar partida:", error);
+    });
+
+    // Mantém a seção challenge visível
+    showSection('challenge');
+}
+
+/**
+ * LÓGICA DO LOBBY: Função para esconder o lobby (se necessário).
+ */
+function endCreateMode() {
+  const lobby = document.getElementById('lobby');
+  if (lobby) lobby.style.display = 'none'; // CORRIGIDO: Esconde o lobby
+}
+
+function startMultiMode() {
+  hideFooter();
+  showSection('play');
+}
+
+// Playlist Area
+function showNewPlaylistNameArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'flex'; // Use 'flex' ou 'block'
+    btnShowNewPlaylist.style.display = 'none';
+    newPlaylistNameInput.focus();
+  }
+}
+
+function hideAddPlaylistArea() {
+  if (newPlaylistArea && btnShowNewPlaylist) {
+    newPlaylistArea.style.display = 'none';
+    btnShowNewPlaylist.style.display = 'flex'; // Mostra o botão de 
+    newPlaylistNameInput.value = '';
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Login ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+// Configuração do Appwrite
+const DATABASE_ID = "68ed87df000874c3e85a"; 
+const PLAYLISTS_COLLECTION_ID = "playlists";
+  
+// Constantes de Partida
+const MATCHES_COLLECTION_ID = "68fb595d00158868bf7c";
+
+const client = new Appwrite.Client()
+        .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+        .setProject('68ebe8640000ca7c860b');
+
+// Inicialização dos módulos (ID e Databases são necessários para a playlist)
+const { Databases, ID, Permission, Role } = Appwrite;
+const databases = new Databases(client);
+const account = new Appwrite.Account(client);
+
+// Seletores de elementos HTML 
+const btnLoginHeader = document.getElementById('btnLogin');
+
+const loginForm = document.getElementById('login-form');
+const logoutButton = document.getElementById('logout-button');
+const userEmailDisplay = document.getElementById('user-email-display');
+const iconCreate = document.getElementById('icon-create');
+const btnMyPosts = document.getElementById('btn-myPosts');
+
+const loginMessage = document.getElementById('login-message');
+
+// Função para verificar o status de login
+let isCheckingAuth = false;
+
+async function checkAuthStatus() {
+    // Verifica se já há uma sessão em cache
+    const cachedEmail = localStorage.getItem('userEmail');
+    if (cachedEmail) {
+        renderUIForAuthState(true, cachedEmail);
+        showSection('myPosts');
+        return;
+    }
+    
+    showLoading('Carregando...');
+    console.log('Verificando sessão...')
+    
+    try {
+        const user = await account.get();
+        // Salva o email no cache
+        localStorage.setItem('userEmail', user.email);
+        renderUIForAuthState(true, user.email);
+        showSection('myPosts');
+    } catch (error) {
+    	console.log('Usuário não está logando. Direcinando para "home"...')
+        // Remove cache se houver erro
+        localStorage.removeItem('userEmail');
+        renderUIForAuthState(false);
+        showSection('home');
+    } finally {
+        hideLoading();
+    }
+}
+    
+// Evento de submissão do formulário de login
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email-login').value;
+    const password = document.getElementById('password-login').value;
+    loginMessage.textContent = '';
+    
+    showLoading('Entrando...');
+    
+    try {
+        // Primeiro tenta deletar qualquer sessão existente
+        try {
+            await account.deleteSession('current');
+        } catch (error) {
+            // Ignora erro se não houver sessão ativa
+        }
+        
+        // Agora cria a nova sessão
+        await account.createEmailPasswordSession(email, password);
+        
+        // Atualiza a interface
+        const user = await account.get();
+        // Salva no cache
+        localStorage.setItem('userEmail', user.email);
+        renderUIForAuthState(true, user.email);
+        showSection('you');
+    } catch (error) {
+        loginMessage.textContent = 'Erro no login: ' + error.message;
+    } finally {
+        hideLoading();
+    }
+});
+
+// Função de logout
+function handleLogout() {
+    showLoading('Saindo...');
+    
+    account.deleteSession('current')
+        .then(() => {
+            localStorage.removeItem('userEmail');
+            renderUIForAuthState(false);
+            showSection('home');
+        })
+        .catch((error) => {
+            console.error('Erro ao fazer logout:', error);
+        })
+        .finally(() => {
+            hideLoading();
+        });
+}
+    
+/* Função para renderizar a interface de
+    ** acordo com o estado de autenticação */
+function renderUIForAuthState(isLoggedIn, userEmail = '') {
+    // Esconde tudo primeiro
+    iconCreate.style.display = 'none';
+    btnMyPosts.style.display = 'none';
+    btnLoginHeader.style.display = 'none';
+    logoutButton.style.display = 'none';
+    userEmailDisplay.style.display = 'none';
+    
+    // Garantir que a tela de login seja escondida
+    document.getElementById('login-screen').classList.remove('active');
+
+    if (isLoggedIn) {
+        // Mostra email e botão sair
+        userEmailDisplay.textContent = userEmail;
+        userEmailDisplay.style.display = 'block';
+        logoutButton.style.display = 'block';
+    	iconCreate.style.display = 'block';
+	    btnMyPosts.style.display = 'flex';
+        fetchUserPlaylists();
+    } else {
+        // Mostra apenas botão entrar
+        btnLoginHeader.style.display = 'block';
+    }
+}
+
+// Função para mostrar perfil ou tela de login
+async function showProfile() {
+    try {
+        const user = await account.get();
+        // Se conseguiu pegar o usuário, está logado
+        showSection('myProfile');
+    } catch (error) {
+        // Se deu erro, não está logado
+        showSection('login-screen');
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Bloco Fx | Loading ----- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Mostra o overlay de loading
+ * @param {string} message - Mensagem a ser exibida (opcional)
+ */
+function showLoading(message = 'Carregando...') {
+    const overlay = document.getElementById('loadingOverlay');
+    const text = document.getElementById('loadingText');
+    if (text) text.textContent = message;
+    if (overlay) overlay.classList.add('active');
+}
+
+/**
+ * Esconde o overlay de loading
+ */
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | EditSrt --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+const srtData = [
+  { id: 1, start: "00:00:01,000", end: "00:00:03,000", text: "Olá, mundo!" },
+  { id: 2, start: "00:00:04,000", end: "00:00:06,000", text: "Bem-vindo ao editor de legendas." },
+  { id: 3, start: "00:00:07,000", end: "00:00:09,000", text: "Aqui você pode editar e desfazer ações." }
+];
+
+let currentSegment = null;
+let undoStack = [];
+let redoStack = [];
+let stopTimeout = null; // auxiliar para playLine()
+let TIME_STEP = 0.1; // segundos
+let isBatchEditing = false; // para edição em lote
+let subtitleName = "legendas.srt";  // Nome padrão caso não seja carregado nenhum arquivo
+
+
+// ====================================
+// --- Funções de Navegação (Views) ---
+// ====================================
+function renderSegments() {
+  const container = document.getElementById("segments");
+  container.innerHTML = "";  // Limpa a lista de segmentos
+
+  srtData.forEach(seg => {
+    const div = document.createElement("div");
+    div.className = "segment";
+    div.setAttribute('data-id', seg.id);
+    
+    // Adiciona classe ao segmento selecionado
+    if (seg.id === currentSegment?.id) {
+      div.classList.add("segment-selected");
+    }
+    
+    // Define o conteúdo do segmento
+    div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
+    
+    // Define a ação de clicar no segmento
+    div.onclick = () => openEditor(seg.id);
+    
+    // Adiciona o segmento ao container
+    container.appendChild(div);
+  });
+}
+
+function openEditor(id) {
+  currentSegment = srtData.find(s => s.id === id);
+  if (!currentSegment) return;
+
+  document.getElementById("editor").style.display = "block";
+  document.getElementById("editStart").value = currentSegment.start;
+  document.getElementById("editEnd").value = currentSegment.end;
+  document.getElementById("editText").value = currentSegment.text;
+
+  document.getElementById("editStart").oninput = e => handleChange("start", e.target.value);
+  document.getElementById("editEnd").oninput = e => handleChange("end", e.target.value);
+  document.getElementById("editText").oninput = e => handleChange("text", e.target.value);
+  
+  // Remove a classe de todos os segmentos
+  document.querySelectorAll('.segment').forEach(item => {
+    item.classList.remove('segment-selected');
+  });
+  
+  // Adiciona a classe apenas ao segmento atual
+  const itemAtivo = document.querySelector(`[data-id="${id}"]`);
+  if (itemAtivo) {
+    itemAtivo.classList.add('segment-selected');
+  }
+  
+  scrollToSegment(id);
+  
+  setTimeout(() => playLine(), 500);
+}
+
+function handleChange(field, newValue) {
+  if (!currentSegment) return;
+  const oldValue = currentSegment[field];
+  if (oldValue === newValue) return;
+
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  undoStack.push({ 
+    type: "edit",
+    id: currentSegment.id, 
+    field, 
+    oldValue, 
+    newValue,
+    segmentBackup: oldSegment // backup completo do segmento
+  });
+  redoStack = [];
+  currentSegment[field] = newValue;
+  renderSegments();
+}
+
+function adjustTime(field, deltaSeconds) {
+  if (!currentSegment) return;
+
+  const oldValue = currentSegment[field];
+  const newValue = shiftTime(oldValue, deltaSeconds);
+
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const prev = srtData[idx - 1];
+  const next = srtData[idx + 1];
+
+  const toMs = t => {
+    const [h, m, rest] = t.split(":");
+    const [s, ms] = rest.split(",");
+    return (+h * 3600 + +m * 60 + +s) * 1000 + +ms;
+  };
+
+  const newMs = toMs(newValue);
+  const startMs = toMs(currentSegment.start);
+  const endMs = toMs(currentSegment.end);
+
+  if (field === "start" && prev && newMs <= toMs(prev.end) + 0) return;
+  if (field === "end" && next && newMs >= toMs(next.start) - 0) return;
+  if (field === "start" && newMs >= endMs - 0) return;
+  if (field === "end" && newMs <= startMs + 0) return;
+  
+  // Cria uma cópia profunda do segmento ANTES da mudança
+  const oldSegment = { ...currentSegment };
+  
+  if (!isBatchEditing) {
+    undoStack.push({ 
+      type: "edit",
+      id: currentSegment.id, 
+      field, 
+      oldValue, 
+      newValue,
+      segmentBackup: oldSegment
+    });
+    redoStack = [];
+  }
+
+  redoStack = [];
+
+  currentSegment[field] = newValue;
+  updateEditorFields(currentSegment);
+  renderSegments();
+}
+
+function shiftTime(timeStr, delta) {
+  // "00:00:04,500" → soma delta (em segundos)
+  const [h, m, rest] = timeStr.split(":");
+  const [s, ms] = rest.split(",");
+  let totalMs = (+h * 3600 + +m * 60 + +s) * 1000 + +ms + delta * 1000;
+
+  if (totalMs < 0) totalMs = 0;
+  const hours = Math.floor(totalMs / 3600000);
+  const minutes = Math.floor((totalMs % 3600000) / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const millis = Math.floor(totalMs % 1000);
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)},${pad(millis, 3)}`;
+}
+
+function pad(num, size=2) {
+  return num.toString().padStart(size, "0");
+}
+
+// ======================
+// ↩ | ↪ | ☰ ➖ | ☰ ➕️
+// ======================
+function undo() {
+  if (!undoStack.length) return;
+  const last = undoStack.pop();
+  redoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de antes da adição
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de antes da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.oldValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateBefore.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  const last = redoStack.pop();
+  undoStack.push(last);
+
+  if (last.type === "add") {
+    // Restaura o array completo de depois da adição
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData.find(s => s.id === last.segment.id) || null;
+  } else if (last.type === "remove") {
+    // Restaura o array completo de depois da remoção
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({...s})));
+    currentSegment = srtData[last.currentIndex] || srtData[last.currentIndex - 1] || null;
+  } else if (last.type === "edit") {
+    const seg = srtData.find(s => s.id === last.id);
+    if (seg) {
+      seg[last.field] = last.newValue;
+      currentSegment = seg;
+    }
+  } else if (last.type === "edit-multiple") {
+    srtData.length = 0;
+    srtData.push(...last.stateAfter.map(s => ({ ...s })));
+    currentSegment = srtData.find(s => s.id === currentSegment?.id) || srtData[0] || null;
+  }
+
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+function addSegment() {
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  let insertIndex = srtData.length;
+  if (currentSegment) {
+    const idx = srtData.findIndex(s => s.id === currentSegment.id);
+    insertIndex = idx + 1;
+  }
+
+  const newId = insertIndex + 1;
+  const newSegment = {
+    id: newId,
+    start: "00:00:00,000",
+    end: "00:00:00,000",
+    text: "Novo trecho"
+  };
+  
+  srtData.splice(insertIndex, 0, newSegment);
+  
+  // Renumera os IDs a partir do ponto de inserção
+  for (let i = insertIndex + 1; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "add",
+    segment: { ...newSegment },
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: insertIndex
+  });
+  redoStack = [];
+
+  currentSegment = newSegment;
+  renderSegments();
+  openEditor(currentSegment.id);
+}
+
+function removeSegment() {
+  if (!currentSegment) return;
+  if (srtData.length === 1) return alert("Não é possível remover o único segmento.");
+
+  // Salva o estado ANTES da modificação
+  const stateBefore = srtData.map(s => ({...s}));
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  const removedSegment = { ...srtData[idx] };
+  srtData.splice(idx, 1);
+
+  // Renumera os IDs após a remoção
+  for (let i = idx; i < srtData.length; i++) {
+    srtData[i].id = i + 1;
+  }
+
+  // Salva o estado DEPOIS da modificação
+  const stateAfter = srtData.map(s => ({...s}));
+
+  undoStack.push({
+    type: "remove",
+    segment: removedSegment,
+    stateBefore: stateBefore,
+    stateAfter: stateAfter,
+    currentIndex: idx
+  });
+  redoStack = [];
+
+  currentSegment = srtData[idx] || srtData[idx - 1] || null;
+
+  renderSegments();
+  if (currentSegment) openEditor(currentSegment.id);
+  else document.getElementById("editor").style.display = "none";
+}
+
+function updateEditorFields(seg) {
+  document.getElementById("editStart").value = seg.start;
+  document.getElementById("editEnd").value = seg.end;
+  document.getElementById("editText").value = seg.text;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); }
+  if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
+});
+
+
+// ======================
+// ◀◀ | ▶▶
+// ======================
+function prevLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("videoPlayer-editSrt");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx > 0) {
+    openEditor(srtData[idx - 1].id);
+    scrollToSegment(srtData[idx - 1].id);
+  }
+}
+
+function nextLine() {
+  if (!currentSegment) return;
+  
+  // Limpa timeout e pausa o vídeo ANTES de trocar de linha
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+  
+  const videoElement = document.getElementById("videoPlayer-editSrt");
+  if (videoElement && !videoElement.paused) {
+    videoElement.pause();
+  }
+  
+  const idx = srtData.findIndex(s => s.id === currentSegment.id);
+  if (idx < srtData.length - 1) {
+    openEditor(srtData[idx + 1].id);
+    scrollToSegment(srtData[idx + 1].id);
+  }
+}
+
+function scrollToSegment(id) {
+  const segmentsContainer = document.getElementById("segments-area");
+  const segments = document.querySelectorAll(".segment");
+  
+  // Encontra o elemento do segmento pelo índice (id - 1)
+  const targetSegment = segments[id - 1];
+  
+  if (targetSegment && segmentsContainer) {
+    // Usando scrollIntoView para centralizar o segmento
+    targetSegment.scrollIntoView({
+      behavior: 'smooth',  // Animação suave
+      block: 'center'      // Centraliza verticalmente
+    });
+  }
+}
+
+// ======================
+// Etidar e lote
+// ======================
+function showEarlier() {
+  shiftSelectedLines(-getCurrentStep());
+}
+
+function showLater() {
+  shiftSelectedLines(+getCurrentStep());
+}
+
+function getCurrentStep() {
+  const input = document.getElementById("editStack").value.trim().replace(",", ".");
+  const step = parseFloat(input);
+  return isNaN(step) || step <= 0 ? TIME_STEP : step;
+}
+
+function shiftSelectedLines(delta) {
+  const selected = document.querySelector('input[name="opcao-linha"]:checked');
+  const value = selected ? selected.value : "current";
+
+  const stateBefore = srtData.map(s => ({ ...s }));
+  const prevSegment = currentSegment;
+
+  if (value === "all") {
+    isBatchEditing = true;
+    srtData.forEach(seg => {
+      currentSegment = seg;
+      adjustTime("start", delta);
+      adjustTime("end", delta);
+    });
+    isBatchEditing = false;
+  } else if (value === "from-current" && currentSegment) {
+    const startIdx = srtData.findIndex(s => s.id === currentSegment.id);
+    if (startIdx >= 0) {
+      isBatchEditing = true;
+      for (let i = startIdx; i < srtData.length; i++) {
+        currentSegment = srtData[i];
+        adjustTime("start", delta);
+        adjustTime("end", delta);
+      }
+      isBatchEditing = false;
+    }
+  } else if (value === "current" && currentSegment) {
+    adjustTime("start", delta);
+    adjustTime("end", delta);
+  }
+
+  const stateAfter = srtData.map(s => ({ ...s }));
+
+  undoStack.push({
+    type: "edit-multiple",
+    delta,
+    stateBefore,
+    stateAfter
+  });
+  redoStack = [];
+
+  currentSegment = prevSegment;
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
+}
+
+// ==================================
+// Funções de Carregamento
+// ==================================
+function loadContent() {
+  const videoInput = document.getElementById("videoUrl").value.trim();
+  const videoUpload = document.getElementById("videoUpload").files[0];
+
+  const srtInput = document.getElementById("srtUrl").value.trim();
+  const srtUpload = document.getElementById("srtUpload").files[0];
+
+  // Carregar o vídeo em TODAS as seções (CORRIGIDO)
+  if (videoUpload) {
+    const videoURL = URL.createObjectURL(videoUpload);
+    appState.video.file = videoUpload;
+    appState.video.blob = videoURL;
+    updateAllVideos(videoURL); // Usa a função de sincronização
+  } else if (videoInput) {
+    appState.video.url = videoInput;
+    updateAllVideos(videoInput); // Usa a função de sincronização
+  }
+
+  // Carregar a legenda
+  if (srtUpload) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      parseSRT(e.target.result);
+      
+      appState.subtitle.name = srtUpload.name;
+      appState.subtitle.file = srtUpload;
+      document.getElementById("subtitleName").textContent = srtUpload.name;
+    };
+    reader.readAsText(srtUpload);
+  } else if (srtInput) {
+    fetch(srtInput)
+      .then(res => res.text())
+      .then(text => {
+        parseSRT(text);
+
+        appState.subtitle.name = srtInput.split("/").pop();
+        appState.subtitle.url = srtInput;
+        document.getElementById("subtitleName").textContent = appState.subtitle.name;
+      })
+      .catch(err => alert("Erro ao carregar SRT por URL: " + err.message));
+  }
+
+  closeLoadSaveArea();
+}
+
+// Função para interpretar o conteúdo .srt para srtData
+function parseSRT(content) {
+  const lines = content.split(/\r?\n/);
+  const segments = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const id = parseInt(lines[i++]);
+    const time = lines[i++];
+
+    if (!time || !time.includes("-->")) continue;
+
+    const [start, end] = time.split("-->").map(s => s.trim().replace(".", ","));
+    let text = "";
+
+    while (i < lines.length && lines[i].trim() !== "") {
+      text += lines[i++] + "\n";
+    }
+
+    segments.push({
+      id,
+      start,
+      end,
+      text: text.trim()
+    });
+
+    while (i < lines.length && lines[i].trim() === "") i++;
+  }
+
+  srtData.length = 0;
+  srtData.push(...segments);
+  currentSegment = null;
+  undoStack = [];
+  redoStack = [];
+  renderSegments();
+}
+
+// Exibir SRT
+function showSRT() {
+  const srt = generateSRT();
+  const novaAba = window.open("", "_blank");
+
+  if (novaAba) {
+    novaAba.document.write(`<pre>${srt.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`);
+    novaAba.document.title = "SRT Gerado";
+    novaAba.document.close();
+  } else {
+    alert("Não foi possível abrir nova aba. Verifique se o bloqueador de pop-up está ativo.");
+  }
+}
+
+
+function generateSRT() {
+  return srtData.map(seg => {
+    return `${seg.id}\n${seg.start} --> ${seg.end}\n${seg.text}`;
+  }).join("\n\n");
+}
+
+function copyToClipboard() {
+  const text = generateSRT();
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Legendas copiadas para a área de transferência.");
+  });
+}
+
+function downSrt() {
+  // Verifique se o nome da legenda está configurado corretamente
+  if (!subtitleName) {
+    alert("Erro: Nome da legenda não encontrado.");
+    return;
+  }
+
+  const blob = new Blob([generateSRT()], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = subtitleName;  // Usando o nome da legenda carregada
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Função auxiliar para playLine()
+// converter o tempo no formato 
+// SRT (hh:mm:ss,SSS) para segundos
+function parseTime(timeString) {
+  const timeParts = timeString.split(/[:,]/);  // Separar por ":" e ","
+  const hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10);
+  const seconds = parseInt(timeParts[2], 10);
+  const milliseconds = parseInt(timeParts[3], 10);
+
+  // Converter tudo para segundos
+  return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+}
+
+// Busca os tempos de início e fim da legenda atual e 
+// usa o vídeo (ou áudio) para tocar o trecho
+function playLine() {
+  if (!currentSegment) {
+    alert("Nenhum trecho selecionado.");
+    return;
+  }
+
+  const videoElement = document.getElementById("videoPlayer-editSrt");
+  if (!videoElement || !videoElement.src) {
+    alert("Carregue um vídeo primeiro!");
+    return;
+  }
+
+  // **CRÍTICO: Limpa qualquer timeout anterior**
+  if (stopTimeout) {
+    clearTimeout(stopTimeout);
+    stopTimeout = null;
+  }
+
+  // Pausa o vídeo se estiver tocando
+  if (!videoElement.paused) {
+    videoElement.pause();
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+
+  // Aguarda um frame antes de iniciar (garante que pause foi processado)
+  requestAnimationFrame(() => {
+    videoElement.currentTime = startTime;
+    videoElement.play();
+
+    // Configura novo timeout para pausar no fim
+    stopTimeout = setTimeout(() => {
+      videoElement.pause();
+      stopTimeout = null;
+    }, (endTime - startTime) * 1000);
+  });
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Função Principal de Criação de Playlist -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+async function saveNewPlaylistName() {
+    const playlistName = newPlaylistNameInput.value.trim();
+
+    if (!playlistName) {
+        alert("Por favor, digite um nome para a playlist.");
+        return;
+    }
+
+    showLoading('Criando nova playlist...');
+
+    try {
+        // 1. Obter o ID do usuário logado (necessário para a permissão de escrita)
+        const user = await account.get();
+        const userId = user.$id;
+
+        // 2. Definir as permissões: Somente o criador pode ler e escrever
+        const permissions = [
+            Permission.read(Role.user(userId)),
+            Permission.write(Role.user(userId)),
+        ];
+
+        // 3. Criar o documento no Appwrite
+        const newPlaylist = await databases.createDocument(
+            DATABASE_ID, 
+            PLAYLISTS_COLLECTION_ID,
+            ID.unique(), // ID único gerado pelo Appwrite
+            {
+                userId: userId,
+                playlistName: playlistName,
+                // O campo playlistDescription é opcional e não estamos usando aqui
+            },
+            permissions // Aplicar as permissões
+        );
+
+        console.log('Playlist criada com sucesso:', newPlaylist);
+        alert(`Playlist "${playlistName}" criada!`);
+        
+        // Esconder a área de input após o sucesso
+        hideAddPlaylistArea();
+    	await fetchUserPlaylists();
+        
+        // TODO: Você deve adicionar aqui a lógica para
+        // 1. Atualizar a lista de checkboxes de playlists na UI.
+
+    } catch (error) {
+        console.error('Erro ao criar a playlist:', error);
+        alert('Falha ao criar a playlist. Verifique se as permissões e IDs estão corretos.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Funções de Exibição de Playlists do Appwrite -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * 1. Renderiza os elementos de checkbox no formulário com base nos dados.
+ * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
+ */
+/**
+ * Renderiza os elementos de checkbox no formulário com base nos dados.
+ * @param {Array<Object>} playlists - Array de objetos de playlist do Appwrite.
+ */
+function renderPlaylists(playlists) {
+    if (!playlistContainer) return;
+
+    // Limpa o conteúdo existente
+    playlistContainer.innerHTML = '';
+
+    if (playlists.length === 0) {
+        playlistContainer.innerHTML = '<p>Você não possui playlists.</p>';
+        return;
+    }
+    
+    // Contêiner flexível opcional para melhor alinhamento
+    // const listWrapper = document.createElement('div');
+    // listWrapper.className = 'playlist-list-wrapper'; // Você pode criar um estilo para este wrapper
+    
+    playlists.forEach(playlist => {
+        const playlistId = playlist.$id;
+        const playlistName = playlist.playlistName;
+
+        // 1. Cria o elemento LABEL
+        const label = document.createElement('label');
+        // Seu CSS .playlistForm label aplica-se a esta tag
+
+        // 2. Cria o INPUT (checkbox)
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = `playlist-${playlistId}`;
+        input.name = 'playlist';
+        input.value = playlistId;
+
+        // 3. Adiciona input e texto à label
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(` ${playlistName}`));
+        
+        // 4. Adiciona a label ao contêiner principal
+        playlistContainer.appendChild(label);
+        
+        // Em vez de <br>, usar margin-bottom no CSS é mais limpo.
+        // Já está no seu CSS: .playlistForm label { margin-bottom: 15px; }
+    });
+    
+    // Se você usou o listWrapper opcional:
+    // playlistContainer.appendChild(listWrapper);
+}
+
+/**
+ * 2. Busca as playlists do usuário logado no Appwrite.
+ * Nota: Isso só deve ser chamado se o usuário estiver autenticado.
+ */
+async function fetchUserPlaylists() {
+    showLoading('Buscando suas playlists...');
+    
+    try {
+        const user = await account.get();
+        const userId = user.$id;
+
+        // Filtra os documentos onde o 'userId' é igual ao ID do usuário logado.
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            PLAYLISTS_COLLECTION_ID,
+            [
+                Appwrite.Query.equal('userId', userId),
+                Appwrite.Query.orderDesc('$createdAt') // Opcional: ordenar pelas mais recentes
+            ]
+        );
+
+        renderPlaylists(response.documents);
+
+    } catch (error) {
+        console.error('Erro ao buscar playlists:', error);
+        playlistContainer.innerHTML = '<p style="color:red;">Não foi possível carregar as playlists.</p>';
+    } finally {
+        hideLoading();
+    }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+//  - Bloco Fx | Thumbnail -
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+function handleCaptureClick() {
+  const video = document.getElementById('videoPlayer-postLesson'); // Corrigido o ID
+  
+  if (!video) {
+    console.error('Elemento de vídeo não encontrado.');
+    alert('Vídeo não encontrado. Certifique-se de ter carregado um vídeo.');
+    return;
+  }
+
+  if (!video.src || video.readyState < 2) {
+    alert('Aguarde o vídeo carregar completamente antes de capturar a thumbnail.');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  canvas.toBlob((blob) => {
+    if (blob) {
+      window.capturedThumbnailBlob = blob; // Torna global
+      console.log('Thumbnail Blob capturado com sucesso!');
+
+      const imageDataURL = URL.createObjectURL(blob);
+
+      // Encontra a imagem que já existe no HTML
+      const thumbnailImg = document.querySelector('#thumb-section-postLesson img');
+
+      if (thumbnailImg) {
+        // Atualiza a imagem existente
+        thumbnailImg.src = imageDataURL;
+        thumbnailImg.hidden = false; // Torna visível
+        thumbnailImg.style.maxWidth = '200px';
+        thumbnailImg.style.height = 'auto';
+      } else {
+        console.error('Elemento de imagem não encontrado.');
+        alert('Erro: Container da thumbnail não encontrado.');
+      }
+    } else {
+      console.error('Falha ao gerar Blob da thumbnail.');
+      alert('Erro ao capturar a thumbnail.');
+    }
+  }, 'image/jpeg', 0.9);
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Upload Backblaze --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Obtém URL de upload do Backblaze via função Appwrite
+ */
+async function getBackblazeUploadUrl() {
+  console.log("--- Obtendo URL de upload do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',  // ID da sua função
+    JSON.stringify({}),
+    false // síncrono
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha na execução da função: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  
+  if (!data.uploadUrl || !data.authorizationToken) {
+    throw new Error('Erro ao obter URL de upload');
+  }
+  
+  console.log("✅ URL de upload obtida com sucesso");
+  return data;
+}
+
+/**
+ * Faz upload de um arquivo para o Backblaze
+ */
+async function uploadFileToBackblaze(file, fileName, uploadData) {
+  console.log(`--- Fazendo upload de: ${fileName} ---`);
+  console.log(`Tamanho do arquivo: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+  
+  const headers = {
+    'Authorization': uploadData.authorizationToken,
+    'X-Bz-File-Name': encodeURIComponent(fileName),
+    'Content-Type': file.type || 'b2/x-auto',
+    'X-Bz-Content-Sha1': 'do_not_verify',
+  };
+  
+  const uploadResponse = await fetch(uploadData.uploadUrl, {
+    method: 'POST',
+    headers: headers,
+    body: file,
+  });
+  
+  if (!uploadResponse.ok) {
+    throw new Error(`Erro no upload de ${fileName}: ${uploadResponse.statusText}`);
+  }
+  
+  const uploadResult = await uploadResponse.json();
+  console.log(`✅ Upload de ${fileName} concluído!`, uploadResult);
+  
+  return uploadResult;
+}
+
+/**
+ * Converte vídeo do videoPlayer para Blob
+ */
+async function getVideoBlob() {
+  console.log("--- Obtendo Blob do vídeo ---");
+  
+  // CORRIGIDO: Usa o arquivo original do appState
+  if (appState.video.file) {
+    console.log("Usando arquivo de vídeo carregado (File object)");
+    console.log(`✅ Blob do vídeo obtido: ${(appState.video.file.size / 1024 / 1024).toFixed(2)} MB`);
+    return appState.video.file;
+  }
+  
+  // Se foi carregado via blob URL (raro, mas possível)
+  if (appState.video.blob) {
+    console.log("Vídeo é um blob local, buscando conteúdo...");
+    const response = await fetch(appState.video.blob);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  // Se foi carregado via URL externa
+  if (appState.video.url) {
+    console.log("Vídeo é uma URL externa, fazendo fetch...");
+    const response = await fetch(appState.video.url);
+    const blob = await response.blob();
+    console.log(`✅ Blob do vídeo obtido: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+    return blob;
+  }
+  
+  throw new Error('Nenhum vídeo foi carregado');
+}
+
+/**
+ * Converte SRT data para Blob
+ */
+function getSrtBlob() {
+  console.log("--- Criando Blob do SRT ---");
+  const srtContent = generateSRT();
+  const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+  console.log(`✅ Blob do SRT criado: ${blob.size} bytes`);
+  return blob;
+}
+
+/**
+ * Gera nome base a partir do nome do SRT (sem extensão)
+ */
+function getBaseName() {
+  // CORRIGIDO: Usa o nome do appState
+  if (appState.subtitle.name && appState.subtitle.name !== 'legendas.srt') {
+    // Remove a extensão .srt
+    return appState.subtitle.name.replace(/\.srt$/i, '');
+  }
+  
+  // Se não houver nome personalizado, usa o nome do vídeo
+  if (appState.video.file && appState.video.file.name) {
+    return appState.video.file.name.replace(/\.[^/.]+$/, ''); // Remove qualquer extensão
+  }
+  
+  // Fallback: usa timestamp se não houver nome
+  return `lesson_${Date.now()}`;
+}
+
+/**
+ * Função principal para postar a lição
+ */
+async function postLesson() {
+  console.log("=== INÍCIO postLesson() ===");
+  
+  try {
+    showLoading('Preparando upload...');
+    
+    // 1. Validações
+    console.log("--- Validando dados ---");
+    
+    if (!srtData || srtData.length === 0) {
+      throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
+    }
+    
+    // CORRIGIDO: Verifica se há thumbnail capturada
+    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob) {
+      throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
+    }
+    
+    // CORRIGIDO: Verifica se há vídeo no appState
+    if (!appState.video.file && !appState.video.blob && !appState.video.url) {
+      throw new Error('Nenhum vídeo carregado.');
+    }
+    
+    console.log("✅ Validações passaram");
+    
+    // 2. Gera nomes dos arquivos baseados no SRT
+    const baseName = getBaseName();
+    const videoFileName = `${baseName}.mp4`;
+    const srtFileName = `${baseName}.srt`;
+    const thumbFileName = `${baseName}.jpg`;
+    
+    console.log("--- Nomes dos arquivos ---");
+    console.log("Base name:", baseName);
+    console.log("Video:", videoFileName);
+    console.log("SRT:", srtFileName);
+    console.log("Thumb:", thumbFileName);
+    
+    // 3. Prepara os arquivos
+    showLoading('Preparando arquivos...');
+    const videoBlob = await getVideoBlob();
+    const srtBlob = getSrtBlob();
+    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob; // CORRIGIDO
+    
+    console.log("✅ Todos os arquivos preparados");
+    
+    // 4. Faz upload dos 3 arquivos
+    const uploadResults = {
+      video: null,
+      srt: null,
+      thumb: null
+    };
+    
+    // Upload do vídeo
+    showLoading('Enviando vídeo... (1/3)');
+    const videoUploadData = await getBackblazeUploadUrl();
+    uploadResults.video = await uploadFileToBackblaze(videoBlob, videoFileName, videoUploadData);
+    
+    // Upload do SRT
+    showLoading('Enviando legenda... (2/3)');
+    const srtUploadData = await getBackblazeUploadUrl();
+    uploadResults.srt = await uploadFileToBackblaze(srtBlob, srtFileName, srtUploadData);
+    
+    // Upload da thumbnail
+    showLoading('Enviando thumbnail... (3/3)');
+    const thumbUploadData = await getBackblazeUploadUrl();
+    uploadResults.thumb = await uploadFileToBackblaze(thumbBlob, thumbFileName, thumbUploadData);
+    
+    console.log("=== UPLOADS CONCLUÍDOS ===");
+    console.log("Video ID:", uploadResults.video.fileId);
+    console.log("SRT ID:", uploadResults.srt.fileId);
+    console.log("Thumb ID:", uploadResults.thumb.fileId);
+    
+    // 5. Exibe resultado no console (por enquanto)
+    console.log("--- RESULTADO FINAL ---");
+    console.log(JSON.stringify(uploadResults, null, 2));
+    
+    hideLoading();
+    alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
+    // location.reload(); desativado por enquanto
+    
+    // NOVO: Atualiza o cache antes de recarregar
+    await refreshLessonsCache();
+    
+    showSection('home');
+    
+    // TODO: Salvar esses IDs no banco de dados
+    // TODO: Exibir os arquivos na página
+    
+    return uploadResults;
+    
+  } catch (error) {
+    console.error("❌ ERRO em postLesson():", error);
+    hideLoading();
+    alert('❌ Erro ao postar lição: ' + error.message);
+    throw error;
+  } finally {
+    console.log("=== FIM postLesson() ===");
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Listar Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Lista todos os arquivos do bucket via função Appwrite
+ */
+async function listBackblazeFiles() {
+  console.log("--- Listando arquivos do Backblaze ---");
+  
+  const { Functions } = Appwrite;
+  const functions = new Functions(client);
+  
+  const result = await functions.createExecution(
+    '68f7bd14002005b7bb6b',
+    JSON.stringify({ action: 'list' }),
+    false
+  );
+  
+  if (result.status !== 'completed') {
+    throw new Error(`Falha ao listar arquivos: ${result.stderr}`);
+  }
+  
+  const data = JSON.parse(result.responseBody);
+  console.log("✅ Arquivos listados:", data.files?.length || 0);
+  
+  return data.files || [];
+}
+
+/**
+ * Filtra apenas as thumbnails (arquivos .jpg/.jpeg/.png)
+ */
+function filterThumbnails(files) {
+  const thumbs = files.filter(file => {
+    const name = file.fileName.toLowerCase();
+    return name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+  });
+  
+  console.log(`✅ Thumbnails encontradas: ${thumbs.length}`);
+  return thumbs;
+}
+
+/**
+ * Gera URL pública para arquivo do Backblaze usando o fileId
+ */
+function getBackblazePublicUrl(fileId) {
+  return `https://f005.backblazeb2.com/b2api/v1/b2_download_file_by_id?fileId=${fileId}`;
+}
+
+/**
+ * Agrupa arquivos por nome base (sem extensão)
+ * Retorna um objeto com { baseName: { video, srt, thumb } }
+ */
+function groupFilesByLesson(files) {
+  const lessons = {};
+  
+  files.forEach(file => {
+    // Remove a extensão para obter o nome base
+    const baseName = file.fileName.replace(/\.(mp4|srt|jpg|jpeg|png)$/i, '');
+    
+    if (!lessons[baseName]) {
+      lessons[baseName] = {
+        baseName: baseName,
+        video: null,
+        srt: null,
+        thumb: null
+      };
+    }
+    
+    // Identifica o tipo do arquivo
+    const fileName = file.fileName.toLowerCase();
+    if (fileName.endsWith('.mp4')) {
+      lessons[baseName].video = file;
+    } else if (fileName.endsWith('.srt')) {
+      lessons[baseName].srt = file;
+    } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
+      lessons[baseName].thumb = file;
+    }
+  });
+  
+  // Retorna apenas lições que têm pelo menos a thumbnail
+  return Object.values(lessons).filter(lesson => lesson.thumb);
+}
+
+/**
+ * Carrega uma lição específica (vídeo + SRT + thumb) do Backblaze
+ * e guarda o conteúdo em cache após o primeiro carregamento
+ */
+async function previewLesson(lesson) {
+  console.log("--- Carregando lição para preview ---", lesson.baseName);
+
+  try {
+    showLoading('Carregando lição...');
+
+    // 1️⃣ VIDEO -----------------------------------------
+    if (lesson.video) {
+      // Se o vídeo já estiver em cache, usa ele
+      if (!lesson.video.blobUrl) {
+        const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+        const videoResponse = await fetch(videoUrl);
+        const videoBlob = await videoResponse.blob();
+        lesson.video.blobUrl = URL.createObjectURL(videoBlob); // guarda no cache
+        console.log("📦 Vídeo adicionado ao cache:", lesson.video.fileName);
+      } else {
+        console.log("✅ Vídeo já estava no cache:", lesson.video.fileName);
+      }
+
+      appState.video.url = lesson.video.blobUrl;
+      updateAllVideos(lesson.video.blobUrl);
+    } else {
+      console.warn("⚠️ Esta lição não possui vídeo");
+    }
+
+    // 2️⃣ SRT -----------------------------------------
+    if (lesson.srt) {
+      if (!lesson.srt.content) {
+        const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
+        const response = await fetch(srtUrl);
+        const srtContent = await response.text();
+        lesson.srt.content = srtContent; // guarda no cache
+        console.log("📦 Legendas adicionadas ao cache:", lesson.srt.fileName);
+      } else {
+        console.log("✅ Legendas já estavam no cache:", lesson.srt.fileName);
+      }
+
+      parseSRT(lesson.srt.content);
+      appState.subtitle.name = lesson.srt.fileName;
+      appState.subtitle.url = lesson.srt.content;
+    } else {
+      console.warn("⚠️ Esta lição não possui legendas");
+    }
+
+    // 3️⃣ THUMBNAIL -----------------------------------
+    if (lesson.thumb) {
+      const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+      updateAllThumbnails(thumbUrl);
+      appState.thumbnail.url = thumbUrl;
+    }
+
+    hideLoading();
+
+    // 4️⃣ Exibe o preview
+    showSoloPreview();
+
+  } catch (error) {
+    console.error("❌ Erro ao carregar lição:", error);
+    hideLoading();
+    alert('Erro ao carregar lição: ' + error.message);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Sistema de Cache de Thumbnails --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Carrega as lições UMA VEZ e salva em cache
+ */
+async function loadLessonsToCache() {
+  if (isCacheLoaded) {
+    console.log("📦 Cache já carregado, pulando...");
+    return lessonsCache;
+  }
+  
+  console.log("=== Carregando lições para o cache ===");
+  
+  try {
+    showLoading('Carregando lições...');
+    
+    // 1. Lista todos os arquivos
+    const allFiles = await listBackblazeFiles();
+    
+    // 2. Agrupa arquivos por lição (nome base)
+    lessonsCache = groupFilesByLesson(allFiles);
+    isCacheLoaded = true;
+    
+    console.log(`✅ Cache carregado: ${lessonsCache.length} lições`);
+    
+    hideLoading();
+    
+    return lessonsCache;
+    
+  } catch (error) {
+    console.error("❌ ERRO ao carregar cache:", error);
+    hideLoading();
+    throw error;
+  }
+}
+
+/**
+ * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas)
+ * @param {string} sectionId - O ID da seção.
+ * @param {Array<Object>} [dataToRender=lessonsCache] - Array opcional de lições/partidas a serem renderizadas.
+ */
+function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
+    console.log(`--- Renderizando thumbnails para: ${sectionId} ---`);
+    
+    // Mapeia o ID da seção para o ID do container
+    const containerMap = {
+        'home': 'home-post-container',
+        'myPosts': 'user-post-container',
+        'subscriptions': 'subscriptions-post-container',
+        'challenge': MATCHES_POST_CONTAINER // Usando a constante definida
+    };
+    
+    const containerId = containerMap[sectionId];
+    const container = document.getElementById(containerId);
+    
+    if (!container) {
+        console.error(`Container ${containerId} não encontrado para seção ${sectionId}`);
+        return;
+    }
+    
+    // Limpa o container
+    container.innerHTML = '';
+    
+    let itemsToRender = dataToRender; // Usa os dados passados ou o cache padrão
+    let onClickFunction = previewLesson; // Função padrão
+
+    // **LÓGICA PARA DESAFIOS (CHALLENGE)**
+    if (sectionId === 'challenge') {
+        // Se a seção for 'challenge', a função de clique deve ser 'showMultiPreview'
+        // A função showMultiPreview será responsável por entrar na partida.
+        onClickFunction = showMultiPreview; 
+        
+        if (itemsToRender.length === 0) {
+             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
+             return;
+        }
+    } else {
+         // Lógica para 'home', 'myPosts', etc. (dados do cache)
+        if (!isCacheLoaded || itemsToRender.length === 0) {
+             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Carregando lições...</p>';
+             return;
+        }
+    }
+    // FIM LÓGICA PARA DESAFIOS
+    
+    
+    // Renderiza cada lição/partida
+    itemsToRender.forEach((item, index) => {
+        const displayName = item.baseName;
+        const thumbnailUrl = item.thumb.url || getBackblazePublicUrl(item.thumb.fileId); // Usa URL do cache ou gera uma nova
+        
+        // Cria o wrapper do post
+        const postWrapper = document.createElement('div');
+        postWrapper.className = 'post-item';
+        postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
+        
+        // Adiciona um data-atributo com todos os dados da partida/lição
+        postWrapper.onclick = () => onClickFunction(item); 
+        
+        // Cria a thumb-section
+        const thumbSection = document.createElement('div');
+        thumbSection.className = 'thumb-section';
+        thumbSection.innerHTML = `
+          <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+        `;
+        
+        // Cria a info-content
+        const infoContent = document.createElement('div');
+        infoContent.className = 'info-content';
+        infoContent.innerHTML = `
+          <div class="channel-pic">
+            <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+          </div>
+          
+          <div class="video-text">
+            <span class="video-title" style="cursor: pointer;">${displayName}</span>
+            <div class="video-meta">
+              <span class="channel-name">Host: ${item.hostId || 'Canal'}</span>
+              <span class="performance">${item.extraData?.hostPerformance ?? '0'}%</span>
+            </div>
+          </div>`;
+        
+        // Monta o post completo
+        postWrapper.appendChild(thumbSection);
+        postWrapper.appendChild(infoContent);
+        
+        // Adiciona ao container
+        container.appendChild(postWrapper);
+    });
+    
+    console.log('✅ ' + itemsToRender.length + ' itens renderizados em ' + sectionId);
+} 
+
+/**
+ * Força atualização do cache (após upload de nova lição)
+ */
+async function refreshLessonsCache() {
+  console.log("🔄 Forçando atualização do cache...");
+  isCacheLoaded = false;
+  lessonsCache = [];
+  await loadLessonsToCache();
+  
+  // Re-renderiza a seção atual se for uma seção com thumbnails
+  const currentSection = document.querySelector('section.active');
+  if (currentSection && SECTIONS_WITH_THUMBNAILS.includes(currentSection.id)) {
+    renderThumbnailsFromCache(currentSection.id);
+  }
+}
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Multiplayer --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Cria uma nova partida no servidor Appwrite com o status 'waiting'.
+ * * @param {string} lessonId - O ID da lição que será usada na partida.
+ * @param {string} lessonName - O nome da lição.
+ * @param {string} thumbFileId - O ID do arquivo da thumbnail para exibição.
+ * @returns {Promise<Object>} O documento da partida criada.
+ */
+async function createMatchOnServer(lessonId, lessonName, thumbFileId) {
+    if (!isCacheLoaded || lessonsCache.length === 0) {
+        throw new Error("Lições ainda não carregadas ou cache vazio.");
+    }
+
+    // 1. Encontrar a lição selecionada (simulado, você pode ter que adaptar)
+    const selectedLesson = lessonsCache.find(l => l.baseName === lessonId);
+    if (!selectedLesson) {
+        throw new Error(`Lição com ID/BaseName '${lessonId}' não encontrada no cache.`);
+    }
+
+    showLoading('Criando Partida...');
+
+    try {
+        // 2. Obter o ID do usuário logado
+        const user = await account.get();
+        const hostId = user.$id;
+
+        // 3. Permissões
+        const permissions = [
+            // O host (criador) pode ler e escrever
+            Permission.read(Role.user(hostId)),
+            Permission.write(Role.user(hostId)),
+            // Qualquer usuário pode ler a partida (para aparecer na lista de desafios)
+            Permission.read(Role.any()),
+        ];
+        
+        // 4. Estrutura do documento
+        const matchData = {
+            status: 'waiting',
+            hostId: hostId,
+            lessonName: lessonName,
+            thumbFileId: thumbFileId,
+            // Valores padrão para o host (começa em 0.0)
+            hostPerformance: 0.0, 
+            // Os demais campos como currentPlayerId, opponentId, etc., 
+            // serão definidos como NULL por padrão no Appwrite (como sua tabela indica).
+        };
+
+        // 5. Criar o documento
+        const newMatch = await databases.createDocument(
+            DATABASE_ID,
+            MATCHES_COLLECTION_ID,
+            ID.unique(),
+            matchData,
+            permissions
+        );
+
+        console.log('✅ Partida criada com sucesso:', newMatch);
+        alert(`Partida "${lessonName}" criada com sucesso! Status: Waiting.`);
+        
+        // Redireciona para a seção de desafios para ver a partida criada
+        showSection('challenge'); 
+        
+        return newMatch;
+
+    } catch (error) {
+        console.error('❌ Erro ao criar a partida:', error);
+        alert('Falha ao criar a partida. Você está logado?');
+        throw error;
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Busca partidas com status 'waiting' no Appwrite e as prepara para renderização.
+ * @returns {Array<Object>} Um array de objetos de "lição" baseados nas partidas.
+ */
+async function searchMatchesOnServer() {
+    console.log("--- Buscando partidas ativas (waiting) ---");
+    showLoading('Buscando desafios...');
+
+    try {
+        // 1. Busca documentos na coleção de partidas
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            MATCHES_COLLECTION_ID,
+            [
+                // Filtra apenas partidas com status 'waiting'
+                Appwrite.Query.equal('status', 'waiting'),
+                // Opcional: ordenar pelas mais recentes
+                Appwrite.Query.orderDesc('$createdAt') 
+            ]
+        );
+
+        const matches = response.documents;
+        console.log(`✅ ${matches.length} partidas encontradas.`);
+
+        // 2. Transforma cada partida em um objeto compatível com lessonsCache
+        // Isso permite que renderThumbnailsFromCache seja reutilizada.
+        const matchesAsLessons = matches.map(match => {
+            // Usamos o $id da partida como baseName
+            const baseName = match.$id; 
+            const thumbFileId = match.thumbFileId || 'default-thumb-id'; // Fallback se o campo estiver vazio
+
+            return {
+                baseName: match.lessonName, // Exibe o nome da lição como título
+                matchId: match.$id,         // Guarda o ID real da partida
+                hostId: match.hostId,       // Guarda o ID do criador
+                // Cria uma estrutura de thumbnail simplificada para compatibilidade
+                thumb: { 
+                    fileId: thumbFileId,
+                    // Gera a URL da thumbnail
+                    url: getBackblazePublicUrl(thumbFileId)
+                },
+                // Adicione dados opcionais se precisar exibir host ou performance
+                extraData: {
+                    hostPerformance: match.hostPerformance,
+                    lessonName: match.lessonName
+                }
+            };
+        });
+        
+        console.log("Partidas formatadas para renderização.");
+        return matchesAsLessons;
+
+    } catch (error) {
+        console.error('❌ Erro ao buscar partidas:', error);
+        // Em caso de erro, retorna um array vazio
+        return [];
+    } finally {
+        hideLoading();
+    }
+}
+  
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Inicializar --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+async function init() {
+  checkAuthStatus();
+  endCreateMode();
+  
+  // Carrega o cache ANTES de mostrar qualquer seção
+  await loadLessonsToCache();
+  
+  // Agora mostra a home com as thumbnails já carregadas
+  showSection('home');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	init();
+});
+
+</script>
+</body>
+</html>
