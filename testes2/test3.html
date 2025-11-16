@@ -1,5 +1,4 @@
 <!-- exibe a performance por palavra e acumulada -->
-<!-- exibe a play section tanto para solo quanto para multi -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3010,19 +3009,28 @@ function stopWordTimer() {
  * @param {number} performanceValue - O valor atual da performance (de 0 a MAX_WORD_PERFORMANCE).
  */
 function updateWordPerformance(performanceValue) {
-    if (wordPerformanceDisplay) {
-        const percentage = (performanceValue / MAX_WORD_PERFORMANCE) * 100;
-        wordPerformanceDisplay.textContent = `${percentage.toFixed(0)}%`;
-        
-        // Opcional: Mudar a cor com base na performance
-        if (percentage > 50) {
-            wordPerformanceDisplay.style.color = '#4caf50'; // Verde
-        } else if (percentage > 25) {
-            wordPerformanceDisplay.style.color = '#ffc078'; // Laranja
-        } else {
-            wordPerformanceDisplay.style.color = '#ff5e91'; // Vermelho
-        }
+    if (!wordPerformanceDisplay) return;
+
+    const maxPerformance = typeof MAX_WORD_PERFORMANCE === 'number' && MAX_WORD_PERFORMANCE > 0 
+        ? MAX_WORD_PERFORMANCE 
+        : 100; // fallback padrão
+
+    // Garante que performanceValue está no intervalo válido
+    let clampedPerformance = Math.min(Math.max(performanceValue, 0), maxPerformance);
+
+    const percentage = (clampedPerformance / maxPerformance) * 100;
+    wordPerformanceDisplay.textContent = `${percentage.toFixed(0)}%`;
+
+    // Define cor com base na performance, evitando repetição no style
+    let color;
+    if (percentage > 50) {
+        color = '#4caf50'; // Verde
+    } else if (percentage > 25) {
+        color = '#ffc078'; // Laranja
+    } else {
+        color = '#ff5e91'; // Vermelho
     }
+    wordPerformanceDisplay.style.color = color;
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -3159,29 +3167,60 @@ function playLineInPlayMode() {
 */
 async function waitForRenderAndPlay() {
   console.log("--- Aguardando renderização completa ---");
-  
+
   // Aguarda um frame para garantir que o DOM foi atualizado
   await new Promise(resolve => requestAnimationFrame(resolve));
-  
-  // Verifica se o vídeo está pronto
+
   const videoElement = document.getElementById("videoPlayer-play");
-  
   if (!videoElement) {
     console.error("❌ videoPlayer-play não encontrado");
     return;
   }
-  
-  // Se o vídeo não estiver pronto, aguarda
-  if (videoElement.readyState < 2) {
-    console.log("⏳ Aguardando vídeo carregar...");
-    await new Promise(resolve => {
-      videoElement.addEventListener('loadeddata', resolve, { once: true });
+
+  // Função para esperar o carregamento do vídeo com timeout
+  function waitForVideoReady(timeoutMs = 5000) {
+    return new Promise((resolve, reject) => {
+      if (videoElement.readyState >= 2) {
+        resolve();
+        return;
+      }
+
+      const onLoadedData = () => {
+        cleanup();
+        resolve();
+      };
+
+      const onError = () => {
+        cleanup();
+        reject(new Error("Erro ao carregar o vídeo"));
+      };
+
+      const onTimeout = () => {
+        cleanup();
+        reject(new Error("Timeout ao esperar o vídeo carregar"));
+      };
+
+      function cleanup() {
+        videoElement.removeEventListener("loadeddata", onLoadedData);
+        videoElement.removeEventListener("error", onError);
+        clearTimeout(timeoutId);
+      }
+
+      videoElement.addEventListener("loadeddata", onLoadedData, { once: true });
+      videoElement.addEventListener("error", onError, { once: true });
+      const timeoutId = setTimeout(onTimeout, timeoutMs);
     });
   }
-  
+
+  try {
+    console.log("⏳ Aguardando vídeo carregar...");
+    await waitForVideoReady();
+  } catch (error) {
+    console.error("❌ " + error.message);
+    return;
+  }
+
   console.log("✅ Renderização completa, tocando áudio...");
-  
-  // Agora sim, toca o trecho
   playLineInPlayMode();
 }
 
