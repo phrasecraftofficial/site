@@ -1,4 +1,4 @@
-<!-- exibe a performance por palavra e acumulada -->
+<!-- envia os dois jogadores para Play, removida permissões desnecessárias no lado do cliente -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1107,27 +1107,29 @@ function showSoloPreview(lesson) {
  * @param {Object} match - O objeto da partida retornado por searchMatchesOnServer.
  */
 function showMultiPreview(match) {
-    console.log("=== Preview Multiplayer ===", match.lessonName);  
-    showFooter(); // Garante que o footer apareça para os botões
-	  hideSoloAndChallenging();
-	  setEditorMode('previewMulti');   
+    console.log("=== Preview Multiplayer ===", match.baseName);  
+    showFooter();
+    hideSoloAndChallenging();
+    setEditorMode('previewMulti');   
 
-    // 1. Carrega o SRT da lição (simulado, você precisará adaptar)
-    // Para funcionar, a lição precisa estar no cache OU você precisa de uma função
-    // para buscar a lição completa (vídeo e SRT) do Backblaze usando o ID da lição.
-    
-    // Exemplo Simples: Tenta encontrar a lição no cache pelo nome (baseName)
+    // 1. Carrega o SRT da lição
     const associatedLesson = lessonsCache.find(l => l.baseName === match.extraData.lessonName);
 
     if (associatedLesson) {
-        previewLesson(associatedLesson); // Reusa a função que carrega os dados e renderiza
+        previewLesson(associatedLesson);
     } else {
         alert("Lição associada a este desafio não encontrada no cache.");
-        // Em um sistema real, você faria um novo fetch da lição aqui
     }
     
-    // 2. Mantenha o estado da partida
-    window.currentMatch = match; // Armazena a partida para usar em startMultiMode
+    // 2. ✅ CORRIGIDO: Armazena os dados REAIS da partida
+    window.currentMatch = {
+        matchId: match.matchId,
+        hostId: match.hostId,
+        lessonName: match.extraData.lessonName,
+        status: 'waiting', // ✅ Importante: adiciona o status
+        thumbFileId: match.thumb.fileId
+    };
+    
     showSection('editSrt');
 }
 
@@ -1352,7 +1354,7 @@ function startSoloMode() {
  */
 function startCreateMode() {
     const lobby = document.getElementById('lobby');
-    if (lobby) lobby.style.display = 'block'; 
+    if (lobby) lobby.style.display = 'block'; 
 
     if (lessonsCache.length === 0) {
         alert("Não há lições disponíveis para desafiar.");
@@ -1362,14 +1364,23 @@ function startCreateMode() {
     }
 
     // A. Seleciona a primeira lição do cache como exemplo
-    const lesson = lessonsCache[0]; 
+    const lesson = lessonsCache[0]; 
     
     // B. Chama a função de criação da partida
     createMatchOnServer(
         lesson.baseName,
-        lesson.baseName, // Usando o baseName como nome da lição
+        lesson.baseName,
         lesson.thumb.fileId
-    ).catch(error => {
+    ).then(newMatch => {
+        // **NOVO:** Se inscreve para atualizações da partida recém-criada
+        window.unsubscribeFromMatch = subscribeToMatchUpdates(newMatch.$id);
+        
+        // Atualiza a mensagem do lobby
+        if (lobby) {
+            lobby.innerHTML = `<p>Desafio criado! ID: <b>${newMatch.$id}</b>. <br>Aguardando oponente...</p>`;
+        }
+    })
+    .catch(error => {
         // Lidar com erros de criação de partida
         console.error("Falha ao criar partida:", error);
     });
@@ -1386,9 +1397,31 @@ function endCreateMode() {
   if (lobby) lobby.style.display = 'none'; // CORRIGIDO: Esconde o lobby
 }
 
-function startMultiMode() {
-  hideFooter();
-  showSection('play');
+async function startMultiMode() {
+    // ✅ Validação melhorada
+    if (!window.currentMatch) {
+        alert("Nenhuma partida selecionada. Por favor, selecione uma partida primeiro.");
+        showSection('challenge');
+        return;
+    }
+    
+    if (window.currentMatch.status !== 'waiting') {
+        alert("Esta partida não está mais disponível (status: " + window.currentMatch.status + ")");
+        showSection('challenge');
+        return;
+    }
+
+    try {
+        const updatedMatch = await updateMatchOnServer(window.currentMatch.matchId);
+        window.unsubscribeFromMatch = subscribeToMatchUpdates(window.currentMatch.matchId);
+        
+        hideFooter();
+        showSection('play');
+      
+    } catch (e) {
+        console.error("Falha ao iniciar partida multi:", e);
+        alert("Erro ao aceitar o desafio: " + e.message);
+    }
 }
 
 // Playlist Area
@@ -3583,15 +3616,6 @@ async function createMatchOnServer(lessonId, lessonName, thumbFileId) {
         // 2. Obter o ID do usuário logado
         const user = await account.get();
         const hostId = user.$id;
-
-        // 3. Permissões
-        const permissions = [
-            // O host (criador) pode ler e escrever
-            Permission.read(Role.user(hostId)),
-            Permission.write(Role.user(hostId)),
-            // Qualquer usuário pode ler a partida (para aparecer na lista de desafios)
-            Permission.read(Role.any()),
-        ];
         
         // 4. Estrutura do documento
         const matchData = {
@@ -3610,8 +3634,7 @@ async function createMatchOnServer(lessonId, lessonName, thumbFileId) {
             DATABASE_ID,
             MATCHES_COLLECTION_ID,
             ID.unique(),
-            matchData,
-            permissions
+            matchData
         );
 
         console.log('✅ Partida criada com sucesso:', newMatch);
@@ -3640,58 +3663,161 @@ async function searchMatchesOnServer() {
     showLoading('Buscando desafios...');
 
     try {
-        // 1. Busca documentos na coleção de partidas
         const response = await databases.listDocuments(
             DATABASE_ID,
             MATCHES_COLLECTION_ID,
             [
-                // Filtra apenas partidas com status 'waiting'
                 Appwrite.Query.equal('status', 'waiting'),
-                // Opcional: ordenar pelas mais recentes
                 Appwrite.Query.orderDesc('$createdAt') 
             ]
         );
 
         const matches = response.documents;
-        console.log(`✅ ${matches.length} partidas encontradas.`);
+        console.log(`✅ ${matches.length} partidas encontradas: ${matches}`);
 
-        // 2. Transforma cada partida em um objeto compatível com lessonsCache
-        // Isso permite que renderThumbnailsFromCache seja reutilizada.
         const matchesAsLessons = matches.map(match => {
-            // Usamos o $id da partida como baseName
-            const baseName = match.$id; 
-            const thumbFileId = match.thumbFileId || 'default-thumb-id'; // Fallback se o campo estiver vazio
-
+            const thumbFileId = match.thumbFileId;
+            
+            console.log('🔍 Partida encontrada:', {
+                id: match.$id,
+                lessonName: match.lessonName,
+                thumbFileId: thumbFileId,
+                status: match.status
+            });
+        
             return {
-                baseName: match.lessonName, // Exibe o nome da lição como título
-                matchId: match.$id,         // Guarda o ID real da partida
-                hostId: match.hostId,       // Guarda o ID do criador
-                // Cria uma estrutura de thumbnail simplificada para compatibilidade
+                baseName: match.lessonName,
+                matchId: match.$id,
+                hostId: match.hostId,
                 thumb: { 
                     fileId: thumbFileId,
-                    // Gera a URL da thumbnail
                     url: getBackblazePublicUrl(thumbFileId)
                 },
-                // Adicione dados opcionais se precisar exibir host ou performance
                 extraData: {
-                    hostPerformance: match.hostPerformance,
-                    lessonName: match.lessonName
+                    hostPerformance: match.hostPerformance || 0,
+                    lessonName: match.lessonName,
+                    status: match.status,
+                    createdAt: match.$createdAt
                 }
             };
         });
         
-        console.log("Partidas formatadas para renderização.");
+        console.log(`✅ ${matchesAsLessons.length} partidas formatadas para exibição`);
         return matchesAsLessons;
 
     } catch (error) {
         console.error('❌ Erro ao buscar partidas:', error);
-        // Em caso de erro, retorna um array vazio
         return [];
     } finally {
         hideLoading();
     }
 }
-  
+
+/**
+ * 📢 Se inscreve para ouvir as atualizações em tempo real (Realtime) de uma partida específica.
+ * Se o status da partida mudar para 'playing', os dois jogadores são movidos para a seção 'play'.
+ * @param {string} matchId - O ID do documento da partida a ser observada.
+ */
+function subscribeToMatchUpdates(matchId) {
+    console.log(`📡 Conectando ao Realtime para a partida: ${matchId}`);
+    
+    // ✅ CORRIGIDO: Usa client.subscribe() diretamente
+    const channel = `databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}`;
+
+    // Cria uma instância de subscribe diretamente no client
+    const unsubscribe = client.subscribe(channel, (response) => {
+        console.log('📬 Evento recebido:', response);
+        
+        // Verifica se é um evento de atualização
+        if (response.events.includes(`databases.${DATABASE_ID}.collections.${MATCHES_COLLECTION_ID}.documents.${matchId}.update`)) {
+            const updatedMatch = response.payload;
+            
+            console.log('📬 Atualização de partida recebida. Status:', updatedMatch.status);
+
+            // Se o status mudou para 'playing'
+            if (updatedMatch.status === 'playing') {
+                console.log('▶️ Partida iniciada! Redirecionando para a tela de jogo...');
+                
+                // Limpa o lobby
+                endCreateMode(); 
+                
+                // Esconde o footer
+                hideFooter();
+                
+                // Mova os jogadores para a seção 'play'
+                showSection('play');
+                
+                // Inicializa o jogo
+                requestAnimationFrame(() => {
+                    if (srtData.length > 0) {
+                        resetAccumulatedPerformance();
+                        currentSegmentIndex = 0;
+                        injectFirstSegmentShuffled();
+                    }
+                });
+                
+                // Desinscreve após iniciar
+                unsubscribe();
+            }
+        }
+    });
+
+    console.log('✅ Inscrito no canal:', channel);
+    return unsubscribe;
+}
+
+/**
+ * 🔄 Atualiza o status de uma partida no servidor para 'playing'.
+ * É chamada pelo segundo jogador (opponent) ao aceitar um desafio.
+ * Isso dispara a atualização de Realtime para ambos os jogadores.
+ * @param {string} matchId - O ID do documento da partida a ser atualizada.
+ * @returns {Promise<Object>} O documento da partida atualizada.
+ */
+async function updateMatchOnServer(matchId) {
+    showLoading('Aceitando desafio...');
+    
+    try {
+        // 1. Obter o ID do usuário logado (o oponente)
+        const user = await account.get();
+        const opponentId = user.$id;
+
+        // 2. Cria a lista de IDs de leitura: Host, Opponent, e role:any (para leitura pública, se desejar)
+        const currentReadRoles = [
+            Permission.read(Role.user(opponentId)), // Novo leitor
+            Permission.read(Role.user(window.currentMatch.hostId)), // Host (já deve estar lá, mas garante)
+            Permission.read(Role.any()), // Permissão pública (já deve estar lá, mas garante)
+        ];
+        
+        // 3. Obtém o documento atual para garantir que não sobrescrevemos dados importantes
+        const existingMatch = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, matchId);
+        const hostId = existingMatch.hostId;
+
+        // 5. Atualizar o documento
+        const updatedMatch = await databases.updateDocument(
+            DATABASE_ID,
+            MATCHES_COLLECTION_ID,
+            matchId,
+            {
+                status: 'playing', // Mudar o status para iniciar a partida
+                opponentId: opponentId,
+                currentPlayerId: hostId, // O host começa jogando (ou define a lógica de início que preferir)
+                // Oponente também começa com 0.0 de performance
+                opponentPerformance: 0.0 
+            },
+        );
+
+        console.log('✅ Partida atualizada para "playing":', updatedMatch);
+        return updatedMatch;
+
+    } catch (error) {
+        console.error('❌ Erro ao aceitar o desafio e atualizar a partida:', error);
+        alert('Falha ao aceitar o desafio.');
+        throw error;
+    } finally {
+        hideLoading();
+    }
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
