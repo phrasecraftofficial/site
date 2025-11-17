@@ -1,4 +1,7 @@
-<!-- movendo os dois jogadores para play e atualiza performance dos dois
+<!--
+movendo os dois jogadores para play
+atualiza performance dos dois
+bloqueia palavras
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -3568,31 +3571,13 @@ async function loadNextSegment() {
           const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
           const myId = (await account.get()).$id;
           
-          if (match.currentPlayerId === myId) {
-              // É MEU turno - desbloqueia e inicia timer
-              console.log("✅ É meu turno - iniciando timer");
-              palavrasContainer.style.opacity = 1;
-              palavrasContainer.style.pointerEvents = 'auto';
-              
-              const firstCorrectWord = words[0];
-              if (firstCorrectWord) {
-                  startWordTimer(firstCorrectWord);
-              }
-          } else {
-              // NÃO é meu turno - bloqueia
-              console.log("⏸️ Aguardando turno do oponente");
-              palavrasContainer.style.opacity = 0.5;
-              palavrasContainer.style.pointerEvents = 'none';
-          }
+          toggleWordsLock(match.currentPlayerId === myId);
       } catch (error) {
           console.error("Erro ao verificar turno:", error);
       }
   } else {
       // Modo SOLO - sempre desbloqueado
-      const firstCorrectWord = words[0];
-      if (firstCorrectWord) {
-          startWordTimer(firstCorrectWord);
-      }
+      toggleWordsLock(true);
   }
   
   // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR
@@ -3613,6 +3598,40 @@ function showCompletionMessage() {
   if (palavrasContainer) {
     palavrasContainer.innerHTML = '';
   }
+}
+
+/**
+ * Bloqueia ou desbloqueia as palavras e inicia/para o timer
+ * @param {boolean} unlock - true para desbloquear, false para bloquear
+ */
+function toggleWordsLock(unlock) {
+    const palavrasContainer = document.getElementById('palavras');
+    if (!palavrasContainer) return;
+    
+    if (unlock) {
+        // Desbloqueia
+        console.log("🔓 Palavras desbloqueadas - é meu turno");
+        palavrasContainer.style.opacity = 1;
+        palavrasContainer.style.pointerEvents = 'auto';
+        
+        // Inicia o timer para a próxima palavra esperada
+        const currentSegment = srtData[currentSegmentIndex];
+        if (currentSegment) {
+            const words = currentSegment.text.split(/\s+/).filter(w => w.trim().length > 0);
+            const nextWordIndex = selectedWords.length;
+            
+            if (nextWordIndex < words.length) {
+                const nextWord = words[nextWordIndex];
+                startWordTimer(nextWord);
+            }
+        }
+    } else {
+        // Bloqueia
+        console.log("🔒 Palavras bloqueadas - aguardando turno");
+        palavrasContainer.style.opacity = 0.5;
+        palavrasContainer.style.pointerEvents = 'none';
+        stopWordTimer(); // Para o timer se estiver rodando
+    }
 }
 
 // ✅ Função utilitária para o onclick nos botões em Play
@@ -3977,17 +3996,8 @@ async function handleMatchUpdate(payload) {
 
         // C. Lógica de TURNOS (Roda em ambos os casos: avanço ou palavra)
         const myId = (await account.get()).$id;
-        const palavrasContainer = document.getElementById('palavras');
-        
-        if (payload.currentPlayerId === myId) {
-            console.log("É a minha vez!");
-            palavrasContainer.style.opacity = 1;
-            palavrasContainer.style.pointerEvents = 'auto';
-        } else {
-            console.log("Aguardando oponente...");
-            palavrasContainer.style.opacity = 0.5;
-            palavrasContainer.style.pointerEvents = 'none';
-        }
+      
+        toggleWordsLock(payload.currentPlayerId === myId);
 
         // Atualizar performances na UI
         if (payload.hostPerformance !== undefined && payload.opponentPerformance !== undefined) {
@@ -4082,7 +4092,8 @@ async function sendWordToMatch(word) {
             currentMatchId,
             updatePayload // Envia o payload decidido
         );
-        
+      
+        toggleWordsLock(false);        
         hideLoading();
         
     } catch (error) {
