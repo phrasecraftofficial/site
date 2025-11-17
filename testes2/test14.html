@@ -1705,6 +1705,26 @@ function renderSegments() {
 function openEditor(id) {
   currentSegment = srtData.find(s => s.id === id);
   if (!currentSegment) return;
+  
+  // Se estiver em modo preview (não editor), apenas atualiza seleção visual
+  if (currentEditMode !== 'editor') {
+    // Remove a classe de todos os segmentos
+    document.querySelectorAll('.segment').forEach(item => {
+      item.classList.remove('segment-selected');
+    });
+    
+    // Adiciona a classe apenas ao segmento atual
+    const itemAtivo = document.querySelector(`[data-id="${id}"]`);
+    if (itemAtivo) {
+      itemAtivo.classList.add('segment-selected');
+    }
+    
+    scrollToSegment(id);
+    
+    // Toca o áudio e retorna (não mostra editor)
+    setTimeout(() => playLine(), 500);
+    return; // ← IMPORTANTE: Sai da função
+  }
 
   document.getElementById("editor").style.display = "block";
   document.getElementById("editStart").value = currentSegment.start;
