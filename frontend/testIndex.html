@@ -1,4 +1,4 @@
-<!-- atualiza a performance acumulada -->
+<!-- atualiza a palavra enviada para os dois jogadores -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -164,13 +164,11 @@ body.footer-hidden main {
   display: flex;
   justify-content: center; /* centraliza horizontalmente */
   align-items: center;     /* centraliza verticalmente */
-  text-align: center;
   max-width: 600px;
-}
-.gap, h4, h3, h2, p {
   gap: 10px;
   padding: 10px;
   margin-bottom: 20px;
+  text-align: center;
 }
 .row, h4, h3, h2, p {
   margin: 0 auto;
@@ -463,16 +461,14 @@ label input[type="checkbox"] {
       </div>
     </div>
     
-	<div class="flex row gap" id="performance-area">
-      <div class="flex column">
-        <span id="">Jogador 1</span>
+	<div class="performance-area" id="performance-area">
+      <div class="text-area">
         <span id="host-performance">100%</span>
       </div>
-      <div class="flex column">
-        <span id="word-performance"></span>
+      <div class="text-area">
+        <span id="dinamic-icon"> 🚀 </span>
       </div>
-      <div class="flex column">
-        <span id="">Jogador 2</span>
+      <div class="text-area">
         <span id="opponent-performance">100%</span>
       </div>
     </div>
@@ -872,19 +868,15 @@ const STORE_NAME = 'lessons';
 */
 // Array para armazenar as palavras selecionadas na ordem
 let selectedWords = [];
-let currentSegmentIndex = 0;
+
+// Variável para controlar o índice do segmento atual
 
 // Variáveis de performance
 const TIME_PER_LETTER = 0.45; // segundos por letra (ajustável)
-let wordStartTime = null; // Tempo de início da palavra atual
-let currentWordIdealTime = 0; // Tempo ideal para a palavra atual
+let segmentStartTime = null;
+let totalProjectedTime = 0;
 let performanceUpdateInterval = null;
-  
-// O "piso" de performance
-const DECAY_THRESHOLD = 10.0; 
-
-// A taxa de "punição" didática (0.1% por segundo)
-const DECAY_RATE_PER_SECOND = 0.1;
+let currentSegmentIndex = 0;
 
 // Seções que devem exibir thumbnails
 const SECTIONS_WITH_THUMBNAILS = [
@@ -1112,19 +1104,6 @@ async function updateElementForSection(sectionId) { // <-- Tornou-se ASYNC
     if (currentMatchId && playerRole) {
       console.log("Jogador saindo da partida em andamento");
       await handlePlayerLeavingMatch();
-    } else {
-      // ✅ ADICIONE: Se não é multiplayer, apenas limpa as variáveis
-      console.log("Saindo do modo solo, limpando variáveis...");
-      currentMatchId = null;
-      playerRole = null;
-      currentSegmentIndex = 0;
-      selectedWords = [];
-      
-      // Para timers de performance
-      if (performanceUpdateInterval) {
-        clearInterval(performanceUpdateInterval);
-        performanceUpdateInterval = null;
-      }
     }
   }
   
@@ -2960,117 +2939,90 @@ async function refreshLessonsCache() {
 // --- Bloco Fx | Performance --- 
 // Necessário para o bloco Play
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-  
-// Acumulador de performances
-if (!window.segmentPerformances) {
-  window.segmentPerformances = [];
-}
 
 /**
- * Inicia o cronômetro para uma palavra específica
+ * Inicia o cronômetro do segmento
  */
-function startWordTimer(word) {
-  // Conta apenas letras (remove espaços e pontuação)
-  const letterCount = word.replace(/[^a-zA-ZÀ-ÿ]/g, '').length;
+function startSegmentTimer() {
+  const currentSegment = srtData[currentSegmentIndex];
   
-  // Calcula tempo ideal para esta palavra
-  currentWordIdealTime = letterCount * TIME_PER_LETTER;
+  if (!currentSegment) return;
+  
+  // Conta total de letras na frase
+  const totalLetters = currentSegment.text.replace(/\s+/g, '').length;
+  
+  // Calcula tempo projetado
+  totalProjectedTime = totalLetters * TIME_PER_LETTER;
   
   // Marca o tempo de início
-  wordStartTime = Date.now();
+  segmentStartTime = Date.now();
   
-  // --- NOVO: Reseta o estado do "slow decay" ---
-  window.decayStartTime = null;
-  window.performanceAtDecayStart = null;
-  // --- FIM DA ADIÇÃO ---
-  
-  // Inicia atualização contínua da performance (a cada 50ms)
+  // Inicia atualização contínua da performance (a cada 100ms)
   if (performanceUpdateInterval) {
     clearInterval(performanceUpdateInterval);
   }
   
   performanceUpdateInterval = setInterval(() => {
     updatePerformanceDisplay();
-  }, 50); // Atualiza 20x por segundo para fluidez
+  }, 100); // Atualiza 10x por segundo
   
-  console.log(`⏱️ Timer iniciado para palavra "${word}": ${letterCount} letras = ${currentWordIdealTime.toFixed(2)}s`);
+  console.log(`⏱️ Timer iniciado: ${totalLetters} letras = ${totalProjectedTime.toFixed(2)}s projetados`);
 }
 
 /**
  * Para o cronômetro de performance
  */
-function stopWordTimer() {
+function stopSegmentTimer() {
   if (performanceUpdateInterval) {
     clearInterval(performanceUpdateInterval);
     performanceUpdateInterval = null;
+    console.log('⏹️ Timer parado');
   }
-}
-
-/**
- * Calcula a performance da palavra atual em tempo real
- * (Versão combinada: 100+Bonus com Slow Decay)
- */
-function getCurrentWordPerformance() {
-  if (!wordStartTime || currentWordIdealTime === 0) {
-    return 100;
-  }
-
-  // --- LÓGICA DE DECAIMENTO LENTO ---
-  
-  // 1. O modo "slow decay" JÁ FOI ATIVADO?
-  if (window.decayStartTime) {
-    // Calcula há quantos segundos o modo de decaimento começou
-    const decayElapsedTime = (Date.now() - window.decayStartTime) / 1000;
-    
-    // Calcula a nova performance
-    // Ex: 70% - (5 segundos * 0.1) = 69.5%
-    let performance = window.performanceAtDecayStart - (decayElapsedTime * DECAY_RATE_PER_SECOND);
-    
-    // Garante que não caia abaixo de 0
-    return Math.max(0, performance);
-  }
-
-  // --- LÓGICA 100 + BÔNUS (SUA PREFERIDA) ---
-  
-  // 2. Se NÃO, calcula a performance "real" com a sua lógica
-  const elapsedTime = (Date.now() - wordStartTime) / 1000; // segundos
-  const timeDiff = currentWordIdealTime - elapsedTime;
-  const performanceBonus = (timeDiff / currentWordIdealTime) * 100;
-  
-  // A performance final é 100% (base) + o bônus/penalidade
-  let realPerformance = 100 + performanceBonus;
-  
-  // Limita o teto a 200% (importante para o início do timer)
-  realPerformance = Math.min(200, realPerformance);
-
-  // --- O PONTO DE TRANSIÇÃO ---
-
-  // 3. A performance "real" ACABOU DE CAIR abaixo do limiar?
-  if (realPerformance <= DECAY_THRESHOLD) {
-    // SIM! Ativa o modo "slow decay" AGORA
-    window.decayStartTime = Date.now(); // Marca a hora
-    
-    // Salva a performance exata de quando cruzou (ex: 69.9%)
-    window.performanceAtDecayStart = realPerformance; 
-    
-    return realPerformance; // Retorna esse valor (o último antes do "piso")
-  }
-
-  // 4. Se chegou aqui, a performance é > 70% e o "slow decay" está inativo.
-  //    Apenas retorna a performance real.
-  return realPerformance;
 }
 
 /**
  * Atualiza o display de performance em tempo real
  */
 function updatePerformanceDisplay() {
-  const performanceElement = document.getElementById('word-performance');
-  performanceElement.classList.add('flex', 'column');
+  const performanceElement = document.getElementById('host-performance');
   
-  if (!performanceElement || !wordStartTime) return;
+  // Para se não estivermos na seção play
+  if (!performanceElement || !segmentStartTime) return;
   
-  const performanceScore = getCurrentWordPerformance();
+  const currentSegment = srtData[currentSegmentIndex];
+  if (!currentSegment) return;
+  
+  // Obtém dados do progresso
+  const wordsCompleted = selectedWords.length;
+  const totalWords = currentSegment.text.split(/\s+/).filter(w => w.trim().length > 0).length;
+  const elapsedTime = (Date.now() - segmentStartTime) / 1000; // segundos
+  
+  // Calcula o tempo projetado total baseado na velocidade atual
+  let projectedTotalTime;
+  
+  if (wordsCompleted > 0) {
+    // Calcula tempo médio por palavra até agora
+    const avgTimePerWord = elapsedTime / wordsCompleted;
+    const remainingWords = totalWords - wordsCompleted;
+    projectedTotalTime = elapsedTime + (remainingWords * avgTimePerWord);
+  } else {
+    // Se nenhuma palavra foi completada, usa uma estimativa inicial
+    projectedTotalTime = elapsedTime * totalWords;
+  }
+  
+  // Calcula a performance (tempo ideal / tempo projetado) * 100
+  let performanceScore = (totalProjectedTime / projectedTotalTime) * 100;
+  
+  // Sanitiza valores inválidos
+  if (!isFinite(performanceScore) || performanceScore > 1000) {
+    performanceScore = 100;
+  }
+  
+  // Escolhe emoji baseado na performance
+  let emoji = '👍'; // Padrão: bom
+  if (performanceScore < 75) emoji = '🐢';      // Lento
+  else if (performanceScore < 100) emoji = '🤔'; // Médio
+  else if (performanceScore > 125) emoji = '🚀'; // Excelente
   
   // Define a cor baseada na performance
   let color = '#4caf50'; // Verde (bom)
@@ -3078,11 +3030,11 @@ function updatePerformanceDisplay() {
   if (performanceScore < 60) color = '#f44336'; // Vermelho (baixo)
   if (performanceScore > 125) color = '#00e676'; // Verde brilhante (excelente)
   
-  // Atualiza o display (apenas o percentual)
+  // Atualiza o display
   performanceElement.innerHTML = `
     <span style="font-weight: bold; color: ${color};">
       ${performanceScore.toFixed(1)}%
-    </span>
+    </span> ${emoji}
   `;
   
   performanceElement.style.cssText = `
@@ -3091,85 +3043,8 @@ function updatePerformanceDisplay() {
     margin: 10px 0;
     transition: color 0.3s ease;
   `;
-}
-
-/**
- * Acumula e atualiza a performance acumulada da lição
- */
-function updateWordPerformance() {
-  const wordPerformanceElement = document.getElementById('host-performance');
   
-  if (!wordPerformanceElement) {
-    console.warn('Elemento word-performance não encontrado');
-    return;
-  }
-  
-  // Pega a performance da palavra que acabou de ser clicada
-  const currentWordPerformance = getCurrentWordPerformance();
-  
-  // Adiciona ao array de performances
-  if (!window.allWordPerformances) {
-    window.allWordPerformances = [];
-  }
-  
-  window.allWordPerformances.push(currentWordPerformance);
-  
-  // Calcula a média acumulada
-  const accumulatedPerformance = window.allWordPerformances.reduce((sum, p) => sum + p, 0) / window.allWordPerformances.length;
-  
-  // Escolhe emoji baseado na performance acumulada
-  let emoji = '🧠'; // Padrão: bom
-  if (accumulatedPerformance < 70) emoji = '🐢'; // Lento
-  else if (accumulatedPerformance < 90) emoji = '🐌'; // Lento
-  else if (accumulatedPerformance < 95) emoji = '🎯'; // Médio
-  else if (accumulatedPerformance < 100) emoji = '🎉'; // Médio
-  else if (accumulatedPerformance < 105) emoji = '🏆'; // Médio
-  else if (accumulatedPerformance < 110) emoji = '⭐'; // Médio
-  else if (accumulatedPerformance < 120) emoji = '✈️'; // Médio
-  else if (accumulatedPerformance < 130) emoji = '🔥'; // Médio
-  else if (accumulatedPerformance > 135) emoji = '🚀'; // Excelente
-
-  // Define a cor baseada na performance acumulada
-  let color = '#4caf50'; // Verde (bom)
-  if (accumulatedPerformance < 80) color = '#ff9800'; // Laranja (médio)
-  if (accumulatedPerformance < 60) color = '#f44336'; // Vermelho (baixo)
-  if (accumulatedPerformance > 125) color = '#00e676'; // Verde brilhante (excelente)
-  
-  // Atualiza o display (percentual + emoji)
-  wordPerformanceElement.innerHTML = `
-    <span style="font-weight: bold; color: ${color};">
-      ${accumulatedPerformance.toFixed(1)}%
-    </span> ${emoji}
-  `;
-  
-  wordPerformanceElement.style.cssText = `
-    font-size: 16px;
-    text-align: center;
-    margin: 10px 0;
-    transition: color 0.3s ease;
-  `;
-  
-  console.log(`📊 Performance Palavra: ${currentWordPerformance.toFixed(1)}% | Acumulada: ${accumulatedPerformance.toFixed(1)}% (${window.allWordPerformances.length} palavras)`);
-}
-
-/**
- * Retorna a próxima palavra esperada
- */
-function getNextExpectedWord() {
-  const currentSegment = srtData[currentSegmentIndex];
-  if (!currentSegment) return null;
-  
-  const correctWords = currentSegment.text
-    .split(/\s+/)
-    .filter(w => w.trim().length > 0);
-  
-  const nextIndex = selectedWords.length;
-  
-  if (nextIndex >= correctWords.length) {
-    return null;
-  }
-  
-  return correctWords[nextIndex];
+  // console.log(`📊 Performance: ${performanceScore.toFixed(1)}% | Palavras: ${wordsCompleted}/${totalWords} | Tempo: ${elapsedTime.toFixed(1)}s`);
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -3306,9 +3181,6 @@ function moveWordToPhrase(wordButton, word) {
     console.error("❌ Elemento 'frase' não encontrado");
     return;
   }
-  
-  // Para o timer da palavra anterior
-  stopWordTimer();
 
   // SE FOR JOGO MULTIPLAYER
     if (currentMatchId) {
@@ -3341,15 +3213,6 @@ function moveWordToPhrase(wordButton, word) {
 		  fraseContainer.appendChild(phraseButton);
 		  
 		  console.log("Frase atual:", selectedWords.join(' '));
-  
-      // Atualiza a performance acumulada
-      updateWordPerformance();
-  
-      // Inicia timer da próxima palavra
-      const nextWord = getNextExpectedWord();
-      if (nextWord) {
-        startWordTimer(nextWord);
-      }
       
     	// Verifica se a frase está completa
     	checkIfPhraseComplete();
@@ -3408,6 +3271,9 @@ function checkIfPhraseComplete() {
   if (selectedWords.length === correctWords.length) {
     console.log("🎉 Frase completa!");
     
+    // Para o timer de performance
+    stopSegmentTimer();
+    
     // Última atualização da performance (mostra resultado final)
     updatePerformanceDisplay();
     
@@ -3431,9 +3297,6 @@ function checkIfPhraseComplete() {
 async function loadNextSegment() {
   // Limpa o array de palavras selecionadas
   selectedWords = [];
-  
-  // Para qualquer timer anterior
-  stopWordTimer();
   
   // Pega o próximo segmento
   const nextSegment = srtData[currentSegmentIndex];
@@ -3510,11 +3373,8 @@ async function loadNextSegment() {
   // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR (ROBUSTA)
   await waitForRenderAndPlay();
   
-  // ⏱️ INICIA O CRONÔMETRO DA PRIMEIRA PALAVRA
-  const firstWord = words[0];
-  if (firstWord) {
-    startWordTimer(firstWord);
-  }
+  // ⏱️ INICIA O CRONÔMETRO DE PERFORMANCE
+  startSegmentTimer();
 }
 
 /**
@@ -3585,16 +3445,6 @@ onClick('repetir', () => {
 function startSoloMode() {
   console.log("=== INÍCIO startSoloMode() ===");
   
-  // 🔥 CRÍTICO: Limpa variáveis de multiplayer
-  currentMatchId = null;
-  playerRole = null;
-  currentLessonForMatch = null; // Opcional, mas recomendado
-  
-  // Reseta o acumulador de performances (se usar)
-  if (window.allWordPerformances) {
-    window.allWordPerformances = [];
-  }
-  
   // IMPORTANTE: Esconde o footer ANTES de mudar de seção
   hideFooter();
   
@@ -3646,9 +3496,7 @@ async function createMatchOnServer() {
         thumbFileId: thumbFileId,
         status: "waiting",
         currentSentenceIndex: 0,
-        currentSentenceWords: "",
-        hostPerformance: 100,
-        opponentPerformance: 100
+		currentSentenceWords: ""
     };
 
     // 3. Criar o documento no Appwrite
@@ -4320,7 +4168,7 @@ async function handleMatchUpdate(payload) {
                 }
             }
         }
-        
+
         // C. Lógica de TURNOS (Roda em ambos os casos: avanço ou palavra)
         const myId = (await account.get()).$id;
         const palavrasContainer = document.getElementById('palavras');
@@ -4334,43 +4182,11 @@ async function handleMatchUpdate(payload) {
             palavrasContainer.style.opacity = 0.5;
             palavrasContainer.style.pointerEvents = 'none';
         }
-    } // ← FIM DO IF (appState.currentSection === 'play')
-    
-    // D. Atualiza a PERFORMANCE DO OPONENTE na UI (SEMPRE, independente da seção)
-    const opponentPerformanceElement = document.getElementById('opponent-performance');
-    if (opponentPerformanceElement && playerRole) {
-        const opponentPerf = playerRole === 'host' ? payload.opponentPerformance : payload.hostPerformance;
-        
-        if (opponentPerf !== undefined) {
-            // Escolhe emoji baseado na performance do oponente
-            let emoji = '🧠'; // Padrão
-            if (opponentPerf < 70) emoji = '🐢';
-            else if (opponentPerf < 90) emoji = '🐌';
-            else if (opponentPerf < 95) emoji = '🎯';
-            else if (opponentPerf < 100) emoji = '🎉';
-            else if (opponentPerf < 105) emoji = '🏆';
-            else if (opponentPerf < 110) emoji = '⭐';
-            else if (opponentPerf < 120) emoji = '✈️';
-            else if (opponentPerf < 130) emoji = '🔥';
-            else if (opponentPerf > 135) emoji = '🚀';
-            
-            // Define a cor
-            let color = '#4caf50';
-            if (opponentPerf < 80) color = '#ff9800';
-            if (opponentPerf < 60) color = '#f44336';
-            if (opponentPerf > 125) color = '#00e676';
-            
-            opponentPerformanceElement.innerHTML = `
-                <span style="font-weight: bold; color: ${color};">
-                    ${opponentPerf.toFixed(1)}%
-                </span> ${emoji}
-            `;
-        }
     }
 }
   
 /**
- * (BLOCO FX ATUALIZADO) Envia a palavra selecionada, passa o turno E ENVIA A PERFORMANCE.
+ * (BLOCO FX ATUALIZADO) Envia a palavra selecionada e passa o turno.
  * AGORA VERIFICA SE A FRASE FOI CONCLUÍDA.
  */
 async function sendWordToMatch(word) {
@@ -4391,41 +4207,17 @@ async function sendWordToMatch(word) {
             return;
         }
 
-        // 3. CAPTURA A PERFORMANCE DA PALAVRA ATUAL
-        const currentWordPerformance = getCurrentWordPerformance();
-        console.log(`📊 Performance da palavra "${word}": ${currentWordPerformance.toFixed(1)}%`);
-
-        // 4. Monta os novos dados
+        // 3. Monta os novos dados
         const newWords = (match.currentSentenceWords ? match.currentSentenceWords + " " : "") + word;
         
-        // 5. Pega a frase correta localmente
+        // 4. Pega a frase correta localmente
         const correctSegment = srtData[match.currentSentenceIndex];
         const correctWords = correctSegment.text.split(/\s+/).filter(w => w.trim().length > 0);
 
-        // 6. Determina qual campo de performance atualizar (host ou opponent)
-        const performanceField = (playerRole === 'host') ? 'hostPerformance' : 'opponentPerformance';
-        
-        // 7. Calcula a PERFORMANCE ACUMULADA
-        // Pega a performance acumulada existente no servidor
-        const currentAccumulatedPerformance = match[performanceField] || 100;
-        
-        // Adiciona a performance da palavra ao array local (para calcular média)
-        if (!window.allWordPerformances) {
-            window.allWordPerformances = [];
-        }
-        window.allWordPerformances.push(currentWordPerformance);
-        
-        // Calcula a nova performance acumulada (média de todas as palavras)
-        const newAccumulatedPerformance = window.allWordPerformances.reduce((sum, p) => sum + p, 0) / window.allWordPerformances.length;
-        
-        console.log(`📈 Performance acumulada atualizada: ${newAccumulatedPerformance.toFixed(1)}% (${window.allWordPerformances.length} palavras)`);
+        // 5. Prepara o payload de atualização
+        let updatePayload = {};
 
-        // 8. Prepara o payload de atualização
-        let updatePayload = {
-            [performanceField]: newAccumulatedPerformance // Atualiza a performance acumulada
-        };
-
-        // 9. Verifica se a frase está completa
+        // 6. Verifica se a frase está completa
         if (newWords.split(' ').length === correctWords.length) {
             // === FRASE COMPLETA ===
             console.log("Frase completa! Avançando para o próximo índice.");
@@ -4434,14 +4226,12 @@ async function sendWordToMatch(word) {
             if (match.currentSentenceIndex + 1 >= srtData.length) {
                 // JOGO TERMINOU
                 updatePayload = {
-                    ...updatePayload, // Mantém a performance
                     status: 'finished', // Sinaliza fim de jogo
                     currentSentenceWords: newWords // Envia a última frase completa
                 };
             } else {
                 // PRÓXIMA FRASE
                 updatePayload = {
-                    ...updatePayload, // Mantém a performance
                     currentSentenceWords: "", // Reseta as palavras
                     currentSentenceIndex: match.currentSentenceIndex + 1, // Avança o índice
                     // O oponente (ou quem não jogou por último) começa a próxima
@@ -4455,18 +4245,17 @@ async function sendWordToMatch(word) {
             // Passa o turno para o outro jogador
             const nextPlayerId = (myId === match.hostId) ? match.opponentId : match.hostId;
             updatePayload = {
-                ...updatePayload, // Mantém a performance
                 currentSentenceWords: newWords,
                 currentPlayerId: nextPlayerId
             };
         }
 
-        // 10. Atualiza o documento no servidor
+        // 7. Atualiza o documento no servidor
         await databases.updateDocument(
             DATABASE_ID,
             MATCHES_COLLECTION_ID,
             currentMatchId,
-            updatePayload // Envia o payload com a performance
+            updatePayload // Envia o payload decidido
         );
         
         hideLoading();
