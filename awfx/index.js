@@ -125,10 +125,10 @@ export default async ({ req, res, log, error }) => {
     }
     
     // ============================================
-    // CASO 2B: Listar TODAS as versões (incluindo duplicatas)
+    // CASO 2B: Listar TODAS as versões (incluindo duplicatas) e Logar no AW FX
     // ============================================
     if (action === 'list_versions') {
-      log("📋 Listando TODAS as versões de arquivos (incluindo duplicatas)...");
+      log("📋 Listando TODAS as versões de arquivos...");
       
       const listRes = await fetch(`${authData.apiUrl}/b2api/v2/b2_list_file_versions`, {
         method: "POST",
@@ -149,11 +149,20 @@ export default async ({ req, res, log, error }) => {
         return res.json({ error: `Erro ao listar versões: ${listData.message}` }, 500);
       }
       
-      log(`✅ ${listData.files?.length || 0} versões listadas (incluindo duplicatas)`);
+      const files = listData.files || [];
+      log(`✅ ${files.length} VERSÕES ENCONTRADAS no total.`);
       
-      // IMPORTANTE: b2_list_file_versions retorna o mesmo formato
+      // 🚀 NOVO: Itera e loga os detalhes de cada versão no log da função Appwrite
+      files.forEach((file, index) => {
+          // Converte o timestamp para uma data legível (opcional, mas útil)
+          const uploadDate = new Date(file.uploadTimestamp).toISOString();
+          
+          log(`[VERSÃO #${index + 1}] Nome: ${file.fileName}, ID: ${file.fileId}, Status: ${file.action}, Data: ${uploadDate}`);
+      });
+      
+      // Retorna a lista completa para o cliente (como antes)
       return res.json({
-        files: listData.files || [],
+        files: files, 
         nextFileName: listData.nextFileName,
         nextFileId: listData.nextFileId,
       });
