@@ -1,4 +1,5 @@
 /*
+ * versão ok antes de deletar no bb2
  * Código da Função Appwrite (Backend) - COM CACHE DE AUTENTICAÇÃO
  * Usando o formato ES Modules
  * Suporta: Upload URL + Listagem de arquivos
