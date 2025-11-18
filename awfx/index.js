@@ -10,6 +10,10 @@ export default async ({ req, res, log, error }) => {
   
   const authHeader = Buffer.from(`${keyId}:${applicationKey}`).toString('base64');
   const now = Date.now();
+  
+  // Cache global
+  let cachedAuth = null;
+  let authExpiry = 0;
  
   try {
     // Autorização com cache
@@ -45,6 +49,7 @@ export default async ({ req, res, log, error }) => {
       action = body.action || 'upload';
       fileId = body.fileId;
       fileName = body.fileName;
+      log(`📋 Ação solicitada: ${action}`);
     } catch (e) {
       log("Body vazio, usando ação padrão: upload");
     }
@@ -88,12 +93,12 @@ export default async ({ req, res, log, error }) => {
     }
     
     // ============================================
-    // CASO 2: Listar TODAS as versões (incluindo duplicatas)
+    // CASO 2A: Listar apenas versões mais recentes (para cache normal)
     // ============================================
-    if (action === 'list' || action === 'list_versions') {
-      log("📋 Listando TODAS as versões de arquivos...");
+    if (action === 'list') {
+      log("📋 Listando arquivos (apenas versões mais recentes)...");
       
-      const listRes = await fetch(`${authData.apiUrl}/b2api/v2/b2_list_file_versions`, {
+      const listRes = await fetch(`${authData.apiUrl}/b2api/v2/b2_list_file_names`, {
         method: "POST",
         headers: {
           "Authorization": authData.authorizationToken,
@@ -101,7 +106,7 @@ export default async ({ req, res, log, error }) => {
         },
         body: JSON.stringify({
           bucketId: bucketId,
-          maxFileCount: 10000, // Aumentado para pegar todas as versões
+          maxFileCount: 1000,
         }),
       });
       
@@ -112,9 +117,43 @@ export default async ({ req, res, log, error }) => {
         return res.json({ error: `Erro ao listar: ${listData.message}` }, 500);
       }
       
-      log(`✅ ${listData.files?.length || 0} versões listadas (incluindo duplicatas)`);
+      log(`✅ ${listData.files?.length || 0} arquivos listados`);
       return res.json({
-        files: listData.files,
+        files: listData.files || [],
+        nextFileName: listData.nextFileName,
+      });
+    }
+    
+    // ============================================
+    // CASO 2B: Listar TODAS as versões (incluindo duplicatas)
+    // ============================================
+    if (action === 'list_versions') {
+      log("📋 Listando TODAS as versões de arquivos (incluindo duplicatas)...");
+      
+      const listRes = await fetch(`${authData.apiUrl}/b2api/v2/b2_list_file_versions`, {
+        method: "POST",
+        headers: {
+          "Authorization": authData.authorizationToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bucketId: bucketId,
+          maxFileCount: 10000,
+        }),
+      });
+      
+      const listData = await listRes.json();
+      
+      if (listRes.status !== 200) {
+        error(`Erro ao listar versões: ${listData.message}`);
+        return res.json({ error: `Erro ao listar versões: ${listData.message}` }, 500);
+      }
+      
+      log(`✅ ${listData.files?.length || 0} versões listadas (incluindo duplicatas)`);
+      
+      // IMPORTANTE: b2_list_file_versions retorna o mesmo formato
+      return res.json({
+        files: listData.files || [],
         nextFileName: listData.nextFileName,
         nextFileId: listData.nextFileId,
       });
@@ -148,6 +187,6 @@ export default async ({ req, res, log, error }) => {
     
   } catch (err) {
     error("❌ Erro: " + err.message);
-    return res.json({ error: "Erro interno." }, 500);
+    return res.json({ error: "Erro interno: " + err.message }, 500);
   }
 };
