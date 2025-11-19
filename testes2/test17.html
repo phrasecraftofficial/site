@@ -1,6 +1,7 @@
 <!-- 
 delete e edit funcionando, 
 Switch statement para definir clickFunction baseado na seção
+gap ok
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -462,7 +463,7 @@ label input[type="checkbox"] {
       </div>
     </div>
     
-	  <div class="flex row gap" id="performance-area">
+    <div class="flex row gap" id="performance-area">
       <div class="flex column">
         <span id="">Jogador 1</span>
         <span id="host-performance">100%</span>
@@ -529,13 +530,13 @@ label input[type="checkbox"] {
 		<h2>Create</h2>
         <p>Use this section to create new content.</p>
 			<form>
-                <label for="videoUpload" class="flex column">Upload Vídeo
+                <label for="videoUpload" class="flex column gap">Upload Vídeo
                 <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
                 <input type="file" id="videoUpload" accept="video/*"></label>
-                <label for="srtUpload" class="flex column" class="upload-btn">Upload SRT
+                <label for="srtUpload" class="flex column gap" class="upload-btn">Upload SRT
                 <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
                 <input type="file" id="srtUpload" accept=".srt"></label>
-                <button class="general-btn flex row" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+                <button class="general-btn flex row gap" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
             </form>
     </section>
 
@@ -557,9 +558,9 @@ label input[type="checkbox"] {
       <p>This section is about your profile.</p>
                       
       <div>
-        <button class="flex column general-btn" onclick="showSection('myProfile')">
+        <button class="flex column gap general-btn" onclick="showSection('myProfile')">
             <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Perfil</span></button>
-        <button class="flex column general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
+        <button class="flex column gap general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
             <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Postagens</span></button>
       </div>
     
@@ -574,7 +575,7 @@ label input[type="checkbox"] {
     <section id="myProfile">
 		<h2>My Account</h2>
 		<p>Use this section to see and edit your profile.</p>
-        <div class="flex column" >
+        <div class="flex column gap" >
           <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
           <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
           <span>____________________________________</span>
@@ -584,7 +585,7 @@ label input[type="checkbox"] {
     
     <section id="login-screen">
     	<h2>Entrar</h2>
-    	<form class="flex column" id="login-form">
+    	<form class="flex column gap" id="login-form">
     	    <p id="login-message"></p>
     	    <input type="email" id="email-login" placeholder="E-mail" required>
     	    <input type="password" id="password-login" placeholder="Senha" required>
@@ -654,21 +655,21 @@ label input[type="checkbox"] {
 	<section id="postLesson">
 		<h2>Post</h2>
 		<p>Use this section to post.</p>
-		<div class="flex column" id="video-section-postLesson">
+		<div class="flex column gap" id="video-section-postLesson">
           <!-- O vídeo de postagem ou edição será inserido aqui -->
           <video id="videoPlayer-postLesson" controls crossorigin="anonymous">
               <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
           </video>
 		</div>
-      	<div class="flex row" id="postLesson-containerBtn">
+      	<div class="flex row gap" id="postLesson-containerBtn">
       	    <button class="general-btn" onclick="showSection('editSrt')">👈</button>
       		  <button class="general-btn" onclick="handleCaptureClick()">Thumbnail 📸</button>
       	    <button class="general-btn" onclick="postLesson()">Postar 🛰️</button>
       	</div>
       
-      <div class="flex row" id="thumb-section-postLesson">
+      <div class="flex row gap" id="thumb-section-postLesson">
       	<img class="channel-pic" alt="captured thumb" hidden>
-        <form class="flex column">
+        <form class="flex column gap">
             <!-- Título -->
             <input type="text" placeholder="Digite o nome o vídeo..." name="nome">
 
@@ -679,9 +680,9 @@ label input[type="checkbox"] {
       <p>______________</p>
 
       <!-- Playlist -->
-      <form class="flex column" id="playlistForm">
+      <form class="flex column gap" id="playlistForm">
           <h4>Adicionar à Playlist</h4>
-          <div class="flex column"  id="playlist-checkbox-container" style="width: 150px;">
+          <div class="flex column gap"  id="playlist-checkbox-container" style="width: 150px;">
               <p>Carregando...</p>
               <label class="radio-option">
                   <input type="checkbox" name="opcao-linha" value="all" checked>
@@ -697,7 +698,7 @@ label input[type="checkbox"] {
               </label>
           </div>
           
-          <div class="flex row" id="new-playlist-name-area" style="display: none;">
+          <div class="flex row gap" id="new-playlist-name-area" style="display: none;">
           <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
           <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
 			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
@@ -714,7 +715,7 @@ label input[type="checkbox"] {
           </video>
         </div>
 
-      	<div class="flex row">
+      	<div class="flex row gap">
       		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
       		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
       		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
@@ -728,16 +729,16 @@ label input[type="checkbox"] {
             <div class="word-container" id="palavras"></div>
         </div>
         
-        <div class="flex row" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+        <div class="flex row gap" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
     </section>
   <!----------->
   <!--editSrt-->
   <!----------->
   <section id="editSrt">
     <div id="save-area">
-        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
         <p>💾 Salvar</p>
-        <div class="flex row">
+        <div class="flex row gap">
             <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
             <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
             <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
@@ -748,14 +749,14 @@ label input[type="checkbox"] {
     	<!-- Div para exibir o nome do arquivo da legenda -->
 	</div>
     
-	<div class="column-area" id="video-section-editor">
+	<div class="" id="video-section-editor">
 		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
 			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
 		</video>
 	</div>
 
 	<div id="editor">
-	<div class="flex row">
+	<div class="flex row gap">
     	<button id="btn-save" onclick="showSave()">💾</button>
     	<button onclick="undo()">↩</button>
     	<button onclick="redo()">↪</button>
@@ -764,48 +765,48 @@ label input[type="checkbox"] {
     	<button onclick="removeSegment()">|−</button>
     	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
 	</div>
-	<form class="flex row" style="gap: 0; padding: 0;">
-      <label class="flex row" style="gap: 0; padding: 0;">
-        <div class="flex column" style="gap: 0; padding: 0;">
+	<form class="flex row gap" style="gap: 0; padding: 0;">
+      <label class="flex row gap" style="gap: 0; padding: 0;">
+        <div class="flex column gap" style="gap: 0; padding: 0;">
           Início
           <input type="text" id="editStart" placeholder="00:00:000">
         </div>
-        <div class="flex column">
+        <div class="flex column gap">
           <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
           <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
         </div>
       </label>
-      <label class="flex row" style="gap: 0; padding: 0;">
-        <div class="flex column" style="gap: 0; padding: 0;">
+      <label class="flex row gap" style="gap: 0; padding: 0;">
+        <div class="flex column gap" style="gap: 0; padding: 0;">
           Fim
           <input id="editEnd"  placeholder="00:00:000">
         </div>
-        <div class="flex column">
+        <div class="flex column gap">
           <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
           <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
         </div>
       </label>
     </form>
     <form>
-      <label class="flex row">Texto
+      <label class="flex row gap">Texto
           <textarea type="text" id="editText" rows="3"></textarea>
       </label>
     </form>
     </div><!--editor-->
-    <div class="flex row" id="navigation-controls-previewMode">
+    <div class="flex row gap" id="navigation-controls-previewMode">
 		<button onclick="prevLine()">⏮︎</button>
 		<button onclick="playLine()">⏯︎</button>
 		<button onclick="nextLine()">⏭︎</button>
 	</div>
 	<div class="column-area" id="config-area">
-        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
      	<p>⚙ Editar em lote</p>
-         <form class="flex row">
+         <form class="flex row gap">
            <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
            <input id="editStack" placeholder="0.05">
            <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
 		</form>
-		<form class="flex column" id="linhaForm" style="width: 300px;">
+		<form class="flex column gap" id="linhaForm" style="width: 300px;">
 			<label class="radio-option" style="align-self: flex-start;">
 				<input type="radio" name="opcao-linha" value="all" checked>
 				Todas as linhas
@@ -820,7 +821,7 @@ label input[type="checkbox"] {
 			</label>
 		</form>
 	</div><!--config-area-->
-    <div class="segmentsArea flex column" id="segments-area">
+    <div class="segmentsArea flex column gap" id="segments-area">
     	  <span>Lista de Legendas</span>
         <div id="segments"></div>
     </div>
