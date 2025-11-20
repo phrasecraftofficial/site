@@ -1,0 +1,119 @@
+>Self-Reporting
+When a name/face match has been established. A name match is established when the individual who is referenced in the content reports the content.
+
+>ctrl + F
+>Limited scope public figure
+An individual who technically qualifies as a public figure but whose primary fame is limited to one of the following specific scopes: activism, journalism, or those who become famous through involuntary means. Where a public figure has broader fame (e.g., both an actor and an activist), they do not qualify to be limited scope public figures.
+
+>ctrl + F
+>Involuntary Public Figure (IPF)
+Individuals who technically qualify as public figures but have not engaged with their fame, unless they have been accused of criminal activity in the context of the incident that led to their fame. This does not include accusations of previous criminal activity or criminal records. Involuntary Public Figures are designated and communicated by Content Policy on a case by case basis. If you have a suggestion, please reach out to your GO Market Team counterpart.
+
+>ctrl + F
+>Public figures
+1. Public figures must meet at least one of the following criteria:
+a. Heads of State, or
+b. Members of the executive or legislative branches of government at state, national, or supranational level, or
+c. Political candidates running for office (for up to 30 days after election if candidate is not elected to position), or
+d. People that have 1M+ fans or followers on one of their social media accounts, or
+e. People who are mentioned by name in the title of 5 or more news articles or media pieces within the last 2 years, as determined by local news search
+f. For example:
+i. Jair Bolsonaro (former president of Brazil)
+ii. Oprah Winfrey (Celebrity)
+iii. Trevor Noah (Comedian)
+iv. Cristiano Ronaldo (Football player)
+v. Ellen DeGeneres (Actress and TV show host)
+2. Note: Minors under the age of 13 don't qualify as public figures
+
+>ctrl + F
+>Purposeful exposure
+Purposeful exposure is when the poster either tags the public figure in the content or posts a comment directly on the public figure's own post or page.
+
+>ctrl + F
+>Establishing Targets
+A target is established when there's an identifiable individual in the content in question. 
+That doesn't necessarily mean that the face of the individual(s) being targeted has to be depicted in the content in order for it to contain an identifiable target given that there are other ways to identify a person.
+This includes usage of pronouns or mentioning an individual (not by name), and additional identifying details/context such as relationship to reporter, age, physical attributes, job, location, and so on.
+i. For example: "This girl I know is a slut. She is a colleague of mine at Starbucks and always wears this silly red hat" (does fall within policy).
+Content that targets non-real or non-identifiable individuals is not in violation of the Bullying and Harassment policy.
+Groups of individuals defined by protected characteristics, occupation, fan-groups, or employment by a corporation are too big of a group to qualify as a bullying target unless there is context that specifically limits the size of the group.
+ii. "Justin Bieber fans are fat and ugly" = Doesn't fall within policy
+iii. "The Justin Bieber fan girls in my homeroom are fat and ugly" = Does fall within policy
+
+<---------------------------->
+Bullying and Harassment
+     🏷️ Label by target
+<---------------------------->
+🏷️ Sexualized Harrassment
+> Anyone.
+
+🏷️ Calls for death, SSI or to contract or develop a medical condition
+Calls for self-injury or suicide:
+> Anyone.
+
+Calls for death and statements in favor of contracting or developing a medical condition:
+> Anyone;
+> Adult public figures, with purposeful exposure.
+
+🏷️ Claims about sexual activity, romantic involvement and gender identity
+Claims about sexual activity:
+> Any Minor;
+> Private Adult ;
+> Limited scope public figure. 
+
+Claims about romantic involvement and gender identity:
+> private Minor;
+> private Adult, with self-report;
+> Minor involuntary public figure.
+
+🏷️ Violent Tragedies
+> Anyone.
+
+🏷️ Negative Comparison to animals/inanimate objects
+> private: Minor or Adult;
+> Limited scope public figure;
+> Minor public figure, with purposeful exposure.
+
+🏷️ Negative physical description*
+ctrl+f = *Statements of inferiority about physical appearance
+> Anyone, with Exception:
+> Adult public figure, with purposeful exposure.
+
+🏷️ Targeted and female gendered Cursing
+Targeted cursing:
+> private Minor;
+> private Adults, with self-report;
+> Minor involuntary public figure.
+
+Derogatory terms related to female-gendered cursing:
+> Private minors;
+
+🏷️ Negative Character/Contempt/Exclusion
+> private Minor;
+> private Adult, with self-reported;
+> Minor involuntary public figure.
+
+🏷️ Physical bullying
+> private Minor.
+
+🏷️ Non-Negative Comparison/claims/description*
+ctrl+f = *Neutral or positive physical descriptions *Non-negative character or ability claims
+> When self-reported: private Minor or Adult, and Minor Involuntary public figure.
+
+🏷️ Other
+Allegations about criminal or illegal behavior
+> any Minor.
+
+Threats to release an individual's private phone number, residential address, or email address	> > Anyone.
+<---------------------------->
+
+Who is the target in relation to the post?
+Reporter, is the person who reports the content and if there is any, it's available in the reporter widget in SRT.
+Parent Post/Media owner, a user who owns the parent post/media associated with the content.
+A user tagged/mentioned in the post/media caption.
+A user tagged/mentioned within media.
+Parent comment owner.
+A user tagged/mentioned in the comment(s).
+Owner of shared media, the owner of the original media shared by the other user.
+A person depicted in the image/video (PDITI/PDITV), compare the face in the photo of the parent Post/Media Owner with the face of the PDITI/PDITV.
+Other, use this option when none of the other options in the guided review tree is applicable.
