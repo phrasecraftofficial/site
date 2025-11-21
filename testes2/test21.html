@@ -661,6 +661,7 @@ label input[type="checkbox"] {
         </div>
       </div>
     </section>
+  
 	<section id="postLesson">
 		<h2>Post</h2>
 		<p>Use this section to post.</p>
@@ -708,38 +709,43 @@ label input[type="checkbox"] {
           </div>
           
           <div class="flex row gap" id="new-playlist-name-area" style="display: none;">
-          <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
-          <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
-			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
-			<button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
-			<button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
+            <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
+            <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
+			      <input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
+			      <button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
+			      <button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
           </div>
           
       </form> 
     </section>
-	<section id="play">
-		<div id="video-section-play">
+  
+	  <section id="play">
+		  <div id="video-section-play">
+          <div id="subtitle-content" class="hidden"> 
+            <!- As legendas aparecem aqui: -->
+          </div>
           <video id="videoPlayer-play" controls crossorigin="anonymous">
-                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-          </video>
-        </div>
+          <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+        </video>
+      </div>
 
       	<div class="flex row gap">
-      		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
-      		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
+      		<button class="general-btn" id="repetir-btn" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
+      		<button class="general-btn" id="lerFrase-btn" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
       		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
  font-weight: bold; background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
-      		<button class="general-btn" id="desistir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
-		</div>
+      		<button class="general-btn" id="desistir-btn" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
+		    </div>
 
-		<div class="phrase-container" id="frase"></div>
+		    <div class="phrase-container" id="frase"></div>
 
         <div class="word-button-wrapper">
-            <div class="word-container" id="palavras"></div>
+          <div class="word-container" id="palavras"></div>
         </div>
         
         <div class="flex row gap" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
     </section>
+  
   <!----------->
   <!--editSrt-->
   <!----------->
@@ -4032,7 +4038,7 @@ function onClick(id, handler) {
 // ✅ Uso simples e limpo
 
 // Botão "Tocar Trecho" - Repete o áudio do segmento atual
-onClick('repetir', () => {
+onClick('repetir-btn', () => {
   playLineInPlayMode();
   console.log('Tradução iniciada (placeholder)');
 });
