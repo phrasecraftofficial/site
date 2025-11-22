@@ -1,7 +1,5 @@
 <!-- 
-fx traduzir
-nao mostra solo desafir etc
-18 mostra
+tentando fx traduzir
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -35,17 +33,7 @@ section {
 section.active { 
 	display: block; 
 }
-/* Esconde botões contextuais por padrão (serão mostrados via JS quando necessário) */
-#preview-footer-solo,
-#preview-footer-challenging,
-#preview-footer-challenges {
-  display: none !important;
-}
 
-/* Classe helper para mostrar elementos via JS */
-.js-show {
-  display: flex !important;
-}
 /* Estilos gerais para Header e Footer */
 header, footer {
   position: fixed;
@@ -723,7 +711,7 @@ label input[type="checkbox"] {
   
 	  <section id="play">
 		  <div id="video-section-play">
-          <div id="translate-area" class="hidden"> 
+          <div id="subtitle-content" class="hidden"> 
             <!- As legendas aparecem aqui: -->
           </div>
           <video id="videoPlayer-play" controls crossorigin="anonymous">
@@ -1157,57 +1145,49 @@ async function updateElementForSection(sectionId) {
  * Esta função atualiza a UI com base no modo
  */
 function setEditorMode(mode) {
-    currentEditMode = mode; 
-    console.log("Modo alterado para:", currentEditMode);
+    // Atualiza a variável de estado
+    currentEditMode = mode; 
+    console.log("Modo alterado para:", currentEditMode);
 
-    const editorDiv = document.getElementById('editor');
-    const navPreview = document.getElementById('navigation-controls-previewMode');
-    
-    const footerSolo = document.getElementById('preview-footer-solo');
-    const footerChallenging = document.getElementById('preview-footer-challenging');
-    const footerChallenges = document.getElementById('preview-footer-challenges');
+    // 2. Seleciona os elementos do seu HTML
+    const editorDiv = document.getElementById('editor');
+    const navPreview = document.getElementById('navigation-controls-previewMode');
+    
+    // Botões do footer (baseado no seu HTML)
+    const footerSolo = document.getElementById('preview-footer-solo');
+    const footerChallenging = document.getElementById('preview-footer-challenging');
+    const footerChallenges = document.getElementById('preview-footer-challenges');
 
-    hideMainNavigation();
-    closeLoadSaveArea();
-    
-    // Esconde tudo primeiro
-    if (editorDiv) editorDiv.style.display = 'none';
-    if (navPreview) navPreview.style.display = 'none';
-    if (footerSolo) {
-        footerSolo.style.display = 'none';
-        footerSolo.classList.remove('js-show');
-    }
-    if (footerChallenging) {
-        footerChallenging.style.display = 'none';
-        footerChallenging.classList.remove('js-show');
-    }
-    if (footerChallenges) {
-        footerChallenges.style.display = 'none';
-        footerChallenges.classList.remove('js-show');
-    }
+    // 3. Lógica para esconder/mostrar
+  	hideMainNavigation();
+	  closeLoadSaveArea();
+    
+    // Primeiro, esconde tudo para "limpar"
+    // (Oculta as partes que mudam)
+    if (editorDiv) editorDiv.style.display = 'none';
+    if (navPreview) navPreview.style.display = 'none';
+    if (footerSolo) footerSolo.style.display = 'none';
+    if (footerChallenging) footerChallenging.style.display = 'none';
+    if (footerChallenges) footerChallenges.style.display = 'none';
 
-    if (mode === 'editor') {
-        if (editorDiv) editorDiv.style.display = 'block';
-        if (navPreview) navPreview.style.display = 'block';
-        
-    } else if (mode === 'previewSolo') {
-        if (navPreview) navPreview.style.display = 'block';
-        if (footerSolo) {
-            footerSolo.style.display = 'flex';
-            footerSolo.classList.add('js-show');
-        }
-        if (footerChallenging) {
-            footerChallenging.style.display = 'flex';
-            footerChallenging.classList.add('js-show');
-        }
-        
-    } else if (mode === 'previewMulti') {
-        if (navPreview) navPreview.style.display = 'block';
-        if (footerChallenges) {
-            footerChallenges.style.display = 'flex';
-            footerChallenges.classList.add('js-show');
-        }
-    }
+    // Agora, mostra apenas o que é necessário para o modo
+    
+    if (mode === 'editor') {
+        // Mostra o editor
+        if (editorDiv) editorDiv.style.display = 'block';
+        if (navPreview) navPreview.style.display = 'block';
+        
+    } else if (mode === 'previewSolo') {
+        // Mostra navegação e botões de "Solo" e "Desafiar"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
+        if (footerChallenging) footerChallenging.style.display = 'flex';
+        
+    } else if (mode === 'previewMulti') {
+        // Mostra navegação e botão "Aceitar Desafio"
+        if (navPreview) navPreview.style.display = 'block';
+        if (footerChallenges) footerChallenges.style.display = 'flex';
+    }
 }
 
 function openContent() {
@@ -1309,11 +1289,9 @@ function hideSoloAndChallenging() {
 
   if (btnSolo) {
     btnSolo.style.display = 'none';
-    btnSolo.classList.remove('js-show');
   }
   if (btnChallenging) {
     btnChallenging.style.display = 'none';
-    btnChallenging.classList.remove('js-show');
   }
 }
 
@@ -1325,7 +1303,6 @@ function hideAcceptChallenge() {
   
   if (btnAccept) {
     btnAccept.style.display = 'none';
-    btnAccept.classList.remove('js-show');
   }
 }
 
@@ -3151,7 +3128,10 @@ async function loadLessonsToCache() {
 
 /**
  * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas).
- * ✅ CORRIGIDO: Agora passa o objeto completo (item) para as funções de preview
+ * Inclui lógica para renderizar botões de Editar/Excluir na seção 'myPosts'.
+ * Switch statement para definir clickFunction baseado na seção
+ * * @param {string} sectionId - O ID da seção ativa ('home', 'myPosts', 'challenge', etc.).
+ * @param {Array<Object>} [dataToRender=lessonsCache] - Array opcional de lições/partidas a serem renderizadas.
  */
 function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     console.log(`--- Renderizando thumbnails para: ${sectionId} ---`);
@@ -3183,16 +3163,16 @@ function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     switch(sectionId) {
         case 'home':
         case 'subscriptions':
-            clickFunction = (item) => showSoloPreview(item); // ✅ Passa o item
+            clickFunction = (item) => showSoloPreview(item);
             break;
         case 'challenge':
-            clickFunction = (item) => showMultiPreview(item); // ✅ Passa o item
+            clickFunction = (item) => showMultiPreview(item);
             break;
         case 'myPosts':
-            clickFunction = (item) => handleEditLesson(item); // ✅ Passa o item
+            clickFunction = (item) => handleEditLesson(item);
             break;
         default:
-            clickFunction = (item) => previewLesson(item); // ✅ Passa o item
+            clickFunction = (item) => previewLesson(item);
     }
 
     // 3. Verifica se há itens para renderizar
@@ -3264,24 +3244,23 @@ function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
         // Adiciona ao container
         container.appendChild(postWrapper);
         
-        // 6. ✅ CORREÇÃO CRÍTICA: Adicionar event listeners APÓS inserir no DOM
-        //    E passar o objeto COMPLETO (item) para as funções
+        // 6. Adicionar event listeners APÓS inserir no DOM
         
-        // Event listener para a THUMBNAIL
+        // Event listener para a THUMBNAIL (sempre chama a clickFunction da seção)
         const thumbElement = postWrapper.querySelector('.thumb-section');
         if (thumbElement) {
             thumbElement.addEventListener('click', () => {
                 console.log(`Thumbnail clicada em ${sectionId}:`, baseName);
-                clickFunction(item); // ✅ PASSA O OBJETO COMPLETO
+                clickFunction(item);
             });
         }
         
-        // Event listener para o TÍTULO
+        // Event listener para o TÍTULO (sempre chama a clickFunction da seção)
         const titleElement = postWrapper.querySelector('.video-title-clickable');
         if (titleElement) {
             titleElement.addEventListener('click', () => {
                 console.log(`Título clicado em ${sectionId}:`, baseName);
-                clickFunction(item); // ✅ PASSA O OBJETO COMPLETO
+                clickFunction(item);
             });
         }
         
@@ -3293,7 +3272,7 @@ function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
                 btnEdit.addEventListener('click', (e) => {
                     e.stopPropagation();
                     console.log(`Botão Editar clicado:`, baseName);
-                    handleEditLesson(item); // ✅ PASSA O OBJETO COMPLETO
+                    handleEditLesson(item);
                 });
             }
             
@@ -4054,50 +4033,56 @@ onClick('repetir-btn', () => {
 /**
  * Botão "Traduzir" - Mostra a frase completa (placeholder)
  * API não oficial, sem limite oficial
- * mas o uso é feito por conta e risco.
- * Para uso pessoal e leve,
- * provavelmente não haverá problemas.
+ * Uso pessoal e leve, provavelmente sem problemas.
  */
- */
-onClick('traduzir-btn', () => {
-    // 1. Seleciona a área de tradução e o texto original completo
+
+onClick('traduzir-btn', async () => {
     const translateArea = document.getElementById('translate-area');
-    
-    // Pega o texto direto do array de dados (srtData), independente do estado do jogo
-    const originalText = srtData[currentSegmentIndex]?.text; 
+    const originalText = srtData[currentSegmentIndex]?.text;
 
     if (!translateArea || !originalText) return;
 
-    // 2. Lógica de "Toggle" (Clicar de novo limpa a tradução)
-    if (translateArea.textContent !== "") {
-        translateArea.textContent = ""; 
+    // Toggle: se já existe texto, limpa
+    if (translateArea.textContent.trim() !== "") {
+        translateArea.textContent = "";
         return;
     }
 
-    // 3. Feedback visual imediato
+    // Feedback imediato
     translateArea.textContent = "Traduzindo...";
 
-    // 4. Requisição Fetch (Lógica do Code 2 embutida aqui para não criar nova função)
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=${encodeURIComponent(originalText)}`;
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            // O Google pode devolver a frase quebrada em array, aqui juntamos tudo
-            let translation = '';
-            if (data && data[0]) {
-                data[0].forEach(item => {
-                    if (item[0]) translation += item[0];
-                });
-            }
-            // 5. Exibe a tradução final
-            translateArea.textContent = translation;
-        })
-        .catch(error => {
-            console.error('Erro na tradução:', error);
-            translateArea.textContent = "Erro ao traduzir.";
-        });
+    try {
+        const translation = await translateText(originalText, "pt");
+        translateArea.textContent = translation || "Não foi possível traduzir.";
+    } catch (error) {
+        console.error("Erro na tradução:", error);
+        translateArea.textContent = "Erro ao traduzir.";
+    }
 });
+
+/**
+ * Função utilitária para traduzir texto usando a API não oficial do Google
+ * @param {string} text - Texto original
+ * @param {string} targetLang - Idioma alvo (ex: 'pt')
+ * @returns {Promise<string>} Tradução
+ */
+async function translateText(text, targetLang = "pt") {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const response = await fetch(url);
+
+    if (!response.ok) throw new Error("Falha na requisição");
+
+    const data = await response.json();
+    let translation = "";
+
+    if (Array.isArray(data[0])) {
+        data[0].forEach(item => {
+            if (item[0]) translation += item[0];
+        });
+    }
+
+    return translation;
+}
 
 /**
  * Botão "Passar" - Pula para o próximo segmento
