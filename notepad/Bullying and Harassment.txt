@@ -17,7 +17,15 @@ The targets in the context of the post may be the reporter, parent post, parent 
 
 >ctrl + F
 >Establishing Targets
-A target is established when there is an identifiable individual in the content under review, and this does not necessarily require the person’s face to be depicted, since identification can occur through pronouns, indirect mentions, or contextual details such as relationship to the reporter, age, physical attributes, job, or location. For example, the statement “This girl I know is a slut. She is a colleague of mine at Starbucks and always wears this silly red hat” falls within policy because it identifies a specific person. In contrast, content aimed at non-real or non-identifiable individuals does not violate the Bullying and Harassment policy. Similarly, groups defined broadly by protected characteristics, occupations, fan bases, or corporate employment are considered too large to qualify as bullying targets unless the context narrows the group to identifiable individuals. For instance, “Justin Bieber fans are fat and ugly” does not fall within policy, while “The Justin Bieber fan girls in my homeroom are fat and ugly” does fall within policy.
+A target is established when there is an identifiable individual in the content under review, and this does not necessarily require the person’s face to be depicted, since identification can occur through pronouns, indirect mentions, or contextual details such as relationship to the reporter, age, physical attributes, job, or location.
+
+For example, the statement “This girl I know is a slut. She is a colleague of mine at Starbucks and always wears this silly red hat” falls within policy because it identifies a specific person. 
+
+In contrast, content aimed at non-real or non-identifiable individuals does not violate the Bullying and Harassment policy. 
+
+Similarly, groups defined broadly by protected characteristics, occupations, fan bases, or corporate employment are considered too large to qualify as bullying targets unless the context narrows the group to identifiable individuals. 
+
+For instance, “Justin Bieber fans are fat and ugly” does not fall within policy, while “The Justin Bieber fan girls in my homeroom are fat and ugly” does fall within policy.
 
 >Self-Reporting
 Self-Reporting occur When a name/face match has been established. A name match is established when the individual who is referenced in the content reports the content.
