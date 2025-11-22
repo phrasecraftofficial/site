@@ -1,5 +1,5 @@
 <!-- 
-tentando fx traduzir
+fx traduzir working
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -711,7 +711,7 @@ label input[type="checkbox"] {
   
 	  <section id="play">
 		  <div id="video-section-play">
-          <div id="subtitle-content" class="hidden"> 
+          <div id="translate-area" class="hidden"> 
             <!- As legendas aparecem aqui: -->
           </div>
           <video id="videoPlayer-play" controls crossorigin="anonymous">
@@ -4067,7 +4067,13 @@ onClick('traduzir-btn', async () => {
  * @returns {Promise<string>} Tradução
  */
 async function translateText(text, targetLang = "pt") {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const url =
+      'https://translate.googleapis.com/translate_a/single' +
+      '?client=gtx' +
+      '&sl=auto' +
+      '&tl=' + encodeURIComponent(targetLang) +
+      '&dt=t' +
+      '&q=' + encodeURIComponent(text);
     const response = await fetch(url);
 
     if (!response.ok) throw new Error("Falha na requisição");
