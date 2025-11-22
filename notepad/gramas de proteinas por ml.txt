@@ -1,0 +1,20 @@
+1. Composição dos ingredientes
+Albumina em pó (500 g): geralmente contém cerca de 80% de proteína (valor médio, pode variar conforme a marca). → 500 g × 0,80 = 400 g de proteína.
+
+Cacau em pó (200 g): contém em média 20% de proteína. → 200 g × 0,20 = 40 g de proteína.
+
+🔹 Proteína total da mistura: 400 g + 40 g = 440 g de proteína. 🔹 Peso total da mistura: 500 g + 200 g = 700 g.
+
+2. Proporção de proteína na mistura
+undefined
+Ou seja, cada 100 g da mistura tem ~62,8 g de proteína.
+
+3. Conversão para volume (15 ml)
+Aqui entra uma questão importante: ml é medida de volume, não de massa. Para converter, precisamos da densidade da mistura. Como não temos um valor exato, podemos assumir que a densidade é próxima à de pós alimentícios (≈0,5 g/ml a 0,7 g/ml).
+
+Se a densidade for 0,5 g/ml: 15 ml × 0,5 g/ml = 7,5 g de mistura → 7,5 g × 0,628 = 4,7 g de proteína
+
+Se a densidade for 0,7 g/ml: 15 ml × 0,7 g/ml = 10,5 g de mistura → 10,5 g × 0,628 = 6,6 g de proteína
+
+✅ Resultado aproximado
+No volume de 15 ml da mistura, você terá entre 4,7 g e 6,6 g de proteína, dependendo da densidade real do pó.
