@@ -14,10 +14,17 @@ In this stage, it is essential to identify the target in the context of the post
 
 The targets in the context of the post may be the reporter, parent post, parent comment owner, a person depicted in the image/video (PDITI/PDITV), owner of shared media, other, a user tagged or mentioned in the post, media caption or comment, or within media.
 
+Who is the target in relation to the post?
 
->ctrl + F
->Establishing Targets
-A target is established when there is an identifiable individual in the content under review, and this does not necessarily require the person’s face to be depicted, since identification can occur through pronouns, indirect mentions, or contextual details such as relationship to the reporter, age, physical attributes, job, or location.
+Reporter, is the person who reports the content and if there is any, it's available in the reporter widget in SRT.
+Parent Post/Media owner, a user who owns the parent post/media associated with the content.
+Owner of shared media, the owner of the original media shared by the other user.
+A person depicted in the image/video (PDITI/PDITV), compare the face in the photo of the parent Post/Media Owner with the face of the PDITI/PDITV.
+Other, use this option when none of the other options in the guided review tree is applicable.
+
+>ctrl + F = Establishing Targets
+>Who is the target in the real context
+A target in the real context is established when there is an identifiable individual in the content under review, and this does not necessarily require the person’s face to be depicted, since identification can occur through pronouns, indirect mentions, or contextual details such as relationship to the reporter, age, physical attributes, job, or location.
 
 For example, the statement “This girl I know is a slut. She is a colleague of mine at Starbucks and always wears this silly red hat” falls within policy because it identifies a specific person. 
 
@@ -26,9 +33,6 @@ In contrast, content aimed at non-real or non-identifiable individuals does not 
 Similarly, groups defined broadly by protected characteristics, occupations, fan bases, or corporate employment are considered too large to qualify as bullying targets unless the context narrows the group to identifiable individuals. 
 
 For instance, “Justin Bieber fans are fat and ugly” does not fall within policy, while “The Justin Bieber fan girls in my homeroom are fat and ugly” does fall within policy.
-
->Self-Reporting
-Self-Reporting occur When a name/face match has been established. A name match is established when the individual who is referenced in the content reports the content.
 
 >ctrl + F
 >Limited scope public figure
@@ -48,80 +52,35 @@ Public figures, are also defined as people with over one million followers on a 
 Examples of public figures include Luiz Inácio, Oprah Winfrey, Trevor Noah, Cristiano Ronaldo, and Ellen DeGeneres. Importantly, minors under the age of 13 do not qualify as public figures.
 
 >ctrl + F
+>Self-Reporting
+Self-Reporting occur When a name/face match has been established. A name match is established when the individual who is referenced in the content reports the content.
+
+>ctrl + F
 >Purposeful exposure
 Purposeful exposure is when the poster either tags the public figure in the content or posts a comment directly on the public figure's own post or page.
 
+Bullying and harassment policy, label by protected target:
 
-<---------------------------->
-Bullying and Harassment
-     🏷️ Label by target
-<---------------------------->
-🏷️ Sexualized Harrassment
-> Anyone.
+Label: Sexualized Harrassment, Violent Tragedies, Calls for self-injury or suicide. Targets: Anyone.
 
-🏷️ Calls for death, SSI or to contract or develop a medical condition
-Calls for self-injury or suicide:
-> Anyone.
+Label: Calls for death and statements in favor of contracting or developing a medical condition. Targets: anyone with exception. Adult public figures, with purposeful exposure.
 
-Calls for death and statements in favor of contracting or developing a medical condition:
-> Anyone;
-> Adult public figures, with purposeful exposure.
+Label: Claims about sexual activity. Targets: Any Minor, Private Adult, Limited scope public figure. 
 
-🏷️ Claims about sexual activity, romantic involvement and gender identity
-Claims about sexual activity:
-> Any Minor;
-> Private Adult ;
-> Limited scope public figure. 
+Label: Claims about romantic involvement and gender identity. Targets: private Minor, private Adult, with self-report, Minor involuntary public figure.
 
-Claims about romantic involvement and gender identity:
-> private Minor;
-> private Adult, with self-report;
-> Minor involuntary public figure.
+Label: Negative Comparison to animals/inanimate objects. Targets: private: Minor or Adult, Limited scope public figure, Minor public figure, with purposeful exposure.
 
-🏷️ Violent Tragedies
-> Anyone.
+Label: Statements of inferiority about physical appearance. Targets: Anyone, with Exception. Adult public figure, with purposeful exposure.
 
-🏷️ Negative Comparison to animals/inanimate objects
-> private: Minor or Adult;
-> Limited scope public figure;
-> Minor public figure, with purposeful exposure.
+Label: Targeted cursing. Targets: private Minor, private Adults, with self-report, Minor involuntary public figure.
 
-🏷️ Negative physical description*
-ctrl+f = *Statements of inferiority about physical appearance
-> Anyone, with Exception:
-> Adult public figure, with purposeful exposure.
+Label: Physical bullying and Derogatory terms related to female-gendered cursing. Targets: Private minors.
 
-🏷️ Targeted and female gendered Cursing
-Targeted cursing:
-> private Minor;
-> private Adults, with self-report;
-> Minor involuntary public figure.
+Label: Negative Character/Contempt/Exclusion. Targets: private Minor, private Adult, with self-reported, Minor involuntary public figure.
 
-Derogatory terms related to female-gendered cursing:
-> Private minors;
+Label: Neutral, positive physical descriptions or non-negative character or ability claims, when self-reported. Targets: private Minor or Adult, and Minor Involuntary public figure.
 
-🏷️ Negative Character/Contempt/Exclusion
-> private Minor;
-> private Adult, with self-reported;
-> Minor involuntary public figure.
+Label: Other, when Allegations about criminal or illegal behavior. Targets: any Minor.
 
-🏷️ Physical bullying
-> private Minor.
-
-🏷️ Non-Negative Comparison/claims/description*
-ctrl+f = *Neutral or positive physical descriptions *Non-negative character or ability claims
-> When self-reported: private Minor or Adult, and Minor Involuntary public figure.
-
-🏷️ Other
-Allegations about criminal or illegal behavior
-> any Minor.
-
-Threats to release an individual's private phone number, residential address, or email address	> > Anyone.
-<---------------------------->
-
-Who is the target in relation to the post?
-Reporter, is the person who reports the content and if there is any, it's available in the reporter widget in SRT.
-Parent Post/Media owner, a user who owns the parent post/media associated with the content.
-Owner of shared media, the owner of the original media shared by the other user.
-A person depicted in the image/video (PDITI/PDITV), compare the face in the photo of the parent Post/Media Owner with the face of the PDITI/PDITV.
-Other, use this option when none of the other options in the guided review tree is applicable.
+Label: Other, when Threats to release an individual's private phone number, residential address, or email address. Targets: Anyone.
