@@ -64,21 +64,21 @@ Bullying and harassment policy, label by protected target:
 
 Label: Sexualized Harrassment, Violent Tragedies, Calls for self-injury or suicide. Targets: Anyone.
 
-Label: Calls for death and statements in favor of contracting or developing a medical condition. Targets: anyone with exception. Adult public figures, with purposeful exposure.
+Label: Calls for death and statements in favor of contracting or developing a medical condition. Targets: anyone with exception. Adult public figure with purposeful exposure.
 
 Label: Claims about sexual activity. Targets: Any Minor, Private Adult, Limited scope public figure. 
 
-Label: Claims about romantic involvement and gender identity. Targets: private Minor, private Adult, with self-report, Minor involuntary public figure.
+Label: Claims about romantic involvement and gender identity. Targets: private Minor, private Adult with self-report, Minor involuntary public figure.
 
-Label: Negative Comparison to animals or inanimate objects. Targets: private: Minor or Adult, Limited scope public figure, Minor public figure, with purposeful exposure.
+Label: Negative Comparison to animals or inanimate objects. Targets: private: Minor or Adult, Limited scope public figure, Minor public figure with purposeful exposure.
 
-Label: Statements of inferiority about physical appearance. Targets: Anyone, with Exception. Adult public figure, with purposeful exposure.
+Label: Statements of inferiority about physical appearance. Targets: Anyone with Exception. Adult public figure with purposeful exposure.
 
-Label: Targeted cursing. Targets: private Minor, private Adults, with self-report, Minor involuntary public figure.
+Label: Targeted cursing. Targets: private Minor, private Adults with self-report, Minor involuntary public figure.
 
 Label: Physical bullying and Derogatory terms related to female-gendered cursing. Targets: Private minors.
 
-Label: Negative Character or Contempt or Exclusion. Targets: private Minor, private Adult, with self-reported, Minor involuntary public figure.
+Label: Negative Character or Contempt or Exclusion. Targets: private Minor, private Adult with self-reported, Minor involuntary public figure.
 
 Label: Neutral, positive physical descriptions or non-negative character or ability claims, when self-reported. Targets: private Minor or Adult, and Minor Involuntary public figure.
 
