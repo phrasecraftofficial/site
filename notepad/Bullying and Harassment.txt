@@ -1,3 +1,4 @@
+
 Moderation flow for the Bullying and Harassment policy
 
 The moderation flow for the Bullying and Harassment policy can be understood as a process divided into two major complementary stages.
@@ -10,12 +11,11 @@ After that, the target is defined in the general context as a real person, which
 
 The second stage is the practical part of moderation, which consists of recording in the system the classification of the type of attack and the target.
 
-In this stage, it is essential to identify the target in the context of the post, which may be someone who is being mentioned and/or depicted.
+In this stage, it is essential to identify who is the target in the context of the post, which may be someone who is being mentioned and/or depicted.
 
 The targets in the context of the post may be the reporter, parent post, parent comment owner, a person depicted in the image/video (PDITI/PDITV), owner of shared media, other, a user tagged or mentioned in the post, media caption or comment, or within media.
 
-Who is the target in relation to the post?
-
+>ctrl + F = Widgets and 'Who is the target' Label
 Reporter, is the person who reports the content and if there is any, it's available in the reporter widget in SRT.
 Parent Post/Media owner, a user who owns the parent post/media associated with the content.
 Owner of shared media, the owner of the original media shared by the other user.
