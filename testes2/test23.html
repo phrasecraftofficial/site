@@ -1,5 +1,5 @@
 <!-- 
-fx traduzir working
+play btn ok
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -448,18 +448,12 @@ label input[type="checkbox"] {
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(109, 40, 217, 0.3);
 }
-/* Estilo para palavra incorreta (Vermelho) */
+/* Estilo para palavra clicada incorretamente (Vermelho) */
 .word-button-incorrect {
-    background: transparent !important;
-    color: #ffd6f3;
-    padding: 0 10px;
-    margin: 10px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(255, 0, 0, 0.6);
+    /* Remove a sombra e aplica o gradiente de erro */
+    box-shadow: none !important;
+    background: linear-gradient(to bottom, #E91E63, #C2185B) !important;
+    color: #fff; /* Garante que a cor do texto não mude */
 }
 /* Verde Correta*/
 .phrase-word-button {
@@ -484,7 +478,7 @@ label input[type="checkbox"] {
 /* Estilo da sobreposição da tradução */
 .translate-overlay {
     position: absolute; /* Fixa em relação ao video-container-relative */
-    bottom: 30%;       /* Distância do fundo do vídeo (ajuste conforme a barra de controles) */
+    bottom: 40%;       /* Distância do fundo do vídeo (ajuste conforme a barra de controles) */
     left: 50%;          /* Começa no meio */
     transform: translateX(-50%); /* Centraliza exatamente no meio */
     
@@ -4983,4 +4977,4 @@ testListAllVersions();
 */
 </script>
 </body>
-</html>tesssasdf
+</html>
