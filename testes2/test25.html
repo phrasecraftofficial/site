@@ -1,5 +1,6 @@
 <!-- 
 loading ok
+se abrir x loading deve fechar x loading.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -483,7 +484,7 @@ label input[type="checkbox"] {
     left: 50%;          /* Começa no meio */
     transform: translateX(-50%); /* Centraliza exatamente no meio */
     
-    width: 80%;         /* Largura máxima da legenda */
+    max-width: 80%;         /* Largura máxima da legenda */
     background-color: rgba(0, 0, 0, 0.7); /* Fundo preto semi-transparente */
     color: #ffc078;     /* Cor do texto (Laranja claro para destaque) */
     
@@ -957,6 +958,7 @@ const SECTIONS_WITH_THUMBNAILS = [
 const textArea = document.getElementById('text-area');
 const iconsRight = document.getElementById('icons-right');
 const performanceArea = document.getElementById('performance-area');
+const translateArea = document.getElementById('translate-area');
 
 // Seleciona os elementos Edit Srt
 const videoSection = document.getElementById('video-section-editor');
@@ -1712,6 +1714,7 @@ async function waitForThumbnailsToRender(sectionId = null, timeout = 10000) {
       
       if (loadedImages.length > 0) {
         console.log(`✅ ${loadedImages.length} thumbnail(s) carregada(s) em ${targetSection}`);
+        hideLoading();
         resolve();
         return;
       }
@@ -3028,11 +3031,13 @@ async function postLesson() {
     showLoading('Enviando vídeo... (1/3)');
     const videoUploadData = await getBackblazeUploadUrl();
     uploadResults.video = await uploadFileToBackblaze(videoBlob, videoFileName, videoUploadData);
+    hideLoading();
     
     // Upload do SRT
     showLoading('Enviando legenda... (2/3)');
     const srtUploadData = await getBackblazeUploadUrl();
     uploadResults.srt = await uploadFileToBackblaze(srtBlob, srtFileName, srtUploadData);
+    hideLoading();
     
     // Upload da thumbnail
     showLoading('Enviando thumbnail... (3/3)');
@@ -3043,6 +3048,7 @@ async function postLesson() {
     console.log("Video ID:", uploadResults.video.fileId);
     console.log("SRT ID:", uploadResults.srt.fileId);
     console.log("Thumb ID:", uploadResults.thumb.fileId);
+    hideLoading();
     
     // 5. Exibe resultado no console (por enquanto)
     console.log("--- RESULTADO FINAL ---");
@@ -3050,20 +3056,15 @@ async function postLesson() {
     
     hideLoading();
     alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
-    // location.reload(); desativado por enquanto
     
     // limpar o localStorage
     localStorage.removeItem('phrasecraft_autosave_srt');
     console.log('🧹 Rascunho automático limpo após postagem.');
-    // ---------------------
     
-    // Atualiza o cache antes de recarregar
-    await refreshLessonsCache();
+    // Atualiza o cache DEPOIS de dar hideLoading()
+    await refreshLessonsCache(); // Esse já chama showLoading/hideLoading internamente
     
     showSection('home');
-    
-    // TODO: Salvar esses IDs no banco de dados
-    // TODO: Exibir os arquivos na página
     
     return uploadResults;
     
@@ -3455,6 +3456,9 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
  */
 async function refreshLessonsCache() {
   console.log("🔄 Forçando atualização do cache...");
+  
+  showLoading('Atualizando lista de lições...');
+  
   isCacheLoaded = false;
   lessonsCache = [];
   await loadLessonsToCache();
@@ -3462,8 +3466,11 @@ async function refreshLessonsCache() {
   // Re-renderiza a seção atual se for uma seção com thumbnails
   const currentSection = document.querySelector('section.active');
   if (currentSection && SECTIONS_WITH_THUMBNAILS.includes(currentSection.id)) {
-    renderThumbnailsFromCache(currentSection.id);
+    await renderThumbnailsFromCache(currentSection.id);
+    await waitForThumbnailsToRender(currentSection.id);
   }
+  
+  hideLoading(); // ✅ ADICIONE
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -3999,6 +4006,9 @@ function checkIfPhraseComplete() {
         
         // Limpa o timer final
         stopWordTimer();
+      
+        // oculta translate area
+        translateArea.style.display = "none";
         
         setTimeout(async () => {
             currentSegmentIndex++; // Prepara para o próximo segmento
@@ -4291,7 +4301,6 @@ function speakText(text, rate = 1.0, onStartCallback = null, onEndCallback = nul
  * Uso pessoal e leve, provavelmente sem problemas.
  */
 onClick('traduzir-btn', async () => {
-    const translateArea = document.getElementById('translate-area');
     const originalText = srtData[currentSegmentIndex]?.text;
 
     if (!translateArea || !originalText) return;
