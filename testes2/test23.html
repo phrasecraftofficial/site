@@ -1,5 +1,5 @@
 <!-- 
-play btn ok
+sintetizador do navegador ok
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -982,10 +982,10 @@ const playlistContainer = document.getElementById('playlist-checkbox-container')
 const MATCHES_POST_CONTAINER = 'multi-post-container'; // ID do container na seção 'challenge'
 
 // Constantes de Performance
-const MS_PER_LETTER = 250; // Tempo base por letra segundos
+const MS_PER_LETTER = 350; // Tempo base por letra segundos
 const MAX_WORD_PERFORMANCE = 200; // Performance máxima (200%)
-const DECAY_THRESHOLD = 30; // Quando ativa o "slow decay" (70%)
-const DECAY_RATE_PER_SECOND = 0.5; // Taxa de queda lenta por segundo (0.5%/s)
+const DECAY_THRESHOLD = 50; // Quando ativa o "slow decay" (70%)
+const DECAY_RATE_PER_SECOND = 0.3; // Taxa de queda lenta por segundo (0.5%/s)
 
 // Variáveis de estado do timer
 let timerInterval = null;
@@ -3986,6 +3986,8 @@ async function loadNextSegment() {
     };
     
     wordButton.onclick = () => {
+      // Lê a palavra na velocidade normal, pausando o vídeo se necessário
+      speakText(word, 1.0);
       moveWordToPhrase(wordButton, word);
     };
     
@@ -4087,14 +4089,120 @@ onClick('repetir-btn', () => {
 /**
  * Botão "Tocar Lento" - Toca em velocidade reduzida
  */
+// --- Configuração Global de Fala ---
+const speechState = {
+    currentLang: 'en-us',       // Idioma padrão inicial
+    availableLangs: new Set()   // Set para garantir lista única de idiomas disponíveis
+};
 
+// Botão "Ler Frase" (Tartaruga)
+onClick('lerFrase-btn', () => {
+    const btn = document.getElementById('lerFrase-btn');
+    const text = srtData[currentSegmentIndex]?.text;
+
+    // Apenas chama a função. Ela cuida do resto (video, idioma, cancelamento).
+    speakText(
+        text, 
+        0.6, // Lento
+        () => btn.classList.add('btn-active'),   // Callback Inicio
+        () => btn.classList.remove('btn-active') // Callback Fim
+    );
+});
+
+/**
+ * Inicializa a lista de idiomas suportados pelo navegador.
+ * Deve ser chamado no init() ou DOMContentLoaded.
+ */
+function initSpeechEngine() {
+    const populateLangs = () => {
+        const voices = window.speechSynthesis.getVoices();
+        
+        // Limpa e repopula o Set
+        speechState.availableLangs.clear();
+        
+        voices.forEach(voice => {
+            // Adiciona apenas o código do idioma (ex: 'pt-BR', 'en-US')
+            speechState.availableLangs.add(voice.lang);
+        });
+        
+        console.log("🗣️ Idiomas de voz carregados:", speechState.availableLangs.size);
+    };
+
+    // O evento onvoiceschanged é necessário porque o Chrome carrega vozes assincronamente
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = populateLangs;
+    }
+    
+    populateLangs(); // Tenta carregar imediatamente caso já estejam prontos
+}
+
+/**
+ * Função auxiliar para pausar qualquer vídeo ativo na tela e limpar timeouts de reprodução.
+ */
+function pauseActiveVideo() {
+    // Lista dos IDs dos players usados no sistema
+    const videoIds = ['videoPlayer-play', 'videoPlayer-editSrt', 'videoPlayer-postLesson'];
+
+    videoIds.forEach(id => {
+        const video = document.getElementById(id);
+        if (video && !video.paused) {
+            video.pause();
+            console.log(`⏸️ Vídeo ${id} pausado automaticamente para síntese de voz.`);
+        }
+    });
+
+    // Limpa o timeout global de "tocar trecho" se ele existir, para não pausar o vídeo do nada depois
+    if (typeof stopTimeout !== 'undefined' && stopTimeout) {
+        clearTimeout(stopTimeout);
+        stopTimeout = null;
+    }
+}
+
+/**
+ * Sintetiza voz a partir de um texto (Versão Final com Pause Automático).
+ */
+function speakText(text, rate = 1.0, onStartCallback = null, onEndCallback = null) {
+    if (!text) return;
+
+    if (!('speechSynthesis' in window)) {
+        console.warn("Este navegador não suporta síntese de voz.");
+        return;
+    }
+
+    // 1. PAUSA O VÍDEO AUTOMATICAMENTE ANTES DE FALAR
+    pauseActiveVideo();
+
+    // 2. Cancela falas anteriores
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Usa o estado global definido anteriormente
+    utterance.lang = typeof speechState !== 'undefined' ? speechState.currentLang : 'pt-BR'; 
+    utterance.rate = rate;
+    utterance.pitch = 1;
+
+    utterance.onstart = () => {
+        if (onStartCallback) onStartCallback();
+    };
+
+    utterance.onend = () => {
+        if (onEndCallback) onEndCallback();
+    };
+
+    utterance.onerror = (e) => {
+        console.error("Erro na síntese:", e);
+        if (onEndCallback) onEndCallback();
+    };
+
+    window.speechSynthesis.speak(utterance);
+}
 
 /**
  * Botão "Traduzir" - Mostra a frase completa (placeholder)
  * API não oficial, sem limite oficial
  * Uso pessoal e leve, provavelmente sem problemas.
  */
-
 onClick('traduzir-btn', async () => {
     const translateArea = document.getElementById('translate-area');
     const originalText = srtData[currentSegmentIndex]?.text;
@@ -4902,6 +5010,7 @@ async function init() {
   checkAuthStatus();
   endCreateMode();
   deleteExistingMatches();
+  initSpeechEngine();
   
   // Carrega o cache ANTES de mostrar qualquer seção
   await loadLessonsToCache();
