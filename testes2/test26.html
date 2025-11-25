@@ -1,7 +1,6 @@
 <!-- 
-postLesson(): Adiciona hideLoading() após cada etapa de upload + no finally como garantia
+loading ok
 -->
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -117,7 +116,7 @@ header {
  /*      Footer      */
 /* ===============  */
 #main-footer {
-  display: none;
+  display: none;  /* <-- ADICIONE ISSO: Começa invisível */
   bottom: 0;
   height: 56px;
   border-top: 1px solid #222;
@@ -484,7 +483,7 @@ label input[type="checkbox"] {
     left: 50%;          /* Começa no meio */
     transform: translateX(-50%); /* Centraliza exatamente no meio */
     
-    width: 80%;         /* Largura máxima da legenda */
+    max-width: 500px;         /* Largura máxima da legenda */
     background-color: rgba(0, 0, 0, 0.7); /* Fundo preto semi-transparente */
     color: #ffc078;     /* Cor do texto (Laranja claro para destaque) */
     
@@ -958,6 +957,7 @@ const SECTIONS_WITH_THUMBNAILS = [
 const textArea = document.getElementById('text-area');
 const iconsRight = document.getElementById('icons-right');
 const performanceArea = document.getElementById('performance-area');
+const translateArea = document.getElementById('translate-area');
 
 // Seleciona os elementos Edit Srt
 const videoSection = document.getElementById('video-section-editor');
@@ -1127,7 +1127,6 @@ async function showSection(sectionId) {
     syncStateToSection(sectionId);
 }
 
-
 /**
  * Decide quais elementos deve mostrar com base na seção ativa.
  * Também gerencia a visibilidade do lobby.
@@ -1145,12 +1144,9 @@ async function updateElementForSection(sectionId) {
   return; // segurança caso não existam
   
   // --- LÓGICA DE OCULTAR PLAYLIST ---
-  // Apenas tenta esconder a área da Playlist se a função existir
-  // E se não estiver na seção postLesson.
   if (sectionId !== "postLesson" && typeof hideAddPlaylistArea === 'function') {
       hideAddPlaylistArea();
   }
-  // ----------------------------------
     
   if (sectionId === "play") {
     iconsRight.style.display = "none";
@@ -1163,13 +1159,11 @@ async function updateElementForSection(sectionId) {
   }
 
   // Manipula elementoss do footer
-  // Verifica se a seção atual está na lista principal
-  if (mainNavSections.includes(sectionId)) {
-    // Se sim, mostra a navegação principal (Home, Subs, etc.)
-    showMainNavigation();
-  } 
-  
-  // LÓGICA DO LOBBY: Oculta o lobby se a nova seção NÃO for 'challenge'
+  if (mainNavSections.includes(sectionId)) {
+    showMainNavigation();
+  } 
+  
+  // LÓGICA DO LOBBY
   const lobby = document.getElementById('lobby');
   if (sectionId !== 'challenge') {
     if (lobby) {
@@ -1178,34 +1172,33 @@ async function updateElementForSection(sectionId) {
   }
     
   // --- LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
-  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId)) {
+  // ⚠️ SÓ RENDERIZA SE NÃO FOR DURANTE A INICIALIZAÇÃO
+  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId) && appState.currentSection !== null) {
+    showLoading('Carregando thumbnails...'); 
+    
     if (sectionId === 'challenge') {
-        // ✅ Busca partidas do servidor (necessário para dados em tempo real)
-        // MAS as thumbnails virão do cache via searchMatchesOnServer()
         console.log("📡 Buscando partidas do servidor (thumbs virão do cache)");
         const matches = await searchMatchesOnServer();
-        renderThumbnailsFromCache(sectionId, matches);
+        await renderThumbnailsFromCache(sectionId, matches);
+        await waitForThumbnailsToRender(sectionId);
     } else {
-        // ✅ Usa o cache local de lições
         console.log("📦 Usando cache local de lições");
         if (!isCacheLoaded) {
             await loadLessonsToCache();
         }
-        renderThumbnailsFromCache(sectionId, lessonsCache);
+        await renderThumbnailsFromCache(sectionId, lessonsCache);
+        await waitForThumbnailsToRender(sectionId);
     }
+    
+    hideLoading();
   }
   // --- FIM LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
 
   if (sectionId === 'play' && lessonsCache.length > 0) {
-    // Aguarda um frame para garantir que a seção está ativa
     requestAnimationFrame(() => {
-        // Você precisará de uma maneira de garantir que a lição correta seja carregada aqui.
-        // Por enquanto, usa a lição já carregada no cache e inicia.
         if (srtData.length > 0) {
             resetAccumulatedPerformance();
-            currentSegmentIndex = 0; // Reseta o índice
-          
-            // Agora injeta o primeiro trecho
+            currentSegmentIndex = 0;
             injectFirstSegmentShuffled();
         } else {
             console.error("Não há lições no cache para iniciar o modo Play.");
@@ -1673,7 +1666,80 @@ async function handleEditLesson(lesson) {
         alert('Falha ao carregar lição para edição: ' + error.message);
     }
 }
+
+/**
+ * Aguarda até que as thumbnails sejam renderizadas no DOM em qualquer seção
+ * @param {string} sectionId - ID da seção a verificar (ex: 'home', 'myPosts', 'challenge')
+ * @param {number} timeout - Tempo máximo de espera em ms (padrão: 10000ms)
+ * @returns {Promise<void>}
+ */
+async function waitForThumbnailsToRender(sectionId = null, timeout = 10000) {
+  // Se não passar sectionId, usa a seção atual
+  const targetSection = sectionId || appState.currentSection;
   
+  console.log(`⏳ Aguardando renderização das thumbnails em: ${targetSection}`);
+  
+  const startTime = Date.now();
+  
+  return new Promise((resolve) => {
+    const checkThumbnails = () => {
+      // Monta o seletor baseado na seção
+      let containerSelector;
+      
+      switch(targetSection) {
+        case 'home':
+          containerSelector = '#home-post-container';
+          break;
+        case 'myPosts':
+          containerSelector = '#user-post-container';
+          break;
+        case 'challenge':
+          containerSelector = '#multi-post-container';
+          break;
+        case 'subscriptions':
+          containerSelector = '#subscriptions-post-container';
+          break;
+        default:
+          console.warn(`⚠️ Seção ${targetSection} não tem thumbnails`);
+          resolve();
+          return;
+      }
+      
+      // Verifica se existem thumbnails renderizadas
+      const thumbImages = document.querySelectorAll(`${containerSelector} .thumb-section img`);
+      
+      // Verifica se as imagens estão realmente carregadas
+      const loadedImages = Array.from(thumbImages).filter(img => img.complete && img.naturalHeight > 0);
+      
+      if (loadedImages.length > 0) {
+        console.log(`✅ ${loadedImages.length} thumbnail(s) carregada(s) em ${targetSection}`);
+        hideLoading();
+        resolve();
+        return;
+      }
+      
+      // Caso especial: se não há lições no cache, resolve imediatamente
+      if (isCacheLoaded && lessonsCache.length === 0) {
+        console.log("ℹ️ Nenhuma lição disponível no cache");
+        resolve();
+        return;
+      }
+      
+      // Timeout de segurança
+      if (Date.now() - startTime > timeout) {
+        console.warn(`⚠️ Timeout ao aguardar thumbnails em ${targetSection}`);
+        resolve();
+        return;
+      }
+      
+      // Tenta novamente em 100ms
+      setTimeout(checkThumbnails, 100);
+    };
+    
+    // Aguarda um frame antes de começar a verificar
+    requestAnimationFrame(checkThumbnails);
+  });
+}
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // ----- Bloco Fx | Login ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -1717,7 +1783,6 @@ async function checkAuthStatus() {
         return;
     }
     
-    showLoading('Carregando...');
     console.log('Verificando sessão...')
     
     try {
@@ -1733,7 +1798,6 @@ async function checkAuthStatus() {
         renderUIForAuthState(false);
         showSection('home');
     } finally {
-        hideLoading();
     }
 }
     
@@ -1831,23 +1895,47 @@ async function showProfile() {
 // ----- Bloco Fx | Loading ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
+// ✅ ADICIONE ESTA VARIÁVEL NO TOPO
+let loadingCounter = 0;
+
 /**
  * Mostra o overlay de loading
  * @param {string} message - Mensagem a ser exibida (opcional)
  */
 function showLoading(message = 'Carregando...') {
+    loadingCounter++;
     const overlay = document.getElementById('loadingOverlay');
     const text = document.getElementById('loadingText');
     if (text) text.textContent = message;
     if (overlay) overlay.classList.add('active');
+    console.log(`🔵 showLoading(${loadingCounter}): ${message}`);
 }
 
 /**
  * Esconde o overlay de loading
  */
 function hideLoading() {
+    loadingCounter--;
+    
+    // ✅ SÓ ESCONDE QUANDO O CONTADOR CHEGAR A ZERO
+    if (loadingCounter <= 0) {
+        loadingCounter = 0; // Reset de segurança
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.remove('active');
+        console.log(`🟢 hideLoading(0): Overlay escondido`);
+    } else {
+        console.log(`🟡 hideLoading(${loadingCounter}): Ainda há operações em andamento`);
+    }
+}
+
+/**
+ * Força o loading a esconder (use apenas em emergências)
+ */
+function forceHideLoading() {
+    loadingCounter = 0;
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.classList.remove('active');
+    console.log(`🔴 forceHideLoading(): Forçado a esconder`);
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -2899,10 +2987,12 @@ async function postLesson() {
       throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
     }
     
+    // CORRIGIDO: Verifica se há thumbnail capturada
     if (!window.capturedThumbnailBlob && !appState.thumbnail.blob) {
       throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
     }
     
+    // CORRIGIDO: Verifica se há vídeo no appState
     if (!appState.video.file && !appState.video.blob && !appState.video.url) {
       throw new Error('Nenhum vídeo carregado.');
     }
@@ -2925,7 +3015,7 @@ async function postLesson() {
     showLoading('Preparando arquivos...');
     const videoBlob = await getVideoBlob();
     const srtBlob = getSrtBlob();
-    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob;
+    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob; // CORRIGIDO
     
     console.log("✅ Todos os arquivos preparados");
     
@@ -2940,39 +3030,38 @@ async function postLesson() {
     showLoading('Enviando vídeo... (1/3)');
     const videoUploadData = await getBackblazeUploadUrl();
     uploadResults.video = await uploadFileToBackblaze(videoBlob, videoFileName, videoUploadData);
-    hideLoading(); // ✅ ADICIONE
+    hideLoading();
     
     // Upload do SRT
     showLoading('Enviando legenda... (2/3)');
     const srtUploadData = await getBackblazeUploadUrl();
     uploadResults.srt = await uploadFileToBackblaze(srtBlob, srtFileName, srtUploadData);
-    hideLoading(); // ✅ ADICIONE
+    hideLoading();
     
     // Upload da thumbnail
     showLoading('Enviando thumbnail... (3/3)');
     const thumbUploadData = await getBackblazeUploadUrl();
     uploadResults.thumb = await uploadFileToBackblaze(thumbBlob, thumbFileName, thumbUploadData);
-    hideLoading(); // ✅ ADICIONE
     
     console.log("=== UPLOADS CONCLUÍDOS ===");
     console.log("Video ID:", uploadResults.video.fileId);
     console.log("SRT ID:", uploadResults.srt.fileId);
     console.log("Thumb ID:", uploadResults.thumb.fileId);
+    hideLoading();
     
     // 5. Exibe resultado no console (por enquanto)
     console.log("--- RESULTADO FINAL ---");
     console.log(JSON.stringify(uploadResults, null, 2));
     
+    hideLoading();
     alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
     
     // limpar o localStorage
     localStorage.removeItem('phrasecraft_autosave_srt');
     console.log('🧹 Rascunho automático limpo após postagem.');
     
-    // Atualiza o cache antes de recarregar
-    showLoading('Atualizando cache...');
-    await refreshLessonsCache();
-    hideLoading(); // ✅ ADICIONE
+    // Atualiza o cache DEPOIS de dar hideLoading()
+    await refreshLessonsCache(); // Esse já chama showLoading/hideLoading internamente
     
     showSection('home');
     
@@ -2980,10 +3069,10 @@ async function postLesson() {
     
   } catch (error) {
     console.error("❌ ERRO em postLesson():", error);
+    hideLoading();
     alert('❌ Erro ao postar lição: ' + error.message);
     throw error;
   } finally {
-    hideLoading(); // ✅ GARANTE que o loading sempre seja escondido
     console.log("=== FIM postLesson() ===");
   }
 }
@@ -3175,7 +3264,6 @@ async function loadLessonsToCache() {
   console.log("=== Carregando lições para o cache ===");
   
   try {
-    showLoading('Carregando lições...');
     
     // 1. Lista todos os arquivos
     const allFiles = await listBackblazeFiles();
@@ -3185,14 +3273,11 @@ async function loadLessonsToCache() {
     isCacheLoaded = true;
     
     console.log(`✅ Cache carregado: ${lessonsCache.length} lições`);
-    
-    hideLoading();
-    
+        
     return lessonsCache;
     
   } catch (error) {
     console.error("❌ ERRO ao carregar cache:", error);
-    hideLoading();
     throw error;
   }
 }
@@ -3204,7 +3289,10 @@ async function loadLessonsToCache() {
  * * @param {string} sectionId - O ID da seção ativa ('home', 'myPosts', 'challenge', etc.).
  * @param {Array<Object>} [dataToRender=lessonsCache] - Array opcional de lições/partidas a serem renderizadas.
  */
-function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
+/**
+ * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas).
+ */
+async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     console.log(`--- Renderizando thumbnails para: ${sectionId} ---`);
     
     // 1. Configuração e Seleção do Container
@@ -3367,6 +3455,9 @@ function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
  */
 async function refreshLessonsCache() {
   console.log("🔄 Forçando atualização do cache...");
+  
+  showLoading('Atualizando lista de lições...');
+  
   isCacheLoaded = false;
   lessonsCache = [];
   await loadLessonsToCache();
@@ -3374,8 +3465,11 @@ async function refreshLessonsCache() {
   // Re-renderiza a seção atual se for uma seção com thumbnails
   const currentSection = document.querySelector('section.active');
   if (currentSection && SECTIONS_WITH_THUMBNAILS.includes(currentSection.id)) {
-    renderThumbnailsFromCache(currentSection.id);
+    await renderThumbnailsFromCache(currentSection.id);
+    await waitForThumbnailsToRender(currentSection.id);
   }
+  
+  hideLoading(); // ✅ ADICIONE
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -3911,6 +4005,9 @@ function checkIfPhraseComplete() {
         
         // Limpa o timer final
         stopWordTimer();
+      
+        // oculta translate area
+        translateArea.style.display = "none";
         
         setTimeout(async () => {
             currentSegmentIndex++; // Prepara para o próximo segmento
@@ -4203,7 +4300,6 @@ function speakText(text, rate = 1.0, onStartCallback = null, onEndCallback = nul
  * Uso pessoal e leve, provavelmente sem problemas.
  */
 onClick('traduzir-btn', async () => {
-    const translateArea = document.getElementById('translate-area');
     const originalText = srtData[currentSegmentIndex]?.text;
 
     if (!translateArea || !originalText) return;
@@ -5006,16 +5102,34 @@ window.addEventListener('beforeunload', () => {
 });
 
 async function init() {
-  checkAuthStatus();
+  // ✅ Marca que estamos inicializando (para evitar duplicação)
+  appState.currentSection = null;
+  
+  showLoading('Verificando autenticação...');
+  await checkAuthStatus();
+  hideLoading();
+  
+  showLoading('Limpando partidas antigas...');
   endCreateMode();
-  deleteExistingMatches();
-  initSpeechEngine();
+  await deleteExistingMatches();
+  hideLoading();
   
-  // Carrega o cache ANTES de mostrar qualquer seção
+  showLoading('Carregando lições do servidor...');
   await loadLessonsToCache();
+  hideLoading();
   
-  // Agora mostra a home com as thumbnails já carregadas
+  showLoading('Preparando interface...');
+  // ✅ Agora showSection() NÃO vai renderizar thumbs porque currentSection é null
   showSection('home');
+  hideLoading();
+  
+  // ✅ Renderiza as thumbs manualmente UMA VEZ
+  showLoading('Carregando thumbnails...');
+  await renderThumbnailsFromCache('home', lessonsCache);
+  await waitForThumbnailsToRender('home');
+  hideLoading();
+  
+  console.log("✅ Aplicação inicializada com sucesso!");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
