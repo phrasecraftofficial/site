@@ -982,10 +982,10 @@ const playlistContainer = document.getElementById('playlist-checkbox-container')
 const MATCHES_POST_CONTAINER = 'multi-post-container'; // ID do container na seção 'challenge'
 
 // Constantes de Performance
-const MS_PER_LETTER = 350; // Tempo base por letra segundos
+const MS_PER_LETTER = 250; // Tempo base por letra segundos
 const MAX_WORD_PERFORMANCE = 200; // Performance máxima (200%)
-const DECAY_THRESHOLD = 50; // Quando ativa o "slow decay" (70%)
-const DECAY_RATE_PER_SECOND = 0.3; // Taxa de queda lenta por segundo (0.5%/s)
+const DECAY_THRESHOLD = 30; // Quando ativa o "slow decay" (70%)
+const DECAY_RATE_PER_SECOND = 0.5; // Taxa de queda lenta por segundo (0.5%/s)
 
 // Variáveis de estado do timer
 let timerInterval = null;
@@ -4147,7 +4147,7 @@ function pauseActiveVideo() {
         const video = document.getElementById(id);
         if (video && !video.paused) {
             video.pause();
-            console.log(`⏸️ Vídeo ${id} pausado automaticamente para síntese de voz.`);
+            console.log('⏸️ Vídeo ' + id + ' pausado automaticamente para síntese de voz.');
         }
     });
 
