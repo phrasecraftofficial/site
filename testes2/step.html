@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Página Dark - Step Timer</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #000;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 4px;
+      background: #2a2a2a;
+      color: #fff;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background: #3a3a3a;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #555;
+    }
+    .time-display {
+      margin-top: 20px;
+      font-size: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Timer Dark</h2>
+    
+    <label for="step">Step (segundos ou milissegundos):</label>
+    <input type="number" id="step" value="0.100" step="0.001">
+    
+    <label for="current">Tempo atual:</label>
+    <input type="text" id="current" value="0.000" readonly>
+    
+    <button onclick="advanceTime()">Avançar</button>
+    
+    <div class="time-display" id="display">Tempo: 0.000s</div>
+  </div>
+
+  <script>
+    let currentTime = 0.000;
+
+    function advanceTime() {
+      const step = parseFloat(document.getElementById('step').value);
+      currentTime += step;
+      document.getElementById('current').value = currentTime.toFixed(3);
+      document.getElementById('display').innerText = `Tempo: ${currentTime.toFixed(3)}s`;
+    }
+  </script>
+</body>
+</html>
