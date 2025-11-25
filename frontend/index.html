@@ -1,4 +1,5 @@
-<!-- deleta partidas
+<!-- 
+sintetizador do navegador ok
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -31,7 +32,8 @@ section {
 /* visível */
 section.active { 
 	display: block; 
-}   
+}
+
 /* Estilos gerais para Header e Footer */
 header, footer {
   position: fixed;
@@ -377,8 +379,7 @@ label input[type="checkbox"] {
     100% { transform: rotate(360deg); }
 }
 /* ================================== */
-/* Estilo para a Lista de Legendas */
-/* ================================== */
+/*   Estilo para a Lista de Legendas  */
 /* ================================== */
 .segmentsArea {
 	padding: 10px; 
@@ -412,20 +413,91 @@ label input[type="checkbox"] {
 .segmentsArea::-webkit-scrollbar {
   width: 8px;
 }
-
 .segmentsArea::-webkit-scrollbar-track {
   background: #0b0404;
 }
-
 .segmentsArea::-webkit-scrollbar-thumb {
   background: #3ea6ff;
   border-radius: 4px;
 }
-
 .segmentsArea::-webkit-scrollbar-thumb:hover {
   background: #6d28d9;
 }
-
+/* Container dos botões - Flexbox simples centralizado */
+.play-btnContainer {
+    display: flex;
+    justify-content: center; /* Centraliza horizontalmente */
+    align-items: center;
+    gap: 20px;      /* Espaço entre os botões */
+    margin-top: 5px; /* Espaço entre o vídeo e os botões */
+    margin-bottom: 15px; /* Espaço entre os botões e a frase */
+    
+    /* Removemos position: absolute, bottom, left, transform e z-index */
+}
+/* Estilo Base dos botões de palavra */
+.word-button-base {
+    width: auto;
+    color: #d7d9ff;
+    padding: 0 10px;
+    margin: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(109, 40, 217, 0.3);
+}
+/* Estilo para palavra clicada incorretamente (Vermelho) */
+.word-button-incorrect {
+    /* Remove a sombra e aplica o gradiente de erro */
+    box-shadow: none !important;
+    background: linear-gradient(to bottom, #E91E63, #C2185B) !important;
+    color: #fff; /* Garante que a cor do texto não mude */
+}
+/* Verde Correta*/
+.phrase-word-button {
+    width: auto;
+    color: #e1ffd9;
+    padding: 0 10px;
+    margin: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+/* Torna o container do vídeo uma referência para o posicionamento */
+.video-container-relative {
+    position: relative; 
+    display: inline-block; /* Ou block, dependendo do layout, mas relative é essencial */
+    width: 100%;
+}
+/* Estilo da sobreposição da tradução */
+.translate-overlay {
+    position: absolute; /* Fixa em relação ao video-container-relative */
+    bottom: 40%;       /* Distância do fundo do vídeo (ajuste conforme a barra de controles) */
+    left: 50%;          /* Começa no meio */
+    transform: translateX(-50%); /* Centraliza exatamente no meio */
+    
+    width: 80%;         /* Largura máxima da legenda */
+    background-color: rgba(0, 0, 0, 0.7); /* Fundo preto semi-transparente */
+    color: #ffc078;     /* Cor do texto (Laranja claro para destaque) */
+    
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    z-index: 10;        /* Garante que fique na frente do vídeo */
+    
+    pointer-events: none; /* Permite clicar no vídeo através do texto (play/pause) */
+    
+    /* Opcional: Efeito de transição suave */
+    transition: opacity 0.3s ease;
+}
 /* Para telas pequenas */
 @media screen and (max-width: 600px) {
   .segmentsArea {
@@ -460,7 +532,7 @@ label input[type="checkbox"] {
       </div>
     </div>
     
-	  <div class="flex row gap" id="performance-area">
+    <div class="flex row gap" id="performance-area">
       <div class="flex column">
         <span id="">Jogador 1</span>
         <span id="host-performance">100%</span>
@@ -527,13 +599,13 @@ label input[type="checkbox"] {
 		<h2>Create</h2>
         <p>Use this section to create new content.</p>
 			<form>
-                <label for="videoUpload" class="flex column">Upload Vídeo
+                <label for="videoUpload" class="flex column gap">Upload Vídeo
                 <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
                 <input type="file" id="videoUpload" accept="video/*"></label>
-                <label for="srtUpload" class="flex column" class="upload-btn">Upload SRT
+                <label for="srtUpload" class="flex column gap" class="upload-btn">Upload SRT
                 <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
                 <input type="file" id="srtUpload" accept=".srt"></label>
-                <button class="general-btn flex row" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+                <button class="general-btn flex row gap" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
             </form>
     </section>
 
@@ -555,9 +627,9 @@ label input[type="checkbox"] {
       <p>This section is about your profile.</p>
                       
       <div>
-        <button class="flex column general-btn" onclick="showSection('myProfile')">
+        <button class="flex column gap general-btn" onclick="showSection('myProfile')">
             <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Perfil</span></button>
-        <button class="flex column general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
+        <button class="flex column gap general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
             <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Postagens</span></button>
       </div>
     
@@ -572,7 +644,7 @@ label input[type="checkbox"] {
     <section id="myProfile">
 		<h2>My Account</h2>
 		<p>Use this section to see and edit your profile.</p>
-        <div class="flex column" >
+        <div class="flex column gap" >
           <button class="general-btn" id="btnLogin" onclick="showSection('login-screen')">Entrar</button>
           <div id="user-email-display" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);"></div>
           <span>____________________________________</span>
@@ -582,7 +654,7 @@ label input[type="checkbox"] {
     
     <section id="login-screen">
     	<h2>Entrar</h2>
-    	<form class="flex column" id="login-form">
+    	<form class="flex column gap" id="login-form">
     	    <p id="login-message"></p>
     	    <input type="email" id="email-login" placeholder="E-mail" required>
     	    <input type="password" id="password-login" placeholder="Senha" required>
@@ -649,24 +721,25 @@ label input[type="checkbox"] {
         </div>
       </div>
     </section>
+  
 	<section id="postLesson">
 		<h2>Post</h2>
 		<p>Use this section to post.</p>
-		<div class="flex column" id="video-section-postLesson">
+		<div class="flex column gap" id="video-section-postLesson">
           <!-- O vídeo de postagem ou edição será inserido aqui -->
           <video id="videoPlayer-postLesson" controls crossorigin="anonymous">
               <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
           </video>
 		</div>
-      	<div class="flex row" id="postLesson-containerBtn">
+      	<div class="flex row gap" id="postLesson-containerBtn">
       	    <button class="general-btn" onclick="showSection('editSrt')">👈</button>
       		  <button class="general-btn" onclick="handleCaptureClick()">Thumbnail 📸</button>
       	    <button class="general-btn" onclick="postLesson()">Postar 🛰️</button>
       	</div>
       
-      <div class="flex row" id="thumb-section-postLesson">
-      	<img class="channel-pic" alt="captured thumb" hidden>
-        <form class="flex column">
+      <div class="flex row gap" id="thumb-section-postLesson">
+      	<img class="channel-pic" alt="captured thumb" >
+        <form class="flex column gap">
             <!-- Título -->
             <input type="text" placeholder="Digite o nome o vídeo..." name="nome">
 
@@ -677,9 +750,9 @@ label input[type="checkbox"] {
       <p>______________</p>
 
       <!-- Playlist -->
-      <form class="flex column" id="playlistForm">
+      <form class="flex column gap" id="playlistForm">
           <h4>Adicionar à Playlist</h4>
-          <div class="flex column"  id="playlist-checkbox-container" style="width: 150px;">
+          <div class="flex column gap"  id="playlist-checkbox-container" style="width: 150px;">
               <p>Carregando...</p>
               <label class="radio-option">
                   <input type="checkbox" name="opcao-linha" value="all" checked>
@@ -695,47 +768,51 @@ label input[type="checkbox"] {
               </label>
           </div>
           
-          <div class="flex row" id="new-playlist-name-area" style="display: none;">
-          <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
-          <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
-			<input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
-			<button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
-			<button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
+          <div class="flex row gap" id="new-playlist-name-area" style="display: none;">
+            <!-- botao aqui dentro para ser ocultado sem acrescimo de códiog -->
+            <button class="general-btn" id="btn-show-new-playlist-area" onclick="showNewPlaylistNameArea()" type="button">Nova Playlist</button>
+			      <input type="text"  id="new-playlist-name-input" placeholder="Digite o nome da playlist..." >
+			      <button id="btn-save-new-playlist-name" onclick="saveNewPlaylistName()" type="button">✔</button>
+			      <button id="btn-hide-add-playlist-area" onclick="hideAddPlaylistArea()" type="button">✖</button>
           </div>
           
       </form> 
     </section>
-	<section id="play">
-		<div id="video-section-play">
-          <video id="videoPlayer-play" controls crossorigin="anonymous">
-                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-          </video>
+  
+	  <section id="play">
+      <div id="video-section-play" class="video-container-relative">
+          <video id="videoPlayer-play"controls crossorigin="anonymous">
+          <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+        </video>
+        <div id="translate-area" class="">
+            <!- As legendas aparecem aqui: -->
+        </div>
+      
+      	<div class="play-btnContainer">
+          <button class="play-btn" id="repetir-btn">🐇</button>
+          <button class="play-btn" id="lerFrase-btn">🐢</button>
+          <button class="play-btn" id="traduzir-btn">❓</button>
+		    </div>
+      </div>
+            
+		    <div class="phrase-container flex row" id="frase" style="white-space: normal; flex-wrap: wrap; margin-bottom: 40px;">
         </div>
 
-      	<div class="flex row">
-      		<button class="general-btn" id="repetir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #b34dd6 0%, #9C27B0 50%, #7c1f8e 100%);">Tocar Trecho</button>
-      		<button class="general-btn" id="lerFrase" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #78c0ff 0%, #5babf0 50%, #4d98e5 100%);">Tocar Lento</button>
-      		<button class="general-btn" id="traduzir-btn" class="control-button" style="color: white;
- font-weight: bold; background: linear-gradient(to bottom, #ffc078 0%, #ffa94d 50%, #e59442 100%);">Traduzir</button>
-      		<button class="general-btn" id="desistir" class="control-button" style="color: white; font-weight: bold; background: linear-gradient(to bottom, #ff5e91 0%, #E91E63 50%, #c41858 100%);">Passar</button>
-		</div>
-
-		<div class="phrase-container" id="frase"></div>
-
-        <div class="word-button-wrapper">
-            <div class="word-container" id="palavras"></div>
+        <div class="word-container flex row" id="palavras" style="white-space: normal; flex-wrap: wrap; margin-bottom: 40px;">
         </div>
+
         
-        <div class="flex row" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
+        <div class="flex row gap" id="progresso" style="margin-top: 10px; font-size: 0.9em;">Progresso: 0 de 0</div>
     </section>
+  
   <!----------->
   <!--editSrt-->
   <!----------->
   <section id="editSrt">
     <div id="save-area">
-        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
         <p>💾 Salvar</p>
-        <div class="flex row">
+        <div class="flex row gap">
             <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
             <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
             <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
@@ -746,14 +823,14 @@ label input[type="checkbox"] {
     	<!-- Div para exibir o nome do arquivo da legenda -->
 	</div>
     
-	<div class="column-area" id="video-section-editor">
+	<div class="" id="video-section-editor">
 		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
 			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
 		</video>
 	</div>
 
 	<div id="editor">
-	<div class="flex row">
+	<div class="flex row gap">
     	<button id="btn-save" onclick="showSave()">💾</button>
     	<button onclick="undo()">↩</button>
     	<button onclick="redo()">↪</button>
@@ -762,48 +839,48 @@ label input[type="checkbox"] {
     	<button onclick="removeSegment()">|−</button>
     	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
 	</div>
-	<form class="flex row" style="gap: 0; padding: 0;">
-      <label class="flex row" style="gap: 0; padding: 0;">
-        <div class="flex column" style="gap: 0; padding: 0;">
+	<form class="flex row gap" style="gap: 0; padding: 0;">
+      <label class="flex row gap" style="gap: 0; padding: 0;">
+        <div class="flex column gap" style="gap: 0; padding: 0;">
           Início
           <input type="text" id="editStart" placeholder="00:00:000">
         </div>
-        <div class="flex column">
+        <div class="flex column gap">
           <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
           <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
         </div>
       </label>
-      <label class="flex row" style="gap: 0; padding: 0;">
-        <div class="flex column" style="gap: 0; padding: 0;">
+      <label class="flex row gap" style="gap: 0; padding: 0;">
+        <div class="flex column gap" style="gap: 0; padding: 0;">
           Fim
           <input id="editEnd"  placeholder="00:00:000">
         </div>
-        <div class="flex column">
+        <div class="flex column gap">
           <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
           <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
         </div>
       </label>
     </form>
     <form>
-      <label class="flex row">Texto
+      <label class="flex row gap">Texto
           <textarea type="text" id="editText" rows="3"></textarea>
       </label>
     </form>
     </div><!--editor-->
-    <div class="flex row" id="navigation-controls-previewMode">
+    <div class="flex row gap" id="navigation-controls-previewMode">
 		<button onclick="prevLine()">⏮︎</button>
 		<button onclick="playLine()">⏯︎</button>
 		<button onclick="nextLine()">⏭︎</button>
 	</div>
 	<div class="column-area" id="config-area">
-        <span class="flex row" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
      	<p>⚙ Editar em lote</p>
-         <form class="flex row">
+         <form class="flex row gap">
            <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
            <input id="editStack" placeholder="0.05">
            <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
 		</form>
-		<form class="flex column" id="linhaForm" style="width: 300px;">
+		<form class="flex column gap" id="linhaForm" style="width: 300px;">
 			<label class="radio-option" style="align-self: flex-start;">
 				<input type="radio" name="opcao-linha" value="all" checked>
 				Todas as linhas
@@ -818,7 +895,7 @@ label input[type="checkbox"] {
 			</label>
 		</form>
 	</div><!--config-area-->
-    <div class="segmentsArea flex column" id="segments-area">
+    <div class="segmentsArea flex column gap" id="segments-area">
     	  <span>Lista de Legendas</span>
         <div id="segments"></div>
     </div>
@@ -838,17 +915,20 @@ label input[type="checkbox"] {
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>You</span></a>
     <a href="#" onclick="showSection('challenge')">
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafios</span></a>
-    <a href="#" id="preview-footer-solo" onclick="startSoloMode()">
+    <a href="#" id="preview-footer-solo" onclick="startSoloMode()" >
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Solo</span></a>
-    <a href="#" id="preview-footer-challenging" onclick="startCreateMode()">
+    <a href="#" id="preview-footer-challenging" onclick="startCreateMode()" >
         <img src="https://files.catbox.moe/tdzklr.svg" alt="Ícone SVG" width="25" height="25" /><span>Desafiar</span></a>
-    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()">
+    <a href="#" id="preview-footer-challenges" onclick="startMultiMode()" >
         <img src="https://files.catbox.moe/p2znlg.svg" alt="Ícone SVG" width="21" height="21" /><span>Aceitar Desafio</span></a>
   </footer>
 
 <script>
 // 1. A variável "estado" (começa como 'editor')
-let currentEditMode = 'editor';
+let currentEditMode = 'editor';  
+
+// Chave para salvar Srt no navegador
+const STORAGE_SRT_KEY = 'phrasecraft_autosave_srt';
 
 // Variável para controlar se já está carregando
 let isLoadingThumbnails = false;
@@ -860,6 +940,9 @@ let isCacheLoaded = false;
 // variáveis para Play
 let currentSegmentIndex = 0;
 let selectedWords = [];
+
+// 🎯 Set para rastrear wrong word
+let incorrectButtonsSet = new Set(); 
 
 // Seções que devem exibir thumbnails
 const SECTIONS_WITH_THUMBNAILS = [
@@ -898,20 +981,27 @@ const playlistContainer = document.getElementById('playlist-checkbox-container')
 // Constantes de Partida
 const MATCHES_POST_CONTAINER = 'multi-post-container'; // ID do container na seção 'challenge'
 
-// Performance
+// Constantes de Performance
+const MS_PER_LETTER = 350; // Tempo base por letra segundos
+const MAX_WORD_PERFORMANCE = 200; // Performance máxima (200%)
+const DECAY_THRESHOLD = 50; // Quando ativa o "slow decay" (70%)
+const DECAY_RATE_PER_SECOND = 0.3; // Taxa de queda lenta por segundo (0.5%/s)
+
+// Variáveis de estado do timer
 let timerInterval = null;
-let startTime = 0;
-// CONSTANTE: Tempo base (em milissegundos) para cada letra da palavra.
-const MS_PER_LETTER = 1500; 
-// Máximo de Performance exibido. Começa em 200, diminuindo em 1 por 10ms.
-const MAX_WORD_PERFORMANCE = 200; 
-let currentWordPerformance = MAX_WORD_PERFORMANCE; 
-// O elemento de exibição de performance
-const wordPerformanceDisplay = document.getElementById('word-performance');
+let wordStartTime = 0;
+let currentWordIdealTime = 0;
+
+// Variáveis para o modo "slow decay"
+let decayStartTime = null;
+let performanceAtDecayStart = 0;
 
 // Variável global para armazenar a performance acumulada
 let totalPerformance = 0;
 let totalWordsCompleted = 0;
+
+// O elemento de exibição de performance
+const wordPerformanceDisplay = document.getElementById('word-performance');
 
 // Defina aqui todas as seções que usam a navegação principal
 const mainNavSections = [
@@ -1087,17 +1177,20 @@ async function updateElementForSection(sectionId) {
     
   // --- LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
   if (SECTIONS_WITH_THUMBNAILS.includes(sectionId)) {
-      if (sectionId === 'challenge') {
-          // Se for a seção de desafios, buscamos as partidas no servidor
-          const matches = await searchMatchesOnServer();
-          renderThumbnailsFromCache(sectionId, matches);
-      } else {
-          // Para as outras seções (home, myPosts, etc.), usamos o cache de lições
-          if (!isCacheLoaded) {
-              await loadLessonsToCache();
-          }
-          renderThumbnailsFromCache(sectionId, lessonsCache);
-      }
+    if (sectionId === 'challenge') {
+        // ✅ Busca partidas do servidor (necessário para dados em tempo real)
+        // MAS as thumbnails virão do cache via searchMatchesOnServer()
+        console.log("📡 Buscando partidas do servidor (thumbs virão do cache)");
+        const matches = await searchMatchesOnServer();
+        renderThumbnailsFromCache(sectionId, matches);
+    } else {
+        // ✅ Usa o cache local de lições
+        console.log("📦 Usando cache local de lições");
+        if (!isCacheLoaded) {
+            await loadLessonsToCache();
+        }
+        renderThumbnailsFromCache(sectionId, lessonsCache);
+    }
   }
   // --- FIM LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
 
@@ -1239,50 +1332,50 @@ function hideMainNavigation() {
 }
 
 /**
- * Exibe a navegação principal (Home, Subs, You, Desafios)
- * e esconde os botões contextuais (Solo, Desafiar, Aceitar).
- */
+ * Exibe a navegação principal (Home, Subs, You, Desafios)
+ * e esconde os botões contextuais (Solo, Desafiar, Aceitar).
+ */
 function showMainNavigation() {
-  // 1. Esconde os botões contextuais
-  hideSoloAndChallenging();
-  hideAcceptChallenge();
-  
-  // 2. Garante que o footer esteja visível
-  showFooter();
+  // 1. Esconde os botões contextuais
+  hideSoloAndChallenging();
+  hideAcceptChallenge();
+  
+  // 2. Garante que o footer esteja visível
+  showFooter();
 
-  // 3. Define a variável
-  const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
-  
-  // 4. Mostra os links de navegação principais
-  mainNavLinks.forEach(link => {
-    link.style.display = 'flex';
-  });
+  // 3. Define a variável
+  const mainNavLinks = document.querySelectorAll('#main-footer a:not([id])');
+  
+  // 4. Mostra os links de navegação principais
+  mainNavLinks.forEach(link => {
+    link.style.display = 'flex';
+  });
 }
 
 /**
- * Oculta os botões "Solo" e "Desafiar".
- */
+ * Oculta os botões "Solo" e "Desafiar".
+ */
 function hideSoloAndChallenging() {
-  const btnSolo = document.getElementById('preview-footer-solo');
-  const btnChallenging = document.getElementById('preview-footer-challenging');
+  const btnSolo = document.getElementById('preview-footer-solo');
+  const btnChallenging = document.getElementById('preview-footer-challenging');
 
-  if (btnSolo) {
-    btnSolo.style.display = 'none';
-  }
-  if (btnChallenging) {
-    btnChallenging.style.display = 'none';
-  }
+  if (btnSolo) {
+    btnSolo.style.display = 'none';
+  }
+  if (btnChallenging) {
+    btnChallenging.style.display = 'none';
+  }
 }
 
 /**
- * Oculta o botão "Aceitar Desafio".
- */
+ * Oculta o botão "Aceitar Desafio".
+ */
 function hideAcceptChallenge() {
-  const btnAccept = document.getElementById('preview-footer-challenges');
-  
-  if (btnAccept) {
-    btnAccept.style.display = 'none';
-  }
+  const btnAccept = document.getElementById('preview-footer-challenges');
+  
+  if (btnAccept) {
+    btnAccept.style.display = 'none';
+  }
 }
 
 /**
@@ -1480,6 +1573,105 @@ function hideAddPlaylistArea() {
   }
 }
 
+/**
+ * Lida com o clique no botão Editar.
+ * Carrega a lição e verifica se há rascunhos salvos.
+ * CORRIGIDO: Agora verifica o rascunho ANTES de carregar do servidor
+ * @param {Object} lesson O objeto completo da lição.
+ */
+async function handleEditLesson(lesson) {
+    console.log("✎ Editando lição:", lesson.baseName);
+    
+    try {
+        // 1. ✅ CORREÇÃO: Verifica se existe rascunho ANTES de carregar do servidor
+        const hasDraft = localStorage.getItem(STORAGE_SRT_KEY);
+
+        if (hasDraft) {
+            // Pergunta ao usuário se quer usar o rascunho
+            const useDraft = confirm("Existe uma versão editada não salva (rascunho) deste arquivo. Deseja restaurá-la?");
+            
+            if (useDraft) {
+                // 1a. Se SIM: Carrega APENAS vídeo e thumb do servidor, mantém SRT do localStorage
+                showLoading('Preparando área de edição...');
+                console.log("♻️ Usuário escolheu restaurar o rascunho");
+                
+                // Carrega vídeo e thumbnail (sem tocar no SRT)
+                if (lesson.video) {
+                    const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
+                    
+                    if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
+                        appState.video.url = cachedLesson.video.blobUrl;
+                        updateAllVideos(cachedLesson.video.blobUrl);
+                    } else {
+                        const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+                        const videoResponse = await fetch(videoUrl);
+                        const videoBlob = await videoResponse.blob();
+                        const blobUrl = URL.createObjectURL(videoBlob);
+                        
+                        if (cachedLesson && cachedLesson.video) {
+                            cachedLesson.video.blobUrl = blobUrl;
+                        }
+                        
+                        appState.video.url = blobUrl;
+                        updateAllVideos(blobUrl);
+                    }
+                }
+                
+                // Carrega thumbnail
+                if (lesson.thumb) {
+                    const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+                    updateAllThumbnails(thumbUrl);
+                    appState.thumbnail.url = thumbUrl;
+                }
+                
+                // 1b. Restaura o SRT do localStorage
+                const loaded = loadSrtFromLocal();
+                if (loaded) {
+                    showLoading('Restaurarando rascunho...');
+                    console.log("✅ Rascunho local restaurado com sucesso.");
+                } else {
+                    console.warn("⚠️ Falha ao restaurar rascunho, carregando do servidor...");
+                    // Se falhar, carrega do servidor como fallback
+                    await loadSrtFromServer(lesson);
+                }
+                
+            } else {
+                // 1c. Se NÃO: Carrega tudo do servidor (versão original)
+                console.log("🔄 Usuário preferiu a versão original do servidor");
+                await previewLesson(lesson); // Carrega tudo normalmente
+                
+                // Opcional: Limpa o rascunho antigo para não perguntar novamente
+                localStorage.removeItem(STORAGE_SRT_KEY);
+                console.log("🧹 Rascunho antigo limpo.");
+            }
+        } else {
+            // 2. Se NÃO há rascunho: Carrega tudo do servidor normalmente
+            console.log("📦 Nenhum rascunho encontrado, carregando do servidor...");
+            await previewLesson(lesson);
+        }
+
+        // 3. Configura a interface para o modo de edição
+        hideFooter();
+        setEditorMode('editor');
+        showSection('editSrt');
+        
+        // 4. Garante que os segmentos (seja do server ou do local) sejam renderizados
+        renderSegments();
+
+        // 5. Atualiza o nome do arquivo na UI para referência
+        if (lesson.srt && lesson.srt.fileName) {
+            appState.subtitle.name = lesson.srt.fileName;
+            document.getElementById("subtitleName").textContent = lesson.srt.fileName;
+        }
+
+        hideLoading();
+
+    } catch (error) {
+        console.error("Erro ao preparar edição:", error);
+        alert('Falha ao carregar lição para edição: ' + error.message);
+    }
+}
+  
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // ----- Bloco Fx | Login ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -1519,7 +1711,7 @@ async function checkAuthStatus() {
     const cachedEmail = localStorage.getItem('userEmail');
     if (cachedEmail) {
         renderUIForAuthState(true, cachedEmail);
-        showSection('myPosts');
+        
         return;
     }
     
@@ -1700,6 +1892,10 @@ function renderSegments() {
     // Adiciona o segmento ao container
     container.appendChild(div);
   });
+  
+  // salvamento automático no localStorage do navegador
+  localStorage.setItem(STORAGE_SRT_KEY, JSON.stringify(srtData));
+  console.log('💾 Legenda salva automaticamente localStorage do navegador.');
 }
 
 function openEditor(id) {
@@ -2126,6 +2322,9 @@ function loadContent() {
   const srtInput = document.getElementById("srtUrl").value.trim();
   const srtUpload = document.getElementById("srtUpload").files[0];
 
+  // Se houver trabalho não salvo, perguntamos ao usuário
+  const restore = confirm("Encontramos uma edição de legenda não salva. Deseja continuar de onde parou?");
+
   // Carregar o vídeo em TODAS as seções (CORRIGIDO)
   if (videoUpload) {
     const videoURL = URL.createObjectURL(videoUpload);
@@ -2138,7 +2337,10 @@ function loadContent() {
   }
 
   // Carregar a legenda
-  if (srtUpload) {
+  if (restore) {
+    // Carregar Srt do localStorage
+    loadSrtFromLocal();
+  } else if (srtUpload) {
     const reader = new FileReader();
     reader.onload = function (e) {
       parseSRT(e.target.result);
@@ -2162,6 +2364,59 @@ function loadContent() {
   }
 
   closeLoadSaveArea();
+}
+
+
+// Carregar Srt do localStorage
+function loadSrtFromLocal() {
+  const saved = localStorage.getItem(STORAGE_SRT_KEY);
+  if (saved) {
+    try {
+      const parsedData = JSON.parse(saved);
+      if (Array.isArray(parsedData) && parsedData.length > 0) {
+        srtData.length = 0;
+        srtData.push(...parsedData);
+        renderSegments();
+        console.log('📂 Rascunho recuperado do navegador.');
+        return true; // Indica que carregou com sucesso
+      }
+    } catch (e) {
+      console.error('Erro ao carregar rascunho:', e);
+    }
+  }
+  return false;
+}
+
+
+/**
+ * ✅ NOVA FUNÇÃO AUXILIAR: Carrega apenas o SRT do servidor
+ * (Extrai a lógica de carregar SRT de previewLesson para reutilização)
+ */
+async function loadSrtFromServer(lesson) {
+    if (!lesson.srt) {
+        console.warn("⚠️ Esta lição não possui legendas no servidor");
+        return;
+    }
+    
+    const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
+    
+    if (cachedLesson && cachedLesson.srt && cachedLesson.srt.content) {
+        console.log("✅ Legendas já estavam no cache:", lesson.srt.fileName);
+        parseSRT(cachedLesson.srt.content);
+    } else {
+        console.log("📦 Baixando legendas do servidor:", lesson.srt.fileName);
+        const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
+        const response = await fetch(srtUrl);
+        const srtContent = await response.text();
+        
+        if (cachedLesson && cachedLesson.srt) {
+            cachedLesson.srt.content = srtContent;
+        }
+        
+        parseSRT(srtContent);
+    }
+    
+    appState.subtitle.name = lesson.srt.fileName;
 }
 
 // Função para interpretar o conteúdo .srt para srtData
@@ -2301,11 +2556,12 @@ function playLine() {
     }, (endTime - startTime) * 1000);
   });
 }
-
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-// ----- Função Principal de Criação de Playlist -----
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-
+  
+// ⫘⫘⫘⫘⫘⫘⫘⫘
+// ----- Playlist -----
+// ⫘⫘⫘⫘⫘⫘⫘⫘
+  
+// Função Principal de Criação
 async function saveNewPlaylistName() {
     const playlistName = newPlaylistNameInput.value.trim();
 
@@ -2708,7 +2964,12 @@ async function postLesson() {
     alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
     // location.reload(); desativado por enquanto
     
-    // NOVO: Atualiza o cache antes de recarregar
+    // limpar o localStorage
+    localStorage.removeItem('phrasecraft_autosave_srt');
+    console.log('🧹 Rascunho automático limpo após postagem.');
+    // ---------------------
+    
+    // Atualiza o cache antes de recarregar
     await refreshLessonsCache();
     
     showSection('home');
@@ -2785,7 +3046,6 @@ function groupFilesByLesson(files) {
   const lessons = {};
   
   files.forEach(file => {
-    // Remove a extensão para obter o nome base
     const baseName = file.fileName.replace(/\.(mp4|srt|jpg|jpeg|png)$/i, '');
     
     if (!lessons[baseName]) {
@@ -2797,18 +3057,21 @@ function groupFilesByLesson(files) {
       };
     }
     
-    // Identifica o tipo do arquivo
     const fileName = file.fileName.toLowerCase();
     if (fileName.endsWith('.mp4')) {
       lessons[baseName].video = file;
     } else if (fileName.endsWith('.srt')) {
       lessons[baseName].srt = file;
     } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
-      lessons[baseName].thumb = file;
+      // ✅ Salva URL junto com fileId
+      lessons[baseName].thumb = {
+        fileId: file.fileId,
+        fileName: file.fileName,
+        url: getBackblazePublicUrl(file.fileId) // ← Cache da URL
+      };
     }
   });
   
-  // Retorna apenas lições que têm pelo menos a thumbnail
   return Object.values(lessons).filter(lesson => lesson.thumb);
 }
 
@@ -2824,38 +3087,59 @@ async function previewLesson(lesson) {
 
     // 1️⃣ VIDEO -----------------------------------------
     if (lesson.video) {
-      // Se o vídeo já estiver em cache, usa ele
-      if (!lesson.video.blobUrl) {
+      // ✅ CORREÇÃO: Busca a lição no cache global para verificar se já tem o blob
+      const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
+      
+      if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
+        // ✅ Já está no cache
+        console.log("✅ Vídeo já estava no cache:", lesson.video.fileName);
+        appState.video.url = cachedLesson.video.blobUrl;
+        updateAllVideos(cachedLesson.video.blobUrl);
+      } else {
+        // ❌ Não está no cache, faz o download
+        console.log("📦 Baixando vídeo pela primeira vez:", lesson.video.fileName);
         const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
         const videoResponse = await fetch(videoUrl);
         const videoBlob = await videoResponse.blob();
-        lesson.video.blobUrl = URL.createObjectURL(videoBlob); // guarda no cache
-        console.log("📦 Vídeo adicionado ao cache:", lesson.video.fileName);
-      } else {
-        console.log("✅ Vídeo já estava no cache:", lesson.video.fileName);
+        const blobUrl = URL.createObjectURL(videoBlob);
+        
+        // ✅ CRÍTICO: Salva no cache global
+        if (cachedLesson && cachedLesson.video) {
+          cachedLesson.video.blobUrl = blobUrl;
+        }
+        
+        appState.video.url = blobUrl;
+        updateAllVideos(blobUrl);
       }
-
-      appState.video.url = lesson.video.blobUrl;
-      updateAllVideos(lesson.video.blobUrl);
     } else {
       console.warn("⚠️ Esta lição não possui vídeo");
     }
 
     // 2️⃣ SRT -----------------------------------------
     if (lesson.srt) {
-      if (!lesson.srt.content) {
+      // ✅ CORREÇÃO: Busca no cache global
+      const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
+      
+      if (cachedLesson && cachedLesson.srt && cachedLesson.srt.content) {
+        // ✅ Já está no cache
+        console.log("✅ Legendas já estavam no cache:", lesson.srt.fileName);
+        parseSRT(cachedLesson.srt.content);
+      } else {
+        // ❌ Não está no cache, faz o download
+        console.log("📦 Baixando legendas pela primeira vez:", lesson.srt.fileName);
         const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
         const response = await fetch(srtUrl);
         const srtContent = await response.text();
-        lesson.srt.content = srtContent; // guarda no cache
-        console.log("📦 Legendas adicionadas ao cache:", lesson.srt.fileName);
-      } else {
-        console.log("✅ Legendas já estavam no cache:", lesson.srt.fileName);
+        
+        // ✅ CRÍTICO: Salva no cache global
+        if (cachedLesson && cachedLesson.srt) {
+          cachedLesson.srt.content = srtContent;
+        }
+        
+        parseSRT(srtContent);
       }
-
-      parseSRT(lesson.srt.content);
+      
       appState.subtitle.name = lesson.srt.fileName;
-      appState.subtitle.url = lesson.srt.content;
     } else {
       console.warn("⚠️ Esta lição não possui legendas");
     }
@@ -2915,19 +3199,21 @@ async function loadLessonsToCache() {
 }
 
 /**
- * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas)
- * @param {string} sectionId - O ID da seção.
+ * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas).
+ * Inclui lógica para renderizar botões de Editar/Excluir na seção 'myPosts'.
+ * Switch statement para definir clickFunction baseado na seção
+ * * @param {string} sectionId - O ID da seção ativa ('home', 'myPosts', 'challenge', etc.).
  * @param {Array<Object>} [dataToRender=lessonsCache] - Array opcional de lições/partidas a serem renderizadas.
  */
 function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     console.log(`--- Renderizando thumbnails para: ${sectionId} ---`);
     
-    // Mapeia o ID da seção para o ID do container
+    // 1. Configuração e Seleção do Container
     const containerMap = {
         'home': 'home-post-container',
         'myPosts': 'user-post-container',
         'subscriptions': 'subscriptions-post-container',
-        'challenge': MATCHES_POST_CONTAINER // Usando a constante definida
+        'challenge': MATCHES_POST_CONTAINER
     };
     
     const containerId = containerMap[sectionId];
@@ -2941,63 +3227,87 @@ function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     // Limpa o container
     container.innerHTML = '';
     
-    let itemsToRender = dataToRender; // Usa os dados passados ou o cache padrão
-    let onClickFunction = showSoloPreview; // Função padrão
-
-    // **LÓGICA PARA DESAFIOS (CHALLENGE)**
-    if (sectionId === 'challenge') {
-        // Se a seção for 'challenge', a função de clique deve ser 'showMultiPreview'
-        // A função showMultiPreview será responsável por entrar na partida.
-        onClickFunction = showMultiPreview; 
-        
-        if (itemsToRender.length === 0) {
-             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
-             return;
-        }
-    } else {      
-         // Lógica para 'home', 'myPosts', etc. (dados do cache)
-        if (!isCacheLoaded || itemsToRender.length === 0) {
-             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Carregando lições...</p>';
-             return;
-        }
+    let itemsToRender = dataToRender;
+    
+    // 2. Define a função de clique baseada na seção
+    let clickFunction;
+    
+    switch(sectionId) {
+        case 'home':
+        case 'subscriptions':
+            clickFunction = (item) => showSoloPreview(item);
+            break;
+        case 'challenge':
+            clickFunction = (item) => showMultiPreview(item);
+            break;
+        case 'myPosts':
+            clickFunction = (item) => handleEditLesson(item);
+            break;
+        default:
+            clickFunction = (item) => previewLesson(item);
     }
-    // FIM LÓGICA PARA DESAFIOS
 
-    // Renderiza cada lição/partida
-    itemsToRender.forEach((item, index) => {
-        const displayName = item.baseName;
-        const thumbnailUrl = item.thumb.url || getBackblazePublicUrl(item.thumb.fileId); // Usa URL do cache ou gera uma nova
-        
+    // 3. Verifica se há itens para renderizar
+    if (sectionId === 'challenge') {
+        if (itemsToRender.length === 0) {
+            container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
+            return;
+        }
+    } else if (itemsToRender.length === 0) {
+        container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição postada.</p>';
+        return;
+    }
+
+    // 4. Renderização de cada Item
+    itemsToRender.forEach((item) => {
+        const baseName = item.baseName;
+        const thumbnailUrl = item.thumb.url || getBackblazePublicUrl(item.thumb.fileId); 
+        const hostIdDisplay = item.hostId || 'Eu';
+
         // Cria o wrapper do post
         const postWrapper = document.createElement('div');
         postWrapper.className = 'post-item';
-        postWrapper.style.cssText = 'margin-bottom: 20px; cursor: pointer;';
-              
-        // Adiciona um data-atributo com todos os dados da partida/lição
-        postWrapper.onclick = () => onClickFunction(item); 
+        postWrapper.style.cssText = 'margin-bottom: 20px;';
         
-        // Cria a thumb-section
+        // Estrutura do Conteúdo Meta (Ações)
+        let metaButtonsHTML = ``;
+
+        if (sectionId === 'myPosts') {
+            // Botões específicos para MyPosts
+            metaButtonsHTML = `
+                <span class="general-btn btn-edit-lesson" data-basename="${baseName}">✎ Editar</span>
+                <span class="general-btn btn-delete-lesson" data-basename="${baseName}" style="color: red;">❌ Excluir</span>
+            `;
+        } else {
+            // Para home, challenge, subscriptions - mostra performance
+            const performanceValue = item.extraData?.hostPerformance ?? '99';
+            metaButtonsHTML = `<span class="performance">${performanceValue}%</span>`;
+        }
+        
+        // 5. Montagem do HTML
         const thumbSection = document.createElement('div');
         thumbSection.className = 'thumb-section';
-        thumbSection.innerHTML = `
-          <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
-        `;
+        thumbSection.style.cursor = 'pointer';
+        thumbSection.innerHTML = `<img src="${thumbnailUrl}" alt="Preview da Thumbnail">`;
         
-        // Cria a info-content
         const infoContent = document.createElement('div');
         infoContent.className = 'info-content';
         infoContent.innerHTML = `
-          <div class="channel-pic">
-            <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
-          </div>
-          
-          <div class="video-text">
-            <span class="video-title" style="cursor: pointer;">${displayName}</span>
-            <div class="video-meta">
-              <span class="channel-name">Host: ${item.hostId || 'Canal'}</span>
-              <span class="performance">${item.extraData?.hostPerformance ?? '0'}%</span>
+            <div class="channel-pic">
+                <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
             </div>
-          </div>`;
+            
+            <div class="video-text">
+                <span 
+                    class="video-title video-title-clickable" 
+                    data-basename="${baseName}"
+                    style="cursor: pointer;"
+                >${baseName}</span>
+                <div class="video-meta">
+                    <span class="channel-name">Host: ${hostIdDisplay}</span>
+                    ${metaButtonsHTML}
+                </div>
+            </div>`;
         
         // Monta o post completo
         postWrapper.appendChild(thumbSection);
@@ -3005,10 +3315,53 @@ function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
         
         // Adiciona ao container
         container.appendChild(postWrapper);
+        
+        // 6. Adicionar event listeners APÓS inserir no DOM
+        
+        // Event listener para a THUMBNAIL (sempre chama a clickFunction da seção)
+        const thumbElement = postWrapper.querySelector('.thumb-section');
+        if (thumbElement) {
+            thumbElement.addEventListener('click', () => {
+                console.log(`Thumbnail clicada em ${sectionId}:`, baseName);
+                clickFunction(item);
+            });
+        }
+        
+        // Event listener para o TÍTULO (sempre chama a clickFunction da seção)
+        const titleElement = postWrapper.querySelector('.video-title-clickable');
+        if (titleElement) {
+            titleElement.addEventListener('click', () => {
+                console.log(`Título clicado em ${sectionId}:`, baseName);
+                clickFunction(item);
+            });
+        }
+        
+        // Event listeners específicos para MyPosts
+        if (sectionId === 'myPosts') {
+            // Botão Editar
+            const btnEdit = postWrapper.querySelector('.btn-edit-lesson');
+            if (btnEdit) {
+                btnEdit.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log(`Botão Editar clicado:`, baseName);
+                    handleEditLesson(item);
+                });
+            }
+            
+            // Botão Excluir
+            const btnDelete = postWrapper.querySelector('.btn-delete-lesson');
+            if (btnDelete) {
+                btnDelete.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log(`Botão Excluir clicado:`, baseName);
+                    deleteFullLesson(baseName);
+                });
+            }
+        }
     });
     
     console.log('✅ ' + itemsToRender.length + ' itens renderizados em ' + sectionId);
-} 
+}
 
 /**
  * Força atualização do cache (após upload de nova lição)
@@ -3032,91 +3385,156 @@ async function refreshLessonsCache() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 
 /**
- * Calcula o tempo alvo (em ms) para a palavra, baseado em seu comprimento.
+ * Calcula o tempo ideal (em segundos) para a palavra, baseado em seu comprimento.
  * @param {string} word - A palavra para a qual calcular o tempo.
- * @returns {number} O tempo máximo em milissegundos.
+ * @returns {number} O tempo ideal em segundos.
  */
 function getTargetTimeForWord(word) {
-    // 150ms por letra (exemplo: 'teste' tem 5 letras * 150 = 750ms)
-    return word.length * MS_PER_LETTER;
+    // 1.5 segundos por letra (exemplo: 'teste' = 5 letras * 1.5 = 7.5s)
+    return (word.length * MS_PER_LETTER) / 1000;
+}
+
+/**
+ * Calcula a performance atual da palavra com sistema de bônus/decaimento.
+ * @returns {number} Performance de 0 a 200 (%).
+ */
+function calculateCurrentWordPerformance() {
+    // Se o timer não foi iniciado, retorna 100%
+    if (!wordStartTime || currentWordIdealTime === 0) {
+        return 100;
+    }
+    
+    // --- LÓGICA DE DECAIMENTO LENTO (Slow Decay Mode) ---
+    
+    // 1. O modo "slow decay" JÁ FOI ATIVADO?
+    if (decayStartTime !== null) {
+        // Calcula há quantos segundos o modo de decaimento começou
+        const decayElapsedTime = (Date.now() - decayStartTime) / 1000;
+        
+        // Calcula a nova performance com queda lenta
+        // Ex: 70% - (5 segundos * 0.5) = 67.5%
+        let performance = performanceAtDecayStart - (decayElapsedTime * DECAY_RATE_PER_SECOND);
+        
+        // Garante que não caia abaixo de 0
+        return Math.max(0, performance);
+    }
+    
+    // --- LÓGICA 100 + BÔNUS/PENALIDADE ---
+    
+    // 2. Se NÃO está no slow decay, calcula a performance "real"
+    const elapsedTime = (Date.now() - wordStartTime) / 1000; // segundos
+    const timeDiff = currentWordIdealTime - elapsedTime;
+    
+    // Calcula o bônus/penalidade baseado na diferença de tempo
+    const performanceBonus = (timeDiff / currentWordIdealTime) * 100;
+    
+    // A performance final é 100% (base) + o bônus/penalidade
+    let realPerformance = 100 + performanceBonus;
+    
+    // Limita o teto a 200% (importante no início)
+    realPerformance = Math.min(MAX_WORD_PERFORMANCE, realPerformance);
+    
+    // --- O PONTO DE TRANSIÇÃO ---
+    
+    // 3. A performance "real" ACABOU DE CAIR abaixo do limiar?
+    if (realPerformance <= DECAY_THRESHOLD && decayStartTime === null) {
+        // SIM! Ativa o modo "slow decay" AGORA
+        decayStartTime = Date.now(); // Marca a hora exata
+        
+        // Salva a performance exata no momento da transição (ex: 69.9%)
+        performanceAtDecayStart = realPerformance;
+        
+        console.log(`🐢 Slow decay ativado em ${realPerformance.toFixed(1)}%`);
+        
+        return realPerformance; // Retorna esse valor (o último antes do "piso")
+    }
+    
+    // 4. Se chegou aqui, a performance é > 70% e o "slow decay" está inativo.
+    //    Apenas retorna a performance real.
+    return realPerformance;
 }
 
 /**
  * Inicia o cronômetro para a palavra atual.
- * A performance começa no máximo e diminui a cada 10ms.
- * @param {string} currentWord - A palavra atual para determinar o tempo limite.
+ * A performance começa em 200% e pode decair até 0%.
+ * @param {string} currentWord - A palavra atual para determinar o tempo ideal.
  */
 function startWordTimer(currentWord) {
     // Para qualquer timer anterior
     if (timerInterval) {
         clearInterval(timerInterval);
     }
-
-    const targetTimeMs = getTargetTimeForWord(currentWord);
-    // Tempo limite em segundos
-    const timeLimitSeconds = targetTimeMs / 1000;
     
-    // A performance total a ser perdida ao longo do tempo.
-    const performanceLostPerSecond = MAX_WORD_PERFORMANCE / timeLimitSeconds; 
+    // Reseta variáveis do modo slow decay
+    decayStartTime = null;
+    performanceAtDecayStart = 0;
     
-    // Inicia a performance no máximo
-    currentWordPerformance = MAX_WORD_PERFORMANCE;
-    startTime = Date.now();
-
-    // Atualiza a cada 10ms (mais suave para animação)
+    // Define o tempo ideal e marca o início
+    currentWordIdealTime = getTargetTimeForWord(currentWord);
+    wordStartTime = Date.now();
+    
+    console.log(`⏱️ Timer iniciado para "${currentWord}" (tempo ideal: ${currentWordIdealTime.toFixed(2)}s)`);
+    
+    // Inicializa a exibição em 200%
+    updateWordPerformance(MAX_WORD_PERFORMANCE);
+    
+    // Atualiza a cada 50ms para animação mais suave
     timerInterval = setInterval(() => {
-        const elapsedTime = (Date.now() - startTime) / 1000; // Tempo decorrido em segundos
-        
-        // Calcula a performance a ser removida
-        const performanceDecrease = elapsedTime * performanceLostPerSecond;
-        
-        // Novo valor de performance
-        const newPerformance = Math.max(0, MAX_WORD_PERFORMANCE - performanceDecrease);
-        currentWordPerformance = newPerformance;
-        
-        // Atualiza a exibição (apenas a performance da palavra)
-        updateWordPerformance(currentWordPerformance);
-    }, 10);
+        const currentPerformance = calculateCurrentWordPerformance();
+        updateWordPerformance(currentPerformance);
+    }, 50);
 }
 
 /**
- * Para o cronômetro, retorna a performance final.
- * @returns {number} O valor final da performance da palavra.
+ * Para o cronômetro e retorna a performance final.
+ * @returns {number} O valor final da performance da palavra (0-200).
  */
 function stopWordTimer() {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
     }
-    return currentWordPerformance;
+    
+    const finalPerformance = calculateCurrentWordPerformance();
+    
+    console.log(`⏹️ Timer parado. Performance final: ${finalPerformance.toFixed(2)}%`);
+    
+    // Reseta variáveis
+    wordStartTime = 0;
+    currentWordIdealTime = 0;
+    decayStartTime = null;
+    performanceAtDecayStart = 0;
+    
+    return finalPerformance;
 }
 
 /**
  * Atualiza a exibição da performance da palavra no header.
- * @param {number} performanceValue - O valor atual da performance (de 0 a MAX_WORD_PERFORMANCE).
+ * @param {number} performanceValue - O valor atual da performance (de 0 a 200).
  */
 function updateWordPerformance(performanceValue) {
     if (!wordPerformanceDisplay) return;
 
-    const maxPerformance = typeof MAX_WORD_PERFORMANCE === 'number' && MAX_WORD_PERFORMANCE > 0 
-        ? MAX_WORD_PERFORMANCE 
-        : 100; // fallback padrão
-
     // Garante que performanceValue está no intervalo válido
-    let clampedPerformance = Math.min(Math.max(performanceValue, 0), maxPerformance);
+    let clampedPerformance = Math.min(Math.max(performanceValue, 0), MAX_WORD_PERFORMANCE);
 
-    const percentage = (clampedPerformance / maxPerformance) * 100;
-    wordPerformanceDisplay.textContent = `${percentage.toFixed(0)}%`;
+    // Calcula a porcentagem para exibição (0-200%)
+    wordPerformanceDisplay.textContent = `${clampedPerformance.toFixed(0)}%`;
 
-    // Define cor com base na performance, evitando repetição no style
+    // Define cor com base na performance
     let color;
-    if (percentage > 50) {
-        color = '#4caf50'; // Verde
-    } else if (percentage > 25) {
-        color = '#ffc078'; // Laranja
+    if (clampedPerformance >= 150) {
+        color = '#00ff88'; // Verde brilhante (excepcional)
+    } else if (clampedPerformance >= 100) {
+        color = '#4caf50'; // Verde (bom)
+    } else if (clampedPerformance >= 70) {
+        color = '#ffc078'; // Laranja (aceitável)
+    } else if (clampedPerformance >= 40) {
+        color = '#ff9800'; // Laranja escuro (ruim)
     } else {
-        color = '#ff5e91'; // Vermelho
+        color = '#ff5e91'; // Vermelho (muito ruim)
     }
+    
     wordPerformanceDisplay.style.color = color;
 }
 
@@ -3126,37 +3544,33 @@ function updateWordPerformance(performanceValue) {
 
 /**
  * 💾 Salva a performance de uma palavra no total acumulado do modo Solo.
- * @param {number} wordPerformance - Performance obtida na palavra (0-MAX_WORD_PERFORMANCE).
+ * @param {number} wordPerformance - Performance obtida na palavra (0-200).
  */
 function addWordPerformanceSolo(wordPerformance) {
     totalWordsCompleted++;
     totalPerformance += wordPerformance;
     
-    console.log(`📊 Palavra ${totalWordsCompleted} (Solo): ${wordPerformance.toFixed(2)} pontos`);
+    console.log(`📊 Palavra ${totalWordsCompleted} (Solo): ${wordPerformance.toFixed(2)}%`);
     console.log(`📊 Total acumulado (Solo): ${totalPerformance.toFixed(2)} pontos`);
     
     updatePerformanceDisplayById();
 }
 
 /**
- * 🌐 Salva a performance de uma palavra no modo Multiplayer (envia para o servidor).
- * @param {number} wordPerformance - Performance obtida na palavra (0-MAX_WORD_PERFORMANCE).
- */
+ * 🌐 Salva a performance de uma palavra no modo Multiplayer (envia para o servidor).
+ * @param {number} wordPerformance - Performance obtida na palavra (0-200).
+ */
 async function addWordPerformanceMulti(wordPerformance) {
-    // Por enquanto, apenas salva localmente (igual ao Solo)
-    console.log("📊 Modo Multi (simplificado) - salvando performance localmente");
-    addWordPerformanceSolo(wordPerformance);
-    
-    // Futura lógica para enviar a performance da palavra
-    if (currentMatchId) {
-        console.log(`Futuro: Enviaria performance ${wordPerformance.toFixed(2)} para a partida ${currentMatchId}`);
-        // Aqui você fara um joinMatchOnServer com o score e a palavra completada.
-        // await joinMatchOnServer(currentMatchId, { lastPerformance: wordPerformance });
-    }
+    console.log("📊 Modo Multi - salvando performance");
+    addWordPerformanceSolo(wordPerformance);
+    
+    if (currentMatchId) {
+        console.log(`Futuro: Enviaria performance ${wordPerformance.toFixed(2)} para a partida ${currentMatchId}`);
+    }
 }
 
 /**
- * Calcula a performance média em porcentagem (0-100%)
+ * Calcula a performance média em porcentagem (0-200%)
  * @returns {number} Performance média em porcentagem
  */
 function calculateAveragePerformance() {
@@ -3164,49 +3578,53 @@ function calculateAveragePerformance() {
         return 100; // Se não completou nenhuma palavra ainda, mostra 100%
     }
     
-    // Cada palavra pode ter no máximo MAX_WORD_PERFORMANCE (200) pontos
-    const maxPossibleScore = totalWordsCompleted * MAX_WORD_PERFORMANCE;
+    // CORREÇÃO: Simplesmente calcula a média dos valores obtidos
+    // Se fez 190%, 180%, 170% em 3 palavras = (190+180+170)/3 = 180%
+    const averagePerformance = totalPerformance / totalWordsCompleted;
     
-    // Calcula a porcentagem
-    const percentage = (totalPerformance / maxPossibleScore) * 100;
-    
-    return Math.max(0, Math.min(100, percentage)); // Garante que fica entre 0-100
+    // Garante que fica entre 0-200
+    return Math.max(0, Math.min(200, averagePerformance));
 }
 
 /**
  * Atualiza a exibição da performance no header
  * @param {string} elementId - ID do elemento ('host-performance' ou 'opponent-performance')
- * @param {number} performanceValue - Valor da performance (0-100) ou null para calcular localmente
+ * @param {number} performanceValue - Valor da performance (0-200) ou null para calcular localmente
  */
 function updatePerformanceDisplayById(elementId = 'host-performance', performanceValue = null) {
     const performanceElement = document.getElementById(elementId);
     
     if (performanceElement) {
-        // Se não passou valor, calcula localmente (modo solo ou própria performance)
         const averagePerformance = performanceValue !== null ? performanceValue : calculateAveragePerformance();
         
-        // Escolhe emoji baseado na performance acumulada
-        let emoji = '🧠'; // Padrão
-        if (averagePerformance < 70) emoji = '🐢'; // Muito lento
-        else if (averagePerformance < 80) emoji = '🐌'; // Lento
-        else if (averagePerformance < 85) emoji = '🎯'; // Razoável
-        else if (averagePerformance < 90) emoji = '🎉'; // Bom
-        else if (averagePerformance < 93) emoji = '🏆'; // Muito bom
-        else if (averagePerformance < 95) emoji = '⭐'; // Ótimo
-        else if (averagePerformance < 97) emoji = '✈️'; // Excelente
-        else if (averagePerformance < 99) emoji = '🔥'; // Excepcional
-        else emoji = '🚀'; // Perfeito
+        // CORREÇÃO: Emojis ajustados para escala de 0-200%
+        let emoji = '🧠';
+        if (averagePerformance < 50) emoji = '🐢';      // Muito lento
+        else if (averagePerformance < 70) emoji = '🐌'; // Lento
+        else if (averagePerformance < 80) emoji = '📚'; // Precisa praticar
+        else if (averagePerformance < 90) emoji = '🎉'; // Quase lá
+        else if (averagePerformance < 100) emoji = '🎯'; // Bom!
+        else if (averagePerformance < 110) emoji = '🏆'; // Muito bom!
+        else if (averagePerformance < 120) emoji = '⭐'; // Ótimo!
+        else if (averagePerformance < 130) emoji = '✈️'; // Excelente!
+        else if (averagePerformance < 150) emoji = '🔥'; // Impressionante!
+        else if (averagePerformance < 170) emoji = '🚀'; // Incrível!
+        else emoji = '👑'; // Perfeito!
         
-        // Exibe a porcentagem com o emoji
+        // Mostra o valor real (0-200%)
         performanceElement.textContent = `${averagePerformance.toFixed(0)}% ${emoji}`;
         
-        // Mudar a cor com base na performance
-        if (averagePerformance >= 90) {
-            performanceElement.style.color = '#4caf50'; // Verde
+        // CORREÇÃO: Cores ajustadas para escala de 0-200%
+        if (averagePerformance >= 150) {
+            performanceElement.style.color = '#00ff88'; // Verde brilhante (excepcional)
+        } else if (averagePerformance >= 120) {
+            performanceElement.style.color = '#4caf50'; // Verde (muito bom)
+        } else if (averagePerformance >= 100) {
+            performanceElement.style.color = '#ffc078'; // Laranja claro (bom)
         } else if (averagePerformance >= 70) {
-            performanceElement.style.color = '#ffc078'; // Laranja
+            performanceElement.style.color = '#ff9800'; // Laranja (aceitável)
         } else {
-            performanceElement.style.color = '#ff5e91'; // Vermelho
+            performanceElement.style.color = '#ff5e91'; // Vermelho (ruim)
         }
     }
 }
@@ -3368,20 +3786,33 @@ async function injectFirstSegmentShuffled() {
 function moveWordToPhrase(wordButton, word) {
   console.log("Tentando mover palavra:", word);
   
-  // Verifica se é a próxima palavra correta
-  if (!isNextWord(word)) {
-    console.log("❌ Palavra incorreta! Não é a próxima da sequência.");
-    
-    // Feedback visual de erro
-    wordButton.style.background = 'linear-gradient(to bottom, #ff5e91, #E91E63)';
-    setTimeout(() => {
-      wordButton.style.background = 'linear-gradient(to bottom, #6d28d9, #5b21b6)';
-    }, 300);
-	  
-    return;
-  }
+    // Verifica se é a próxima palavra correta
+    if (!isNextWord(word)) {
+        console.log("❌ Palavra incorreta! Não é a próxima da sequência.");
+        
+        // 1. APLICA CLASSE DE ERRO
+        wordButton.classList.add('word-button-incorrect');
+        
+        // 2. Adiciona o botão ao Set de botões incorretos.
+        incorrectButtonsSet.add(wordButton); 
+        return;
+    }
   
-  console.log("✅ Palavra correta! Movendo...");
+    console.log("✅ Palavra correta! Movendo...");
+  
+    // >> 🎯 AJUSTE DE RESET NO SUCESSO (Reseta TODOS os botões incorretos)
+    if (incorrectButtonsSet.size > 0) {
+        console.log(`🎨 Resetando cor de ${incorrectButtonsSet.size} botão(ões) incorreto(s) anterior(es).`);
+        
+        incorrectButtonsSet.forEach(btn => {
+            // 3. REMOVE CLASSE DE ERRO para resetar o estilo para o padrão base
+            wordButton.classList.remove('word-button-incorrect'); 
+        });
+        
+        // Limpa o Set
+        incorrectButtonsSet.clear(); 
+    }
+    // << FIM AJUSTE DE RESET NO SUCESSO
   
   // 1. **PARAR O TIMER E CAPTURAR A PERFORMANCE**
   const finalPerformance = stopWordTimer();
@@ -3414,19 +3845,6 @@ function moveWordToPhrase(wordButton, word) {
 		const phraseButton = document.createElement('button');
 		phraseButton.className = 'phrase-word-button';
 		phraseButton.textContent = word;
-		phraseButton.style.cssText = `
-			width: auto;
-		  	color: #fff;
-		  	padding: 0 10px;
-		  	margin: 4px;
-		  	background: transparent;
-		  	border: none;
-		  	border-radius: 8px;
-		  	font-size: 16px;
-		  	cursor: pointer;
-		  	transition: all 0.3s ease;
-		  	box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
-		`;
 		  
 		fraseContainer.appendChild(phraseButton);
 	}
@@ -3478,9 +3896,6 @@ function isNextWord(word) {
   return word === palavraEsperada;
 }
 
-/**
- * 🎯 Função principal que verifica se a frase está completa e direciona para o modo correto.
- */
 /**
  * 🎯 Função principal que verifica se a frase está completa (SIMPLIFICADA)
  */
@@ -3554,21 +3969,11 @@ async function loadNextSegment() {
   // Cria botões para cada palavra
   shuffledWords.forEach((word) => {
     const wordButton = document.createElement('button');
-    wordButton.className = 'word-button';
+    
+    // 1. APLICA A CLASSE BASE
+    wordButton.className = 'word-button word-button-base';
+    
     wordButton.textContent = word;
-    wordButton.style.cssText = `      
-      width: auto;
-      color: #fff;
-      padding: 0 10px;
-      margin: 4px;
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(109, 40, 217, 0.3);
-    `;
     
     wordButton.onmouseenter = () => {
       wordButton.style.transform = 'translateY(-2px)';
@@ -3581,6 +3986,8 @@ async function loadNextSegment() {
     };
     
     wordButton.onclick = () => {
+      // Lê a palavra na velocidade normal, pausando o vídeo se necessário
+      speakText(word, 1.0);
       moveWordToPhrase(wordButton, word);
     };
     
@@ -3671,7 +4078,7 @@ function onClick(id, handler) {
 // ✅ Uso simples e limpo
 
 // Botão "Tocar Trecho" - Repete o áudio do segmento atual
-onClick('repetir', () => {
+onClick('repetir-btn', () => {
   playLineInPlayMode();
   console.log('Tradução iniciada (placeholder)');
 });
@@ -3682,12 +4089,187 @@ onClick('repetir', () => {
 /**
  * Botão "Tocar Lento" - Toca em velocidade reduzida
  */
+// --- Configuração Global de Fala ---
+const speechState = {
+    currentLang: 'en-us',       // Idioma padrão inicial
+    availableLangs: new Set()   // Set para garantir lista única de idiomas disponíveis
+};
 
+// Botão "Ler Frase" (Tartaruga)
+onClick('lerFrase-btn', () => {
+    const btn = document.getElementById('lerFrase-btn');
+    const text = srtData[currentSegmentIndex]?.text;
+
+    // Apenas chama a função. Ela cuida do resto (video, idioma, cancelamento).
+    speakText(
+        text, 
+        0.6, // Lento
+        () => btn.classList.add('btn-active'),   // Callback Inicio
+        () => btn.classList.remove('btn-active') // Callback Fim
+    );
+});
+
+/**
+ * Inicializa a lista de idiomas suportados pelo navegador.
+ * Deve ser chamado no init() ou DOMContentLoaded.
+ */
+function initSpeechEngine() {
+    const populateLangs = () => {
+        const voices = window.speechSynthesis.getVoices();
+        
+        // Limpa e repopula o Set
+        speechState.availableLangs.clear();
+        
+        voices.forEach(voice => {
+            // Adiciona apenas o código do idioma (ex: 'pt-BR', 'en-US')
+            speechState.availableLangs.add(voice.lang);
+        });
+        
+        console.log("🗣️ Idiomas de voz carregados:", speechState.availableLangs.size);
+    };
+
+    // O evento onvoiceschanged é necessário porque o Chrome carrega vozes assincronamente
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = populateLangs;
+    }
+    
+    populateLangs(); // Tenta carregar imediatamente caso já estejam prontos
+}
+
+/**
+ * Função auxiliar para pausar qualquer vídeo ativo na tela e limpar timeouts de reprodução.
+ */
+function pauseActiveVideo() {
+    // Lista dos IDs dos players usados no sistema
+    const videoIds = ['videoPlayer-play', 'videoPlayer-editSrt', 'videoPlayer-postLesson'];
+
+    videoIds.forEach(id => {
+        const video = document.getElementById(id);
+        if (video && !video.paused) {
+            video.pause();
+            console.log(`⏸️ Vídeo ${id} pausado automaticamente para síntese de voz.`);
+        }
+    });
+
+    // Limpa o timeout global de "tocar trecho" se ele existir, para não pausar o vídeo do nada depois
+    if (typeof stopTimeout !== 'undefined' && stopTimeout) {
+        clearTimeout(stopTimeout);
+        stopTimeout = null;
+    }
+}
+
+/**
+ * Sintetiza voz a partir de um texto (Versão Final com Pause Automático).
+ */
+function speakText(text, rate = 1.0, onStartCallback = null, onEndCallback = null) {
+    if (!text) return;
+
+    if (!('speechSynthesis' in window)) {
+        console.warn("Este navegador não suporta síntese de voz.");
+        return;
+    }
+
+    // 1. PAUSA O VÍDEO AUTOMATICAMENTE ANTES DE FALAR
+    pauseActiveVideo();
+
+    // 2. Cancela falas anteriores
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Usa o estado global definido anteriormente
+    utterance.lang = typeof speechState !== 'undefined' ? speechState.currentLang : 'pt-BR'; 
+    utterance.rate = rate;
+    utterance.pitch = 1;
+
+    utterance.onstart = () => {
+        if (onStartCallback) onStartCallback();
+    };
+
+    utterance.onend = () => {
+        if (onEndCallback) onEndCallback();
+    };
+
+    utterance.onerror = (e) => {
+        console.error("Erro na síntese:", e);
+        if (onEndCallback) onEndCallback();
+    };
+
+    window.speechSynthesis.speak(utterance);
+}
 
 /**
  * Botão "Traduzir" - Mostra a frase completa (placeholder)
+ * API não oficial, sem limite oficial
+ * Uso pessoal e leve, provavelmente sem problemas.
  */
+onClick('traduzir-btn', async () => {
+    const translateArea = document.getElementById('translate-area');
+    const originalText = srtData[currentSegmentIndex]?.text;
 
+    if (!translateArea || !originalText) return;
+
+    // Toggle: se já existe texto, limpa e oculta
+    if (translateArea.textContent.trim() !== "") {
+        translateArea.textContent = "";
+        translateArea.style.display = "none";   // oculta se vazio
+        translateArea.classList.remove('translate-overlay'); // <--- Remove a classe (volta ao normal)
+        return;
+    }
+
+    // Se passou daqui, é para LIGAR
+    translateArea.classList.add('translate-overlay'); // <--- Adiciona a classe (fica brilhante)
+
+    // Feedback imediato
+    translateArea.textContent = "Traduzindo...";
+    translateArea.style.display = "block"; // mostra durante tradução
+
+    try {
+        const translation = await translateText(originalText, "pt");
+        translateArea.textContent = translation || "";
+
+        // Mostrar ou ocultar conforme conteúdo
+        if (!translation || translation.trim() === "") {
+            translateArea.style.display = "none";  // não mostra se vazio
+        } else {
+            translateArea.style.display = "block"; // mostra se houver tradução
+        }
+    } catch (error) {
+        console.error("Erro na tradução:", error);
+        translateArea.textContent = "Erro ao traduzir.";
+        translateArea.style.display = "block"; // mostra mensagem de erro
+    }
+});
+
+/**
+ * Função utilitária para traduzir texto usando a API não oficial do Google
+ * @param {string} text - Texto original
+ * @param {string} targetLang - Idioma alvo (ex: 'pt')
+ * @returns {Promise<string>} Tradução
+ */
+async function translateText(text, targetLang = "pt") {
+    const url =
+      'https://translate.googleapis.com/translate_a/single' +
+      '?client=gtx' +
+      '&sl=auto' +
+      '&tl=' + encodeURIComponent(targetLang) +
+      '&dt=t' +
+      '&q=' + encodeURIComponent(text);
+    const response = await fetch(url);
+
+    if (!response.ok) throw new Error("Falha na requisição");
+
+    const data = await response.json();
+    let translation = "";
+
+    if (Array.isArray(data[0])) {
+        data[0].forEach(item => {
+            if (item[0]) translation += item[0];
+        });
+    }
+
+    return translation;
+}
 
 /**
  * Botão "Passar" - Pula para o próximo segmento
@@ -3777,16 +4359,18 @@ async function searchMatchesOnServer() {
         );
 
         const matches = response.documents;
-        console.log(`✅ ${matches.length} partidas encontradas: ${matches}`);
+        console.log(`✅ ${matches.length} partidas encontradas`);
 
         const matchesAsLessons = matches.map(match => {
             const thumbFileId = match.thumbFileId;
             
-            console.log('🔍 Partida encontrada:', {
-                id: match.$id,
+            // ✅ Tenta reutilizar thumb do cache primeiro
+            const cachedLesson = lessonsCache.find(l => l.baseName === match.lessonName);
+            const thumbUrl = cachedLesson?.thumb?.url || getBackblazePublicUrl(thumbFileId);
+            
+            console.log('🔍 Partida:', {
                 lessonName: match.lessonName,
-                thumbFileId: thumbFileId,
-                status: match.status
+                thumbFromCache: !!cachedLesson?.thumb?.url // ← Mostra se veio do cache
             });
         
             return {
@@ -3795,7 +4379,7 @@ async function searchMatchesOnServer() {
                 hostId: match.hostId,
                 thumb: { 
                     fileId: thumbFileId,
-                    url: getBackblazePublicUrl(thumbFileId)
+                    url: thumbUrl // ← Usa cache se disponível
                 },
                 extraData: {
                     hostPerformance: match.hostPerformance || 0,
@@ -3806,7 +4390,7 @@ async function searchMatchesOnServer() {
             };
         });
         
-        console.log(`✅ ${matchesAsLessons.length} partidas formatadas para exibição`);
+        console.log(`✅ ${matchesAsLessons.length} partidas formatadas`);
         return matchesAsLessons;
 
     } catch (error) {
@@ -4253,6 +4837,166 @@ async function handlePlayerLeavingMatch() {
   }
 }
 
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Update BackBlaze --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// Adicione esta função ao Bloco Fx | Multiplayer (ou onde preferir)
+
+/**
+ * Deleta todos os arquivos (MP4, SRT, JPG) de uma lição no Backblaze B2.
+ * @param {string} baseName O nome base da lição (ex: 'Coolio - Gangsta's Paradise').
+ */
+async function deleteFullLesson(baseName) {
+    if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente a lição: "${baseName}"?`)) {
+        return;
+    }
+    
+    // 1. Obtém os nomes completos dos arquivos
+    const filesToDelete = [
+        `${baseName}.mp4`,
+        `${baseName}.srt`,
+        `${baseName}.jpg`
+    ];
+    
+    showLoading(`Iniciando exclusão de: ${baseName}...`);
+
+    try {
+        let deletedCount = 0;
+        
+        for (const fileName of filesToDelete) {
+            // Reutiliza o fluxo de obter a versão mais recente e deletar
+            const file = await getLatestFile(fileName);
+            
+            if (file) {
+                // deleteLatestFile(fileName) já faz a chamada B2 com fileId e fileName
+                const success = await deleteLatestFile(file.fileName); 
+                if (success) {
+                    deletedCount++;
+                }
+            } else {
+                console.warn(`Arquivo ${fileName} não encontrado ou já foi deletado.`);
+            }
+        }
+
+        if (deletedCount > 0) {
+            alert(`✅ Lição "${baseName}" deletada com sucesso! (${deletedCount} arquivos removidos).`);
+            await refreshLessonsCache(); // Recarrega o cache e atualiza a UI
+        } else {
+            alert(`⚠️ Nenhum arquivo encontrado para deletar para a lição "${baseName}".`);
+        }
+
+    } catch (error) {
+        console.error("❌ ERRO ao deletar lição:", error);
+        alert('❌ Falha na exclusão completa da lição. Verifique o console.');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Lista a versão mais recente de um arquivo específico em um bucket B2.
+ * Esta função usa a ação 'list' do seu Appwrite Function.
+ * * @param {string} baseName O nome do arquivo a ser procurado (e.g., 'minha_licao.mp4').
+ * @returns {Promise<Object|null>} O objeto do arquivo (com fileId e fileName) ou null se não for encontrado.
+ */
+async function getLatestFile(baseName) {
+    const { Functions, Query } = Appwrite;
+    const functions = new Functions(client); // 'client' deve ser o Appwrite.Client configurado globalmente
+    
+    showLoading(`Buscando a versão mais recente de: ${baseName}...`);
+
+    try {
+        // Executa a função Appwrite com a ação 'list' (b2_list_file_names)
+        const result = await functions.createExecution(
+            '68f7bd14002005b7bb6b', // Substitua pelo ID REAL da sua função
+            JSON.stringify({ action: 'list' }),
+            false // síncrono
+        );
+
+        if (result.status !== 'completed') {
+            throw new Error(`Falha na execução da função: ${result.stderr}`);
+        }
+
+        const data = JSON.parse(result.responseBody);
+        const files = data.files || [];
+
+        // Filtra para encontrar o arquivo específico pelo nome
+        // NOTA: O nome do arquivo no B2 inclui a extensão (e.g., minha_licao.mp4)
+        const latestFile = files.find(file => file.fileName === baseName);
+
+        if (latestFile) {
+            console.log(`✅ Versão mais recente encontrada: ${latestFile.fileName} (ID: ${latestFile.fileId})`);
+            return latestFile;
+        } else {
+            console.log(`⚠️ Arquivo não encontrado no bucket: ${baseName}`);
+            return null;
+        }
+
+    } catch (error) {
+        console.error("❌ Erro ao listar a versão mais recente:", error);
+        throw error;
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Deleta a versão mais recente de um arquivo no Backblaze B2.
+ * * @param {string} baseName O nome do arquivo (e.g., 'minha_licao.mp4') que você deseja deletar.
+ * @returns {Promise<boolean>} Retorna true se a deleção for bem-sucedida.
+ */
+async function deleteLatestFile(baseName) {
+    const { Functions } = Appwrite;
+    const functions = new Functions(client);
+
+    // 1. Obtém o fileId e fileName da versão mais recente
+    const fileToDelete = await getLatestFile(baseName);
+
+    if (!fileToDelete) {
+        alert(`Não foi possível deletar: arquivo ${baseName} não encontrado.`);
+        return false;
+    }
+
+    const { fileId, fileName } = fileToDelete;
+    
+    showLoading(`Deletando: ${fileName}...`);
+    
+    try {
+        // 2. Executa a função Appwrite com a ação 'delete'
+        const result = await functions.createExecution(
+            '68f7bd14002005b7bb6b', // Substitua pelo ID REAL da sua função
+            JSON.stringify({
+                action: 'delete',
+                fileId: fileId,
+                fileName: fileName
+            }),
+            false // síncrono
+        );
+
+        if (result.status !== 'completed') {
+            throw new Error(`Falha na execução da função: ${result.stderr}`);
+        }
+
+        const data = JSON.parse(result.responseBody);
+
+        if (data.success) {
+            console.log(`✅ Arquivo deletado com sucesso: ${data.fileName}`);
+            alert(`✅ ${data.fileName} deletado com sucesso!`);
+            return true;
+        } else {
+            throw new Error(`Erro de deleção B2: ${data.error}`);
+        }
+
+    } catch (error) {
+        console.error("❌ Erro ao deletar o arquivo:", error);
+        alert(`❌ Falha na deleção: ${error.message}`);
+        return false;
+    } finally {
+        hideLoading();
+    }
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -4266,6 +5010,7 @@ async function init() {
   checkAuthStatus();
   endCreateMode();
   deleteExistingMatches();
+  initSpeechEngine();
   
   // Carrega o cache ANTES de mostrar qualquer seção
   await loadLessonsToCache();
@@ -4277,7 +5022,68 @@ async function init() {
 document.addEventListener('DOMContentLoaded', () => {
 	init();
 });
+/**
+ * 🧪 Função de Teste: Lista TODAS as versões de arquivos no console.
+ * Chama a ação 'list_versions' da Appwrite Function para listar todos os arquivos
+ * do Backblaze B2, incluindo versões antigas/ocultas, e exibe os detalhes.
+ * * @returns {Promise<void>}
+ 
+async function testListAllVersions() {
+    // É crucial que 'client' (Appwrite.Client) esteja definido no escopo global
+    // ou seja passado como argumento, e que Appwrite.Functions esteja disponível.
+    const { Functions } = Appwrite;
+    const functions = new Functions(client);
 
+    console.log("=================================================");
+    console.log("🚀 INICIANDO TESTE: LISTAR TODAS AS VERSÕES DO B2");
+    console.log("=================================================");
+
+    showLoading('Listando todas as versões de arquivos...');
+
+    try {
+        // 1. Executa a função Appwrite com a ação 'list_versions'
+        const result = await functions.createExecution(
+            '68f7bd14002005b7bb6b', // ⚠️ SUBSTITUA PELO ID REAL DA SUA FUNÇÃO
+            JSON.stringify({ action: 'list_versions' }),
+            false // síncrono
+        );
+
+        if (result.status !== 'completed') {
+            console.error("❌ Erro na execução da função Appwrite:", result.stderr);
+            throw new Error(`Falha na execução da função no servidor: ${result.stderr}`);
+        }
+        
+        // CORREÇÃO CRÍTICA: Faz o parsing do JSON contido no responseBody
+        // para obter o objeto de dados que contém o array 'files'.
+        const data = JSON.parse(result.responseBody);
+        const files = data.files || []; 
+
+        console.log(`✅ ${files.length} VERSÕES ENCONTRADAS (incluindo versões antigas/ocultas):`);
+        
+        // 2. Itera sobre os arquivos e exibe os detalhes no console
+        files.forEach((file, index) => {
+            const date = new Date(file.uploadTimestamp).toLocaleString('pt-BR');
+            console.log(`--- Arquivo #${index + 1} ---`);
+            console.log(`  Nome: ${file.fileName}`);
+            console.log(`  ID: ${file.fileId}`);
+            console.log(`  Tipo de Ação (Status): ${file.action}`); // Ex: 'upload', 'hide', 'delete'
+            console.log(`  Tamanho: ${(file.contentLength / 1024).toFixed(2)} KB`);
+            console.log(`  Data Upload: ${date}`);
+        });
+
+    } catch (error) {
+        console.error("❌ ERRO NO TESTE DE LISTAGEM DE VERSÕES:", error);
+    } finally {
+        hideLoading();
+        console.log("=================================================");
+        console.log("🏁 TESTE DE LISTAGEM CONCLUÍDO");
+        console.log("=================================================");
+    }
+}
+// Chame esta função após a inicialização (init) ou
+// clique em um botão para testar a listagem completa.
+testListAllVersions();
+*/
 </script>
 </body>
 </html>
