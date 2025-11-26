@@ -1,80 +1,674 @@
+<!-- 
+loading ok
+-->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Página Dark - Step Timer</title>
-  <style>
-    body {
-      background-color: #121212;
-      color: #f0f0f0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .container {
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px #000;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      border: none;
-      border-radius: 4px;
-      background: #2a2a2a;
-      color: #fff;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      background: #3a3a3a;
-      color: #fff;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #555;
-    }
-    .time-display {
-      margin-top: 20px;
-      font-size: 1.5em;
-    }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhraseCraft</title>
+  <script src="https://unpkg.com/dexie@4/dist/dexie.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
+<style>
+/* Reset básico */ 
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+} 
+body { 
+    font-family: "Roboto", Arial, sans-serif; 
+    background-color: #0b0404; 
+    color: #e0e0e0; 
+    line-height: 1.54;
+}
+main {
+  padding: 62px 0 62px 0; /* altura do footer e do header */
+}
+/* todas escondidas */
+section { 
+	display: ;
+} 
+/* visível */
+section.active { 
+	display: block; 
+}
+
+/* Caixas internas */
+.box {
+    background: #1c1c1c;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #000;
+}
+
+/* Estilos gerais para Header e Footer */
+header, footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: #000;
+  padding: 0 16px;
+  color: #fff;
+  user-select: none;
+  z-index: 1000;
+}
+  /* ===============  */
+ /*      Header      */
+/* ===============  */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
+  border-bottom: 1px solid #222;
+}
+/* Logo à esquerda */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+/* Performance centralizado no header */
+.performance-area {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-area img {
+  background: #fff; 
+  color: #000;  
+  border-radius: 15%;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+.icon {
+  width: 24px; 
+  height: 24px;
+}
+/* Ícones à direita */
+.icons-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.icons-right a {
+  color: #6d28d9;
+  text-decoration: none;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+.icons-right svg, header svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Centralização interna dos textos e ícones */
+.text-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+  /* ===============  */
+ /*      Footer      */
+/* ===============  */
+#main-footer {
+  display: none;  /* <-- ADICIONE ISSO: Começa invisível */
+  bottom: 0;
+  height: 56px;
+  border-top: 1px solid #222;
+  justify-content: space-around;
+  align-items: center;
+}
+#main-footer a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+#main-footer a svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+/* Texto do footer */
+#main-footer span {
+  font-size: 10px;
+  user-select: none;
+}
+body.footer-hidden main {
+  padding-bottom: 0;
+}
+/* Adaptativo para telas pequenas */
+@media screen and (max-width: 600px) {
+  header {
+    padding: 0 8px;
+  }
+  #main-footer a {
+    font-size: 8px;
+    gap: 2px;
+  }
+  #main-footer a svg {
+    width: 20px;
+    height: 20px;
+  }
+  #preview-footer {
+    height: 48px;
+  }
+} 
+/* --- Classes de layout simplificadas --- */
+/* === CLASSES GERAIS === */
+.row, h4, h3, h2, p {
+    display: flex;
+    flex-direction: row;
+}
+.column {
+    display: flex;
+    flex-direction: column;
+}
+.height {
+    align-items: center; /* Alinhamento vertical */
+}
+.width {
+    justify-content: center; /* Alinhamento horizontal */
+}
+.gap {
+    gap: 10px;
+}
+.padding {
+    padding: 10px;
+}
+.between {
+  justify-content: space-between; /* Distribui o espaço uniformemente entre os itens */
+}
+.nowrap {
+  white-space: nowrap;
+}
+input, textarea {
+    border: 1px solid #555; 
+    border-radius: 4px; 
+    padding: 10px 12px; 
+    font-size: 14px; 
+    width: 250px; 
+    max-width: 550px; 
+    background-color: #121212; 
+    color: #e0e0e0; 
+    transition: border-color 0.2s ease; 
+} 
+input:focus, textarea:focus { 
+    border-color: #3ea6ff; 
+    outline: none; 
+}
+#editEnd, #editStart, #editStack, #editStep {
+    width: 110px;
+}
+input[type="radio"] {
+    width: 16px; 
+    max-width: 16px; 
+}
+/* Playlist Item */
+label input[type="checkbox"] {
+    /* Usando accent-color para estilizar a cor do 'check' (suporte varia) */
+    accent-color: gray; /* Cor secundária de destaque */
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid #5a5a5a; /* Borda para contraste */
+    background-color: #333333; /* Fundo do checkbox */
+    cursor: pointer;
+}
+button {
+	width: 30px;
+	height: 30px;
+	font-size: 16px;
+	white-space: nowrap;
+	cursor: pointer;
+	border: none; 
+	background-color: #263238; 
+	color: #3ea6ff;
+	border-radius: 8px; 
+	transition: background 0.2s;
+}
+button:hover {
+	background-color: #bbb;
+	color: #000;
+}
+.general-btn { 
+    background-color: transparent; 
+    border: none; 
+    color: #3ea6ff;
+    font-weight: 500;
+  	white-space: nowrap; 
+    cursor: pointer; 
+    padding: 8px 12px;
+	border-radius: 8px;  
+    transition: background-color 0.2s ease; 
+	width: auto; 
+	max-width: 150px;
+	height: auto;
+}
+.general-btn:hover { 
+	background-color: #00111b; 
+	color: #fff;
+}
+/*thumb-section*/
+.video-section, .thumb-section { 
+  width: 100%;
+  height: auto;
+}
+
+video, .thumb-section img {
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+/* info-content */
+.info-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px 0 5px;
+  align-items: center;
+  margin: 0 10px 8px;
+  font-size: 12px;
+  max-height: 400px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+/* Texto do vídeo */
+.video-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+/* Título do vídeo */
+.video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 5px 0 5px 8px;
+  text-align: left;
+}
+/* Linha com nome do canal, desempenho e editar */
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 5px 8px;
+  font-size: 14px;
+}
+
+/* Imagem do canal */
+.channel-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 1px 0 20px 0;
+}
+
+/* Nome do canal */
+.channel-name {
+  color: #bbbbbb;
+  margin-bottom: 15px;
+}
+
+/* Desempenho (percentual) */
+.performance {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Botão Editar */
+.video-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+  /*=================*/
+ /* Loading Overlay */
+/*=================*/
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #333;
+    border-top: 4px solid #6d28d9;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* ================================== */
+/*   Estilo para a Lista de Legendas  */
+/* ================================== */
+.segmentsArea {
+	padding: 10px; 
+    max-height: 50vh; /* ou a altura que preferir */
+    overflow-y: auto;
+    width: 100%;
+    max-width: 600px;
+}
+
+.segment { 
+  background: #1a1a1a;
+  padding: 10px; 
+  border-radius: 10px; 
+  margin: 5px 0; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.segment:hover:not(.segment-selected) {
+  background: #334450;
+  border-left-color: #3ea6ff;
+}
+
+.segment-selected {
+  background: #1e3a4f;
+  border-left-color: #6d28d9;
+}
+
+/* Scrollbar customizada */
+.segmentsArea::-webkit-scrollbar {
+  width: 8px;
+}
+.segmentsArea::-webkit-scrollbar-track {
+  background: #0b0404;
+}
+.segmentsArea::-webkit-scrollbar-thumb {
+  background: #3ea6ff;
+  border-radius: 4px;
+}
+.segmentsArea::-webkit-scrollbar-thumb:hover {
+  background: #6d28d9;
+}
+/* Container dos botões - Flexbox simples centralizado */
+.play-btnContainer {
+    display: flex;
+    justify-content: center; /* Centraliza horizontalmente */
+    align-items: center;
+    gap: 20px;      /* Espaço entre os botões */
+    margin-top: 5px; /* Espaço entre o vídeo e os botões */
+    margin-bottom: 15px; /* Espaço entre os botões e a frase */
+}
+/* Estilo Base dos botões de palavra */
+.word-button-base {
+    width: auto;
+    color: #d7d9ff;
+    padding: 0 10px;
+    margin: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(109, 40, 217, 0.3);
+}
+/* Estilo para palavra clicada incorretamente (Vermelho) */
+.word-button-incorrect {
+    /* Remove a sombra e aplica o gradiente de erro */
+    box-shadow: none !important;
+    background: linear-gradient(to bottom, #E91E63, #C2185B) !important;
+    color: #fff; /* Garante que a cor do texto não mude */
+}
+/* Verde Correta*/
+.phrase-word-button {
+    width: auto;
+    color: #e1ffd9;
+    padding: 0 10px;
+    margin: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+/* Torna o container do vídeo uma referência para o posicionamento */
+.video-container-relative {
+    position: relative; 
+    display: inline-block; /* Ou block, dependendo do layout, mas relative é essencial */
+    width: 100%;
+}
+/* Estilo da sobreposição da tradução */
+.translate-overlay {
+    position: absolute; /* Fixa em relação ao video-container-relative */
+    bottom: 40%;       /* Distância do fundo do vídeo (ajuste conforme a barra de controles) */
+    left: 50%;          /* Começa no meio */
+    transform: translateX(-50%); /* Centraliza exatamente no meio */
+    
+    max-width: 500px;         /* Largura máxima da legenda */
+    background-color: rgba(0, 0, 0, 0.7); /* Fundo preto semi-transparente */
+    color: #ffc078; /* Cor do texto (Laranja claro para destaque) */
+    
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    z-index: 10; /* Garante que fique na frente do vídeo */
+    
+    pointer-events: none; /* Permite clicar no vídeo através do texto (play/pause) */
+    
+    /* Opcional: Efeito de transição suave */
+    transition: opacity 0.3s ease;
+}
+/* Para telas pequenas */
+@media screen and (max-width: 600px) {
+  .segmentsArea {
+    max-height: 50vh; /* Mais espaço em telas pequenas */
+  }
+  
+  .segment {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+/* Telas muito pequenas */
+@media screen and (max-width: 400px) {
+  .general-btn {
+    font-size: 14px;
+    padding: 5px 6px;
+  }
+}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Timer Dark</h2>
-    
-    <label for="step">Step (segundos ou milissegundos):</label>
-    <input type="number" id="step" value="0.100" step="0.001">
-    
-    <label for="current">Tempo atual:</label>
-    <input type="text" id="current" value="0.000" readonly>
-    
-    <button onclick="advanceTime()">Avançar</button>
-    
-    <div class="time-display" id="display">Tempo: 0.000s</div>
-  </div>
 
-  <script>
-    let currentTime = 0.000;
+<main>
+<section id="editSrt" class="column gap padding height">
+	<h2>Srt Editor</h2>
+    <div class="box column gap" id="save-area">
+      <div class="row gap width between">
+          <h3>💾 Salvar</h3>
+          <span id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+      </div>
+      <div class="row gap">
+          <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
+          <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
+          <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
+      </div>
+    </div><!--save-area-->
+      
+	<div id="subtitleName">
+    	<!-- Div para exibir o nome do arquivo da legenda -->
+	</div>
+    
+	<div class="video-container-relative" id="video-section-editor">
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+        <div class="row gap width" id="navigation-controls-previewMode" style="
+          position: absolute; /* Fixa em relação ao video-container-relative */
+          bottom: 70px; /* Distância do fundo do vídeo*/
+          left: 50%; /* Começa no meio */
+          transform: translateX(-50%);
+          z-index: 10;">
+            <button onclick="prevLine()">⏮︎</button>
+            <button onclick="playLine()">⏯︎</button>
+            <button onclick="nextLine()">⏭︎</button>
+        </div>
+	</div>
 
-    function advanceTime() {
-      const step = parseFloat(document.getElementById('step').value);
-      currentTime += step;
-      document.getElementById('current').value = currentTime.toFixed(3);
-      document.getElementById('display').innerText = `Tempo: ${currentTime.toFixed(3)}s`;
-    }
-  </script>
+	<div id="editor">
+	<div class="row gap width">
+    	<button id="btn-save" onclick="showSave()">💾</button>
+    	<button onclick="undo()">↩</button>
+    	<button onclick="redo()">↪</button>
+    	<button id="btn-config" onclick="showConfig()">⚙</button>
+    	<button onclick="addSegment()">|+</button>
+    	<button onclick="removeSegment()">|−</button>
+    	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
+	</div>
+    <form class="padding">
+      <label class="row gap width">
+          <textarea type="text" id="editText" rows="3"style="width: 90vw;"></textarea>
+      </label>
+    </form>
+	<form class="row gap padding width">
+      <label class="row gap">
+        <div class="column gap">
+          Início
+          <input type="text" id="editStart" placeholder="00:00:000">
+        </div>
+        <div class="column gap">
+          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
+        </div>
+      </label>
+      <label class="row gap">
+        <div class="column gap">
+          Fim
+          <input id="editEnd"  placeholder="00:00:000">
+        </div>
+        <div class="flex column gap">
+          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
+        </div>
+      </label>
+    </form>
+    </div><!--editor-->
+
+
+  
+  	<form class="box column gap width" id="config-area">
+  		<label class="row gap height">
+  			<p>Salto:</p>
+  			<input id="editStep" type="" step="0.1" min="0.01" oninput="updateTimeStep()" placeholder="0.050">
+  			<p>Lote:</p>
+  			<input id="editStack" placeholder="0.100">
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+  		</label>
+  		<div class="row gap">                      
+  			<select id="">
+  				<option name="opcao-linha" value="all" checked>Todas as linhas</option>
+  				<option name="opcao-linha" value="current">Linha atual</option>
+  				<option name="opcao-linha" value="from-current">Atual e próximas</option>
+  			</select>
+  			<button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
+  			<button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
+  		</div>
+      </form><!--config-area-->
+    <div class="column gap" id="segments-area">
+    	  <span>Lista de Legendas</span>
+        <div id="segments"></div>
+    </div>
+</section>
+</main>
+
+<script>
+    const video = document.getElementById("video");
+    const playBtn = document.getElementById("play");
+    const progress = document.getElementById("progress");
+    const volume = document.getElementById("volume");
+    const fullscreen = document.getElementById("fullscreen");
+
+    // Play / Pause
+    playBtn.addEventListener("click", () => {
+        if (video.paused) {
+            video.play();
+            playBtn.textContent = "⏸";
+        } else {
+            video.pause();
+            playBtn.textContent = "▶";
+        }
+    });
+
+    // Atualizar barra de progresso
+    video.addEventListener("timeupdate", () => {
+        progress.max = video.duration;
+        progress.value = video.currentTime;
+    });
+
+    // Buscar na barra
+    progress.addEventListener("input", () => {
+        video.currentTime = progress.value;
+    });
+
+    // Volume
+    volume.addEventListener("input", () => {
+        video.volume = volume.value;
+    });
+
+    // Tela cheia
+    fullscreen.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+            video.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    });
+</script>
 </body>
 </html>
