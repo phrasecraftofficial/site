@@ -1,6 +1,9 @@
 <!-- 
 step ok
 -->
+<!-- 
+loading ok
+-->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -634,7 +637,7 @@ label input[type="checkbox"] {
            
 		<form class="flex row gap" id="linhaForm"> 
            <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>                
-  			<select id="" style="width: 160px;">
+  			<select id="batchMode" id="" style="width: 160px;">
   				<option name="opcao-linha" value="all" checked>Todas as linhas</option>
   				<option name="opcao-linha" value="current">Linha atual</option>
   				<option name="opcao-linha" value="from-current">Atual e próximas</option>
@@ -2381,8 +2384,8 @@ function getCurrentStep() {
 }
 
 function shiftSelectedLines(delta) {
-  const selected = document.querySelector('input[name="opcao-linha"]:checked');
-  const value = selected ? selected.value : "current";
+  // --- Lendo o valor do Select ---
+  const value = document.getElementById("batchMode").value;
 
   const stateBefore = srtData.map(s => ({ ...s }));
   const prevSegment = currentSegment;
