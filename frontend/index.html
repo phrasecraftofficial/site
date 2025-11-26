@@ -1,4 +1,7 @@
 <!-- 
+step ok
+-->
+<!-- 
 loading ok
 -->
 <!DOCTYPE html>
@@ -33,7 +36,16 @@ section {
 section.active { 
 	display: block; 
 }
-
+/* Caixas internas */
+.box {
+    background: #1c1c1c;
+  	margin: 0 auto;
+    padding: 10px;
+    max-width: 600px;
+    min-width: 400px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #000;
+}
 /* Estilos gerais para Header e Footer */
 header, footer {
   position: fixed;
@@ -116,7 +128,7 @@ header {
  /*      Footer      */
 /* ===============  */
 #main-footer {
-  display: none;  /* <-- ADICIONE ISSO: Começa invisível */
+  display: none;  /* <-- Começa invisível */
   bottom: 0;
   height: 56px;
   border-top: 1px solid #222;
@@ -184,13 +196,13 @@ body.footer-hidden main {
   margin: 0 auto;
   flex-direction: column;
 }
-input, textarea {
+input, textarea, select {
     border: 1px solid #555; 
     border-radius: 4px; 
     padding: 10px 12px; 
     font-size: 14px; 
     width: 250px; 
-    max-width: 400px; 
+    max-width: ; 
     background-color: #121212; 
     color: #e0e0e0; 
     transition: border-color 0.2s ease; 
@@ -199,8 +211,8 @@ input:focus, textarea:focus {
     border-color: #3ea6ff; 
     outline: none; 
 }
-#editEnd, #editStart, #editStack {
-    width: 90px;
+#editEnd, #editStart, #editStack, #editStep {
+    width: 110px;
 }
 input[type="radio"] {
     width: 16px; 
@@ -566,6 +578,101 @@ label input[type="checkbox"] {
   </header>
 
 <main>
+  <section id="editSrt">
+    <div class="box" id="save-area">
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <p>💾 Salvar</p>
+        <div class="flex row gap">
+            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
+            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
+            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
+        </div>
+    </div><!--save-area-->
+      
+	<div id="subtitleName">
+    	<!-- Div para exibir o nome do arquivo da legenda -->
+	</div>
+    
+	<div class="video-container-relative" id="video-section-editor">
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+        <div class="flex row gap" id="navigation-controls-previewMode"  style="
+            position: absolute; /* Fixa em relação ao video-container-relative */
+            bottom: 70px; /* Distância do fundo do vídeo*/
+            left: 50%; /* Começa no meio */
+            transform: translateX(-50%);
+            z-index: 10;">
+            <button onclick="prevLine()">⏮︎</button>
+            <button onclick="playLine()">⏯︎</button>
+            <button onclick="nextLine()">⏭︎</button>
+        </div>
+	</div>
+
+	<div id="editor">
+	<div class="flex row gap">
+    	<button id="btn-save" onclick="showSave()">💾</button>
+    	<button onclick="undo()">↩</button>
+    	<button onclick="redo()">↪</button>
+    	<button id="btn-config" onclick="showConfig()">⚙</button>
+    	<button onclick="addSegment()">|+</button>
+    	<button onclick="removeSegment()">|−</button>
+    	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
+	</div>
+    <form>
+      <label class="flex row gap" >
+          <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
+      </label>
+    </form>
+	<div class="box column" id="config-area">
+		<form class="flex row">
+     		<label class="row gap">Lote
+           	<input id="editStack" placeholder="0.100">
+            </label>
+        	<span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+     		<label class="row gap">Salto
+           	<input id="editStep" type="" step="0.1" min="0.01" oninput="updateTimeStep()" placeholder="0.050">
+            </label>
+		</form>
+           
+		<form class="flex row gap" id="linhaForm"> 
+           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>                
+  			<select id="batchMode" id="" style="width: 160px;">
+  				<option name="opcao-linha" value="all" checked>Todas as linhas</option>
+  				<option name="opcao-linha" value="current">Linha atual</option>
+  				<option name="opcao-linha" value="from-current">Atual e próximas</option>
+  			</select>
+           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>     
+		</form>
+	</div><!--config-area-->
+	<form class="flex row gap" style="gap: 0; padding: 0;">
+      <label class="flex row gap" style="gap: 0; padding: 0;">
+        <div class="flex column gap" style="gap: 0; padding: 0;">
+          Início
+          <input type="text" id="editStart" placeholder="00:00:000">
+        </div>
+        <div class="flex column gap">
+          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
+        </div>
+      </label>
+      <label class="flex row gap" style="gap: 0; padding: 0;">
+        <div class="flex column gap" style="gap: 0; padding: 0;">
+          Fim
+          <input id="editEnd"  placeholder="00:00:000">
+        </div>
+        <div class="flex column gap">
+          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
+          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
+        </div>
+      </label>
+    </form>
+    </div><!--editor-->
+    <div class="segmentsArea flex column gap" id="segments-area">
+    	  <span>Lista de Legendas</span>
+        <div id="segments"></div>
+    </div>
+	</section>
     <!-- Seções -->
     <section id="home">
         <h2>Home</h2>
@@ -809,98 +916,7 @@ label input[type="checkbox"] {
   <!----------->
   <!--editSrt-->
   <!----------->
-  <section id="editSrt">
-    <div id="save-area">
-        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-        <p>💾 Salvar</p>
-        <div class="flex row gap">
-            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
-            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
-            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
-        </div>
-    </div><!--save-area-->
-      
-	<div id="subtitleName">
-    	<!-- Div para exibir o nome do arquivo da legenda -->
-	</div>
-    
-	<div class="" id="video-section-editor">
-		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
-			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-		</video>
-	</div>
 
-	<div id="editor">
-	<div class="flex row gap">
-    	<button id="btn-save" onclick="showSave()">💾</button>
-    	<button onclick="undo()">↩</button>
-    	<button onclick="redo()">↪</button>
-    	<button id="btn-config" onclick="showConfig()">⚙</button>
-    	<button onclick="addSegment()">|+</button>
-    	<button onclick="removeSegment()">|−</button>
-    	<button id="btn-load" onclick="showSection('postLesson')">👉</button>
-	</div>
-	<form class="flex row gap" style="gap: 0; padding: 0;">
-      <label class="flex row gap" style="gap: 0; padding: 0;">
-        <div class="flex column gap" style="gap: 0; padding: 0;">
-          Início
-          <input type="text" id="editStart" placeholder="00:00:000">
-        </div>
-        <div class="flex column gap">
-          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
-          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
-        </div>
-      </label>
-      <label class="flex row gap" style="gap: 0; padding: 0;">
-        <div class="flex column gap" style="gap: 0; padding: 0;">
-          Fim
-          <input id="editEnd"  placeholder="00:00:000">
-        </div>
-        <div class="flex column gap">
-          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
-          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
-        </div>
-      </label>
-    </form>
-    <form>
-      <label class="flex row gap">Texto
-          <textarea type="text" id="editText" rows="3"></textarea>
-      </label>
-    </form>
-    </div><!--editor-->
-    <div class="flex row gap" id="navigation-controls-previewMode">
-		<button onclick="prevLine()">⏮︎</button>
-		<button onclick="playLine()">⏯︎</button>
-		<button onclick="nextLine()">⏭︎</button>
-	</div>
-	<div class="column-area" id="config-area">
-        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-     	<p>⚙ Editar em lote</p>
-         <form class="flex row gap">
-           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
-           <input id="editStack" placeholder="0.05">
-           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>
-		</form>
-		<form class="flex column gap" id="linhaForm" style="width: 300px;">
-			<label class="radio-option" style="align-self: flex-start;">
-				<input type="radio" name="opcao-linha" value="all" checked>
-				Todas as linhas
-			</label>
-			<label class="radio-option" style="align-self: flex-start;">
-				<input type="radio" name="opcao-linha" value="current">
-				Apenas linha atual
-			</label>
-			<label class="radio-option" style="align-self: flex-start;">
-				<input type="radio" name="opcao-linha" value="from-current">
-				Linha selecionada e próximas linhas
-			</label>
-		</form>
-	</div><!--config-area-->
-    <div class="segmentsArea flex column gap" id="segments-area">
-    	  <span>Lista de Legendas</span>
-        <div id="segments"></div>
-    </div>
-	</section>
   </main>  
 
   <footer id="main-footer">
@@ -2105,6 +2121,17 @@ function adjustTime(field, deltaSeconds) {
   renderSegments();
 }
 
+function updateTimeStep() {
+  const input = document.getElementById("editStep");
+  // Substitui vírgula por ponto para garantir compatibilidade numérica
+  let val = parseFloat(input.value.replace(',', '.'));
+  
+  // Verifica se é um número válido e maior que 0
+  if (!isNaN(val) && val > 0) {
+    TIME_STEP = val;
+  }
+}
+
 function shiftTime(timeStr, delta) {
   // "00:00:04,500" → soma delta (em segundos)
   const [h, m, rest] = timeStr.split(":");
@@ -2357,8 +2384,8 @@ function getCurrentStep() {
 }
 
 function shiftSelectedLines(delta) {
-  const selected = document.querySelector('input[name="opcao-linha"]:checked');
-  const value = selected ? selected.value : "current";
+  // --- Lendo o valor do Select ---
+  const value = document.getElementById("batchMode").value;
 
   const stateBefore = srtData.map(s => ({ ...s }));
   const prevSegment = currentSegment;
