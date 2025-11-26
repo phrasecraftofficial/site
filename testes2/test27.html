@@ -39,6 +39,7 @@ section.active {
   	margin: 0 auto;
     padding: 10px;
     max-width: 600px;
+    min-width: 400px;
     border-radius: 8px;
     box-shadow: 0 0 10px #000;
 }
@@ -192,7 +193,7 @@ body.footer-hidden main {
   margin: 0 auto;
   flex-direction: column;
 }
-input, textarea {
+input, textarea, select {
     border: 1px solid #555; 
     border-radius: 4px; 
     padding: 10px 12px; 
@@ -625,20 +626,20 @@ label input[type="checkbox"] {
      		<label class="row gap">Lote
            	<input id="editStack" placeholder="0.100">
             </label>
+        	<span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
      		<label class="row gap">Salto
            	<input id="editStep" type="" step="0.1" min="0.01" oninput="updateTimeStep()" placeholder="0.050">
             </label>
-        	<span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
 		</form>
            
 		<form class="flex row gap" id="linhaForm"> 
-           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>
-           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>                     
-  			<select id="">
+           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>                
+  			<select id="" style="width: 160px;">
   				<option name="opcao-linha" value="all" checked>Todas as linhas</option>
   				<option name="opcao-linha" value="current">Linha atual</option>
   				<option name="opcao-linha" value="from-current">Atual e próximas</option>
   			</select>
+           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>     
 		</form>
 	</div><!--config-area-->
 	<form class="flex row gap" style="gap: 0; padding: 0;">
