@@ -1,27 +1,5 @@
-<!-- 37
-Resumo das Mudanças
-✅ O que foi adicionado:
-
-Dexie DB para armazenar múltiplos rascunhos
-saveDraftIfEditable() - salvamento inteligente
-Indicadores visuais com botões ✔️ e ✖️
-Event listeners para gerenciar rascunhos
-Limpeza automática após postagem
-
-✅ O que foi reutilizado:
-
-handleEditLesson() (apenas expandido)
-renderThumbnailsFromCache() (adiciona verificação)
-previewLesson() (sem alterações)
-Toda estrutura de carregamento existente
-
-✅ O que foi removido:
-
-STORAGE_SRT_KEY constante
-loadSrtFromLocal() função
-Limpeza manual do localStorage
-
-O sistema agora suporta múltiplos rascunhos vinculados, protege contra uploads manuais e mantém a UX fluida!
+<!-- 38
+racunho e barra de progresso reposicionados de acordo com o video
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -276,27 +254,28 @@ button:hover {
 .video-section, .thumb-section { 
   width: 100%;
   height: auto;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative; /* Garante que filhos absolutos fiquem aqui dentro */
 }
 
 video, .thumb-section img {
   max-height: 400px;
-  max-width: 600px;
-  width: 100%;
+  width: 100%; 
   display: block;
-  margin: 0 auto;
+  object-fit: cover; /* Garante que a imagem preencha bem */
 }
-/* info-content */
+
+/* Garante que os textos e botões abaixo do vídeo sigam o mesmo alinhamento */
 .info-content {
   display: flex;
   justify-content: space-between;
-  padding: 0 5px 0 5px;
   align-items: center;
-  margin: 0 10px 8px;
-  font-size: 12px;
-  max-height: 400px;
-  max-width: 600px;
   width: 100%;
-  margin: 0 auto;
+  max-width: 600px; /* Mesmo limite da thumb */
+  margin: 8px auto; /* Centraliza */
+  padding: 0 5px;
+  box-sizing: border-box; /* Garante que padding não estoure a largura */
 }
 
 /* Texto do vídeo */
@@ -560,7 +539,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.37</span>
+        <span>PhraseCraft v0.38</span>
       </div>
     </div>
     
@@ -617,7 +596,7 @@ label input[type="checkbox"] {
 			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
 		</video>
         <div class="flex row gap" id="navigation-controls-previewMode"  style="
-            position: absolute; /* Fixa em relação ao video-container-relative */
+            position: fixed; /* Fixa em relação ao video-container-relative */
             top: 1px; /* Distância do fundo do vídeo*/
             left: 50%; /* Começa no meio */
             transform: translateX(-50%);
@@ -3555,6 +3534,7 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                     background: linear-gradient(45deg,rgba(0, 3, 43, 1) 0%, rgba(63, 0, 163, 1) 33%, rgba(0, 3, 43, 1) 66%, rgba(255, 255, 255, 0) 100%);
                     width: ${progressPercentage}%;
                     border-radius: 2px;
+                    z-index: 2; /* Garante que fique acima da imagem */
                 "></div>
             `;
         }
@@ -3583,20 +3563,19 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                         minute: '2-digit'
                     });
                     
-                    draftIndicatorHTML = `
-                        <div style="
+                    draftIndicatorHTML = `<div style="
                             position: absolute;
-                            top: 8px;
-                            left: 8px;
-                            background: rgba(255, 152, 0, 0.95);
-                            color: #000;
+                            bottom: 8px;
+                            right: 8px;
+                            background: rgba(255, 182, 73, 0.3); color: #FCEACF;
+                            color: #fceacf;
                             padding: 4px 8px;
                             border-radius: 4px;
-                            font-size: 11px;
+                            font-size: 12px;
                             font-weight: bold;
                             display: flex;
                             align-items: center;
-                            gap: 6px;
+                            gap: 10px;
                             z-index: 10;
                         ">
                             💾 Rascunho (${draftDate})
@@ -3604,13 +3583,13 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                                 class="btn-continue-draft" 
                                 data-basename="${baseName}"
                                 style="
-                                    background: #4caf50;
+                                    background: rgba(76, 175, 80, 0.4);
                                     border: none;
                                     color: white;
                                     padding: 2px 6px;
                                     border-radius: 3px;
                                     cursor: pointer;
-                                    font-size: 10px;
+                                    font-size: 12px;
                                 "
                                 title="Continuar editando">
                                 ✔️
@@ -3619,13 +3598,13 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                                 class="btn-discard-draft" 
                                 data-basename="${baseName}"
                                 style="
-                                    background: #f44336;
+                                    background: rgba(244, 67, 54, 0.4);
                                     border: none;
                                     color: white;
                                     padding: 2px 6px;
                                     border-radius: 3px;
                                     cursor: pointer;
-                                    font-size: 10px;
+                                    font-size: 12px;
                                 "
                                 title="Descartar rascunho">
                                 ✖️
@@ -3648,8 +3627,8 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
         thumbSection.style.cursor = 'pointer';
         thumbSection.style.position = 'relative';
         thumbSection.innerHTML = `
-            ${draftIndicatorHTML}
             <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+            ${draftIndicatorHTML}
             ${progressBarHTML}
         `;
         
