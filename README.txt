@@ -1,5 +1,7 @@
 # site
 
+Fluxo para tanto para thumb quanto para srt e video: consulta cache arquivos e nome, consulta links e nomes no aw, baixa arquivos do bb, salva arquivos e nomes no cache,
+
 criar documento editingLessons
 Adicionar toggle 'em edicao' ou colocar em edicao automaticamente ao clicar em editar e exibir alert 'Ao continuar, essa licao nao ficara mais disponivel para partidas ate que seja postada novamente. Deseja continuar?'
 antes de carregar licoes consulta documento para nao exibir licoes com status 'editing'
