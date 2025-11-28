@@ -1,18 +1,20 @@
 <!-- 
-O que acontece agora?
-Oponente entra em Desafios: Carrega a lista inicial e se conecta ao canal do Lobby.
+O erro ocorre porque window.currentMatch não 
+está sendo definido corretamente no showMultiPreview
 
-Host na Home: O Host desiste e sai (ou fecha a aba). 
-O Appwrite deleta o documento (graças à função que fizemos no passo anterior).
+A função updateElementForSection 
+precisa cobrir todos os casos
 
-Evento Realtime: O navegador do Oponente recebe o evento .delete.
+Correção no handleMatchUpdate com tratamento 
+para quando o oponente está em preview e o host sai:
 
-Atualização Instantânea: O código remove aquela partida do 
-lobbyMatches e chama renderThumbnailsFromCache imediatamente. 
-A partida some da frente do Oponente antes que ele possa clicar nela.
+O fluxo:
 
-Lista Vazia: Se for a única partida, a função renderThumbnailsFromCache 
-já sabe mostrar a mensagem "Nenhum desafio encontrado" automaticamente.
+ ✅ Host cria desafio → Vai para challenge, lobby visível
+ ✅ Oponente clica no card → showMultiPreview() → Define window.currentMatch
+ ✅ Oponente clica "Aceitar" → startMultiMode() → Lê window.currentMatch
+ ✅ Host sai do lobby → handlePlayerLeavingMatch() deleta a partida
+ ✅ Oponente recebe evento delete → Volta para challenge com alerta
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -551,7 +553,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft</span>
+        <span>PhraseCraft v0.36</span>
       </div>
     </div>
     
@@ -1163,21 +1165,40 @@ async function showSection(sectionId) {
  */
 async function updateElementForSection(sectionId) {
   
-  // Detecta saída de 'play' OU 'challenge' (lobby) se houver uma partida ativa
-  // Reutiliza handlePlayerLeavingMatch para limpar tudo
-  if ((appState.currentSection === 'play' || appState.currentSection === 'challenge') && 
-       sectionId !== appState.currentSection && 
-       currentMatchId) {
-       
-    console.log("🚪 Jogador abandonando partida ou lobby...");
-    await handlePlayerLeavingMatch();
+  // --- 1. LÓGICA DE SAÍDA / ENCERRAMENTO ---
+  const isLeavingChallenge = appState.currentSection === 'challenge' && sectionId !== 'challenge';
+  const isLeavingPlay = appState.currentSection === 'play' && sectionId !== 'play';
+  const isLeavingEditSrt = appState.currentSection === 'editSrt' && sectionId !== 'editSrt';
+  
+  // ✅ CASO 1: HOST sai do Lobby (challenge) para outra seção (que não seja play)
+  if (isLeavingChallenge && currentMatchId && sectionId !== 'play') {
+      console.log("🚪 Host saindo do Lobby sem aceitar...");
+      await handlePlayerLeavingMatch();
+  }
+  
+  // ✅ CASO 2: HOST sai de PLAY para qualquer outra seção → Abandona
+  if (isLeavingPlay && currentMatchId) {
+      console.log("🚪 Host abandonando partida em andamento...");
+      await handlePlayerLeavingMatch();
+  }
+  
+  // ✅ CASO 3: OPONENTE sai de PLAY → Abandona
+  if (isLeavingPlay && currentMatchId) {
+      console.log("🚪 Oponente abandonando partida...");
+      await handlePlayerLeavingMatch();
+  }
+  
+  // ✅ CASO 4: OPONENTE sai do Preview (editSrt) → Apenas cancela escuta
+  if (isLeavingEditSrt && !currentMatchId && window.unsubscribeFromMatch) {
+      console.log("🔕 Oponente saiu do preview. Cancelando escuta.");
+      window.unsubscribeFromMatch();
+      window.unsubscribeFromMatch = null;
+      window.currentMatch = null;
   }
 
-  // Oculta elementoss do header em play
-  if (!iconsRight || !textArea)
-  return; // segurança caso não existam
+  // --- 2. CONFIGURAÇÃO VISUAL PADRÃO (mantém como está) ---
+  if (!iconsRight || !textArea) return; 
   
-  // --- LÓGICA DE OCULTAR PLAYLIST ---
   if (sectionId !== "postLesson" && typeof hideAddPlaylistArea === 'function') {
       hideAddPlaylistArea();
   }
@@ -1192,68 +1213,54 @@ async function updateElementForSection(sectionId) {
     performanceArea.style.display = "none";
   }
 
-  // Manipula elementoss do footer
   if (mainNavSections.includes(sectionId)) {
     showMainNavigation();
   } 
   
-  // LÓGICA DO LOBBY
+  // --- 3. CONTROLE DO LOBBY (mantém como está) ---
   const lobby = document.getElementById('lobby');
-  if (sectionId !== 'challenge') {
-    if (lobby) {
-      lobby.style.display = 'none';
-    }
+  
+  if (sectionId === 'challenge') {
+      if (lobby) lobby.style.display = 'block';
+      subscribeToLobby();
+      
+      showLoading('Carregando desafios...'); 
+      const matches = await searchMatchesOnServer();
+      await renderThumbnailsFromCache(sectionId, matches);
+      await waitForThumbnailsToRender(sectionId);
+      hideLoading();
+
+  } else {
+      if (lobby) lobby.style.display = 'none';
+      
+      if (lobbyUnsubscribe) {
+          console.log("🔕 Saindo da lista de desafios. Desligando Lobby.");
+          lobbyUnsubscribe();
+          lobbyUnsubscribe = null;
+      }
   }
     
-  // ⚠️ SÓ RENDERIZA SE NÃO FOR DURANTE A INICIALIZAÇÃO
-  // --- LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
-  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId) && appState.currentSection !== null) {
-    
-    // Se for Challenge, liga o Realtime
-    if (sectionId === 'challenge') {
-        showLoading('Carregando thumbnails...'); 
-        console.log("📡 Buscando partidas do servidor...");
-        
-        // 1. Busca inicial
-        const matches = await searchMatchesOnServer();
-        await renderThumbnailsFromCache(sectionId, matches);
-        
-        // 2. Liga a inscrição Realtime do Lobby
-        subscribeToLobby();
-        
-        await waitForThumbnailsToRender(sectionId);
-    } else {
-        // Se NÃO for challenge, desliga o Realtime do Lobby para economizar recurso
-        if (lobbyUnsubscribe) {
-            console.log("🔕 Saindo do Lobby, desligando realtime.");
-            lobbyUnsubscribe();
-            lobbyUnsubscribe = null;
-        }
-
-        // ... (Lógica normal das outras seções continua aqui: loadLessonsToCache, etc)
-        console.log("📦 Usando cache local de lições");
-        if (!isCacheLoaded) {
-            await loadLessonsToCache();
-        }
-        await renderThumbnailsFromCache(sectionId, lessonsCache);
-        await waitForThumbnailsToRender(sectionId);
+  // --- 4. CARREGAMENTO DE OUTRAS SEÇÕES (mantém como está) ---
+  if (SECTIONS_WITH_THUMBNAILS.includes(sectionId) && sectionId !== 'challenge' && appState.currentSection !== null) {
+    showLoading('Carregando...');
+    console.log("📦 Usando cache local de lições");
+    if (!isCacheLoaded) {
+        await loadLessonsToCache();
     }
-    
+    await renderThumbnailsFromCache(sectionId, lessonsCache);
+    await waitForThumbnailsToRender(sectionId);
     hideLoading();
   }
-  // --- FIM LÓGICA DE RENDERIZAÇÃO DE THUMBNAILS ---
 
+  // --- 5. PLAY (mantém como está) ---
   if (sectionId === 'play' && lessonsCache.length > 0) {
     requestAnimationFrame(() => {
         if (srtData.length > 0) {
             resetAccumulatedPerformance();
             currentSegmentIndex = 0;
             injectFirstSegmentShuffled();
-        } else {
-            console.error("Não há lições no cache para iniciar o modo Play.");
         }
     });
-    console.log(`➡️ Usuário redirecionado para a tela de Play.`);
   }
 }
 
@@ -1359,7 +1366,7 @@ function showMultiPreview(match) {
     setEditorMode('previewMulti');    
 
     // 1. Carrega o SRT da lição
-    const associatedLesson = lessonsCache.find(l => l.baseName === match.extraData.lessonName);
+    const associatedLesson = lessonsCache.find(l => l.baseName === match.baseName); // CORREÇÃO: usar match.baseName
 
     if (associatedLesson) {
         previewLesson(associatedLesson);
@@ -1367,17 +1374,18 @@ function showMultiPreview(match) {
         alert("Lição associada a este desafio não encontrada no cache.");
     }
     
-    // 2. Armazena os dados da partida
+    // 2. ✅ CORREÇÃO: Armazena TODOS os dados necessários
     window.currentMatch = {
         matchId: match.matchId,
         hostId: match.hostId,
-        lessonName: match.extraData.lessonName,
-        status: match.extraData.status,
+        lessonName: match.baseName, // CORREÇÃO: usar match.baseName em vez de match.extraData.lessonName
+        status: match.extraData?.status || 'waiting', // CORREÇÃO: fallback seguro
         thumbFileId: match.thumb.fileId
     };
     
-    // 3. 🚨 OTIMIZAÇÃO: Se inscreve IMEDIATAMENTE para saber se o Host desiste
-    // (Armazenamos na variável global para poder cancelar depois se sair da tela)
+    console.log("✅ Partida armazenada em window.currentMatch:", window.currentMatch); // LOG PARA DEBUG
+    
+    // 3. Se inscreve para saber se o Host desiste
     window.unsubscribeFromMatch = subscribeToMatchUpdates(match.matchId);
     
     showSection('editSrt');
@@ -4939,24 +4947,22 @@ async function joinMatchOnServer(matchId, dataPayload = null) {
  * AGORA REAGE AO AVANÇO DE SENTENÇA.
  */
 async function handleMatchUpdate(payload) {
-    // --- 🚨 DETECTAR DESISTÊNCIA DO HOST ---
+    // --- DETECTAR DESISTÊNCIA DO HOST ---
     if (payload.status === 'deleted_by_host') {
         console.log("🚫 O Host excluiu a partida.");
         
+        // ✅ CORREÇÃO: Verifica AMBAS as seções (editSrt e challenge)
         if (appState.currentSection === 'editSrt' || appState.currentSection === 'challenge') {
             alert("O Host cancelou esta partida.");
             
-            // Limpa variáveis
             currentMatchId = null;
             window.currentMatch = null;
-            if (window.unsubscribeFromMatch) window.unsubscribeFromMatch();
+            if (window.unsubscribeFromMatch) {
+                window.unsubscribeFromMatch();
+                window.unsubscribeFromMatch = null;
+            }
 
-            // Volta para a lista de desafios
-            // AQUI: showSection já vai buscar a lista vazia no servidor
             showSection('challenge');
-            
-            // REMOVA ESTA LINHA: refreshLessonsCache(); 
-            // Motivo: Ela carrega lições, não partidas, e causa confusão no log.
         }
         return;
     }
@@ -5235,44 +5241,26 @@ async function deleteExistingMatches() {
  * Lida com a saída de um jogador da partida em andamento
  */
 async function handlePlayerLeavingMatch() {
-  if (!currentMatchId) {
-    console.log("Nenhuma partida ativa para processar saída");
-    return;
-  }
+  if (!currentMatchId) return;
 
-  console.log(`🚪 Saindo da partida: ${currentMatchId}`);
+  console.log(`🚪 Processando saída da partida: ${currentMatchId}`);
   
   try {
-    // Busca o estado atual da partida
+    // Busca o estado atual para decidir o que fazer
     const match = await databases.getDocument(
       DATABASE_ID,
       MATCHES_COLLECTION_ID,
       currentMatchId
     );
     
-    if (match.status === 'left') {
-      // Segundo jogador a sair - DELETA a partida
-      console.log("🗑️ Segundo jogador saindo - Deletando partida");
-      await databases.deleteDocument(
-        DATABASE_ID,
-        MATCHES_COLLECTION_ID,
-        currentMatchId
-      );
-      console.log("✅ Partida deletada com sucesso");
-      
-    } else if (match.status === 'playing') {
-      // Jogador saindo durante o jogo
-      console.log("⚠️ Jogador saindo do jogo - Atualizando status para 'left'");
-      await databases.updateDocument(
-        DATABASE_ID,
-        MATCHES_COLLECTION_ID,
-        currentMatchId,
-        { status: 'left' }
-      
-      );
-      console.log("✅ Status atualizado para 'left'");
-      
-    // ---  Deleta se estiver apenas esperando (Lobby) ---
+    // CASO 1: Partida já estava abandonada ou finalizada
+    if (match.status === 'left' || match.status === 'finished') {
+       // Apenas limpa localmente, talvez deletar se for o último
+       if (match.status === 'left') {
+           await databases.deleteDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+       }
+    
+    // CASO 2: Host sai enquanto aguarda (Lobby) -> DELETA TUDO
     } else if (match.status === 'waiting') {
       console.log("🗑️ Host desistiu do Lobby - Deletando partida");
       await databases.deleteDocument(
@@ -5280,15 +5268,27 @@ async function handlePlayerLeavingMatch() {
         MATCHES_COLLECTION_ID,
         currentMatchId
       );
+
+    // CASO 3: Jogo em andamento -> Marca como ABANDONADO ('left')
+    } else if (match.status === 'playing') {
+      console.log("⚠️ Jogador saindo do jogo - Atualizando status para 'left'");
+      await databases.updateDocument(
+        DATABASE_ID,
+        MATCHES_COLLECTION_ID,
+        currentMatchId,
+        { status: 'left' }
+      );
     }
     
   } catch (error) {
-    console.error("❌ Erro ao processar saída da partida:", error);
+    // Se der erro 404 (documento não encontrado), significa que já foi deletado.
+    // Apenas ignoramos e limpamos o estado local.
+    console.warn("⚠️ Aviso na saída (provavelmente já deletado):", error.message);
   } finally {
-    // Limpa variáveis locais
+    // Limpeza Local OBRIGATÓRIA
     currentMatchId = null;
+    window.currentMatch = null;
     
-    // Para de escutar o Realtime
     if (window.unsubscribeFromMatch) {
       window.unsubscribeFromMatch();
       window.unsubscribeFromMatch = null;
