@@ -2,6 +2,28 @@
 
 Fluxo para tanto para thumb quanto para srt e video: consulta cache arquivos e nome, consulta links e nomes no aw, baixa arquivos do bb, salva arquivos e nomes no cache,
 
+Estratégia recomendada
+Lazy loading nativo (loading="lazy): simples e eficiente para a maioria dos casos.
+
+IntersectionObserver + Paginação infinita: se você tem MUITAS thumbs (milhares), vale dividir em lotes:
+
+Carrega 20–30 por vez.
+
+Quando o usuário chega perto do fim, busca mais via AJAX/Fetch.
+
+Isso evita até mesmo renderizar 100 elementos no DOM de uma vez.
+
+📊 Exemplo de fluxo com 100 thumbs
+Página inicial: renderiza 20 thumbs.
+
+Scroll até 50% da tela: carrega mais 20.
+
+Scroll até 80%: carrega mais 20.
+
+Se o usuário nunca chegar ao fim, talvez só 40–60 imagens sejam carregadas, mesmo que existam 100+.
+
+👉 Ou seja: lazy loading sozinho já resolve se você renderizar todas as thumbs no HTML, mas só carregar conforme aparecem. Se você quiser otimizar ainda mais, combine com scroll infinito para não renderizar centenas de elementos desnecessários no DOM.
+
 criar documento editingLessons
 Adicionar toggle 'em edicao' ou colocar em edicao automaticamente ao clicar em editar e exibir alert 'Ao continuar, essa licao nao ficara mais disponivel para partidas ate que seja postada novamente. Deseja continuar?'
 antes de carregar licoes consulta documento para nao exibir licoes com status 'editing'
