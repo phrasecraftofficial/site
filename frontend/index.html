@@ -1,21 +1,27 @@
-<!-- 
-v0.36
-O erro ocorre porque window.currentMatch não 
-está sendo definido corretamente no showMultiPreview
+<!-- 37
+Resumo das Mudanças
+✅ O que foi adicionado:
 
-A função updateElementForSection 
-precisa cobrir todos os casos
+Dexie DB para armazenar múltiplos rascunhos
+saveDraftIfEditable() - salvamento inteligente
+Indicadores visuais com botões ✔️ e ✖️
+Event listeners para gerenciar rascunhos
+Limpeza automática após postagem
 
-Correção no handleMatchUpdate com tratamento 
-para quando o oponente está em preview e o host sai:
+✅ O que foi reutilizado:
 
-O fluxo:
+handleEditLesson() (apenas expandido)
+renderThumbnailsFromCache() (adiciona verificação)
+previewLesson() (sem alterações)
+Toda estrutura de carregamento existente
 
- ✅ Host cria desafio → Vai para challenge, lobby visível
- ✅ Oponente clica no card → showMultiPreview() → Define window.currentMatch
- ✅ Oponente clica "Aceitar" → startMultiMode() → Lê window.currentMatch
- ✅ Host sai do lobby → handlePlayerLeavingMatch() deleta a partida
- ✅ Oponente recebe evento delete → Volta para challenge com alerta
+✅ O que foi removido:
+
+STORAGE_SRT_KEY constante
+loadSrtFromLocal() função
+Limpeza manual do localStorage
+
+O sistema agora suporta múltiplos rascunhos vinculados, protege contra uploads manuais e mantém a UX fluida!
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -554,7 +560,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.36</span>
+        <span>PhraseCraft v0.37</span>
       </div>
     </div>
     
@@ -957,9 +963,6 @@ label input[type="checkbox"] {
 // 1. A variável "estado" (começa como 'editor')
 let currentEditMode = 'editor';  
 
-// Chave para salvar Srt no navegador
-const STORAGE_SRT_KEY = 'phrasecraft_autosave_srt';
-
 // Variável para controlar se já está carregando
 let isLoadingThumbnails = false;
 
@@ -1087,6 +1090,12 @@ let currentMatchId = null; // Armazena o ID da partida atual
 // Variáveis Globais para o Lobby
 let lobbyUnsubscribe = null;
 const lobbyMatches = new Map();
+
+// Configuração do Dexie para armazenar múltiplos rascunhos
+const db = new Dexie('PhraseCraftDB');
+db.version(1).stores({
+  drafts: 'baseName, srtData, lastModified, videoPosition'
+});
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --------------- Bloco Fx ----------------
@@ -1699,19 +1708,20 @@ async function handleEditLesson(lesson) {
     console.log("✎ Editando lição:", lesson.baseName);
     
     try {
-        // 1. ✅ CORREÇÃO: Verifica se existe rascunho ANTES de carregar do servidor
-        const hasDraft = localStorage.getItem(STORAGE_SRT_KEY);
+        // ✅ NOVO: Verifica se existe rascunho no Dexie
+        const draft = await db.drafts.get(lesson.baseName);
 
-        if (hasDraft) {
-            // Pergunta ao usuário se quer usar o rascunho
-            const useDraft = confirm(`Existe uma versão editada não salva (rascunho) para "${lesson.baseName}".\n\nDeseja restaurá-la?`);
+        if (draft) {
+            const useDraft = confirm(
+                `Existe uma versão editada não salva (rascunho) para "${lesson.baseName}".\n\n` +
+                `Última modificação: ${new Date(draft.lastModified).toLocaleString()}\n\n` +
+                `Deseja restaurá-la?`
+            );
             
             if (useDraft) {
-                // 1a. Se SIM: Carrega APENAS vídeo e thumb do servidor, mantém SRT do localStorage
-                showLoading('Preparando área de edição...');
-                console.log("♻️ Usuário escolheu restaurar o rascunho");
+                showLoading('Restaurando rascunho...');
                 
-                // Carrega vídeo e thumbnail (sem tocar no SRT)
+                // Carrega vídeo e thumbnail
                 if (lesson.video) {
                     const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
                     
@@ -1733,54 +1743,50 @@ async function handleEditLesson(lesson) {
                     }
                 }
                 
-                // Carrega thumbnail
                 if (lesson.thumb) {
                     const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
                     updateAllThumbnails(thumbUrl);
                     appState.thumbnail.url = thumbUrl;
                 }
                 
-                // 1b. Restaura o SRT do localStorage
-                const loaded = loadSrtFromLocal();
-                if (loaded) {
-                    showLoading('Restaurarando rascunho...');
-                    console.log("✅ Rascunho local restaurado com sucesso.");
-                } else {
-                    console.warn("⚠️ Falha ao restaurar rascunho, carregando do servidor...");
-                    // Se falhar, carrega do servidor como fallback
-                    await loadSrtFromServer(lesson);
-                }
+                // ✅ Restaura SRT do rascunho
+                srtData.length = 0;
+                srtData.push(...draft.srtData);
+                
+                // ✅ Restaura posição do vídeo
+                requestAnimationFrame(() => {
+                    const videoPlayer = document.getElementById("videoPlayer-editSrt");
+                    if (videoPlayer && draft.videoPosition) {
+                        videoPlayer.currentTime = draft.videoPosition;
+                    }
+                });
+                
+                console.log("✅ Rascunho restaurado");
                 
             } else {
-                // 1c. Se NÃO: Carrega tudo do servidor (versão original)
-                console.log("🔄 Usuário preferiu a versão original do servidor");
-                await previewLesson(lesson); // Carrega tudo normalmente
+                // Usuário recusou o rascunho, carrega do servidor
+                console.log("🔄 Carregando versão original do servidor");
+                await previewLesson(lesson);
                 
-                // Opcional: Limpa o rascunho antigo para não perguntar novamente
-                localStorage.removeItem(STORAGE_SRT_KEY);
-                console.log("🧹 Rascunho antigo limpo.");
+                // ✅ Limpa o rascunho antigo
+                await db.drafts.delete(lesson.baseName);
+                console.log("🧹 Rascunho antigo descartado.");
             }
         } else {
-            // 2. Se NÃO há rascunho: Carrega tudo do servidor normalmente
-            console.log("📦 Nenhum rascunho encontrado, carregando do servidor...");
+            // Sem rascunho, carrega normalmente
+            console.log("📦 Nenhum rascunho, carregando do servidor...");
             await previewLesson(lesson);
         }
 
-        // 3. Configura a interface para o modo de edição
+        // Configura interface
         hideFooter();
         setEditorMode('editor');
         showSection('editSrt');
-        
-        // 4. Garante que os segmentos (seja do server ou do local) sejam renderizados
         renderSegments();
 
-        // 5. Atualiza o nome do arquivo na UI para referência
         if (lesson.srt && lesson.srt.fileName) {
             appState.subtitle.name = lesson.srt.fileName;
             document.getElementById("subtitleName").textContent = lesson.srt.fileName;
-        } else {
-            // 2. Se NÃO há rascunho: Carrega tudo do servidor normalmente
-            console.log("Erro ao atualizar nome do arquivo");
         }
 
         hideLoading();
@@ -1788,6 +1794,7 @@ async function handleEditLesson(lesson) {
     } catch (error) {
         console.error("Erro ao preparar edição:", error);
         alert('Falha ao carregar lição para edição: ' + error.message);
+        hideLoading();
     }
 }
 
@@ -2088,31 +2095,71 @@ let subtitleName = "legendas.srt";  // Nome padrão caso não seja carregado nen
 // ====================================
 function renderSegments() {
   const container = document.getElementById("segments");
-  container.innerHTML = "";  // Limpa a lista de segmentos
+  container.innerHTML = "";
 
   srtData.forEach(seg => {
     const div = document.createElement("div");
     div.className = "segment";
     div.setAttribute('data-id', seg.id);
     
-    // Adiciona classe ao segmento selecionado
     if (seg.id === currentSegment?.id) {
       div.classList.add("segment-selected");
     }
     
-    // Define o conteúdo do segmento
     div.innerHTML = `<b>${seg.id}</b> [${seg.start} → ${seg.end}]<br>${seg.text}`;
-    
-    // Define a ação de clicar no segmento
     div.onclick = () => openEditor(seg.id);
     
-    // Adiciona o segmento ao container
     container.appendChild(div);
   });
   
-  // salvamento automático no localStorage do navegador
-  localStorage.setItem(STORAGE_SRT_KEY, JSON.stringify(srtData));
-  console.log('💾 Legenda salva automaticamente localStorage do navegador.');
+  // ✅ NOVO: Salvamento inteligente baseado na origem
+  saveDraftIfEditable();
+}
+
+/**
+ * ✅ NOVA FUNÇÃO: Salva rascunho apenas se for lição editável do cache/servidor
+ */
+async function saveDraftIfEditable() {
+  // Bloqueia salvamento nas seguintes situações:
+  const blockSections = ['create', 'challenge']; // Upload manual
+  
+  if (blockSections.includes(appState.currentSection)) {
+    console.log('🚫 Salvamento bloqueado: Lição de upload manual');
+    return;
+  }
+  
+  // Verifica se há um baseName válido
+  const baseName = appState.subtitle.name?.replace(/\.srt$/i, '');
+  
+  if (!baseName || baseName === 'legendas') {
+    console.log('🚫 Salvamento bloqueado: Nome inválido');
+    return;
+  }
+  
+  // Verifica se a lição está no cache (vem do servidor)
+  const lessonInCache = lessonsCache.find(l => l.baseName === baseName);
+  
+  if (!lessonInCache) {
+    console.log('🚫 Salvamento bloqueado: Lição não está no cache');
+    return;
+  }
+  
+  // ✅ TUDO CERTO: Salva o rascunho
+  try {
+    const videoPlayer = document.getElementById("videoPlayer-editSrt");
+    const videoPosition = videoPlayer?.currentTime || 0;
+    
+    await db.drafts.put({
+      baseName: baseName,
+      srtData: JSON.parse(JSON.stringify(srtData)), // Deep clone
+      lastModified: Date.now(),
+      videoPosition: videoPosition
+    });
+    
+    console.log(`💾 Rascunho salvo: ${baseName}`);
+  } catch (error) {
+    console.error('❌ Erro ao salvar rascunho:', error);
+  }
 }
 
 function openEditor(id) {
@@ -2550,25 +2597,22 @@ function loadContent() {
   const srtInput = document.getElementById("srtUrl").value.trim();
   const srtUpload = document.getElementById("srtUpload").files[0];
 
-  // Se houver trabalho não salvo, perguntamos ao usuário
-  const restore = confirm("Encontramos uma edição de legenda não salva. Deseja continuar de onde parou?");
+  // ❌ REMOVER ESTE BLOCO INTEIRO:
+  // const restore = confirm("Encontramos uma edição de legenda não salva. Deseja continuar de onde parou?");
 
   // Carregar o vídeo em TODAS as seções (CORRIGIDO)
   if (videoUpload) {
     const videoURL = URL.createObjectURL(videoUpload);
     appState.video.file = videoUpload;
     appState.video.blob = videoURL;
-    updateAllVideos(videoURL); // Usa a função de sincronização
+    updateAllVideos(videoURL);
   } else if (videoInput) {
     appState.video.url = videoInput;
-    updateAllVideos(videoInput); // Usa a função de sincronização
+    updateAllVideos(videoInput);
   }
 
-  // Carregar a legenda
-  if (restore) {
-    // Carregar Srt do localStorage
-    loadSrtFromLocal();
-  } else if (srtUpload) {
+  // ✅ SIMPLIFICAR: Carregar legenda diretamente
+  if (srtUpload) {
     const reader = new FileReader();
     reader.onload = function (e) {
       parseSRT(e.target.result);
@@ -2593,28 +2637,6 @@ function loadContent() {
 
   closeLoadSaveArea();
 }
-
-
-// Carregar Srt do localStorage
-function loadSrtFromLocal() {
-  const saved = localStorage.getItem(STORAGE_SRT_KEY);
-  if (saved) {
-    try {
-      const parsedData = JSON.parse(saved);
-      if (Array.isArray(parsedData) && parsedData.length > 0) {
-        srtData.length = 0;
-        srtData.push(...parsedData);
-        renderSegments();
-        console.log('📂 Rascunho recuperado do navegador.');
-        return true; // Indica que carregou com sucesso
-      }
-    } catch (e) {
-      console.error('Erro ao carregar rascunho:', e);
-    }
-  }
-  return false;
-}
-
 
 /**
  * ✅ NOVA FUNÇÃO AUXILIAR: Carrega apenas o SRT do servidor
@@ -3194,13 +3216,15 @@ async function postLesson() {
     hideLoading();
     alert('✅ Lição postada com sucesso!\n\nVerifique o console (F12) para ver os IDs dos arquivos.');
     
-    // limpar o localStorage
-    localStorage.removeItem('phrasecraft_autosave_srt');
-    console.log('🧹 Rascunho automático limpo após postagem.');
+    // ✅ Limpa o rascunho específico desta lição
+    try {
+        await db.drafts.delete(baseName);
+        console.log(`🧹 Rascunho de "${baseName}" limpo após postagem.`);
+    } catch (error) {
+        console.warn('Aviso ao limpar rascunho:', error);
+    }
     
-    // Atualiza o cache DEPOIS de dar hideLoading()
-    await refreshLessonsCache(); // Esse já chama showLoading/hideLoading internamente
-    
+    await refreshLessonsCache();
     showSection('home');
     
     return uploadResults;
@@ -3538,12 +3562,80 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
         // Estrutura do Conteúdo Meta (Ações)
         let metaButtonsHTML = ``;
 
+        // O código JavaScript espera botões .btn-edit-lesson e .btn-delete-lesson
         if (sectionId === 'myPosts') {
-            // Botões específicos para MyPosts
             metaButtonsHTML = `
                 <span class="general-btn btn-edit-lesson" data-basename="${baseName}">✎ Editar</span>
                 <span class="general-btn btn-delete-lesson" data-basename="${baseName}" style="color: red;">❌ Excluir</span>
             `;
+        }
+      
+        // ✅ NOVO: Verifica se há rascunho para esta lição (apenas em myPosts)
+        let draftIndicatorHTML = '';
+        if (sectionId === 'myPosts') {
+            try {
+                const draft = await db.drafts.get(baseName);
+                if (draft) {
+                    const draftDate = new Date(draft.lastModified).toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    draftIndicatorHTML = `
+                        <div style="
+                            position: absolute;
+                            top: 8px;
+                            left: 8px;
+                            background: rgba(255, 152, 0, 0.95);
+                            color: #000;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 11px;
+                            font-weight: bold;
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            z-index: 10;
+                        ">
+                            💾 Rascunho (${draftDate})
+                            <button 
+                                class="btn-continue-draft" 
+                                data-basename="${baseName}"
+                                style="
+                                    background: #4caf50;
+                                    border: none;
+                                    color: white;
+                                    padding: 2px 6px;
+                                    border-radius: 3px;
+                                    cursor: pointer;
+                                    font-size: 10px;
+                                "
+                                title="Continuar editando">
+                                ✔️
+                            </button>
+                            <button 
+                                class="btn-discard-draft" 
+                                data-basename="${baseName}"
+                                style="
+                                    background: #f44336;
+                                    border: none;
+                                    color: white;
+                                    padding: 2px 6px;
+                                    border-radius: 3px;
+                                    cursor: pointer;
+                                    font-size: 10px;
+                                "
+                                title="Descartar rascunho">
+                                ✖️
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.warn("Erro ao verificar rascunho:", error);
+            }
         } else {
             // Para home, challenge, subscriptions - mostra performance
             const performanceValue = item.extraData?.hostPerformance ?? '99';
@@ -3555,12 +3647,16 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
         thumbSection.className = 'thumb-section';
         thumbSection.style.cursor = 'pointer';
         thumbSection.style.position = 'relative';
-        thumbSection.innerHTML = `<img src="${thumbnailUrl}" alt="Preview da Thumbnail">${progressBarHTML}`;
+        thumbSection.innerHTML = `
+            ${draftIndicatorHTML}
+            <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+            ${progressBarHTML}
+        `;
         
         const infoContent = document.createElement('div');
         infoContent.className = 'info-content';
         
-        // Adiciona botão "Continuar" se houver progresso
+        // Adiciona botão "Continuar (Lição)" se houver progresso
         let continueButtonHTML = '';
         if (hasSavedProgress) {
             continueButtonHTML = `
@@ -3628,13 +3724,47 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                 });
             }
             
-            // Botão Excluir
+            // Botão Excluir Lição
             const btnDelete = postWrapper.querySelector('.btn-delete-lesson');
             if (btnDelete) {
                 btnDelete.addEventListener('click', (e) => {
                     e.stopPropagation();
                     console.log(`Botão Excluir clicado:`, baseName);
                     deleteFullLesson(baseName);
+                });
+            }
+
+            // ✅ NOVO: Botão Continuar Rascunho
+            const btnContinueDraft = postWrapper.querySelector('.btn-continue-draft');
+            if (btnContinueDraft) {
+                btnContinueDraft.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    console.log(`✔️ Continuando rascunho:`, baseName);
+                    await handleEditLesson(item); // Já tem lógica de rascunho
+                });
+            }
+            
+            // ✅ NOVO: Botão Descartar Rascunho
+            const btnDiscardDraft = postWrapper.querySelector('.btn-discard-draft');
+            if (btnDiscardDraft) {
+                btnDiscardDraft.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    
+                    if (confirm(`Descartar o rascunho de "${baseName}"?\n\nEsta ação não pode ser desfeita.`)) {
+                        try {
+                            await db.drafts.delete(baseName);
+                            console.log(`🗑️ Rascunho descartado:`, baseName);
+                            
+                            // Re-renderiza para remover o indicador
+                            const matches = await searchMatchesOnServer();
+                            await renderThumbnailsFromCache('myPosts', lessonsCache);
+                            
+                            alert('Rascunho descartado com sucesso!');
+                        } catch (error) {
+                            console.error('Erro ao descartar:', error);
+                            alert('Erro ao descartar o rascunho.');
+                        }
+                    }
                 });
             }
         }
