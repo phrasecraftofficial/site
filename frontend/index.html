@@ -1,21 +1,30 @@
-<!-- 40
-currentTime tem baixa precisão - varia por navegador (16ms a 200ms)
-timeupdate event é impreciso - dispara raramente (a cada 250ms em alguns browsers)
-Buffering e decoding causam delays
-Solucao:
-performance.now() + setInterval(10ms)
-const playStart = performance.now();
-const checkEnd = setInterval(() => {
-    const elapsed = performance.now() - playStart;
-    if (elapsed >= durationMs) {
-        clearInterval(checkEnd);
-        videoElement.pause();
-    }
-}, 10);
-Vantagens:
-✅ Precisão até ±5ms (independente do refresh rate)
-✅ Mais consistente entre dispositivos
-✅ Ideal para áudio/vídeo sincronizado
+<!-- 41
+Estratégia recomendada
+Use requestVideoFrameCallback quando disponível: sincroniza com cada frame de vídeo, é o mais preciso hoje (Chrome/Edge modernos).
+
+Fallback para requestAnimationFrame: roda ~60Hz e é muito mais preciso que timeupdate.
+
+Evite setInterval: tem jitter maior e pode atrasar.
+
+Margem de corte pequena (ε): algo como 0.02s a 0.05s para compensar latências internas.
+
+Finalize no ponto exato: pause e ajuste currentTime = endTime imediatamente.
+
+Por que isso é mais preciso
+Sincronização por frame: requestVideoFrameCallback chama seu callback exatamente quando um frame é apresentado; o corte usa o tempo real de exibição, minimizando drift.
+
+Fallback rAF: mesmo sem requestVideoFrameCallback, requestAnimationFrame acompanha o ciclo gráfico, muito mais denso que timeupdate.
+
+Corte com ε pequeno: a margem compensa o tempo entre detecção e pause(), evitando pausar antes ou depois. Ajuste para seu codec/dispositivo se necessário.
+
+Ajustes finos e cuidados
+Segmentos muito curtos (< 0.4s): aumente epsilon para 0.05s–0.08s se notar vazamentos.
+
+Variações de buffer/rede: se o vídeo travar por falta de buffer, o currentTime pode avançar aos saltos; monitore waiting/stalled se for streaming.
+
+Consistência de currentTime: após pause(), sempre force video.currentTime = endTime para garantir o ponto exato.
+
+Autoplay policies: garanta interação do usuário antes do play() para evitar bloqueios.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -555,7 +564,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.40</span>
+        <span>PhraseCraft v0.41</span>
       </div>
     </div>
     
@@ -2818,63 +2827,85 @@ function parseTime(timeString) {
 // Busca os tempos de início e fim da legenda atual e 
 // usa o vídeo (ou áudio) para tocar o trecho
 function playLine() {
-    if (!currentSegment) return;
+  if (!currentSegment) return;
 
-    const videoElement = document.getElementById("videoPlayer-editSrt");
-    if (!videoElement) return;
+  const video = document.getElementById("videoPlayer-editSrt");
+  if (!video) return;
 
-    if (stopTimeout) {
-        clearTimeout(stopTimeout);
-        stopTimeout = null;
+  // Limpa qualquer watcher anterior
+  if (stopTimeout) {
+    if (typeof stopTimeout === 'function') stopTimeout(); // cancelador
+    stopTimeout = null;
+  }
+
+  const startTime = parseTime(currentSegment.start);
+  const endTime = parseTime(currentSegment.end);
+  const epsilon = 0.03; // 30ms de margem
+
+  // Pausa e busca início
+  video.pause();
+  video.currentTime = startTime;
+
+  const onSeeked = async () => {
+    video.removeEventListener('seeked', onSeeked);
+
+    // Play garantido
+    try {
+      await video.play();
+    } catch (e) {
+      console.warn("Autoplay bloqueado ou erro no play:", e);
+      return;
     }
 
-    const startTime = parseTime(currentSegment.start);
-    const endTime = parseTime(currentSegment.end);
-    const durationMs = (endTime - startTime) * 1000;
+    // Watcher preciso por frame
+    let canceled = false;
 
-    videoElement.pause();
+    function cancelWatcher() {
+      canceled = true;
+    }
 
-    // ✅ PASSO 1: Busca o ponto de início
-    videoElement.currentTime = startTime;
+    const stopAtEnd = () => {
+      if (canceled) return;
 
-    // ✅ PASSO 2: Aguarda o seek ser processado
-    const onSeeked = () => {
-        videoElement.removeEventListener('seeked', onSeeked);
-        
-        console.log(`🎯 Sincronização bem-sucedida em ${startTime}s`);
-        
-        // ✅ PASSO 3: Reproduz
-        videoElement.play();
-        
-        // ✅ PASSO 4: Para com precisão usando performance.now()
-        const playStartTime = performance.now();
-        
-        const checkEnd = setInterval(() => {
-            const elapsed = performance.now() - playStartTime;
-            
-            // Pára quando chegar ao fim (com margem de 50ms)
-            if (elapsed >= durationMs - 50) {
-                clearInterval(checkEnd);
-                videoElement.pause();
-                
-                // Garante que parou no ponto exato
-                videoElement.currentTime = endTime;
-                
-                console.log(`✅ Parado em ${endTime}s (diferença real: ${(elapsed - durationMs).toFixed(0)}ms)`);
-            }
-        }, 10);
-        
-        stopTimeout = checkEnd;
+      // Checa o tempo atual com margem
+      if (video.currentTime >= endTime - epsilon) {
+        video.pause();
+        // Ajuste fino para o ponto exato
+        video.currentTime = endTime;
+        cancelWatcher();
+        return;
+      }
+
+      // Próxima verificação por frame
+      if (video.requestVideoFrameCallback) {
+        video.requestVideoFrameCallback(stopAtEnd);
+      } else {
+        requestAnimationFrame(stopAtEnd);
+      }
     };
 
-    videoElement.addEventListener('seeked', onSeeked, { once: true });
+    // Inicia o loop sincronizado com frames
+    if (video.requestVideoFrameCallback) {
+      video.requestVideoFrameCallback(stopAtEnd);
+    } else {
+      requestAnimationFrame(stopAtEnd);
+    }
 
-    // Timeout de segurança (se o seeked não disparar em 2s)
-    const safetyTimeout = setTimeout(() => {
-        videoElement.removeEventListener('seeked', onSeeked);
-        console.warn("⚠️ Timeout no seeked, reproduzindo mesmo assim");
-        videoElement.play();
-    }, 2000);
+    // Guarda o cancelador para limpar em próximas chamadas
+    stopTimeout = cancelWatcher;
+  };
+
+  video.addEventListener('seeked', onSeeked, { once: true });
+
+  // Timeout de segurança se 'seeked' não disparar
+  const safety = setTimeout(() => {
+    video.removeEventListener('seeked', onSeeked);
+    console.warn("Timeout no seeked, tentando reproduzir mesmo assim");
+    onSeeked(); // prossegue mesmo sem evento
+  }, 1500);
+
+  // Limpa o safety quando seeked ocorrer
+  video.addEventListener('seeked', () => clearTimeout(safety), { once: true });
 }
   
 // ⫘⫘⫘⫘⫘⫘⫘⫘
