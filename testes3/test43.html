@@ -3,7 +3,6 @@ ao clicar em editar ou continuar edicao,
 aualizar os campos
 postStatus: para 'editing',
 userEditorId: para o user atual.
-
 ao renderizar para home se inscreve para atualizações de status em posts
 se editing não deve mostrar em home, 
 e se tiver no cache deve excluir
@@ -1244,16 +1243,21 @@ async function updateElementForSection(sectionId) {
     
   // --- 4. CARREGAMENTO DE OUTRAS SEÇÕES (mantém como está) ---
   if (SECTIONS_WITH_THUMBNAILS.includes(sectionId) && sectionId !== 'challenge' && appState.currentSection !== null) {
-    showLoading('Carregando...');
-    console.log("📦 Usando cache local de lições");
-    if (!isCacheLoaded) {
-        await loadLessonsToCache();
-    }
-    await renderThumbnailsFromCache(sectionId, lessonsCache);
-    await waitForThumbnailsToRender(sectionId);
-    hideLoading();
+      showLoading('Carregando...');
+      console.log("📦 Usando cache local de lições");
+      if (!isCacheLoaded) {
+          await loadLessonsToCache();
+      }
+      
+      // ✅ NOVO: Se for HOME, ativa as escutas em tempo real
+      if (sectionId === 'home') {
+          subscribeToPostsUpdates();
+      }
+      
+      await renderThumbnailsFromCache(sectionId, lessonsCache);
+      await waitForThumbnailsToRender(sectionId);
+      hideLoading();
   }
-
   // --- 5. PLAY (mantém como está) ---
   if (sectionId === 'play' && lessonsCache.length > 0) {
     requestAnimationFrame(() => {
@@ -1710,11 +1714,10 @@ async function handleEditLesson(lesson) {
         // ============================================================
         // 🔄 NOVA LÓGICA: Atualizar Status no Appwrite
         // ============================================================
-        if (lesson.docId) { // Verifica se temos o ID do documento (vindo do cache novo)
+        if (lesson.docId) {
             console.log(`🔒 Bloqueando post "${lesson.baseName}" para edição...`);
             
             try {
-                // Pega usuário atual para marcar como editor
                 const user = await account.get();
                 
                 await databases.updateDocument(
@@ -1722,20 +1725,15 @@ async function handleEditLesson(lesson) {
                     POSTS_COLLECTION_ID,
                     lesson.docId,
                     {
-                        postStatus: 'editing',   // Muda status
-                        userEditorId: user.$id   // Marca quem está mexendo
+                        postStatus: 'editing',
+                        userEditorId: user.$id
                     }
                 );
-                // Atualiza o objeto local imediatamente. 
-                // Assim, se o usuário voltar para Home, a renderThumbnails vai ver que é 'editing' e remover.
-                lesson.postStatus = 'editing';
+                lesson.postStatus = 'editing'; // Atualiza local
                 console.log("✅ Status atualizado para 'editing' no servidor.");
             } catch (authError) {
-                console.warn("⚠️ Não foi possível atualizar status (Usuário deslogado ou sem permissão):", authError);
-                // Não paramos o fluxo aqui, permitimos editar localmente mesmo se falhar no server
+                console.warn("⚠️ Não foi possível atualizar status:", authError);
             }
-        } else {
-            console.warn("⚠️ docId não encontrado na lição. O status não será atualizado no servidor.");
         }
         // ============================================================
 
@@ -5903,6 +5901,108 @@ async function handleContinueLesson(event, baseName) {
     }
 }
 
+/**
+ * 📡 Se inscreve para atualizações em tempo real dos posts publicados
+ * Detecta mudanças de status (editing, published) e atualiza a UI
+ */
+function subscribeToPostsUpdates() {
+    console.log("📡 Inscrevendo-se em atualizações de Posts...");
+    
+    const channel = `databases.${DATABASE_ID}.collections.${POSTS_COLLECTION_ID}.documents`;
+    
+    // Limpa inscrição anterior se houver
+    if (window.unsubscribeFromPosts) {
+        window.unsubscribeFromPosts();
+    }
+
+    window.unsubscribeFromPosts = client.subscribe(channel, (response) => {
+        const event = response.events[0];
+        const doc = response.payload;
+
+        console.log(`📬 Evento Post: ${event}`, doc);
+
+        // 1. POST MUDOU PARA 'EDITING' (Host começou a editar)
+        if ((event.includes('.update') || event.includes('.create')) && doc.postStatus === 'editing') {
+            console.log(`✏️ Post "${doc.lessonName}" agora está em EDITING`);
+            
+            // Remove do cache se estiver lá
+            const indexInCache = lessonsCache.findIndex(l => l.baseName === doc.lessonName);
+            if (indexInCache > -1) {
+                console.log(`🗑️ Removendo "${doc.lessonName}" do cache (status: editing)`);
+                lessonsCache.splice(indexInCache, 1);
+            }
+            
+            // Se estamos na HOME, re-renderiza para remover a lição
+            if (appState.currentSection === 'home') {
+                renderThumbnailsFromCache('home', lessonsCache);
+            }
+        }
+
+        // 2. POST VOLTOU PARA 'PUBLISHED' (Host finalizou edição)
+        if (event.includes('.update') && doc.postStatus === 'published') {
+            console.log(`✅ Post "${doc.lessonName}" voltou a PUBLISHED`);
+            
+            // Verifica se já está no cache
+            const existingIndex = lessonsCache.findIndex(l => l.baseName === doc.lessonName);
+            
+            if (existingIndex === -1) {
+                // Se não está, adiciona
+                const thumbUrl = getBackblazePublicUrl(doc.thumbFileId);
+                lessonsCache.unshift({
+                    baseName: doc.lessonName,
+                    docId: doc.$id,
+                    postStatus: doc.postStatus,
+                    video: {
+                        fileId: doc.videoFileId,
+                        fileName: `${doc.lessonName}.mp4`,
+                        blobUrl: null
+                    },
+                    srt: {
+                        fileId: doc.srtFileId,
+                        fileName: `${doc.lessonName}.srt`,
+                        content: null
+                    },
+                    thumb: {
+                        fileId: doc.thumbFileId,
+                        url: thumbUrl
+                    },
+                    hostId: doc.userEditorId,
+                    extraData: {
+                        description: doc.description,
+                        channelName: doc.channelName
+                    }
+                });
+                console.log(`✨ "${doc.lessonName}" adicionado ao cache`);
+            } else {
+                // Se já está, apenas atualiza o status
+                lessonsCache[existingIndex].postStatus = 'published';
+                lessonsCache[existingIndex].docId = doc.$id;
+            }
+            
+            // Se estamos na HOME, re-renderiza para incluir a lição
+            if (appState.currentSection === 'home') {
+                renderThumbnailsFromCache('home', lessonsCache);
+            }
+        }
+
+        // 3. POST FOI DELETADO
+        if (event.includes('.delete')) {
+            console.log(`🗑️ Post "${doc.lessonName}" foi deletado`);
+            
+            const indexInCache = lessonsCache.findIndex(l => l.baseName === doc.lessonName);
+            if (indexInCache > -1) {
+                lessonsCache.splice(indexInCache, 1);
+            }
+            
+            // Re-renderiza se estamos na HOME
+            if (appState.currentSection === 'home') {
+                renderThumbnailsFromCache('home', lessonsCache);
+            }
+        }
+    });
+
+    console.log('✅ Inscrito em atualizações de Posts');
+}
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -5913,34 +6013,35 @@ window.addEventListener('beforeunload', () => {
 });
 
 async function init() {
-  // ✅ Marca que estamos inicializando (para evitar duplicação)
-  appState.currentSection = null;
-  
-  showLoading('Verificando autenticação...');
-  await checkAuthStatus();
-  hideLoading();
-  
-  showLoading('Limpando partidas antigas...');
-  endCreateMode();
-  await deleteExistingMatches();
-  hideLoading();
-  
-  showLoading('Carregando lições do servidor...');
-  await loadLessonsToCache();
-  hideLoading();
-  
-  showLoading('Preparando interface...');
-  // ✅ Agora showSection() NÃO vai renderizar thumbs porque currentSection é null
-  showSection('home');
-  hideLoading();
-  
-  // ✅ Renderiza as thumbs manualmente UMA VEZ
-  showLoading('Carregando thumbnails...');
-  await renderThumbnailsFromCache('home', lessonsCache);
-  await waitForThumbnailsToRender('home');
-  hideLoading();
-  
-  console.log("✅ Aplicação inicializada com sucesso!");
+    appState.currentSection = null;
+    
+    showLoading('Verificando autenticação...');
+    await checkAuthStatus();
+    hideLoading();
+    
+    showLoading('Limpando partidas antigas...');
+    endCreateMode();
+    await deleteExistingMatches();
+    hideLoading();
+    
+    showLoading('Carregando lições do servidor...');
+    await loadLessonsToCache();
+    hideLoading();
+    
+    showLoading('Preparando interface...');
+    showSection('home');
+    hideLoading();
+    
+    showLoading('Carregando thumbnails...');
+    await renderThumbnailsFromCache('home', lessonsCache);
+    
+    // ✅ NOVO: Ativa escuta de updates de posts AQUI
+    subscribeToPostsUpdates();
+    
+    await waitForThumbnailsToRender('home');
+    hideLoading();
+    
+    console.log("✅ Aplicação inicializada com sucesso!");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
