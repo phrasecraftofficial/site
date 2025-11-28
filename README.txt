@@ -8,6 +8,8 @@ se user editando for igual user logado = notifica 'De volta ao trabalho, os joga
 xxxx xxxxx, em edicao ha x dia(s).'
 atualiza todo dia de acordo com o dia que foi criado o registro de edicao.
 
+editorUserId, baseName, link srt, link video, link thumb, status: editing/posted
+
 idiomas, seleciona idioma na lista
 sigla do idioma e adicionado no nome
 parse do nome para saber o idioma do sintetizador e do tradutor
