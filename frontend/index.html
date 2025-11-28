@@ -1,6 +1,10 @@
-<!-- 38
-racunho e barra de progresso reposicionados de acordo com o video
--->
+<!-- 39
+srtData é um array global que nunca era resetado
+Quando carregava a lição Y, o srtData ainda continha os 142 segmentos da lição X
+Quando salvava o rascunho, salvava o srtData errado!
+
+Agora com srtData.length = 0 no início de ambas as funções, 
+garantindo que cada lição tem seus próprios segmentos.-->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -539,7 +543,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.38</span>
+        <span>PhraseCraft v0.39</span>
       </div>
     </div>
     
@@ -1192,13 +1196,19 @@ async function updateElementForSection(sectionId) {
       hideAddPlaylistArea();
   }
     
-  if (sectionId === "play") {
+  // 1. Oculta Ícones e Texto no Play E no Preview (editSrt)
+  if (sectionId === "play" || sectionId === "editSrt") {
     iconsRight.style.display = "none";
     textArea.style.display = "none";
-    performanceArea.style.display = "";
   } else {
     iconsRight.style.display = "";
     textArea.style.display = "";
+  }
+
+  // 2. Mostra Performance APENAS no Play (não no Preview)
+  if (sectionId === "play") {
+    performanceArea.style.display = "";
+  } else {
     performanceArea.style.display = "none";
   }
 
@@ -1687,10 +1697,35 @@ async function handleEditLesson(lesson) {
     console.log("✎ Editando lição:", lesson.baseName);
     
     try {
-        // ✅ NOVO: Verifica se existe rascunho no Dexie
+        // ✅ RESETAR srtData NO INÍCIO
+        console.log("🧹 Resetando srtData antes de carregar nova lição");
+        srtData.length = 0;
+        currentSegment = null;
+        undoStack = [];
+        redoStack = [];
+        
+        // ✅ LIMPAR o #subtitleName
+        const subtitleNameElement = document.getElementById("subtitleName");
+        if (subtitleNameElement) {
+            subtitleNameElement.textContent = '';
+        }
+        
+        // ✅ Atualizar appState
+        appState.subtitle.name = lesson.srt?.fileName || `${lesson.baseName}.srt`;
+        console.log("🔄 appState.subtitle.name:", appState.subtitle.name);
+        
+        // ✅ Buscar rascunho específico para ESTA lição
         const draft = await db.drafts.get(lesson.baseName);
-
+        
+        console.log(`🔎 Procurando rascunho para: "${lesson.baseName}"`);
+        console.log(`   Resultado: ${draft ? '✅ ENCONTRADO' : '❌ NÃO ENCONTRADO'}`);
+        
         if (draft) {
+            console.log(`   Detalhes do rascunho:`);
+            console.log(`   - Segmentos: ${draft.srtData?.length}`);
+            console.log(`   - Última modificação: ${new Date(draft.lastModified).toLocaleString('pt-BR')}`);
+            console.log(`   - Posição vídeo: ${draft.videoPosition}s`);
+            
             const useDraft = confirm(
                 `Existe uma versão editada não salva (rascunho) para "${lesson.baseName}".\n\n` +
                 `Última modificação: ${new Date(draft.lastModified).toLocaleString()}\n\n` +
@@ -1699,6 +1734,11 @@ async function handleEditLesson(lesson) {
             
             if (useDraft) {
                 showLoading('Restaurando rascunho...');
+                
+                // ✅ Validação: o rascunho tem dados válidos?
+                if (!draft.srtData || draft.srtData.length === 0) {
+                    throw new Error('Rascunho corrompido: nenhum segmento encontrado');
+                }
                 
                 // Carrega vídeo e thumbnail
                 if (lesson.video) {
@@ -1729,8 +1769,14 @@ async function handleEditLesson(lesson) {
                 }
                 
                 // ✅ Restaura SRT do rascunho
-                srtData.length = 0;
-                srtData.push(...draft.srtData);
+                srtData.length = 0; // Garante que está vazio
+                srtData.push(...JSON.parse(JSON.stringify(draft.srtData))); // Deep clone
+                
+                console.log(`✅ Rascunho restaurado com ${srtData.length} segmentos`);
+                console.log(`   Primeiros 3 segmentos do rascunho:`);
+                srtData.slice(0, 3).forEach(seg => {
+                    console.log(`   [${seg.id}] ${seg.text.substring(0, 50)}`);
+                });
                 
                 // ✅ Restaura posição do vídeo
                 requestAnimationFrame(() => {
@@ -1740,10 +1786,8 @@ async function handleEditLesson(lesson) {
                     }
                 });
                 
-                console.log("✅ Rascunho restaurado");
-                
             } else {
-                // Usuário recusou o rascunho, carrega do servidor
+                // Usuário recusou o rascunho
                 console.log("🔄 Carregando versão original do servidor");
                 await previewLesson(lesson);
                 
@@ -1753,19 +1797,22 @@ async function handleEditLesson(lesson) {
             }
         } else {
             // Sem rascunho, carrega normalmente
-            console.log("📦 Nenhum rascunho, carregando do servidor...");
+            console.log("📦 Nenhum rascunho para esta lição, carregando do servidor...");
             await previewLesson(lesson);
         }
 
-        // Configura interface
         hideFooter();
         setEditorMode('editor');
         showSection('editSrt');
         renderSegments();
 
+        // ✅ Atualizar #subtitleName
         if (lesson.srt && lesson.srt.fileName) {
             appState.subtitle.name = lesson.srt.fileName;
-            document.getElementById("subtitleName").textContent = lesson.srt.fileName;
+            const subtitleNameElement = document.getElementById("subtitleName");
+            if (subtitleNameElement) {
+                subtitleNameElement.textContent = lesson.srt.fileName;
+            }
         }
 
         hideLoading();
@@ -2091,27 +2138,38 @@ function renderSegments() {
     container.appendChild(div);
   });
   
-  // ✅ NOVO: Salvamento inteligente baseado na origem
+  // ✅ Salvamento inteligente com debug melhorado
+  console.log("📋 renderSegments() chamado. Tentando salvar rascunho...");
+  console.log("  - currentSection:", appState.currentSection);
+  console.log("  - subtitle.name:", appState.subtitle.name);
+  console.log("  - #subtitleName:", document.getElementById("subtitleName")?.textContent);
+  
   saveDraftIfEditable();
 }
 
 /**
- * ✅ NOVA FUNÇÃO: Salva rascunho apenas se for lição editável do cache/servidor
+ * ✅ Salva rascunho apenas se for lição editável do cache/servidor
  */
 async function saveDraftIfEditable() {
   // Bloqueia salvamento nas seguintes situações:
-  const blockSections = ['create', 'challenge']; // Upload manual
+  const blockSections = ['create', 'challenge'];
   
   if (blockSections.includes(appState.currentSection)) {
     console.log('🚫 Salvamento bloqueado: Lição de upload manual');
     return;
   }
   
-  // Verifica se há um baseName válido
-  const baseName = appState.subtitle.name?.replace(/\.srt$/i, '');
+  // ✅ SIMPLIFICADO: Usa APENAS appState.subtitle.name como fonte da verdade
+  let baseName = null;
   
+  if (appState.subtitle.name && appState.subtitle.name !== 'legendas.srt') {
+    baseName = appState.subtitle.name.replace(/\.srt$/i, '');
+  }
+  
+  // Se não conseguiu, cancela
   if (!baseName || baseName === 'legendas') {
-    console.log('🚫 Salvamento bloqueado: Nome inválido');
+    console.log('🚫 Salvamento bloqueado: appState.subtitle.name inválido');
+    console.log('  appState.subtitle.name:', appState.subtitle.name);
     return;
   }
   
@@ -2119,7 +2177,7 @@ async function saveDraftIfEditable() {
   const lessonInCache = lessonsCache.find(l => l.baseName === baseName);
   
   if (!lessonInCache) {
-    console.log('🚫 Salvamento bloqueado: Lição não está no cache');
+    console.log('🚫 Salvamento bloqueado: Lição não está no cache:', baseName);
     return;
   }
   
@@ -2130,12 +2188,12 @@ async function saveDraftIfEditable() {
     
     await db.drafts.put({
       baseName: baseName,
-      srtData: JSON.parse(JSON.stringify(srtData)), // Deep clone
+      srtData: JSON.parse(JSON.stringify(srtData)),
       lastModified: Date.now(),
       videoPosition: videoPosition
     });
     
-    console.log(`💾 Rascunho salvo: ${baseName}`);
+    console.log(`💾 Rascunho salvo corretamente: ${baseName}`);
   } catch (error) {
     console.error('❌ Erro ao salvar rascunho:', error);
   }
@@ -3314,25 +3372,32 @@ async function previewLesson(lesson) {
   try {
     showLoading('Carregando lição...');
 
+    // ✅ CRÍTICO: RESETAR srtData ANTES de carregar nova lição
+    srtData.length = 0;
+    currentSegment = null;
+    undoStack = [];
+    redoStack = [];
+    console.log("🧹 srtData resetado (era", srtData.length, "segmentos)");
+
+    // ✅ Atualiza appState IMEDIATAMENTE
+    appState.subtitle.name = lesson.srt?.fileName || `${lesson.baseName}.srt`;
+    console.log("🔄 appState.subtitle.name definido para:", appState.subtitle.name);
+
     // 1️⃣ VIDEO -----------------------------------------
     if (lesson.video) {
-      // ✅ CORREÇÃO: Busca a lição no cache global para verificar se já tem o blob
       const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
       
       if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
-        // ✅ Já está no cache
         console.log("✅ Vídeo já estava no cache:", lesson.video.fileName);
         appState.video.url = cachedLesson.video.blobUrl;
         updateAllVideos(cachedLesson.video.blobUrl);
       } else {
-        // ❌ Não está no cache, faz o download
         console.log("📦 Baixando vídeo pela primeira vez:", lesson.video.fileName);
         const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
         const videoResponse = await fetch(videoUrl);
         const videoBlob = await videoResponse.blob();
         const blobUrl = URL.createObjectURL(videoBlob);
         
-        // ✅ CRÍTICO: Salva no cache global
         if (cachedLesson && cachedLesson.video) {
           cachedLesson.video.blobUrl = blobUrl;
         }
@@ -3346,21 +3411,17 @@ async function previewLesson(lesson) {
 
     // 2️⃣ SRT -----------------------------------------
     if (lesson.srt) {
-      // ✅ CORREÇÃO: Busca no cache global
       const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
       
       if (cachedLesson && cachedLesson.srt && cachedLesson.srt.content) {
-        // ✅ Já está no cache
         console.log("✅ Legendas já estavam no cache:", lesson.srt.fileName);
         parseSRT(cachedLesson.srt.content);
       } else {
-        // ❌ Não está no cache, faz o download
         console.log("📦 Baixando legendas pela primeira vez:", lesson.srt.fileName);
         const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
         const response = await fetch(srtUrl);
         const srtContent = await response.text();
         
-        // ✅ CRÍTICO: Salva no cache global
         if (cachedLesson && cachedLesson.srt) {
           cachedLesson.srt.content = srtContent;
         }
@@ -3379,6 +3440,12 @@ async function previewLesson(lesson) {
       updateAllThumbnails(thumbUrl);
       appState.thumbnail.url = thumbUrl;
     }
+
+    // ✅ APÓS carregar tudo, log de confirmação
+    console.log("✅ Lição carregada com sucesso!");
+    console.log(`   - baseName: ${lesson.baseName}`);
+    console.log(`   - srtData.length: ${srtData.length} segmentos`);
+    console.log(`   - appState.subtitle.name: ${appState.subtitle.name}`);
 
     hideLoading();
 
