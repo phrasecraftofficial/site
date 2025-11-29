@@ -1,7 +1,7 @@
-<!-- 43
-Fluxo para tanto para thumb quanto para srt e video: consulta cache arquivos e nome, 
-consulta links e nomes no aw, baixa arquivos do bb, salva arquivos e nomes no cache,
-ao postar e excluir atualiza doc
+<!-- 44
+se postStatus = published mostra em home e myPosts
+ou se postStatus = editing mas id do user mostra em myposts
+else = oculta
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -541,7 +541,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.43</span>
+        <span>PhraseCraft v0.44</span>
       </div>
     </div>
     
@@ -5848,50 +5848,71 @@ function formatAppwriteDocToLesson(doc) {
  * Monitora atualizações na coleção de Posts em tempo real
  * e atualiza a UI da Home se necessário.
  */
+
 function subscribeToPostsUpdates() {
     if (postsUnsubscribe) return;
 
     console.log("📡 Monitorando atualizações de Posts (Realtime)...");
     const channel = `databases.${DATABASE_ID}.collections.${POSTS_COLLECTION_ID}.documents`;
 
-    postsUnsubscribe = client.subscribe(channel, (response) => {
+    // ✅ Adicione o 'async' aqui para podermos pegar o ID do usuário
+    postsUnsubscribe = client.subscribe(channel, async (response) => {
         const event = response.events[0];
         const doc = response.payload;
         
+        // 1. Pega o ID do usuário logado para comparação
+        let myId = null;
+        try {
+            const user = await account.get();
+            myId = user.$id;
+        } catch (e) { /* Usuário não logado */ }
+
         // Identifica ações
         const isDelete = event.includes('.delete');
         const isCreate = event.includes('.create');
         const isUpdate = event.includes('.update');
 
-        // 1. REMOÇÃO: Se foi deletado OU status mudou para algo não 'published'
-        if (isDelete || (isUpdate && doc.postStatus !== 'published')) {
+        // 2. Define as Condições
+        const isPublished = doc.postStatus === 'published';
+        
+        // ✅ É criado por mim E está editando
+        // const isCreateByUser = (myId && doc.userEditorId === myId && doc.postStatus === 'editing');
+
+        // teste
+        const isCreateByUser = (doc.userEditorId === 'a' && doc.postStatus === 'editing');
+
+
+        // 3. Lógica de REMOÇÃO
+        // Remove se: Foi deletado OU (não está publicado E não é um rascunho meu)
+        if (isDelete || (isUpdate && !isPublished && !isCreateByUser)) {
             console.log(`📉 Removendo post: ${doc.lessonName}`);
             lessonsCache = lessonsCache.filter(lesson => lesson.docId !== doc.$id);
             
-            if (appState.currentSection === 'home') {
-                renderThumbnailsFromCache('home', lessonsCache);
+            if (appState.currentSection === 'home' || appState.currentSection === 'myPosts') {
+                renderThumbnailsFromCache(appState.currentSection, lessonsCache);
             }
             return;
         }
 
-        // 2. ADIÇÃO ou ATUALIZAÇÃO: Se status é 'published'
-        if ((isCreate || isUpdate) && doc.postStatus === 'published') {
+        // 4. Lógica de ADIÇÃO ou ATUALIZAÇÃO
+        // Mostra se: Está publicado OU (é meu e está em edição)
+        if ((isCreate || isUpdate) && (isPublished || isCreateByUser)) {
             console.log(`✨ Post novo/atualizado: ${doc.lessonName}`);
             
             // Usa o helper para formatar o novo dado
-            const newLesson = formatAppwriteDocToLesson(doc);
+            // (Certifique-se que a função formatAppwriteDocToLesson existe no seu código)
+            const newLesson = formatAppwriteDocToLesson(doc); 
 
-            // Remove versão antiga se existir (para updates) e adiciona a nova no topo
+            // Remove versão antiga se existir e adiciona a nova no topo
             lessonsCache = lessonsCache.filter(l => l.docId !== doc.$id);
-            lessonsCache.unshift(newLesson); // unshift adiciona no começo da lista
+            lessonsCache.unshift(newLesson); 
 
-            if (appState.currentSection === 'home') {
-                renderThumbnailsFromCache('home', lessonsCache);
+            if (appState.currentSection === 'home' || appState.currentSection === 'myPosts') {
+                renderThumbnailsFromCache(appState.currentSection, lessonsCache);
             }
         }
     });
 }
-
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
