@@ -1,3 +1,60 @@
+==============================
+Itaú Index Itaú Unibanco Ações
+alto risco
+aplicação inicial
+R$ 1,00
+rentab. 12 meses 
+
+46,81%
+rentab. anual 
+
+54,12%
+rentab. mensal 
+
+2,81% (até 28/11)
+
+detalhes do produto
+rentab. anual 
+
+54,12%
+rentab. mensal 
+
+2,81% (até 28/11)
+taxa máxima do produto 
+
+0,80%
+resgate
+crédito em conta em 3 dias úteis
+
+==============================
+Itaú Index Ações Ibovespa
+alto risco
+aplicação inicial
+R$ 1,00
+rentab. 12 meses 
+
+25,97%
+rentab. anual 
+
+31,52%
+rentab. mensal 
+
+5,89% (até 28/11)
+
+detalhes do produto
+rentab. anual 
+
+31,52%
+rentab. mensal 
+
+5,89% (até 28/11)
+taxa máxima do produto 
+
+0,80%
+resgate
+crédito em conta em 3 dias úteis
+
+===================================
 Itaú Smart Ações Brasil 50
 alto risco
 aplicação inicial
@@ -25,20 +82,7 @@ taxa máxima do produto
 resgate
 crédito em conta em 2 dias úteis
 
-NEST FUNDO DE INVESTIMENTOS EM AÇÕES
-alto risco
-aplicação inicial
-R$ 1.000,00
-rentab. 12 meses 
-
-13,76%
-rentab. anual 
-
-29,52%
-rentab. mensal 
-
-5,34% (até 27/11)
-
+===================================
 NEST FUNDO DE INVESTIMENTOS EM AÇÕES
 alto risco
 aplicação inicial
@@ -66,6 +110,7 @@ taxa máxima do produto
 resgate
 crédito em conta em 3 dias úteis
 
+===================================
 Ibiuna Equities 30 Seleção Ações
 alto risco
 aplicação inicial
@@ -93,29 +138,4 @@ taxa máxima do produto
 resgate
 crédito em conta em 3 dias úteis
 
-Itaú Index Itaú Unibanco Ações
-alto risco
-aplicação inicial
-R$ 1,00
-rentab. 12 meses 
 
-46,81%
-rentab. anual 
-
-54,12%
-rentab. mensal 
-
-2,81% (até 28/11)
-
-detalhes do produto
-rentab. anual 
-
-54,12%
-rentab. mensal 
-
-2,81% (até 28/11)
-taxa máxima do produto 
-
-0,80%
-resgate
-crédito em conta em 3 dias úteis
