@@ -1,0 +1,223 @@
+Para integrar a regra hostId && doc.userEditorId === hostId (ou seja, verificar se o usuário logado é o dono do rascunho) no seu código existente, precisamos fazer duas coisas dentro da função renderThumbnailsFromCache:
+ * Obter o ID do usuário logado atual.
+ * Substituir a string fixa 'a' pela variável com esse ID.
+Aqui está como fica a função modificada.
+O Código Atualizado
+Localize a função renderThumbnailsFromCache no seu código e substitua o bloco inicial (antes do for loop) por este:
+// Função 2: renderThumbnailsFromCache (COM A CORREÇÃO DE USUÁRIO)
+async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
+    const containerMap = {
+        'home': 'home-post-container',
+        'myPosts': 'user-post-container',
+        'subscriptions': 'subscriptions-post-container',
+        'challenge': 'multi-post-container'
+    };
+    
+    const containerId = containerMap[sectionId];
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // 1. 👇 OBTER O ID DO USUÁRIO LOGADO (Adicionado)
+    let currentUserId = null;
+    try {
+        const user = await account.get();
+        currentUserId = user.$id;
+    } catch (e) {
+        // Usuário não logado, currentUserId permanece null
+        console.log("Usuário não logado, rascunhos privados ocultos.");
+    }
+
+    let itemsToRender;
+
+    // ✅ CORREÇÃO APLICADA AQUI: Filtra os dados usando o ID real
+    if (sectionId === 'myPosts') {
+        // Para "myPosts", mostra publicados OU rascunhos que pertencem ao usuário logado
+        itemsToRender = dataToRender.filter(lesson => 
+            lesson.extraData.postStatus === 'published' || 
+            // 👇 AQUI ESTÁ A MUDANÇA SOLICITADA:
+            (currentUserId && lesson.hostId === currentUserId && lesson.extraData.postStatus === 'editing')
+        );
+        console.log(`Filtrando para "myPosts": ${itemsToRender.length} de ${dataToRender.length} itens serão exibidos.`);
+    } else if (sectionId === 'home') {
+        // Para "home", mostra APENAS os publicados
+        itemsToRender = dataToRender.filter(lesson => lesson.extraData.postStatus === 'published');
+        console.log(`Filtrando para "home": ${itemsToRender.length} de ${dataToRender.length} itens serão exibidos.`);
+    } else {
+        // Para outras seções (como 'challenge'), usa os dados como estão
+        itemsToRender = dataToRender;
+    }
+
+    // ... (o restante da função continua igual: verificação de vazio, loop for, etc.)
+
+O que mudou?
+ * Recuperação do ID: Adicionei o bloco try/catch com await account.get() no início da função para garantir que temos o currentUserId.
+ * Lógica do Filtro:
+   * Antigo: lesson.hostId === 'a' (Comparava com a letra 'a').
+   * Novo: currentUserId && lesson.hostId === currentUserId (Verifica se existe um usuário logado E se o ID do dono da lição é igual ao ID desse usuário).
+Isso garante que, na aba myPosts, você verá:
+ * Todos os posts publicados (independente do dono).
+ * Seus próprios rascunhos (status editing).
+ * Rascunhos de outras pessoas ficarão ocultos.
+
+***
+
+Você está correto. Para que o fluxo de "Rascunho Privado" funcione (onde o post desaparece da Home e aparece apenas para você em myPosts), precisamos atualizar o documento no Appwrite assim que você clica em "Editar".
+Isso altera o postStatus para 'editing' e define você como o userEditorId.
+Aqui está a função handleEditLesson atualizada. Substitua a função inteira no seu código:
+/**
+ * Lida com o clique no botão Editar.
+ * 1. Atualiza o status no Appwrite para 'editing' e define o dono.
+ * 2. Carrega a lição e verifica se há rascunhos locais.
+ * @param {Object} lesson O objeto completo da lição.
+ */
+async function handleEditLesson(lesson) {
+    console.log("✎ Iniciando processo de edição:", lesson.baseName);
+    
+    try {
+        showLoading('Preparando ambiente de edição...');
+
+        // ============================================================
+        // 🆕 PASSO 1: Atualizar Status no Servidor (Bloquear para Edição)
+        // ============================================================
+        
+        // Obtém o usuário atual para assinar a edição
+        const user = await account.get();
+        const userId = user.$id;
+
+        if (lesson.docId) {
+            console.log(`🔒 Atualizando status do post ${lesson.docId} para 'editing'...`);
+            
+            await databases.updateDocument(
+                DATABASE_ID,
+                POSTS_COLLECTION_ID,
+                lesson.docId,
+                {
+                    postStatus: 'editing',
+                    userEditorId: userId
+                }
+            );
+            console.log("✅ Post atualizado no servidor: Status = editing, Editor = " + userId);
+            
+            // Atualiza o objeto local lesson para refletir a mudança imediata (opcional, mas bom para consistência)
+            lesson.hostId = userId;
+            lesson.extraData.postStatus = 'editing';
+        } else {
+            console.warn("⚠️ Lição sem docId. Pulando atualização de status no servidor.");
+        }
+        // ============================================================
+        // 🏁 FIM DO PASSO 1
+        // ============================================================
+
+        // ✅ RESETAR srtData (O resto da função continua igual)
+        console.log("🧹 Resetando srtData antes de carregar nova lição");
+        srtData.length = 0;
+        currentSegment = null;
+        undoStack = [];
+        redoStack = [];
+        
+        // ✅ LIMPAR o #subtitleName
+        const subtitleNameElement = document.getElementById("subtitleName");
+        if (subtitleNameElement) {
+            subtitleNameElement.textContent = '';
+        }
+        
+        // ✅ Atualizar appState
+        appState.subtitle.name = lesson.srt?.fileName || `${lesson.baseName}.srt`;
+        console.log("🔄 appState.subtitle.name:", appState.subtitle.name);
+        
+        // ✅ Buscar rascunho LOCAL (Dexie) específico para ESTA lição
+        const draft = await db.drafts.get(lesson.baseName);
+        
+        console.log(`🔎 Procurando rascunho local para: "${lesson.baseName}"`);
+        
+        if (draft) {
+            // ... (Lógica de rascunho existente mantida) ...
+            const useDraft = confirm(
+                `Existe uma versão local não salva para "${lesson.baseName}".\n` +
+                `Modificada em: ${new Date(draft.lastModified).toLocaleString()}\n\n` +
+                `Deseja restaurar este rascunho local?`
+            );
+            
+            if (useDraft) {
+                // ... (Lógica de restaurar rascunho mantida) ...
+                if (lesson.video) {
+                     // Lógica de carregar vídeo (igual ao código anterior)
+                     const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
+                     if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
+                        appState.video.url = cachedLesson.video.blobUrl;
+                        updateAllVideos(cachedLesson.video.blobUrl);
+                     } else {
+                        const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+                        // ... fetch e blob (igual ao código anterior)
+                        // Para brevidade, mantive a lógica exata que você já tinha aqui
+                        const videoResponse = await fetch(videoUrl);
+                        const videoBlob = await videoResponse.blob();
+                        const blobUrl = URL.createObjectURL(videoBlob);
+                        if (cachedLesson && cachedLesson.video) cachedLesson.video.blobUrl = blobUrl;
+                        appState.video.url = blobUrl;
+                        updateAllVideos(blobUrl);
+                     }
+                }
+                
+                if (lesson.thumb) {
+                    const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+                    updateAllThumbnails(thumbUrl);
+                    appState.thumbnail.url = thumbUrl;
+                }
+
+                srtData.length = 0;
+                srtData.push(...JSON.parse(JSON.stringify(draft.srtData)));
+                
+                requestAnimationFrame(() => {
+                    const videoPlayer = document.getElementById("videoPlayer-editSrt");
+                    if (videoPlayer && draft.videoPosition) {
+                        videoPlayer.currentTime = draft.videoPosition;
+                    }
+                });
+
+            } else {
+                console.log("🔄 Carregando versão original do servidor");
+                await previewLesson(lesson);
+                await db.drafts.delete(lesson.baseName);
+            }
+        } else {
+            console.log("📦 Nenhum rascunho local, carregando do servidor...");
+            await previewLesson(lesson);
+        }
+
+        hideFooter();
+        setEditorMode('editor');
+        showSection('editSrt');
+        renderSegments();
+
+        if (lesson.srt && lesson.srt.fileName) {
+            appState.subtitle.name = lesson.srt.fileName;
+            const subtitleNameElement = document.getElementById("subtitleName");
+            if (subtitleNameElement) {
+                subtitleNameElement.textContent = lesson.srt.fileName;
+            }
+        }
+
+        // Força uma atualização do cache e da UI para refletir que o post saiu da Home e foi para MyPosts
+        // (Isso fará o post sumir da Home imediatamente após clicar em editar)
+        await refreshLessonsCache();
+
+        hideLoading();
+
+    } catch (error) {
+        console.error("Erro ao preparar edição:", error);
+        alert('Falha ao preparar edição: ' + error.message);
+        hideLoading();
+    }
+}
+
+O que acontece agora?
+ * Você clica em "✎ Editar".
+ * A função pega seu ID de usuário.
+ * Ela chama o Appwrite e altera aquele documento específico:
+   * postStatus vira 'editing'
+   * userEditorId vira seu ID (userId).
+ * Como você tem o "Realtime Listener" (subscribeToPostsUpdates) e a lógica de filtro corrigida (renderThumbnailsFromCache), a interface reagirá automaticamente:
+   * O post sumirá da aba Home (pois Home só mostra published).
+   * O post aparecerá na aba MyPosts com seu status de rascunho.
+ * O editor abre normalmente para você trabalhar.
