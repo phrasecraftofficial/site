@@ -6,6 +6,8 @@ userEditorId: para o user atual.
 ao renderizar para home se inscreve para atualizações de status em posts
 se editing não deve mostrar em home, 
 e se tiver no cache deve excluir
+se no servidor esta em editing e no cache esta em published, deve excluir, 
+se no servidor esta em published e no cache tbm tudo certo.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -1249,7 +1251,7 @@ async function updateElementForSection(sectionId) {
           await loadLessonsToCache();
       }
       
-      // ✅ NOVO: Se for HOME, ativa as escutas em tempo real
+      // ✅ Se for HOME, ativa sincronização em tempo real
       if (sectionId === 'home') {
           subscribeToPostsUpdates();
       }
@@ -1258,6 +1260,7 @@ async function updateElementForSection(sectionId) {
       await waitForThumbnailsToRender(sectionId);
       hideLoading();
   }
+  
   // --- 5. PLAY (mantém como está) ---
   if (sectionId === 'play' && lessonsCache.length > 0) {
     requestAnimationFrame(() => {
@@ -1700,19 +1703,14 @@ function hideAddPlaylistArea() {
  * CORRIGIDO: Agora verifica o rascunho ANTES de carregar do servidor
  * @param {Object} lesson O objeto completo da lição.
  */
-/**
- * Lida com o clique no botão Editar.
- * ATUALIZADO: Muda status no servidor para 'editing' e define o editor atual.
- */
 async function handleEditLesson(lesson) {
     console.log("✎ Editando lição:", lesson.baseName);
     
-    // 1. Início do Loading visual
     showLoading('Preparando ambiente de edição...');
 
     try {
         // ============================================================
-        // 🔄 NOVA LÓGICA: Atualizar Status no Appwrite
+        // 🔄 ATUALIZAR STATUS NO APPWRITE
         // ============================================================
         if (lesson.docId) {
             console.log(`🔒 Bloqueando post "${lesson.baseName}" para edição...`);
@@ -1729,7 +1727,16 @@ async function handleEditLesson(lesson) {
                         userEditorId: user.$id
                     }
                 );
-                lesson.postStatus = 'editing'; // Atualiza local
+                
+                // ✅ REUTILIZA A LÓGICA DO REALTIME AQUI
+                // Simula o evento que o Realtime deveria trazer
+                const indexInCache = lessonsCache.findIndex(l => l.baseName === lesson.baseName);
+                if (indexInCache > -1) {
+                    console.log(`🧹 Removendo do cache (status: editing)`);
+                    lessonsCache.splice(indexInCache, 1);
+                }
+                
+                lesson.postStatus = 'editing';
                 console.log("✅ Status atualizado para 'editing' no servidor.");
             } catch (authError) {
                 console.warn("⚠️ Não foi possível atualizar status:", authError);
@@ -1737,9 +1744,7 @@ async function handleEditLesson(lesson) {
         }
         // ============================================================
 
-
-        // ✅ RESETAR srtData NO INÍCIO
-        console.log("🧹 Resetando srtData antes de carregar nova lição");
+        // ✅ RESETAR srtData ANTES DE CARREGAR
         srtData.length = 0;
         currentSegment = null;
         undoStack = [];
@@ -1772,7 +1777,6 @@ async function handleEditLesson(lesson) {
             if (useDraft) {
                 showLoading('Restaurando rascunho...');
                 
-                // ✅ Validação: o rascunho tem dados válidos?
                 if (!draft.srtData || draft.srtData.length === 0) {
                     throw new Error('Rascunho corrompido: nenhum segmento encontrado');
                 }
@@ -1780,21 +1784,17 @@ async function handleEditLesson(lesson) {
                 // Carrega vídeo e thumbnail
                 if (lesson.video) {
                     const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
-                    // Lógica de carregar vídeo (igual original)
                     if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
                         appState.video.url = cachedLesson.video.blobUrl;
                         updateAllVideos(cachedLesson.video.blobUrl);
                     } else {
-                      // Baixa se necessário
                         const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
                         const videoResponse = await fetch(videoUrl);
                         const videoBlob = await videoResponse.blob();
                         const blobUrl = URL.createObjectURL(videoBlob);
-                        // Atualiza cache
                         if (cachedLesson && cachedLesson.video) {
                             cachedLesson.video.blobUrl = blobUrl;
                         }
-                        // Restaura SRT do Draft
                         appState.video.url = blobUrl;
                         updateAllVideos(blobUrl);
                     }
@@ -1807,8 +1807,8 @@ async function handleEditLesson(lesson) {
                 }
                 
                 // ✅ Restaura SRT do rascunho
-                srtData.length = 0; // Garante que está vazio
-                srtData.push(...JSON.parse(JSON.stringify(draft.srtData))); // Deep clone
+                srtData.length = 0;
+                srtData.push(...JSON.parse(JSON.stringify(draft.srtData)));
                 
                 console.log(`✅ Rascunho restaurado com ${srtData.length} segmentos`);
                 console.log(`   Primeiros 3 segmentos do rascunho:`);
@@ -1838,6 +1838,7 @@ async function handleEditLesson(lesson) {
             console.log("📦 Nenhum rascunho para esta lição, carregando do servidor...");
             await previewLesson(lesson);
         }
+        
         // Configura UI
         hideFooter();
         setEditorMode('editor');
@@ -5919,34 +5920,28 @@ function subscribeToPostsUpdates() {
         const event = response.events[0];
         const doc = response.payload;
 
-        console.log(`📬 Evento Post: ${event}`, doc);
+        console.log(`📬 Evento Post: ${event}`, doc.lessonName, `Status: ${doc.postStatus}`);
 
-        // 1. POST MUDOU PARA 'EDITING' (Host começou a editar)
-        if ((event.includes('.update') || event.includes('.create')) && doc.postStatus === 'editing') {
-            console.log(`✏️ Post "${doc.lessonName}" agora está em EDITING`);
+        // LÓGICA PRINCIPAL: Appwrite é a fonte da verdade
+        // Se status !== 'published', remove do cache
+        // Se status === 'published', garante que está no cache
+        
+        const indexInCache = lessonsCache.findIndex(l => l.baseName === doc.lessonName);
+
+        // ❌ CASO 1: Status é 'editing' ou qualquer coisa que não seja 'published'
+        if (doc.postStatus !== 'published') {
+            console.log(`🧹 Post "${doc.lessonName}" não está published. Removendo do cache...`);
             
-            // Remove do cache se estiver lá
-            const indexInCache = lessonsCache.findIndex(l => l.baseName === doc.lessonName);
             if (indexInCache > -1) {
-                console.log(`🗑️ Removendo "${doc.lessonName}" do cache (status: editing)`);
                 lessonsCache.splice(indexInCache, 1);
             }
+        } 
+        // ✅ CASO 2: Status é 'published' (Appwrite é a verdade)
+        else {
+            console.log(`✅ Post "${doc.lessonName}" está published no servidor.`);
             
-            // Se estamos na HOME, re-renderiza para remover a lição
-            if (appState.currentSection === 'home') {
-                renderThumbnailsFromCache('home', lessonsCache);
-            }
-        }
-
-        // 2. POST VOLTOU PARA 'PUBLISHED' (Host finalizou edição)
-        if (event.includes('.update') && doc.postStatus === 'published') {
-            console.log(`✅ Post "${doc.lessonName}" voltou a PUBLISHED`);
-            
-            // Verifica se já está no cache
-            const existingIndex = lessonsCache.findIndex(l => l.baseName === doc.lessonName);
-            
-            if (existingIndex === -1) {
-                // Se não está, adiciona
+            if (indexInCache === -1) {
+                // Não está no cache, adiciona
                 const thumbUrl = getBackblazePublicUrl(doc.thumbFileId);
                 lessonsCache.unshift({
                     baseName: doc.lessonName,
@@ -5974,35 +5969,22 @@ function subscribeToPostsUpdates() {
                 });
                 console.log(`✨ "${doc.lessonName}" adicionado ao cache`);
             } else {
-                // Se já está, apenas atualiza o status
-                lessonsCache[existingIndex].postStatus = 'published';
-                lessonsCache[existingIndex].docId = doc.$id;
-            }
-            
-            // Se estamos na HOME, re-renderiza para incluir a lição
-            if (appState.currentSection === 'home') {
-                renderThumbnailsFromCache('home', lessonsCache);
+                // Já está no cache, garante que status está sincronizado
+                lessonsCache[indexInCache].postStatus = 'published';
+                lessonsCache[indexInCache].docId = doc.$id;
+                console.log(`🔄 "${doc.lessonName}" sincronizado no cache`);
             }
         }
-
-        // 3. POST FOI DELETADO
-        if (event.includes('.delete')) {
-            console.log(`🗑️ Post "${doc.lessonName}" foi deletado`);
-            
-            const indexInCache = lessonsCache.findIndex(l => l.baseName === doc.lessonName);
-            if (indexInCache > -1) {
-                lessonsCache.splice(indexInCache, 1);
-            }
-            
-            // Re-renderiza se estamos na HOME
-            if (appState.currentSection === 'home') {
-                renderThumbnailsFromCache('home', lessonsCache);
-            }
+        
+        // Re-renderiza se estamos na HOME (reutiliza a função existente)
+        if (appState.currentSection === 'home') {
+            renderThumbnailsFromCache('home', lessonsCache);
         }
     });
 
     console.log('✅ Inscrito em atualizações de Posts');
 }
+  
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
