@@ -1,0 +1,69 @@
+Captura da fala
+Use a Web Speech API (nativa em navegadores como Chrome e Edge).
+
+Ela permite capturar áudio do microfone e transcrever em texto sem custo.
+
+
+const recognition = new webkitSpeechRecognition();
+recognition.lang = 'pt-BR'; // idioma da fala
+recognition.onresult = (event) => {
+  const textoFalado = event.results[0][0].transcript;
+  console.log("Você disse:", textoFalado);
+};
+recognition.start();
+
+
+Exemplo em JavaScript:
+Distância Levenshtein ou 
+distância de edição entre dois "strings" 
+(duas sequências de caracteres):
+é dada pelo número mínimo de operações 
+necessárias para transformar um string no outro.
+
+// Função para calcular distância de Levenshtein
+function levenshtein(a, b) {
+  const matriz = Array.from({ length: a.length + 1 }, () =>
+    Array(b.length + 1).fill(0)
+  );
+
+  for (let i = 0; i <= a.length; i++) matriz[i][0] = i;
+  for (let j = 0; j <= b.length; j++) matriz[0][j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const custo = a[i - 1] === b[j - 1] ? 0 : 1;
+      matriz[i][j] = Math.min(
+        matriz[i - 1][j] + 1,      // deleção
+        matriz[i][j - 1] + 1,      // inserção
+        matriz[i - 1][j - 1] + custo // substituição
+      );
+    }
+  }
+  return matriz[a.length][b.length];
+}
+
+// Similaridade entre duas palavras (0 a 100%)
+function similaridadePalavra(p1, p2) {
+  const distancia = levenshtein(p1, p2);
+  const maxLen = Math.max(p1.length, p2.length);
+  return ((maxLen - distancia) / maxLen) * 100;
+}
+
+// Avaliação de frase
+function avaliarPronuncia(fraseEsperada, fraseCapturada) {
+  const palavrasEsperadas = fraseEsperada.split(" ");
+  const palavrasCapturadas = fraseCapturada.split(" ");
+  let total = 0;
+
+  for (let i = 0; i < palavrasEsperadas.length; i++) {
+    const esperado = palavrasEsperadas[i] || "";
+    const capturado = palavrasCapturadas[i] || "";
+    total += similaridadePalavra(esperado, capturado);
+  }
+
+  return total / palavrasEsperadas.length;
+}
+
+// Exemplo:
+console.log(avaliarPronuncia("amor eterno", "amar eterno")); 
+// Saída: ~87.5%
