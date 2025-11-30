@@ -1,5 +1,11 @@
 # site
 
+transformar a o select em checkbox, 
+diminuir alutra do video, colocar barra de botoes em duas linha ao lado do video, 
+ao editar inicio e fim considerar a caixa de selecao, ou seja ao clicar em fim considerar se linha atual, todas, atual e proximas, 
+adiantar e atrasar continua, 
+cuidado para quebrar o redo undo, coracao da edicao
+
 Fluxo para tanto para thumb quanto para srt e video: consulta cache arquivos e nome, consulta links e nomes no aw, baixa arquivos do bb, salva arquivos e nomes no cache,
 
 Estratégia recomendada
