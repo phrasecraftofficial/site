@@ -1,5 +1,16 @@
 <!-- 50
-elementos do edit Srt reorganizados
+#video-section-editor video {  
+
+#video-section-editor {
+
+Explicação das mudanças:
+
+Wrapper externo com max-width: 600px - Garante que todo o conteúdo (vídeo + botões) respeite o limite
+width: 100% no vídeo (em vez de auto) - Faz o vídeo preencher o container pai respeitando o aspect-ratio
+max-width: 600px; margin: 0 auto; nos controles - Garante que fiquem centralizados e dentro do limite
+CSS adicional - Reforça o comportamento responsivo
+
+Essas mudanças garantem que o vídeo e os controles sempre fiquem centralizados e dentro dos 600px, independente do zoom ou resolução.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -36,7 +47,7 @@ section.active {
 /* Caixas internas */
 .box {
     background: #1c1c1c;
-  	margin: 0 auto;
+    margin: 0 auto;
     padding: 10px;
     max-width: 600px;
     min-width: 400px;
@@ -265,7 +276,14 @@ video, .thumb-section img {
   display: block;
   object-fit: cover; /* Garante que a imagem preencha bem */
 }
-
+#video-section-editor {
+    max-width: 100%;
+}
+#video-section-editor video {
+    width: 100%;
+    height: auto;
+    display: block;
+}
 /* Garante que os textos e botões abaixo do vídeo sigam o mesmo alinhamento */
 .info-content {
   display: flex;
@@ -590,23 +608,14 @@ label input[type="checkbox"] {
 	<div id="subtitleName">
     	<!-- Div para exibir o nome do arquivo da legenda -->
 	</div>
-    
-    <div class="flex row gap" style="
-        align-items: center; 
-        max-width: 600px; 
-        padding: 0; 
-        margin: 0 auto 30px 10px; /* Aumentei o espaço em baixo */
-        gap: 20px; /* Aumentei o espaço entre o vídeo e os botões */
-    ">
-        
-        <div id="video-section-editor" style="flex: 1; position: relative;">
-            <video id="videoPlayer-editSrt" controls crossorigin="anonymous" style="width: auto; aspect-ratio: 16/9; display: block;">
-                <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-            </video>
-        </div>
-
-        <div class="flex column gap"  id="edit-bar" style="width: auto; margin: 0;">
-
+  <div class="flex column gap" style="max-width: 600px; margin: 0 auto;">
+      <div class="flex row gap" style="align-items: center; gap: 20px;">
+          <div id="video-section-editor" style="flex: 1; position: relative;">
+              <video id="videoPlayer-editSrt" controls crossorigin="anonymous" style="width: 100%; aspect-ratio: 16/9; display: block;">
+                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+              </video>
+          </div>
+          <div class="flex column gap" id="edit-bar" style="width: auto; margin: 0;">
             <div class="flex row gap" style="margin: 0;">
                 <button onclick="undo()">↩</button>
                 <button id="btn-save" onclick="showSave()">💾</button>
@@ -624,11 +633,10 @@ label input[type="checkbox"] {
                 <button id="btn-config" onclick="showConfig()">⚙</button>
                 <button onclick="nextLine()" style="background: rgba(0,0,0,0.5);">⏭︎</button>
             </div>
-
-        </div>
-    </div>
-    
-    <div id="editor">
+          </div>
+      </div>
+  </div>
+  <div id="editor">
     <form>
       <label class="flex row gap" >
           <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
@@ -679,7 +687,7 @@ label input[type="checkbox"] {
     </form>
     </div><!--editor-->
     
-    <div class="flex row gap" id="navigation-controls-previewMode"  style="sdisplay: none;">
+    <div class="flex row gap" id="navigation-controls-previewMode" style="display: none; max-width: 600px; margin: 0 auto;">
         <button onclick="prevLine()">⏮︎</button>
         <button onclick="playLine()">⏯︎</button>
         <button onclick="nextLine()">⏭︎</button>
