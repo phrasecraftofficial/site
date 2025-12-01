@@ -6,6 +6,10 @@ ao editar inicio e fim considerar a caixa de selecao, ou seja ao clicar em fim c
 adiantar e atrasar continua, 
 cuidado para quebrar o redo undo, coracao da edicao
 
+usar o codigo existente para impedir que a performance inicie antes do video ser carregado, tocar o trecho e liberar os botoes.
+
+saltar para legenda conforme o player avanca.
+
 Fluxo para tanto para thumb quanto para srt e video: consulta cache arquivos e nome, consulta links e nomes no aw, baixa arquivos do bb, salva arquivos e nomes no cache,
 
 Estratégia recomendada
