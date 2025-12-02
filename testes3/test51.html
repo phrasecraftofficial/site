@@ -1,4 +1,6 @@
 <!-- 51
+O que mudou:
+
 Saltar para legenda conforme o player avanca, igual quando clica em 
 avancar ou retroceder mas automaticamente, movendo a lista de legenda.
 Com botao para ativar desativar.
@@ -7,7 +9,18 @@ enableAutoSync() - Cria um intervalo que checa a cada 200ms
 Usa funções existentes - parseTime(), scrollToSegment(), updateEditorFields()
 Não interfere com a edição - Só atualiza visualmente, sem chamar openEditor()
 
-O app ficará muito mais dinâmico! A lista de legendas vai "seguir" o vídeo automaticamente.-->
+O app ficará muito mais dinâmico! A lista de legendas vai "seguir" o vídeo automaticamente.
+
+em info contente e aparece apenas
+> Excluir racunho (se existir) | > Excluir post
+e se clicar em qualquer outra area do post:
+aparece o confirm, se tiver racunho pergunta se deseja continuar
+se continuar, recupera o rascunho,
+se nao quiser continuar nao recupera o rascunho,
+e segue o fluxo normal ja existente.
+ou seja nao vai mais aparecer editar pois é redundante, 
+ou apenas excluir pois temos duas situaçoes de exclusao.
+-->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -32,6 +45,12 @@ body {
 main {
   padding: 62px 0 62px 0; /* altura do footer e do header */
 }
+/* ocupar a tela toda */
+main.full-screen {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
 /* todas escondidas */
 section { 
 	display: none;
@@ -43,7 +62,7 @@ section.active {
 /* Caixas internas */
 .box {
     background: #1c1c1c;
-    margin: 0 auto;
+  	margin: 5px 5px 5px 5px;
     padding: 10px;
     max-width: 600px;
     min-width: 400px;
@@ -272,14 +291,7 @@ video, .thumb-section img {
   display: block;
   object-fit: cover; /* Garante que a imagem preencha bem */
 }
-#video-section-editor {
-    max-width: 100%;
-}
-#video-section-editor video {
-    width: 100%;
-    height: auto;
-    display: block;
-}
+
 /* Garante que os textos e botões abaixo do vídeo sigam o mesmo alinhamento */
 .info-content {
   display: flex;
@@ -408,7 +420,7 @@ label input[type="checkbox"] {
 /* ================================== */
 .segmentsArea {
 	padding: 10px; 
-    max-height: 50vh; /* ou a altura que preferir */
+    max-height: 30vh; /* ou a altura que preferir */
     overflow-y: auto;
     width: 100%;
     max-width: 600px;
@@ -590,115 +602,6 @@ label input[type="checkbox"] {
   </header>
 
 <main>
-  <section id="editSrt">
-    <div class="box" id="save-area">
-        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-        <p>💾 Salvar</p>
-        <div class="flex row gap">
-            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
-            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
-            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
-        </div>
-    </div><!--save-area-->
-      
-	<div id="subtitleName">
-    	<!-- Div para exibir o nome do arquivo da legenda -->
-	</div>
-    
-  <button id="btn-sync" onclick="toggleAutoSync()" title="Sincronização Automática">
-    🔄
-  </button>
-
-  <div class="flex column gap" style="max-width: 600px; margin: 0 auto;">
-      <div class="flex row gap" style="align-items: center; gap: 20px;">
-          <div id="video-section-editor" style="flex: 1; position: relative;">
-              <video id="videoPlayer-editSrt" controls crossorigin="anonymous" style="width: 100%; aspect-ratio: 16/9; display: block;">
-                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-              </video>
-          </div>
-          <div class="flex column gap" id="edit-bar" style="width: auto; margin: 0;">
-            <div class="flex row gap" style="margin: 0;">
-                <button onclick="undo()">↩</button>
-                <button id="btn-save" onclick="showSave()">💾</button>
-                <button onclick="redo()">↪</button>
-            </div>
-
-            <div class="flex row gap" style="margin: 0;">
-                <button onclick="addSegment()">|+</button>
-                <button onclick="removeSegment()">|−</button>
-                <button id="btn-load" onclick="showSection('postLesson')">👉</button>
-            </div>
-            
-            <div class="flex row gap" style="margin: 0;">
-                <button onclick="prevLine()" style="background: rgba(0,0,0,0.5);">⏮︎</button>
-                <button id="btn-config" onclick="showConfig()">⚙</button>
-                <button onclick="nextLine()" style="background: rgba(0,0,0,0.5);">⏭︎</button>
-            </div>
-          </div>
-      </div>
-  </div>
-  <div id="editor">
-    <form>
-      <label class="flex row gap" >
-          <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
-      </label>
-    </form>
-	<div class="box column" id="config-area">
-		<form class="flex row">
-     		<label class="row gap">Lote
-           	<input id="editStack" placeholder="0.100">
-            </label>
-        	<span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-     		<label class="row gap">Salto
-           	<input id="editStep" type="" step="0.1" min="0.01" oninput="updateTimeStep()" placeholder="0.050">
-            </label>
-		</form>
-           
-		<form class="flex row gap" id="linhaForm"> 
-           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>                
-  			<select id="batchMode" id="" style="width: 160px;">
-  				<option name="opcao-linha" value="all" checked>Todas as linhas</option>
-  				<option name="opcao-linha" value="current">Linha atual</option>
-  				<option name="opcao-linha" value="from-current">Atual e próximas</option>
-  			</select>
-           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>     
-		</form>
-	</div><!--config-area-->
-	<form class="flex row gap" style="gap: 0; padding: 0;">
-      <label class="flex row gap" style="gap: 0; padding: 0;">
-        <div class="flex column gap" style="gap: 0; padding: 0;">
-          Início
-          <input type="text" id="editStart" placeholder="00:00:000">
-        </div>
-        <div class="flex column gap">
-          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
-          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
-        </div>
-      </label>
-      <label class="flex row gap" style="gap: 0; padding: 0;">
-        <div class="flex column gap" style="gap: 0; padding: 0;">
-          Fim
-          <input id="editEnd"  placeholder="00:00:000">
-        </div>
-        <div class="flex column gap">
-          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
-          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
-        </div>
-      </label>
-    </form>
-    </div><!--editor-->
-    
-    <div class="flex row gap" id="navigation-controls-previewMode" style="display: none; max-width: 600px; margin: 0 auto;">
-        <button onclick="prevLine()">⏮︎</button>
-        <button onclick="playLine()">⏯︎</button>
-        <button onclick="nextLine()">⏭︎</button>
-    </div>
-    
-    <div class="segmentsArea flex column gap" id="segments-area">
-    	  <span>Lista de Legendas</span>
-        <div id="segments"></div>
-    </div>
-	</section>
     <!-- Seções -->
     <section id="home">
         <h2>Home</h2>
@@ -942,7 +845,113 @@ label input[type="checkbox"] {
   <!----------->
   <!--editSrt-->
   <!----------->
+  <section id="editSrt">
+    <div class="box thumb-section" id="save-area">
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <p>💾 Salvar</p>
+        <div class="flex row gap">
+            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
+            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
+            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
+        </div>
+    </div><!--save-area-->
+    
+	<div class="" id="video-section-editor">
+        <div id="subtitleName">
+            <!-- Nome do arquivo da legenda -->
+        </div>
+    
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+        <div class="flex row gap" id="navigation-controls-previewMode"  style="
+            position: fixed; /* Fixa em relação ao video-container-relative */
+            top: 1px; /* Distância do fundo do vídeo*/
+            left: 50%; /* Começa no meio */
+            transform: translateX(-50%);
+            z-index: 999;">
+            <button class="general-btn" onclick="prevLine()">⏮︎</button>
+            <button class="general-btn" onclick="playLine()">⏯︎</button>
+            <button class="general-btn" onclick="nextLine()">⏭︎</button>
+        </div>
+	</div>
+    
+    <!-- Lista de Legendas -->
+    <div class="segmentsArea flex column gap" id="segments-area">
+    	  <span>Lista de Legendas</span>
+        <div id="segments"></div>
+    </div>
+    
+    <!-- Editor -->
+	<div class="thumb-section box" id="editor">
+      <div class="flex row gap">
+          <button id="btn-save" onclick="showSave()">💾</button>
+          <button onclick="undo()">↩</button>
+          <button onclick="redo()">↪</button>
+          <button id="btn-sync" onclick="toggleAutoSync()" title="Sincronização Automática">
+            🔄
+          </button>
+          <button id="btn-config" onclick="showConfig()">⚙</button>
+          <button onclick="addSegment()">|+</button>
+          <button onclick="removeSegment()">|−</button>
+          <button id="btn-load" onclick="showSection('postLesson')">👉</button>
+      </div>
+      
+      <form>
+        <label class="flex row gap" >
+            <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
+        </label>
+      </form>
+    
+      <div class="flex column" style="gap: 5px;">
+          <!--Início e Fim-->
+          <form class="row">
+              <div class="flex row gap" style="gap: 0; padding: 0;">
+               <label class="flex column" style="gap: 0; padding: 0; margin-right: 10px;">
+                  Início
+                  <div class="flex row"  style="gap: 5px; padding: 0;">
+                    <input type="text" id="editStart" placeholder="00:00:000">
+                    <button type="button" onclick="adjustBatchTime('start', -1)">−</button>
+                    <button type="button" onclick="adjustBatchTime('start', 1)">+</button>
+                  </div>
+                </label>
+                
+                <label class="flex column" style="gap: 0; padding: 0; margin-left: 10px;">
+                  Fim
+                  <div class="flex row"  style="gap: 5px; padding: 0;">
+                    <input id="editEnd" placeholder="00:00:000">
+                    <button type="button" onclick="adjustBatchTime('end', -1)">−</button>
+                    <button type="button" onclick="adjustBatchTime('end', 1)">+</button>
+                  </div>
+                </label>
+              </div>
+          </form>
+			    <hr style="width: 350px; margin: 5px; border: none; border-top: 0.5px solid #7A9299;">
+          <!--config-area-->
+          <form class="flex row" id="config-area">
+              <label class="flex column" style="margin-right: 10px;">
+                  <p>Lote</p>
+                  <input id="editStack" placeholder="0.100">
+              </label>
 
+              <div class="flex column"  style="gap: 5px; padding: 0; margin-left: 10px;">
+                <div class="flex row">
+                    <button type="button" class="general-btn" onclick="showEarlier()" style="margin-bottom: 0;">Adiantar</button> 
+                    <button type="button" class="general-btn" onclick="showLater()" style="margin-bottom: 0;">Atrasar</button>
+                </div>
+                
+                <select id="batchMode" id="" style="width: 160px;">
+                    <option name="opcao-linha" value="all" checked>Todas as linhas</option>
+                    <option name="opcao-linha" value="current">Linha atual</option>
+                    <option name="opcao-linha" value="from-current">Atual e próximas</option>
+                </select>
+              </div>
+          </form>
+      </div><!--config-area-->
+    
+    </div><!--editor-->
+	</section>
+    
   </main>  
 
   <footer id="main-footer">
@@ -968,7 +977,7 @@ label input[type="checkbox"] {
 
 <script>
 // 1. A variável "estado" (começa como 'editor')
-let currentEditMode = 'editor';  
+let currentEditMode = 'editor'; 
 
 // sincronização srt e video
 let autoSyncEnabled = true;
@@ -1184,6 +1193,17 @@ async function showSection(sectionId) {
  * Também gerencia a visibilidade do lobby.
  */
 async function updateElementForSection(sectionId) {
+  // ✅ Controle de Padding do Main (Full Screen)
+  const mainElement = document.querySelector('main');
+  
+  // Lista de seções que DEVEM ocupar a tela toda (sem padding de header/footer)
+  const fullScreenSections = ['play', 'editSrt']; 
+
+  if (fullScreenSections.includes(sectionId)) {
+      mainElement.classList.add('full-screen');
+  } else {
+      mainElement.classList.remove('full-screen');
+  }
   
   // --- 1. LÓGICA DE SAÍDA / ENCERRAMENTO ---
   const isLeavingChallenge = appState.currentSection === 'challenge' && sectionId !== 'challenge';
@@ -1214,7 +1234,6 @@ async function updateElementForSection(sectionId) {
       window.unsubscribeFromMatch();
       window.unsubscribeFromMatch = null;
       window.currentMatch = null;
-      disableAutoSync();
   }
 
   // --- 2. CONFIGURAÇÃO VISUAL PADRÃO (mantém como está) ---
@@ -1301,7 +1320,6 @@ function setEditorMode(mode) {
 
     // 2. Seleciona os elementos do seu HTML
     const editorDiv = document.getElementById('editor');
-    const editBar = document.getElementById('edit-bar');
     const navPreview = document.getElementById('navigation-controls-previewMode');
     
     // Botões do footer (baseado no seu HTML)
@@ -1316,7 +1334,6 @@ function setEditorMode(mode) {
     // Primeiro, esconde tudo para "limpar"
     // (Oculta as partes que mudam)
     if (editorDiv) editorDiv.style.display = 'none';
-    if (editBar) editBar.style.display = 'none';
     if (navPreview) navPreview.style.display = 'none';
     if (footerSolo) footerSolo.style.display = 'none';
     if (footerChallenging) footerChallenging.style.display = 'none';
@@ -1327,20 +1344,17 @@ function setEditorMode(mode) {
     if (mode === 'editor') {
         // Mostra o editor
         if (editorDiv) editorDiv.style.display = 'block';
-        if (editBar) editBar.style.display = 'block';
-        if (navPreview) navPreview.style.display = 'none';
+        if (navPreview) navPreview.style.display = 'block';
         
     } else if (mode === 'previewSolo') {
         // Mostra navegação e botões de "Solo" e "Desafiar"
         if (navPreview) navPreview.style.display = 'block';
-        if (editBar) editBar.style.display = 'none';
         if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
         if (footerChallenging) footerChallenging.style.display = 'flex';
         
     } else if (mode === 'previewMulti') {
         // Mostra navegação e botão "Aceitar Desafio"
         if (navPreview) navPreview.style.display = 'block';
-        if (editBar) editBar.style.display = 'none';
         if (footerChallenges) footerChallenges.style.display = 'flex';
     }
 }
@@ -1533,16 +1547,19 @@ function closeLoadSaveArea() {
  * Mostra o painel de "Configurações" (Editar em Lote).
  */
 function showConfig() {
-  // Seleciona os elementos
   const configArea = document.getElementById('config-area');
   const saveArea = document.getElementById('save-area');
 
-  // Esconde o painel de salvar (para não sobrepor)
-  if (saveArea) saveArea.style.display = 'none';
-  
-  // Mostra o painel de config
-  if (configArea) configArea.style.display = 'block';
+  const isVisible = window.getComputedStyle(configArea).display !== 'none';
+
+  if (isVisible) {
+    configArea.style.display = 'none';
+  } else {
+    configArea.style.display = 'flex';
+    if (saveArea) saveArea.style.display = 'none';
+  }
 }
+
 
 
 /**
@@ -1786,61 +1803,67 @@ async function handleEditLesson(lesson) {
         
         console.log(`🔎 Procurando rascunho local para: "${lesson.baseName}"`);
         
-        if (draft) {
-            // ... (Lógica de rascunho existente mantida) ...
+        // ✅ Verifica se o usuário JÁ DECIDIU na UI (evita confirm duplicado)
+        const userAlreadyDecided = lesson.hasOwnProperty('useDraft');
+        
+        if (draft && !userAlreadyDecided) {
+            // Caso excepcional: rascunho existe mas usuário não foi perguntado
+            // (ex: chamada direta via botão Editar)
             const useDraft = confirm(
                 `Existe uma versão local não salva para "${lesson.baseName}".\n` +
                 `Modificada em: ${new Date(draft.lastModified).toLocaleString()}\n\n` +
                 `Deseja restaurar este rascunho local?`
             );
+            lesson.useDraft = useDraft;
+        }
+      
+        if (draft && lesson.useDraft) {
+            // Restaura o rascunho (lógica existente mantida)
+            if (lesson.video) {
+                const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
+                if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
+                    appState.video.url = cachedLesson.video.blobUrl;
+                    updateAllVideos(cachedLesson.video.blobUrl);
+                } else {
+                    const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+                    const videoResponse = await fetch(videoUrl);
+                    const videoBlob = await videoResponse.blob();
+                    const blobUrl = URL.createObjectURL(videoBlob);
+                    if (cachedLesson && cachedLesson.video) cachedLesson.video.blobUrl = blobUrl;
+                    appState.video.url = blobUrl;
+                    updateAllVideos(blobUrl);
+                }
+            }
             
-            if (useDraft) {
-                // ... (Lógica de restaurar rascunho mantida) ...
-                if (lesson.video) {
-                     // Lógica de carregar vídeo (igual ao código anterior)
-                     const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
-                     if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
-                        appState.video.url = cachedLesson.video.blobUrl;
-                        updateAllVideos(cachedLesson.video.blobUrl);
-                     } else {
-                        const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
-                        // ... fetch e blob (igual ao código anterior)
-                        // Para brevidade, mantive a lógica exata que você já tinha aqui
-                        const videoResponse = await fetch(videoUrl);
-                        const videoBlob = await videoResponse.blob();
-                        const blobUrl = URL.createObjectURL(videoBlob);
-                        if (cachedLesson && cachedLesson.video) cachedLesson.video.blobUrl = blobUrl;
-                        appState.video.url = blobUrl;
-                        updateAllVideos(blobUrl);
-                     }
+            if (lesson.thumb) {
+                const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+                updateAllThumbnails(thumbUrl);
+                appState.thumbnail.url = thumbUrl;
+            }
+        
+            srtData.length = 0;
+            srtData.push(...JSON.parse(JSON.stringify(draft.srtData)));
+            
+            requestAnimationFrame(() => {
+                const videoPlayer = document.getElementById("videoPlayer-editSrt");
+                if (videoPlayer && draft.videoPosition) {
+                    videoPlayer.currentTime = draft.videoPosition;
                 }
-                
-                if (lesson.thumb) {
-                    const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
-                    updateAllThumbnails(thumbUrl);
-                    appState.thumbnail.url = thumbUrl;
-                }
-
-                srtData.length = 0;
-                srtData.push(...JSON.parse(JSON.stringify(draft.srtData)));
-                
-                requestAnimationFrame(() => {
-                    const videoPlayer = document.getElementById("videoPlayer-editSrt");
-                    if (videoPlayer && draft.videoPosition) {
-                        videoPlayer.currentTime = draft.videoPosition;
-                    }
-                });
-
-            } else {
-                console.log("🔄 Carregando versão original do servidor");
-                await previewLesson(lesson);
+            });
+        
+        } else {
+            // Carrega versão original do servidor
+            console.log("🔄 Carregando versão original do servidor");
+            await previewLesson(lesson);
+            
+            // Se o usuário explicitamente rejeitou o rascunho, deleta ele
+            if (draft && lesson.useDraft === false) {
                 await db.drafts.delete(lesson.baseName);
             }
-        } else {
-            console.log("📦 Nenhum rascunho local, carregando do servidor...");
-            await previewLesson(lesson);
         }
-
+        
+        // Limpa a flag temporária
+        delete lesson.useDraft;
         hideFooter();
         setEditorMode('editor');
         showSection('editSrt');
@@ -2157,7 +2180,6 @@ let currentSegment = null;
 let undoStack = [];
 let redoStack = [];
 let stopTimeout = null; // auxiliar para playLine()
-let TIME_STEP = 0.1; // segundos
 let isBatchEditing = false; // para edição em lote
 let subtitleName = "legendas.srt";  // Nome padrão caso não seja carregado nenhum arquivo
 
@@ -2358,19 +2380,72 @@ function adjustTime(field, deltaSeconds) {
   redoStack = [];
 
   currentSegment[field] = newValue;
-  updateEditorFields(currentSegment);
-  renderSegments();
+  
+  // Para que a edição em lote não trave o navegador 
+  // (tentando renderizar a lista 1000 vezes se tiver 1000 linhas)
+  // Isso garante que, quando você clicar no botão de lote, 
+  // ele só redesenhe a tela uma vez no final, em vez de redesenhar a cada linha alterada.
+  if (!isBatchEditing) {
+      updateEditorFields(currentSegment);
+      renderSegments();
+  }
 }
 
-function updateTimeStep() {
-  const input = document.getElementById("editStep");
-  // Substitui vírgula por ponto para garantir compatibilidade numérica
-  let val = parseFloat(input.value.replace(',', '.'));
+/**
+ * Aplica ajuste de tempo (start ou end) respeitando o modo de lote.
+ * @param {string} field - 'start' ou 'end'
+ * @param {number} direction - 1 para aumentar, -1 para diminuir
+ */
+function adjustBatchTime(field, direction) {
+  const batchMode = document.getElementById("batchMode").value;
   
-  // Verifica se é um número válido e maior que 0
-  if (!isNaN(val) && val > 0) {
-    TIME_STEP = val;
+  // Calcula o delta baseado no valor do Lote * direção (+1 ou -1)
+  const stepSize = getCurrentStep();
+  const delta = direction * stepSize;
+
+  // 1. Se for 'Linha atual', usa a função padrão
+  if (batchMode === 'current') {
+    adjustTime(field, delta);
+    return;
   }
+
+  // 2. Se for Lote ('all' ou 'from-current')
+  const stateBefore = srtData.map(s => ({ ...s }));
+  const savedSegment = currentSegment; 
+
+  isBatchEditing = true; 
+
+  if (batchMode === 'all') {
+    srtData.forEach(seg => {
+      currentSegment = seg;
+      adjustTime(field, delta);
+    });
+  } else if (batchMode === 'from-current' && currentSegment) {
+    const startIdx = srtData.findIndex(s => s.id === currentSegment.id);
+    if (startIdx >= 0) {
+      for (let i = startIdx; i < srtData.length; i++) {
+        currentSegment = srtData[i];
+        adjustTime(field, delta);
+      }
+    }
+  }
+
+  isBatchEditing = false;
+  currentSegment = savedSegment; 
+
+  // 3. Salva o Undo do Lote
+  const stateAfter = srtData.map(s => ({ ...s }));
+  undoStack.push({
+    type: "edit-multiple", 
+    delta,
+    stateBefore,
+    stateAfter
+  });
+  redoStack = [];
+
+  // 4. Renderiza tudo
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
 }
 
 function shiftTime(timeStr, delta) {
@@ -2621,7 +2696,8 @@ function showLater() {
 function getCurrentStep() {
   const input = document.getElementById("editStack").value.trim().replace(",", ".");
   const step = parseFloat(input);
-  return isNaN(step) || step <= 0 ? TIME_STEP : step;
+  // Se não for número ou <= 0, usa 0.100 como padrão
+  return isNaN(step) || step <= 0 ? 0.1 : step;
 }
 
 function shiftSelectedLines(delta) {
@@ -2932,6 +3008,7 @@ function playLine() {
   // Limpa o safety quando seeked ocorrer
   video.addEventListener('seeked', () => clearTimeout(safety), { once: true });
 }
+
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | SRT sync with VIDEO --- 
@@ -3639,6 +3716,9 @@ async function loadLessonsToCache() {
  * ATUALIZADO: Renderiza as thumbnails com indicador de progresso
  * Agora adiciona o botão "Continuar" para lições com progresso
  */
+/**
+ * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas).
+ */
 async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     const containerMap = {
         'home': 'home-post-container',
@@ -3651,59 +3731,44 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // 1. 👇 OBTER O ID DO USUÁRIO LOGADO (Adicionado)
+    // 1. 👇 OBTER O ID DO USUÁRIO LOGADO
     let currentUserId = null;
     try {
         const user = await account.get();
         currentUserId = user.$id;
     } catch (e) {
-        // Usuário não logado, currentUserId permanece null
-        console.log("Usuário não logado, rascunhos privados ocultos.");
+        // Usuário não logado
     }
 
     let itemsToRender;
 
-    // ✅ CORREÇÃO APLICADA AQUI: Filtra os dados usando o ID real
-    if (sectionId === 'myPosts') {
-        // Para "myPosts", mostra publicados OU rascunhos que pertencem ao usuário logado
-        itemsToRender = dataToRender.filter(lesson => 
-            lesson.extraData.postStatus === 'published' || 
-            // 👇 AQUI ESTÁ A MUDANÇA SOLICITADA:
-            (currentUserId && lesson.hostId === currentUserId && lesson.extraData.postStatus === 'editing')
-        );
-        console.log(`Filtrando para "myPosts": ${itemsToRender.length} de ${dataToRender.length} itens serão exibidos.`);
-    } else if (sectionId === 'home') {
+    // 2. 👇 FILTRAR ITENS (Lógica corrigida de seleção)
+    if (sectionId === 'home') {
         // Para "home", mostra APENAS os publicados
         itemsToRender = dataToRender.filter(lesson => lesson.extraData.postStatus === 'published');
-        console.log(`Filtrando para "home": ${itemsToRender.length} de ${dataToRender.length} itens serão exibidos.`);
     } else {
-        // Para outras seções (como 'challenge'), usa os dados como estão
+        // Para 'myPosts', 'challenge' e outros, mostra tudo (filtros visuais aplicados depois se necessário)
         itemsToRender = dataToRender;
     }
 
-    // --- CORREÇÃO AQUI: Verifica se está vazio ANTES de logar ou processar ---
+    // --- Verifica se está vazio ---
     if (itemsToRender.length === 0) {
-        container.innerHTML = ''; // Limpa qualquer lixo anterior
-        
+        container.innerHTML = ''; 
         if (sectionId === 'challenge') {
-             console.log(`ℹ️ Seção ${sectionId}: Nenhum desafio ativo no servidor.`);
              container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
         } else {
-             console.log(`ℹ️ Seção ${sectionId}: Nenhuma lição disponível.`);
-             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição postada.</p>';
+             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição encontrada.</p>';
         }
-        return; // Sai da função aqui, sem imprimir "Renderizando thumbnails..."
+        return;
     }
     
-    // Se chegou aqui, tem itens. Agora sim logamos.
     console.log(`--- Renderizando ${itemsToRender.length} thumbnails para: ${sectionId} ---`);
     
-    // Limpa o container para inserir os novos itens
+    // Limpa o container
     container.innerHTML = '';
     
-    // 2. Define a função de clique baseada na seção
+    // 3. Define a função de clique
     let clickFunction;
-    
     switch(sectionId) {
         case 'home':
         case 'subscriptions':
@@ -3719,24 +3784,13 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             clickFunction = (item) => previewLesson(item);
     }
 
-    // 3. Verifica se há itens para renderizar
-    if (sectionId === 'challenge') {
-        if (itemsToRender.length === 0) {
-            container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
-            return;
-        }
-    } else if (itemsToRender.length === 0) {
-        container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição postada.</p>';
-        return;
-    }
-
-    // 4. Renderização de cada Item
+    // 4. Renderização de cada Item (LOOP PRINCIPAL)
     for (const item of itemsToRender) {
-        const baseName = item.baseName;
+        const baseName = item.baseName; // ✅ baseName definido aqui dentro
         const thumbnailUrl = item.thumb.url || getBackblazePublicUrl(item.thumb.fileId); 
         const hostIdDisplay = item.hostId || 'Eu';
 
-        // ✅ NOVO: Verifica se tem progresso salvo (apenas para home/subscriptions)
+        // Verifica progresso salvo (apenas home/subs)
         let hasSavedProgress = false;
         let progressPercentage = 0;
         
@@ -3744,291 +3798,139 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             const progress = await loadSoloProgress(baseName);
             if (progress) {
                 hasSavedProgress = true;
-                // CORREÇÃO: Usa o totalSegments salvo no banco, com fallback para 1 para evitar divisão por zero
                 const total = progress.totalSegments || 1; 
                 progressPercentage = (progress.currentSegmentIndex / total) * 100;
             }
         }
 
-        // Cria o wrapper do post
+        // --- LÓGICA DE BOTÕES (MOVIDA PARA DENTRO DO LOOP) ---
+        let metaButtonsHTML = ``;
+
+        if (sectionId === 'myPosts') {
+            // Verifica se há rascunho LOCAL para ESTE item
+            let hasDraft = false;
+            try {
+                const draft = await db.drafts.get(baseName);
+                hasDraft = !!draft;
+            } catch (error) {
+                console.error("Erro ao verificar draft", error);
+            }
+            
+            // Monta os botões específicos
+            metaButtonsHTML = `
+                ${hasDraft ? `<span class="general-btn btn-discard-draft" data-basename="${baseName}" style="color: #ff9800;">🗑️ Rascunho</span>` : ''}
+                <span class="general-btn btn-delete-post" data-basename="${baseName}" style="color: red;">❌ Excluir</span>
+            `;
+        }
+        
+        // --- Visual ---
+        const isCompactMode = false; // Defina se necessário
+        
+        // Wrapper do post
         const postWrapper = document.createElement('div');
         postWrapper.className = 'post-item';
         postWrapper.style.cssText = 'margin-bottom: 20px; position: relative;';
         
-        // ✅ NOVO: Adiciona a barra de progresso se houver
+        // Barra de progresso
         let progressBarHTML = '';
         if (hasSavedProgress) {
             progressBarHTML = `
                 <div style="
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    height: 4px;
+                    position: absolute; bottom: 0; left: 0; height: 4px;
                     background: linear-gradient(45deg,rgba(0, 3, 43, 1) 0%, rgba(63, 0, 163, 1) 33%, rgba(0, 3, 43, 1) 66%, rgba(255, 255, 255, 0) 100%);
-                    width: ${progressPercentage}%;
-                    border-radius: 2px;
-                    z-index: 2; /* Garante que fique acima da imagem */
+                    width: ${progressPercentage}%; border-radius: 2px; z-index: 2;
                 "></div>
             `;
         }
         
-        // Estrutura do Conteúdo Meta (Ações)
-        let metaButtonsHTML = ``;
-
-        // O código JavaScript espera botões .btn-edit-lesson e .btn-delete-lesson
-        if (sectionId === 'myPosts') {
-            metaButtonsHTML = `
-                <span class="general-btn btn-edit-lesson" data-basename="${baseName}">✎ Editar</span>
-                <span class="general-btn btn-delete-lesson" data-basename="${baseName}" style="color: red;">❌ Excluir</span>
-            `;
-        }
-      
-        // ✅ NOVO: Verifica se há rascunho para esta lição (apenas em myPosts)
-        let draftIndicatorHTML = '';
-        if (sectionId === 'myPosts') {
-            try {
-                const draft = await db.drafts.get(baseName);
-                if (draft) {
-                    const draftDate = new Date(draft.lastModified).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    draftIndicatorHTML = `<div style="
-                            position: absolute;
-                            bottom: 8px;
-                            right: 8px;
-                            background: rgba(255, 182, 73, 0.3); color: #FCEACF;
-                            color: #fceacf;
-                            padding: 4px 8px;
-                            border-radius: 4px;
-                            font-size: 12px;
-                            font-weight: bold;
-                            display: flex;
-                            align-items: center;
-                            gap: 10px;
-                            z-index: 10;
-                        ">
-                            💾 Rascunho (${draftDate})
-                            <button 
-                                class="btn-continue-draft" 
-                                data-basename="${baseName}"
-                                style="
-                                    background: rgba(76, 175, 80, 0.4);
-                                    border: none;
-                                    color: white;
-                                    padding: 2px 6px;
-                                    border-radius: 3px;
-                                    cursor: pointer;
-                                    font-size: 12px;
-                                "
-                                title="Continuar editando">
-                                ✔️
-                            </button>
-                            <button 
-                                class="btn-discard-draft" 
-                                data-basename="${baseName}"
-                                style="
-                                    background: rgba(244, 67, 54, 0.4);
-                                    border: none;
-                                    color: white;
-                                    padding: 2px 6px;
-                                    border-radius: 3px;
-                                    cursor: pointer;
-                                    font-size: 12px;
-                                "
-                                title="Descartar rascunho">
-                                ✖️
-                            </button>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.warn("Erro ao verificar rascunho:", error);
-            }
-        } else {
-            // Para home, challenge, subscriptions - mostra performance
-            const performanceValue = item.extraData?.hostPerformance ?? '99';
-            metaButtonsHTML = `<span class="performance">${performanceValue}%</span>`;
-        }
-        
-        // 5. Montagem do HTML
-        const thumbSection = document.createElement('div');
-        thumbSection.className = 'thumb-section';
-        thumbSection.style.cursor = 'pointer';
-        thumbSection.style.position = 'relative';
-        thumbSection.innerHTML = `
-            <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
-            ${draftIndicatorHTML}
-            ${progressBarHTML}
-        `;
-        
-        const infoContent = document.createElement('div');
-        infoContent.className = 'info-content';
-        
-        // Adiciona botão "Continuar (Lição)" se houver progresso
+        // Botão Continuar
         let continueButtonHTML = '';
         if (hasSavedProgress) {
             continueButtonHTML = `
-                <span class="general-btn btn-continue-lesson" style="color: #fff; font-weight: bold;"
-                data-basename="${baseName}">
+                <span class="general-btn btn-continue-lesson" style="color: #fff; font-weight: bold;" data-basename="${baseName}">
                 ▶️ Continuar
                 </span>
             `;
         }
         
-        infoContent.innerHTML = `
-            <div class="channel-pic">
-                <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
-            </div>
-            
-            <div class="video-text">
-                <span 
-                    class="video-title video-title-clickable" 
-                    data-basename="${baseName}"
-                    style="cursor: pointer;"
-                >${baseName}</span>
-                <div class="video-meta">
-                    <span class="channel-name">Host: ${hostIdDisplay}</span>
-                    ${continueButtonHTML}
-                    ${metaButtonsHTML}
+        // HTML Interno
+        const thumbSection = document.createElement('div');
+        thumbSection.className = 'thumb-section';
+        // ... (resto da montagem visual mantém igual) ...
+
+        const infoContentHTML = `
+            <div class="info-content">
+                <div class="channel-pic">
+                    <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+                </div>
+                <div class="video-text">
+                    <span class="video-title video-title-clickable" data-basename="${baseName}" style="cursor: pointer;">
+                        ${baseName}
+                    </span>
+                    <div class="video-meta">
+                        <span class="channel-name">Channel: Name</span>
+                        ${continueButtonHTML}
+                        ${metaButtonsHTML}
+                    </div>
                 </div>
             </div>`;
+
+        thumbSection.innerHTML = `
+            <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
+            ${progressBarHTML}
+        `;
         
-        // Monta o post completo
         postWrapper.appendChild(thumbSection);
-        postWrapper.appendChild(infoContent);
+        postWrapper.innerHTML += infoContentHTML; // Adiciona o infoContent
         
-        // Adiciona ao container
         container.appendChild(postWrapper);
         
-        // 6. Adicionar event listeners APÓS inserir no DOM
+        // --- EVENT LISTENERS ---
         
-        // Event listener para a THUMBNAIL (sempre chama a clickFunction da seção)
-        const thumbElement = postWrapper.querySelector('.thumb-section');
-        if (thumbElement) {
-            thumbElement.addEventListener('click', () => {
-                console.log(`Thumbnail clicada em ${sectionId}:`, baseName);
-                clickFunction(item);
-            });
-        }
+        // Click Thumbnail
+        const thumbEl = postWrapper.querySelector('.thumb-section');
+        if(thumbEl) thumbEl.onclick = () => clickFunction(item);
         
-        // Event listener para o TÍTULO (sempre chama a clickFunction da seção)
-        const titleElement = postWrapper.querySelector('.video-title-clickable');
-        if (titleElement) {
-            titleElement.addEventListener('click', () => {
-                console.log(`Título clicado em ${sectionId}:`, baseName);
-                clickFunction(item);
-            });
-        }
-        
-        // Event listeners específicos para MyPosts
+        // Click Title
+        const titleEl = postWrapper.querySelector('.video-title-clickable');
+        if(titleEl) titleEl.onclick = () => clickFunction(item);
+
+        // Listeners Específicos de MyPosts
         if (sectionId === 'myPosts') {
-            // Botão Editar
-            const btnEdit = postWrapper.querySelector('.btn-edit-lesson');
-            if (btnEdit) {
-                btnEdit.addEventListener('click', (e) => {
+            const btnDiscard = postWrapper.querySelector('.btn-discard-draft');
+            if (btnDiscard) {
+                btnDiscard.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    console.log(`Botão Editar clicado:`, baseName);
-                    handleEditLesson(item);
-                });
-            }
-            
-            // Botão Excluir Lição
-            const btnDelete = postWrapper.querySelector('.btn-delete-lesson');
-            if (btnDelete) {
-                btnDelete.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    console.log(`Botão Excluir clicado:`, baseName);
-                    deleteFullLesson(baseName);
-                });
-            }
-
-            // ✅ NOVO: Botão Continuar Rascunho
-            const btnContinueDraft = postWrapper.querySelector('.btn-continue-draft');
-            if (btnContinueDraft) {
-                btnContinueDraft.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    console.log(`✔️ Continuando rascunho:`, baseName);
-                    await handleEditLesson(item); // Já tem lógica de rascunho
-                });
-            }
-            
-            // ✅ Botão Descartar Rascunho
-             // ✅ Botão Descartar Rascunho
-            const btnDiscardDraft = postWrapper.querySelector('.btn-discard-draft');
-            if (btnDiscardDraft) {
-                btnDiscardDraft.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    
-                    if (confirm(`Descartar o rascunho de "${baseName}"?\n\nO status voltará para 'published' e o rascunho local será apagado.`)) {
-                        showLoading('Descartando rascunho...');
-                        try {
-                            // 1. Deleta do Dexie (Local)
-                            await db.drafts.delete(baseName);
-                            console.log(`🗑️ Rascunho local deletado:`, baseName);
-
-                            // 2. Reverte status no Appwrite (Servidor)
-                            if (item.docId) {
-                                console.log(`🔄 Revertendo status no servidor para post ${item.docId}...`);
-                                await databases.updateDocument(
-                                    DATABASE_ID,
-                                    POSTS_COLLECTION_ID,
-                                    item.docId,
-                                    {
-                                        postStatus: 'published',
-                                        userEditorId: null
-                                    }
-                                );
-                                
-                                // Atualiza o cache local imediatamente para refletir a mudança
-                                item.extraData.postStatus = 'published';
-                                item.hostId = null; // Limpa o editor localmente também
-                            }
-
-                            // 3. Atualiza a UI (sem recarregar a página)
-                            await renderThumbnailsFromCache('myPosts', lessonsCache);
-                            
-                            hideLoading();
-                            // alert('Rascunho descartado e post liberado!'); // Opcional, pode remover se achar chato
-
-                        } catch (error) {
-                            console.error('Erro ao descartar:', error);
-                            hideLoading();
-                            alert('Erro ao descartar o rascunho: ' + error.message);
-                        }
+                    if (confirm(`Excluir rascunho local de "${baseName}"?`)) {
+                        await db.drafts.delete(baseName);
+                        // Atualiza UI
+                        await renderThumbnailsFromCache('myPosts', lessonsCache); 
                     }
                 });
             }
+
+            const btnDelete = postWrapper.querySelector('.btn-delete-post');
+            if (btnDelete) {
+                btnDelete.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteFullLesson(baseName);
+                });
+            }
         }
-      
-        // 7. NOVO: Event listener seguro para o botão "Continuar"
-        const btnContinue = postWrapper.querySelector('.btn-continue-lesson');
-        if (btnContinue) {
-            btnContinue.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Evita clicar na thumbnail
-                
-                // Pega o baseName do data-attribute
-                const baseName = e.currentTarget.getAttribute('data-basename');
-                
-                // Busca a lição completa no cache
+        
+        // Listener Continuar
+        const btnCont = postWrapper.querySelector('.btn-continue-lesson');
+        if (btnCont) {
+            btnCont.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const lessonToContinue = lessonsCache.find(l => l.baseName === baseName);
-                
-                if (lessonToContinue) {
-                    console.log("▶️ Continuando lição:", baseName);
-                    await showSoloPreview(lessonToContinue);
-                } else {
-                    console.error("❌ Lição não encontrada:", baseName);
-                }
+                if (lessonToContinue) showSoloPreview(lessonToContinue);
             });
         }
     }
     
-    console.log('✅ ' + itemsToRender.length + ' itens renderizados em ' + sectionId);
+    console.log('✅ Itens renderizados com sucesso.');
 }
-
 /**
  * Força atualização do cache (após upload de nova lição)
  */
