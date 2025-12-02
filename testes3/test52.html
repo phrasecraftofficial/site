@@ -17,6 +17,8 @@ Resumo das mudanças:
 Importante: A lógica usa lessonsCache.find(l => l.baseName === baseName) 
 para verificar se é edição, o que é mais confiável que flags temporárias, 
 pois o cache sempre reflete o estado real do servidor.
+
+pois quando vem de myPosts ja existe thumb, agr nao é mais necessario capturar novamente
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -3487,8 +3489,9 @@ async function postLesson() {
       throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
     }
     
-    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob) {
-      throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
+    // ACEITA SE TIVER URL (Edição)
+    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob && !appState.thumbnail.url) {
+      throw new Error('Nenhuma thumbnail encontrada. Capture 📸 ou carregue um vídeo com capa.');
     }
     
     if (!appState.video.file && !appState.video.blob && !appState.video.url) {
@@ -3576,7 +3579,21 @@ async function postLesson() {
     showLoading('Preparando arquivos...');
     const videoBlob = await getVideoBlob();
     const srtBlob = getSrtBlob();
-    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob;
+    
+    // Lógica para recuperar o Blob
+    let thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob;
+
+    // Se não tem blob novo (edição), mas tem URL, baixa a imagem original para re-upload
+    if (!thumbBlob && appState.thumbnail.url) {
+        console.log("♻️ Recuperando thumbnail existente para re-upload...");
+        try {
+            const response = await fetch(appState.thumbnail.url);
+            thumbBlob = await response.blob();
+        } catch (error) {
+            console.error("Erro ao baixar thumbnail antiga:", error);
+            throw new Error("Falha ao processar a thumbnail existente. Por favor, capture uma nova 📸.");
+        }
+    }
     
     console.log("✅ Todos os arquivos preparados");
     
