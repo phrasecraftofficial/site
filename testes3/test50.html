@@ -1,16 +1,21 @@
 <!-- 50
-#video-section-editor video {  
+O que mudou:
+Lógica onde os botões de Início e Fim respeitam o modo de lote ("Todas as linhas", "Atual e próximas", etc.).
+Trecho antigo: onclick="adjustTime('start', ...)" Novo trecho: onclick="adjustBatchTime('start', ...)"
+Resumo das Mudanças
+HTML: Os botões de + e − agora chamam adjustBatchTime('start', 1) ou -1, em vez de passar a variável removida.
+JS: A função adjustBatchTime pega esse 1 ou -1 e multiplica pelo valor que estiver no input "Lote" (editStack), garantindo que o ajuste de Início/Fim sempre use o valor do lote.
+Função adjustBatchTime verifica o select #batchMode e decide se altera uma ou várias linhas.
+O final da função adjustTime e envolve a renderização num if:
+// ALTERAR O FINAL DA FUNÇÃO PARA ISSO:
+  if (!isBatchEditing) {
+      updateEditorFields(currentSegment);
+      renderSegments();
 
-#video-section-editor {
+Ao usar classList.add, garante que o CSS "full-screen" (que tem !important) sobescreva o padding padrão de 62px apenas quando necessário.
+Assim ao voltar para a 'home' ou 'search', a classe é removida e o espaçamento seguro volta.
 
-Explicação das mudanças:
-
-Wrapper externo com max-width: 600px - Garante que todo o conteúdo (vídeo + botões) respeite o limite
-width: 100% no vídeo (em vez de auto) - Faz o vídeo preencher o container pai respeitando o aspect-ratio
-max-width: 600px; margin: 0 auto; nos controles - Garante que fiquem centralizados e dentro do limite
-CSS adicional - Reforça o comportamento responsivo
-
-Essas mudanças garantem que o vídeo e os controles sempre fiquem centralizados e dentro dos 600px, independente do zoom ou resolução.
+Novo layout em editSrt e removido o input de "Salto"
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -36,6 +41,12 @@ body {
 main {
   padding: 62px 0 62px 0; /* altura do footer e do header */
 }
+/* ocupar a tela toda */
+main.full-screen {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
 /* todas escondidas */
 section { 
 	display: none;
@@ -47,7 +58,7 @@ section.active {
 /* Caixas internas */
 .box {
     background: #1c1c1c;
-    margin: 0 auto;
+  	margin: 5px 5px 5px 5px;
     padding: 10px;
     max-width: 600px;
     min-width: 400px;
@@ -276,14 +287,7 @@ video, .thumb-section img {
   display: block;
   object-fit: cover; /* Garante que a imagem preencha bem */
 }
-#video-section-editor {
-    max-width: 100%;
-}
-#video-section-editor video {
-    width: 100%;
-    height: auto;
-    display: block;
-}
+
 /* Garante que os textos e botões abaixo do vídeo sigam o mesmo alinhamento */
 .info-content {
   display: flex;
@@ -412,7 +416,7 @@ label input[type="checkbox"] {
 /* ================================== */
 .segmentsArea {
 	padding: 10px; 
-    max-height: 50vh; /* ou a altura que preferir */
+    max-height: 30vh; /* ou a altura que preferir */
     overflow-y: auto;
     width: 100%;
     max-width: 600px;
@@ -595,7 +599,7 @@ label input[type="checkbox"] {
 
 <main>
   <section id="editSrt">
-    <div class="box" id="save-area">
+    <div class="box thumb-section" id="save-area">
         <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
         <p>💾 Salvar</p>
         <div class="flex row gap">
@@ -604,100 +608,103 @@ label input[type="checkbox"] {
             <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
         </div>
     </div><!--save-area-->
-      
-	<div id="subtitleName">
-    	<!-- Div para exibir o nome do arquivo da legenda -->
+    
+	<div class="" id="video-section-editor">
+        <div id="subtitleName">
+            <!-- Nome do arquivo da legenda -->
+        </div>
+    
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+        <div class="flex row gap" id="navigation-controls-previewMode"  style="
+            position: fixed; /* Fixa em relação ao video-container-relative */
+            top: 1px; /* Distância do fundo do vídeo*/
+            left: 50%; /* Começa no meio */
+            transform: translateX(-50%);
+            z-index: 999;">
+            <button class="general-btn" onclick="prevLine()">⏮︎</button>
+            <button class="general-btn" onclick="playLine()">⏯︎</button>
+            <button class="general-btn" onclick="nextLine()">⏭︎</button>
+        </div>
 	</div>
-  <div class="flex column gap" style="max-width: 600px; margin: 0 auto;">
-      <div class="flex row gap" style="align-items: center; gap: 20px;">
-          <div id="video-section-editor" style="flex: 1; position: relative;">
-              <video id="videoPlayer-editSrt" controls crossorigin="anonymous" style="width: 100%; aspect-ratio: 16/9; display: block;">
-                  <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-              </video>
-          </div>
-          <div class="flex column gap" id="edit-bar" style="width: auto; margin: 0;">
-            <div class="flex row gap" style="margin: 0;">
-                <button onclick="undo()">↩</button>
-                <button id="btn-save" onclick="showSave()">💾</button>
-                <button onclick="redo()">↪</button>
-            </div>
-
-            <div class="flex row gap" style="margin: 0;">
-                <button onclick="addSegment()">|+</button>
-                <button onclick="removeSegment()">|−</button>
-                <button id="btn-load" onclick="showSection('postLesson')">👉</button>
-            </div>
-            
-            <div class="flex row gap" style="margin: 0;">
-                <button onclick="prevLine()" style="background: rgba(0,0,0,0.5);">⏮︎</button>
-                <button id="btn-config" onclick="showConfig()">⚙</button>
-                <button onclick="nextLine()" style="background: rgba(0,0,0,0.5);">⏭︎</button>
-            </div>
-          </div>
-      </div>
-  </div>
-  <div id="editor">
-    <form>
-      <label class="flex row gap" >
-          <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
-      </label>
-    </form>
-	<div class="box column" id="config-area">
-		<form class="flex row">
-     		<label class="row gap">Lote
-           	<input id="editStack" placeholder="0.100">
-            </label>
-        	<span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-     		<label class="row gap">Salto
-           	<input id="editStep" type="" step="0.1" min="0.01" oninput="updateTimeStep()" placeholder="0.050">
-            </label>
-		</form>
-           
-		<form class="flex row gap" id="linhaForm"> 
-           <button type="button" class="general-btn" onclick="showEarlier()">Adiantar</button>                
-  			<select id="batchMode" id="" style="width: 160px;">
-  				<option name="opcao-linha" value="all" checked>Todas as linhas</option>
-  				<option name="opcao-linha" value="current">Linha atual</option>
-  				<option name="opcao-linha" value="from-current">Atual e próximas</option>
-  			</select>
-           <button type="button" class="general-btn" onclick="showLater()">Atrasar</button>     
-		</form>
-	</div><!--config-area-->
-	<form class="flex row gap" style="gap: 0; padding: 0;">
-      <label class="flex row gap" style="gap: 0; padding: 0;">
-        <div class="flex column gap" style="gap: 0; padding: 0;">
-          Início
-          <input type="text" id="editStart" placeholder="00:00:000">
-        </div>
-        <div class="flex column gap">
-          <button type="button" onclick="adjustTime('start', -TIME_STEP)">−</button>
-          <button type="button" onclick="adjustTime('start', +TIME_STEP)">+</button>
-        </div>
-      </label>
-      <label class="flex row gap" style="gap: 0; padding: 0;">
-        <div class="flex column gap" style="gap: 0; padding: 0;">
-          Fim
-          <input id="editEnd"  placeholder="00:00:000">
-        </div>
-        <div class="flex column gap">
-          <button type="button" onclick="adjustTime('end', -TIME_STEP)">−</button>
-          <button type="button" onclick="adjustTime('end', +TIME_STEP)">+</button>
-        </div>
-      </label>
-    </form>
-    </div><!--editor-->
     
-    <div class="flex row gap" id="navigation-controls-previewMode" style="display: none; max-width: 600px; margin: 0 auto;">
-        <button onclick="prevLine()">⏮︎</button>
-        <button onclick="playLine()">⏯︎</button>
-        <button onclick="nextLine()">⏭︎</button>
-    </div>
-    
+    <!-- Lista de Legendas -->
     <div class="segmentsArea flex column gap" id="segments-area">
     	  <span>Lista de Legendas</span>
         <div id="segments"></div>
     </div>
+    
+    <!-- Editor -->
+	<div class="thumb-section box" id="editor">
+      <div class="flex row gap">
+          <button id="btn-save" onclick="showSave()">💾</button>
+          <button onclick="undo()">↩</button>
+          <button onclick="redo()">↪</button>
+          <button id="btn-sync" onclick="toggleAutoSync()" title="Sincronização Automática">
+            🔄
+          </button>
+          <button id="btn-config" onclick="showConfig()">⚙</button>
+          <button onclick="addSegment()">|+</button>
+          <button onclick="removeSegment()">|−</button>
+          <button id="btn-load" onclick="showSection('postLesson')">👉</button>
+      </div>
+      
+      <form>
+        <label class="flex row gap" >
+            <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
+        </label>
+      </form>
+    
+      <div class="flex column" style="gap: 5px;">
+          <!--Início e Fim-->
+          <form class="row">
+              <div class="flex row gap" style="gap: 0; padding: 0;">
+               <label class="flex column" style="gap: 0; padding: 0; margin-right: 10px;">
+                  Início
+                  <div class="flex row"  style="gap: 5px; padding: 0;">
+                    <input type="text" id="editStart" placeholder="00:00:000">
+                    <button type="button" onclick="adjustBatchTime('start', -1)">−</button>
+                    <button type="button" onclick="adjustBatchTime('start', 1)">+</button>
+                  </div>
+                </label>
+                
+                <label class="flex column" style="gap: 0; padding: 0; margin-left: 10px;">
+                  Fim
+                  <div class="flex row"  style="gap: 5px; padding: 0;">
+                    <input id="editEnd" placeholder="00:00:000">
+                    <button type="button" onclick="adjustBatchTime('end', -1)">−</button>
+                    <button type="button" onclick="adjustBatchTime('end', 1)">+</button>
+                  </div>
+                </label>
+              </div>
+          </form>
+			    <hr style="width: 350px; margin: 5px; border: none; border-top: 0.5px solid #7A9299;">
+          <!--config-area-->
+          <form class="flex row" id="config-area">
+              <label class="flex column" style="margin-right: 10px;">
+                  <p>Lote</p>
+                  <input id="editStack" placeholder="0.100">
+              </label>
+
+              <div class="flex column"  style="gap: 5px; padding: 0; margin-left: 10px;">
+                <div class="flex row">
+                    <button type="button" class="general-btn" onclick="showEarlier()" style="margin-bottom: 0;">Adiantar</button> 
+                    <button type="button" class="general-btn" onclick="showLater()" style="margin-bottom: 0;">Atrasar</button>
+                </div>
+                
+                <select id="batchMode" id="" style="width: 160px;">
+                    <option name="opcao-linha" value="all" checked>Todas as linhas</option>
+                    <option name="opcao-linha" value="current">Linha atual</option>
+                    <option name="opcao-linha" value="from-current">Atual e próximas</option>
+                </select>
+              </div>
+          </form>
+      </div><!--config-area-->
+    
+    </div><!--editor-->
 	</section>
+    
     <!-- Seções -->
     <section id="home">
         <h2>Home</h2>
@@ -967,7 +974,10 @@ label input[type="checkbox"] {
 
 <script>
 // 1. A variável "estado" (começa como 'editor')
-let currentEditMode = 'editor';  
+let currentEditMode = 'editor'; 
+
+// sincronização srt e video
+let autoSyncEnabled = true;
 
 // Variável para controlar se já está carregando
 let isLoadingThumbnails = false;
@@ -1180,6 +1190,17 @@ async function showSection(sectionId) {
  * Também gerencia a visibilidade do lobby.
  */
 async function updateElementForSection(sectionId) {
+  // ✅ Controle de Padding do Main (Full Screen)
+  const mainElement = document.querySelector('main');
+  
+  // Lista de seções que DEVEM ocupar a tela toda (sem padding de header/footer)
+  const fullScreenSections = ['play', 'editSrt']; 
+
+  if (fullScreenSections.includes(sectionId)) {
+      mainElement.classList.add('full-screen');
+  } else {
+      mainElement.classList.remove('full-screen');
+  }
   
   // --- 1. LÓGICA DE SAÍDA / ENCERRAMENTO ---
   const isLeavingChallenge = appState.currentSection === 'challenge' && sectionId !== 'challenge';
@@ -1296,7 +1317,6 @@ function setEditorMode(mode) {
 
     // 2. Seleciona os elementos do seu HTML
     const editorDiv = document.getElementById('editor');
-    const editBar = document.getElementById('edit-bar');
     const navPreview = document.getElementById('navigation-controls-previewMode');
     
     // Botões do footer (baseado no seu HTML)
@@ -1311,7 +1331,6 @@ function setEditorMode(mode) {
     // Primeiro, esconde tudo para "limpar"
     // (Oculta as partes que mudam)
     if (editorDiv) editorDiv.style.display = 'none';
-    if (editBar) editBar.style.display = 'none';
     if (navPreview) navPreview.style.display = 'none';
     if (footerSolo) footerSolo.style.display = 'none';
     if (footerChallenging) footerChallenging.style.display = 'none';
@@ -1322,20 +1341,17 @@ function setEditorMode(mode) {
     if (mode === 'editor') {
         // Mostra o editor
         if (editorDiv) editorDiv.style.display = 'block';
-        if (editBar) editBar.style.display = 'block';
-        if (navPreview) navPreview.style.display = 'none';
+        if (navPreview) navPreview.style.display = 'block';
         
     } else if (mode === 'previewSolo') {
         // Mostra navegação e botões de "Solo" e "Desafiar"
         if (navPreview) navPreview.style.display = 'block';
-        if (editBar) editBar.style.display = 'none';
         if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
         if (footerChallenging) footerChallenging.style.display = 'flex';
         
     } else if (mode === 'previewMulti') {
         // Mostra navegação e botão "Aceitar Desafio"
         if (navPreview) navPreview.style.display = 'block';
-        if (editBar) editBar.style.display = 'none';
         if (footerChallenges) footerChallenges.style.display = 'flex';
     }
 }
@@ -1528,16 +1544,19 @@ function closeLoadSaveArea() {
  * Mostra o painel de "Configurações" (Editar em Lote).
  */
 function showConfig() {
-  // Seleciona os elementos
   const configArea = document.getElementById('config-area');
   const saveArea = document.getElementById('save-area');
 
-  // Esconde o painel de salvar (para não sobrepor)
-  if (saveArea) saveArea.style.display = 'none';
-  
-  // Mostra o painel de config
-  if (configArea) configArea.style.display = 'block';
+  const isVisible = window.getComputedStyle(configArea).display !== 'none';
+
+  if (isVisible) {
+    configArea.style.display = 'none';
+  } else {
+    configArea.style.display = 'flex';
+    if (saveArea) saveArea.style.display = 'none';
+  }
 }
+
 
 
 /**
@@ -2152,7 +2171,6 @@ let currentSegment = null;
 let undoStack = [];
 let redoStack = [];
 let stopTimeout = null; // auxiliar para playLine()
-let TIME_STEP = 0.1; // segundos
 let isBatchEditing = false; // para edição em lote
 let subtitleName = "legendas.srt";  // Nome padrão caso não seja carregado nenhum arquivo
 
@@ -2353,19 +2371,72 @@ function adjustTime(field, deltaSeconds) {
   redoStack = [];
 
   currentSegment[field] = newValue;
-  updateEditorFields(currentSegment);
-  renderSegments();
+  
+  // Para que a edição em lote não trave o navegador 
+  // (tentando renderizar a lista 1000 vezes se tiver 1000 linhas)
+  // Isso garante que, quando você clicar no botão de lote, 
+  // ele só redesenhe a tela uma vez no final, em vez de redesenhar a cada linha alterada.
+  if (!isBatchEditing) {
+      updateEditorFields(currentSegment);
+      renderSegments();
+  }
 }
 
-function updateTimeStep() {
-  const input = document.getElementById("editStep");
-  // Substitui vírgula por ponto para garantir compatibilidade numérica
-  let val = parseFloat(input.value.replace(',', '.'));
+/**
+ * Aplica ajuste de tempo (start ou end) respeitando o modo de lote.
+ * @param {string} field - 'start' ou 'end'
+ * @param {number} direction - 1 para aumentar, -1 para diminuir
+ */
+function adjustBatchTime(field, direction) {
+  const batchMode = document.getElementById("batchMode").value;
   
-  // Verifica se é um número válido e maior que 0
-  if (!isNaN(val) && val > 0) {
-    TIME_STEP = val;
+  // Calcula o delta baseado no valor do Lote * direção (+1 ou -1)
+  const stepSize = getCurrentStep();
+  const delta = direction * stepSize;
+
+  // 1. Se for 'Linha atual', usa a função padrão
+  if (batchMode === 'current') {
+    adjustTime(field, delta);
+    return;
   }
+
+  // 2. Se for Lote ('all' ou 'from-current')
+  const stateBefore = srtData.map(s => ({ ...s }));
+  const savedSegment = currentSegment; 
+
+  isBatchEditing = true; 
+
+  if (batchMode === 'all') {
+    srtData.forEach(seg => {
+      currentSegment = seg;
+      adjustTime(field, delta);
+    });
+  } else if (batchMode === 'from-current' && currentSegment) {
+    const startIdx = srtData.findIndex(s => s.id === currentSegment.id);
+    if (startIdx >= 0) {
+      for (let i = startIdx; i < srtData.length; i++) {
+        currentSegment = srtData[i];
+        adjustTime(field, delta);
+      }
+    }
+  }
+
+  isBatchEditing = false;
+  currentSegment = savedSegment; 
+
+  // 3. Salva o Undo do Lote
+  const stateAfter = srtData.map(s => ({ ...s }));
+  undoStack.push({
+    type: "edit-multiple", 
+    delta,
+    stateBefore,
+    stateAfter
+  });
+  redoStack = [];
+
+  // 4. Renderiza tudo
+  renderSegments();
+  if (currentSegment) updateEditorFields(currentSegment);
 }
 
 function shiftTime(timeStr, delta) {
@@ -2616,7 +2687,8 @@ function showLater() {
 function getCurrentStep() {
   const input = document.getElementById("editStack").value.trim().replace(",", ".");
   const step = parseFloat(input);
-  return isNaN(step) || step <= 0 ? TIME_STEP : step;
+  // Se não for número ou <= 0, usa 0.100 como padrão
+  return isNaN(step) || step <= 0 ? 0.1 : step;
 }
 
 function shiftSelectedLines(delta) {
@@ -2927,7 +2999,99 @@ function playLine() {
   // Limpa o safety quando seeked ocorrer
   video.addEventListener('seeked', () => clearTimeout(safety), { once: true });
 }
+
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | SRT sync with VIDEO --- 
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Sincroniza a lista de legendas com o tempo atual do vídeo
+ * @param {HTMLVideoElement} videoElement - O elemento de vídeo
+ */
+function syncSubtitlesWithVideo(videoElement) {
+    if (!videoElement || !srtData || srtData.length === 0) return;
+    
+    const currentTime = videoElement.currentTime;
+    
+    // Encontra o segmento correspondente ao tempo atual
+    const activeSegmentIndex = srtData.findIndex(seg => {
+        const start = parseTime(seg.start);
+        const end = parseTime(seg.end);
+        return currentTime >= start && currentTime <= end;
+    });
+    
+    // Se encontrou um segmento válido e é diferente do atual
+    if (activeSegmentIndex !== -1 && activeSegmentIndex !== (currentSegment?.id - 1)) {
+        const newSegment = srtData[activeSegmentIndex];
+        
+        // Atualiza visualmente sem chamar openEditor (para não interferir)
+        document.querySelectorAll('.segment').forEach(item => {
+            item.classList.remove('segment-selected');
+        });
+        
+        const activeItem = document.querySelector(`[data-id="${newSegment.id}"]`);
+        if (activeItem) {
+            activeItem.classList.add('segment-selected');
+            scrollToSegment(newSegment.id);
+        }
+        
+        // Atualiza apenas se estiver em modo editor
+        if (currentEditMode === 'editor') {
+            currentSegment = newSegment;
+            updateEditorFields(newSegment);
+        }
+    }
+}
+
+/**
+ * Ativa/desativa a sincronização automática
+ */
+let syncInterval = null;
+
+function enableAutoSync(videoId = 'videoPlayer-editSrt') {
+    const videoElement = document.getElementById(videoId);
+    if (!videoElement) return;
+    
+    // Limpa intervalo anterior se existir
+    if (syncInterval) {
+        clearInterval(syncInterval);
+    }
+    
+    // Verifica a cada 200ms (mais suave que 500ms)
+    syncInterval = setInterval(() => {
+        // Só sincroniza se o vídeo estiver tocando
+        if (!videoElement.paused && !videoElement.ended) {
+            syncSubtitlesWithVideo(videoElement);
+        }
+    }, 200);
+    
+    console.log("✅ Sincronização automática ativada");
+}
+
+function disableAutoSync() {
+    if (syncInterval) {
+        clearInterval(syncInterval);
+        syncInterval = null;
+        console.log("⏸️ Sincronização automática desativada");
+    }
+}
+
+
+function toggleAutoSync() {
   
+    const btn = document.getElementById('btn-sync');
+    
+    if (autoSyncEnabled) {
+        disableAutoSync();
+        autoSyncEnabled = false;
+        if (btn) btn.style.opacity = '0.5'; // Feedback visual
+    } else {
+        enableAutoSync('videoPlayer-editSrt');
+        autoSyncEnabled = true;
+        if (btn) btn.style.opacity = '1';
+    }
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘
 // ----- Playlist -----
 // ⫘⫘⫘⫘⫘⫘⫘⫘
@@ -3700,7 +3864,7 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                         minute: '2-digit'
                     });
                     
-                    draftIndicatorHTML = `<div style="
+                    draftIndicatorHTML =  `<div style="
                             position: absolute;
                             bottom: 8px;
                             right: 8px;
