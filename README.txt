@@ -1,5 +1,7 @@
 # site
 
+>enviar performance para posts, sera a ultima performance obtida
+
 Essa é, sem dúvida, a **arquitetura ideal** para economizar banda e criar uma experiência mais rápida e resiliente (quase como um aplicativo nativo). Você está descrevendo, na essência, o funcionamento de uma **PWA (Progressive Web App) com estratégia de "Cache-First"**.
 
 Aqui está a minha visão de como esse fluxo deve funcionar arquiteturalmente, separado por etapas lógicas:
