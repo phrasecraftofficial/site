@@ -1,21 +1,18 @@
-<!-- 50
-O que mudou:
-Lógica onde os botões de Início e Fim respeitam o modo de lote ("Todas as linhas", "Atual e próximas", etc.).
-Trecho antigo: onclick="adjustTime('start', ...)" Novo trecho: onclick="adjustBatchTime('start', ...)"
-Resumo das Mudanças
-HTML: Os botões de + e − agora chamam adjustBatchTime('start', 1) ou -1, em vez de passar a variável removida.
-JS: A função adjustBatchTime pega esse 1 ou -1 e multiplica pelo valor que estiver no input "Lote" (editStack), garantindo que o ajuste de Início/Fim sempre use o valor do lote.
-Função adjustBatchTime verifica o select #batchMode e decide se altera uma ou várias linhas.
-O final da função adjustTime e envolve a renderização num if:
-// ALTERAR O FINAL DA FUNÇÃO PARA ISSO:
-  if (!isBatchEditing) {
-      updateEditorFields(currentSegment);
-      renderSegments();
+<!-- 58
+**Resumo das mudanças:**
+Usei Array.from(thumbImages).every(img => img.complete). 
+Isso significa: "O Loading só some quando todas as imagens 
+tiverem terminado de tentar carregar (seja carregando a 
+foto ou dando erro)". Assim que a última imagem der 
+erro de Cap, o loading some na hora.
 
-Ao usar classList.add, garante que o CSS "full-screen" (que tem !important) sobescreva o padding padrão de 62px apenas quando necessário.
-Assim ao voltar para a 'home' ou 'search', a classe é removida e o espaçamento seguro volta.
-
-Novo layout em editSrt e removido o input de "Salto"
+**Melhorias implementadas em sendCatboxData:**
+Anti-Travamento: Adicionei forceHideLoading() 
+dentro do catch. Isso garante que o loading 
+suma mesmo se ocorrer um erro grave.
+Validação de URL: Verifica se o texto digitado 
+começa com http para evitar erros bobos antes de enviar.
+Fluxo Limpo: Verifica -> Deleta (se existir) -> Cria.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -561,7 +558,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.50</span>
+        <span>PhraseCraft v0.58</span>
       </div>
     </div>
     
@@ -598,113 +595,6 @@ label input[type="checkbox"] {
   </header>
 
 <main>
-  <section id="editSrt">
-    <div class="box thumb-section" id="save-area">
-        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
-        <p>💾 Salvar</p>
-        <div class="flex row gap">
-            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
-            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
-            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
-        </div>
-    </div><!--save-area-->
-    
-	<div class="" id="video-section-editor">
-        <div id="subtitleName">
-            <!-- Nome do arquivo da legenda -->
-        </div>
-    
-		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
-			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-		</video>
-        <div class="flex row gap" id="navigation-controls-previewMode"  style="
-            position: fixed; /* Fixa em relação ao video-container-relative */
-            top: 1px; /* Distância do fundo do vídeo*/
-            left: 50%; /* Começa no meio */
-            transform: translateX(-50%);
-            z-index: 999;">
-            <button class="general-btn" onclick="prevLine()">⏮︎</button>
-            <button class="general-btn" onclick="playLine()">⏯︎</button>
-            <button class="general-btn" onclick="nextLine()">⏭︎</button>
-        </div>
-	</div>
-    
-    <!-- Lista de Legendas -->
-    <div class="segmentsArea flex column gap" id="segments-area">
-    	  <span>Lista de Legendas</span>
-        <div id="segments"></div>
-    </div>
-    
-    <!-- Editor -->
-	<div class="thumb-section box" id="editor">
-      <div class="flex row gap">
-          <button id="btn-save" onclick="showSave()">💾</button>
-          <button onclick="undo()">↩</button>
-          <button onclick="redo()">↪</button>
-          <button id="btn-sync" onclick="toggleAutoSync()" title="Sincronização Automática">
-            🔄
-          </button>
-          <button id="btn-config" onclick="showConfig()">⚙</button>
-          <button onclick="addSegment()">|+</button>
-          <button onclick="removeSegment()">|−</button>
-          <button id="btn-load" onclick="showSection('postLesson')">👉</button>
-      </div>
-      
-      <form>
-        <label class="flex row gap" >
-            <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
-        </label>
-      </form>
-    
-      <div class="flex column" style="gap: 5px;">
-          <!--Início e Fim-->
-          <form class="row">
-              <div class="flex row gap" style="gap: 0; padding: 0;">
-               <label class="flex column" style="gap: 0; padding: 0; margin-right: 10px;">
-                  Início
-                  <div class="flex row"  style="gap: 5px; padding: 0;">
-                    <input type="text" id="editStart" placeholder="00:00:000">
-                    <button type="button" onclick="adjustBatchTime('start', -1)">−</button>
-                    <button type="button" onclick="adjustBatchTime('start', 1)">+</button>
-                  </div>
-                </label>
-                
-                <label class="flex column" style="gap: 0; padding: 0; margin-left: 10px;">
-                  Fim
-                  <div class="flex row"  style="gap: 5px; padding: 0;">
-                    <input id="editEnd" placeholder="00:00:000">
-                    <button type="button" onclick="adjustBatchTime('end', -1)">−</button>
-                    <button type="button" onclick="adjustBatchTime('end', 1)">+</button>
-                  </div>
-                </label>
-              </div>
-          </form>
-			    <hr style="width: 350px; margin: 5px; border: none; border-top: 0.5px solid #7A9299;">
-          <!--config-area-->
-          <form class="flex row" id="config-area">
-              <label class="flex column" style="margin-right: 10px;">
-                  <p>Lote</p>
-                  <input id="editStack" placeholder="0.100">
-              </label>
-
-              <div class="flex column"  style="gap: 5px; padding: 0; margin-left: 10px;">
-                <div class="flex row">
-                    <button type="button" class="general-btn" onclick="showEarlier()" style="margin-bottom: 0;">Adiantar</button> 
-                    <button type="button" class="general-btn" onclick="showLater()" style="margin-bottom: 0;">Atrasar</button>
-                </div>
-                
-                <select id="batchMode" id="" style="width: 160px;">
-                    <option name="opcao-linha" value="all" checked>Todas as linhas</option>
-                    <option name="opcao-linha" value="current">Linha atual</option>
-                    <option name="opcao-linha" value="from-current">Atual e próximas</option>
-                </select>
-              </div>
-          </form>
-      </div><!--config-area-->
-    
-    </div><!--editor-->
-	</section>
-    
     <!-- Seções -->
     <section id="home">
         <h2>Home</h2>
@@ -735,20 +625,21 @@ label input[type="checkbox"] {
         </div>
     </section>
 
+    <!-- Create -->
     <section id="create">
 		<h2>Create</h2>
-        <p>Use this section to create new content.</p>
+      <p>Use this section to create new content.</p>
 			<form>
-                <label for="videoUpload" class="flex column gap">Upload Vídeo
-                <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
-                <input type="file" id="videoUpload" accept="video/*"></label>
-                <label for="srtUpload" class="flex column gap" class="upload-btn">Upload SRT
-                <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
-                <input type="file" id="srtUpload" accept=".srt"></label>
-                <button class="general-btn flex row gap" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
-            </form>
+          <label for="videoUpload" class="flex column gap">Upload Vídeo
+          <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
+          <input type="file" id="videoUpload" accept="video/*"></label>
+          <label for="srtUpload" class="flex column gap" class="upload-btn">Upload SRT
+          <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
+          <input type="file" id="srtUpload" accept=".srt"></label>
+          <button class="general-btn flex row gap" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+      </form>
     </section>
-
+    
     <!-- Search -->
     <section id="search">
       <h2>Search</h2>
@@ -763,16 +654,55 @@ label input[type="checkbox"] {
 
     <!-- You -->
     <section id="you">
+      <div class="flex row" style="justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin: 0 auto 20px auto;">
+          <h2 style="margin: 0;">My Lessons Posts</h2>
+          <button id="btn-toggleCompactMode" class="general-btn" onclick="toggleCompactMode()" style="font-size: 12px; padding: 5px 10px;">
+              🕶️ Modo Cards: Off
+          </button>
+      </div>
+      
       <h2>You</h2>
       <p>This section is about your profile.</p>
                       
-      <div>
+      <div class="flex row"  id="profile-area">
         <button class="flex column gap general-btn" onclick="showSection('myProfile')">
             <img src="https://files.catbox.moe/r8near.png" alt="Ícone SVG" width="21" height="21" /><span>Perfil</span></button>
         <button class="flex column gap general-btn" id="btn-myPosts" onclick="showSection('myPosts')">
             <img src="https://files.catbox.moe/48dken.svg" alt="Ícone SVG" width="21" height="21" /><span>Postagens</span></button>
       </div>
+   
+      <button class="flex column gap general-btn" id="" onclick="showSection('catBox');" type="button">
+		    <span>🐈</span>Catbox
+      </button> 
     
+    </section>
+    
+    <!-- CatBox -->
+    <section id="catBox">
+    <h2>CatBox</h2>
+	  <p>Welcome to the CatBox section.</p>
+      <form class="flex column" id="catbox-area">
+      	<label class="column gap">
+        	Lição
+        	<input type="text" id="input-postId" placeholder="Cole o id da lição">
+      	</label>
+      	<label class="column gap">
+        	Video
+        	<input type="text" id="input-catboxVideoLink" placeholder="Cole a URL do vídeo">
+      	</label>
+      	<label class="column gap">
+        	Thumnail
+        	<input type="text" id="input-catboxThumbLink" placeholder="Cole a URL da thumb">
+      	</label>
+      	<label class="column gap">
+        	Legendas
+        	<input type="text" id="input-catboxSrtLink" placeholder="Cole a URL do srt">
+      	</label>
+   
+      	<button class="flex column gap general-btn" id="btn-sendCatboxData" id="btn-open" onclick="sendCatboxData();" type="button">
+			    <span>🐈</span>Enviar
+      	</button> 
+      </form>
     </section>
 
     <section id="subscriptions">
@@ -806,11 +736,10 @@ label input[type="checkbox"] {
         <h2>My Lessons Posts</h2>
         <p>Use this section to see your lessons posted.</p>
         <div id="user-post-container" id="myPosts-post-container">
-        
-            <!-- Os cards de vídeo serão inseridos aqui -->
+          <!-- Os cards de vídeo serão inseridos aqui -->
         	<div id="thumb-section-myPosts" class="thumb-section" onclick="showSoloPreview()">
-				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
-            </div>
+				  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+          </div>
             
             <div id="info-content-myPosts" class="info-content">
               <div class="channel-pic">
@@ -948,7 +877,113 @@ label input[type="checkbox"] {
   <!----------->
   <!--editSrt-->
   <!----------->
+  <section id="editSrt">
+    <div class="box thumb-section" id="save-area">
+        <span class="flex row gap" id="btn-close" onclick="closeLoadSaveArea()">&times;</span>
+        <p>💾 Salvar</p>
+        <div class="flex row gap">
+            <button class="general-btn" onclick="copyToClipboard()">📋 Copiar</button>
+            <button class="general-btn" onclick="downSrt()">⬇️ Download</button>
+            <button class="general-btn" onclick="showSRT()">🧾 Exibir</button>
+        </div>
+    </div><!--save-area-->
+    
+	<div class="" id="video-section-editor">
+        <div id="subtitleName">
+            <!-- Nome do arquivo da legenda -->
+        </div>
+    
+		<video id="videoPlayer-editSrt" controls crossorigin="anonymous">
+			<source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+		</video>
+        <div class="flex row gap" id="navigation-controls-previewMode"  style="
+            position: fixed; /* Fixa em relação ao video-container-relative */
+            top: 1px; /* Distância do fundo do vídeo*/
+            left: 50%; /* Começa no meio */
+            transform: translateX(-50%);
+            z-index: 999;">
+            <button class="general-btn" onclick="prevLine()">⏮︎</button>
+            <button class="general-btn" onclick="playLine()">⏯︎</button>
+            <button class="general-btn" onclick="nextLine()">⏭︎</button>
+        </div>
+	</div>
+    
+    <!-- Lista de Legendas -->
+    <div class="segmentsArea flex column gap" id="segments-area">
+    	  <span>Lista de Legendas</span>
+        <div id="segments"></div>
+    </div>
+    
+    <!-- Editor -->
+	<div class="thumb-section box" id="editor">
+      <div class="flex row gap">
+          <button id="btn-save" onclick="showSave()">💾</button>
+          <button onclick="undo()">↩</button>
+          <button onclick="redo()">↪</button>
+          <button id="btn-sync" onclick="toggleAutoSync()" title="Sincronização Automática">
+            🔄
+          </button>
+          <button id="btn-config" onclick="showConfig()">⚙</button>
+          <button onclick="addSegment()">|+</button>
+          <button onclick="removeSegment()">|−</button>
+          <button id="btn-load" onclick="showSection('postLesson')">👉</button>
+      </div>
+      
+      <form>
+        <label class="flex row gap" >
+            <textarea type="text" id="editText" rows="3" style="width: 550px;"></textarea>
+        </label>
+      </form>
+    
+      <div class="flex column" style="gap: 5px;">
+          <!--Início e Fim-->
+          <form class="row">
+              <div class="flex row gap" style="gap: 0; padding: 0;">
+               <label class="flex column" style="gap: 0; padding: 0; margin-right: 10px;">
+                  Início
+                  <div class="flex row"  style="gap: 5px; padding: 0;">
+                    <input type="text" id="editStart" placeholder="00:00:000">
+                    <button type="button" onclick="adjustBatchTime('start', -1)">−</button>
+                    <button type="button" onclick="adjustBatchTime('start', 1)">+</button>
+                  </div>
+                </label>
+                
+                <label class="flex column" style="gap: 0; padding: 0; margin-left: 10px;">
+                  Fim
+                  <div class="flex row"  style="gap: 5px; padding: 0;">
+                    <input id="editEnd" placeholder="00:00:000">
+                    <button type="button" onclick="adjustBatchTime('end', -1)">−</button>
+                    <button type="button" onclick="adjustBatchTime('end', 1)">+</button>
+                  </div>
+                </label>
+              </div>
+          </form>
+			    <hr style="width: 350px; margin: 5px; border: none; border-top: 0.5px solid #7A9299;">
+          <!--config-area-->
+          <form class="flex row" id="config-area">
+              <label class="flex column" style="margin-right: 10px;">
+                  <p>Lote</p>
+                  <input id="editStack" placeholder="0.100">
+              </label>
 
+              <div class="flex column"  style="gap: 5px; padding: 0; margin-left: 10px;">
+                <div class="flex row">
+                    <button type="button" class="general-btn" onclick="showEarlier()" style="margin-bottom: 0;">Adiantar</button> 
+                    <button type="button" class="general-btn" onclick="showLater()" style="margin-bottom: 0;">Atrasar</button>
+                </div>
+                
+                <select id="batchMode" id="" style="width: 160px;">
+                    <option name="opcao-linha" value="all" checked>Todas as linhas</option>
+                    <option name="opcao-linha" value="current">Linha atual</option>
+                    <option name="opcao-linha" value="from-current">Atual e próximas</option>
+                </select>
+              </div>
+          </form>
+      </div><!--config-area-->
+    
+    </div><!--editor-->
+	</section>
+    
   </main>  
 
   <footer id="main-footer">
@@ -1122,7 +1157,36 @@ db.version(1).stores({
 //
 // --------- Visbilidade e Chamadas --------
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-	
+
+// --- CONTROLE DE VISUALIZAÇÃO ---
+// Começa ativado (Lista Compacta)
+let isCompactMode = true; 
+
+function toggleCompactMode() {
+    const toggleBtn = document.getElementById('btn-toggleCompactMode');
+
+    // Inverte o estado
+    isCompactMode = !isCompactMode;
+    
+    console.log("Modo compacto:", isCompactMode);
+    
+    // 1. Atualiza o Texto do Botão
+    if (toggleBtn) {
+        if (isCompactMode) {
+            // Se está compacto, os Cards estão "Off"
+            toggleBtn.textContent = '🕶️ Modo Cards: Off'; 
+        } else {
+            // Se não está compacto, os Cards estão "On"
+            toggleBtn.textContent = '👓 Modo Cards: On';
+        }
+    }
+    
+    // 2. Força a re-renderização visual
+    if (appState.currentSection) {
+        renderThumbnailsFromCache(appState.currentSection);
+    }
+}
+  
 // Mantem um estado global e propaga 
 // as mudanças para todos os elementos
 // relevantes quando o estado mudar.
@@ -1308,28 +1372,38 @@ async function updateElementForSection(sectionId) {
 }
 
 /**
- * Esta função atualiza a UI com base no modo
+ * Esta função atualiza a UI com base no modo (Editor, Preview Solo, Preview Multi)
+ * ATUALIZADO: Altera a altura da lista de legendas (30vh vs 60vh)
  */
 function setEditorMode(mode) {
     // Atualiza a variável de estado
     currentEditMode = mode; 
     console.log("Modo alterado para:", currentEditMode);
 
-    // 2. Seleciona os elementos do seu HTML
+    // 2. Seleciona os elementos do HTML
     const editorDiv = document.getElementById('editor');
     const navPreview = document.getElementById('navigation-controls-previewMode');
+    const segmentsArea = document.getElementById('segments-area'); // ✅ Selecionamos a área da lista
     
-    // Botões do footer (baseado no seu HTML)
+    // Botões do footer
     const footerSolo = document.getElementById('preview-footer-solo');
     const footerChallenging = document.getElementById('preview-footer-challenging');
     const footerChallenges = document.getElementById('preview-footer-challenges');
 
-    // 3. Lógica para esconder/mostrar
-  	hideMainNavigation();
-	  closeLoadSaveArea();
+    // 3. 👇 NOVA LÓGICA DE ALTURA (HEIGHT)
+    if (segmentsArea) {
+        if (mode === 'editor') {
+            segmentsArea.style.maxHeight = '30vh'; // Editor precisa de espaço para os inputs
+        } else {
+            segmentsArea.style.maxHeight = '60vh'; // Preview pode usar mais tela para leitura
+        }
+    }
+
+    // 4. Lógica para esconder/mostrar (Mantida igual)
+    hideMainNavigation();
+    closeLoadSaveArea();
     
     // Primeiro, esconde tudo para "limpar"
-    // (Oculta as partes que mudam)
     if (editorDiv) editorDiv.style.display = 'none';
     if (navPreview) navPreview.style.display = 'none';
     if (footerSolo) footerSolo.style.display = 'none';
@@ -1337,7 +1411,6 @@ function setEditorMode(mode) {
     if (footerChallenges) footerChallenges.style.display = 'none';
 
     // Agora, mostra apenas o que é necessário para o modo
-    
     if (mode === 'editor') {
         // Mostra o editor
         if (editorDiv) editorDiv.style.display = 'block';
@@ -1346,7 +1419,7 @@ function setEditorMode(mode) {
     } else if (mode === 'previewSolo') {
         // Mostra navegação e botões de "Solo" e "Desafiar"
         if (navPreview) navPreview.style.display = 'block';
-        if (footerSolo) footerSolo.style.display = 'flex'; // Seu CSS usa flex para os links do footer
+        if (footerSolo) footerSolo.style.display = 'flex'; 
         if (footerChallenging) footerChallenging.style.display = 'flex';
         
     } else if (mode === 'previewMulti') {
@@ -1359,6 +1432,16 @@ function setEditorMode(mode) {
 function openContent() {
 	hideFooter();
 	setEditorMode('editor');
+  
+  // ✅ Marca que veio de Create (upload manual)
+  // Para isso, precisamos garantir que appState.subtitle.name seja 'legendas.srt' ou não tenha docId
+  const isFromCreate = !lessonsCache.find(l => l.baseName === appState.subtitle.name?.replace(/\.srt$/i, ''));
+  if (isFromCreate) {
+      window.currentEditOrigin = 'create';
+  } else {
+      window.currentEditOrigin = 'myPosts';
+  }
+  
   showSection('editSrt');
 	renderSegments();
   loadContent();
@@ -1742,6 +1825,9 @@ function hideAddPlaylistArea() {
  */
 async function handleEditLesson(lesson) {
     console.log("✎ Iniciando processo de edição:", lesson.baseName);
+  
+    // ✅ Marca que esta lição veio de myPosts (edição)
+    lesson.isEditingExisting = true;
     
     try {
         showLoading('Preparando ambiente de edição...');
@@ -1800,61 +1886,67 @@ async function handleEditLesson(lesson) {
         
         console.log(`🔎 Procurando rascunho local para: "${lesson.baseName}"`);
         
-        if (draft) {
-            // ... (Lógica de rascunho existente mantida) ...
+        // ✅ Verifica se o usuário JÁ DECIDIU na UI (evita confirm duplicado)
+        const userAlreadyDecided = lesson.hasOwnProperty('useDraft');
+        
+        if (draft && !userAlreadyDecided) {
+            // Caso excepcional: rascunho existe mas usuário não foi perguntado
+            // (ex: chamada direta via botão Editar)
             const useDraft = confirm(
                 `Existe uma versão local não salva para "${lesson.baseName}".\n` +
                 `Modificada em: ${new Date(draft.lastModified).toLocaleString()}\n\n` +
                 `Deseja restaurar este rascunho local?`
             );
+            lesson.useDraft = useDraft;
+        }
+      
+        if (draft && lesson.useDraft) {
+            // Restaura o rascunho (lógica existente mantida)
+            if (lesson.video) {
+                const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
+                if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
+                    appState.video.url = cachedLesson.video.blobUrl;
+                    updateAllVideos(cachedLesson.video.blobUrl);
+                } else {
+                    const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
+                    const videoResponse = await fetch(videoUrl);
+                    const videoBlob = await videoResponse.blob();
+                    const blobUrl = URL.createObjectURL(videoBlob);
+                    if (cachedLesson && cachedLesson.video) cachedLesson.video.blobUrl = blobUrl;
+                    appState.video.url = blobUrl;
+                    updateAllVideos(blobUrl);
+                }
+            }
             
-            if (useDraft) {
-                // ... (Lógica de restaurar rascunho mantida) ...
-                if (lesson.video) {
-                     // Lógica de carregar vídeo (igual ao código anterior)
-                     const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
-                     if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
-                        appState.video.url = cachedLesson.video.blobUrl;
-                        updateAllVideos(cachedLesson.video.blobUrl);
-                     } else {
-                        const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
-                        // ... fetch e blob (igual ao código anterior)
-                        // Para brevidade, mantive a lógica exata que você já tinha aqui
-                        const videoResponse = await fetch(videoUrl);
-                        const videoBlob = await videoResponse.blob();
-                        const blobUrl = URL.createObjectURL(videoBlob);
-                        if (cachedLesson && cachedLesson.video) cachedLesson.video.blobUrl = blobUrl;
-                        appState.video.url = blobUrl;
-                        updateAllVideos(blobUrl);
-                     }
+            if (lesson.thumb) {
+                const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+                updateAllThumbnails(thumbUrl);
+                appState.thumbnail.url = thumbUrl;
+            }
+        
+            srtData.length = 0;
+            srtData.push(...JSON.parse(JSON.stringify(draft.srtData)));
+            
+            requestAnimationFrame(() => {
+                const videoPlayer = document.getElementById("videoPlayer-editSrt");
+                if (videoPlayer && draft.videoPosition) {
+                    videoPlayer.currentTime = draft.videoPosition;
                 }
-                
-                if (lesson.thumb) {
-                    const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
-                    updateAllThumbnails(thumbUrl);
-                    appState.thumbnail.url = thumbUrl;
-                }
-
-                srtData.length = 0;
-                srtData.push(...JSON.parse(JSON.stringify(draft.srtData)));
-                
-                requestAnimationFrame(() => {
-                    const videoPlayer = document.getElementById("videoPlayer-editSrt");
-                    if (videoPlayer && draft.videoPosition) {
-                        videoPlayer.currentTime = draft.videoPosition;
-                    }
-                });
-
-            } else {
-                console.log("🔄 Carregando versão original do servidor");
-                await previewLesson(lesson);
+            });
+        
+        } else {
+            // Carrega versão original do servidor
+            console.log("🔄 Carregando versão original do servidor");
+            await previewLesson(lesson);
+            
+            // Se o usuário explicitamente rejeitou o rascunho, deleta ele
+            if (draft && lesson.useDraft === false) {
                 await db.drafts.delete(lesson.baseName);
             }
-        } else {
-            console.log("📦 Nenhum rascunho local, carregando do servidor...");
-            await previewLesson(lesson);
         }
-
+        
+        // Limpa a flag temporária
+        delete lesson.useDraft;
         hideFooter();
         setEditorMode('editor');
         showSection('editSrt');
@@ -1882,10 +1974,8 @@ async function handleEditLesson(lesson) {
 }
 
 /**
- * Aguarda até que as thumbnails sejam renderizadas no DOM em qualquer seção
- * @param {string} sectionId - ID da seção a verificar (ex: 'home', 'myPosts', 'challenge')
- * @param {number} timeout - Tempo máximo de espera em ms (padrão: 10000ms)
- * @returns {Promise<void>}
+ * Aguarda até que as thumbnails sejam renderizadas no DOM.
+ * CORREÇÃO: Aceita imagens com erro como "concluídas" para não travar o loading.
  */
 async function waitForThumbnailsToRender(sectionId = null, timeout = 10000) {
   // Se não passar sectionId, usa a seção atual
@@ -1897,7 +1987,7 @@ async function waitForThumbnailsToRender(sectionId = null, timeout = 10000) {
   
   return new Promise((resolve) => {
     const checkThumbnails = () => {
-      // Monta o seletor baseado na seção
+      // 1. Monta o seletor baseado na seção
       let containerSelector;
       
       switch(targetSection) {
@@ -1914,46 +2004,58 @@ async function waitForThumbnailsToRender(sectionId = null, timeout = 10000) {
           containerSelector = '#subscriptions-post-container';
           break;
         default:
-          console.warn(`⚠️ Seção ${targetSection} não tem thumbnails`);
+          console.warn(`⚠️ Seção ${targetSection} não tem thumbnails configuradas`);
           resolve();
           return;
       }
       
-      // Verifica se existem thumbnails renderizadas
+      // 2. Seleciona as imagens no DOM
       const thumbImages = document.querySelectorAll(`${containerSelector} .thumb-section img`);
       
-      // Verifica se as imagens estão realmente carregadas
-      const loadedImages = Array.from(thumbImages).filter(img => img.complete && img.naturalHeight > 0);
+      // 3. Caso Especial: Lista vazia (cache vazio ou filtro retornou 0)
+      // Se o DOM está vazio, verificamos se o cache também está.
+      // Se o cache tem itens mas o DOM não, o render ainda não aconteceu (continua esperando).
+      if (thumbImages.length === 0) {
+          if (isCacheLoaded && lessonsCache.length === 0) {
+            console.log("ℹ️ Cache vazio, nada para renderizar.");
+            hideLoading();
+            resolve();
+            return;
+          }
+          // Se não é cache vazio, pode ser que o DOM ainda vá atualizar... continua no loop
+      }
+
+      // 4. Lógica de Verificação (CORRIGIDA)
+      // Verifica se TODAS as imagens encontradas já terminaram o processo de rede.
+      // img.complete é true tanto para Sucesso quanto para Erro (404/403).
+      // Isso previne o timeout quando o Backblaze bloqueia o acesso.
+      const allFinished = Array.from(thumbImages).length > 0 && 
+                          Array.from(thumbImages).every(img => img.complete);
       
-      if (loadedImages.length > 0) {
-        console.log(`✅ ${loadedImages.length} thumbnail(s) carregada(s) em ${targetSection}`);
+      if (allFinished) {
+        console.log(`✅ Todas as ${thumbImages.length} thumbnails foram processadas (sucesso ou erro) em ${targetSection}`);
         hideLoading();
         resolve();
         return;
       }
       
-      // Caso especial: se não há lições no cache, resolve imediatamente
-      if (isCacheLoaded && lessonsCache.length === 0) {
-        console.log("ℹ️ Nenhuma lição disponível no cache");
-        resolve();
-        return;
-      }
-      
-      // Timeout de segurança
+      // 5. Timeout de segurança
       if (Date.now() - startTime > timeout) {
-        console.warn(`⚠️ Timeout ao aguardar thumbnails em ${targetSection}`);
+        console.warn(`⚠️ Timeout ao aguardar thumbnails em ${targetSection} (forçando saída)`);
+        hideLoading(); // Garante que o loading saia mesmo no timeout
         resolve();
         return;
       }
       
-      // Tenta novamente em 100ms
-      setTimeout(checkThumbnails, 100);
+      // Tenta novamente no próximo frame de animação (mais suave que setTimeout)
+      requestAnimationFrame(checkThumbnails);
     };
     
-    // Aguarda um frame antes de começar a verificar
+    // Inicia o loop
     requestAnimationFrame(checkThumbnails);
   });
 }
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // ----- Bloco Fx | Login ----- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -1962,8 +2064,11 @@ async function waitForThumbnailsToRender(sectionId = null, timeout = 10000) {
 const DATABASE_ID = "68ed87df000874c3e85a"; 
 const PLAYLISTS_COLLECTION_ID = "playlists";
 
-// Constante da coleção de Posts
+// Constante da coleção do doc Posts
 const POSTS_COLLECTION_ID = "68ed87f400375b28a7e7";
+
+// ID da coleção do doc catBoxPosts
+const CATBOX_COLLECTION_ID = '692f19c80010476f23bf';
   
 // Constantes de Partida
 const MATCHES_COLLECTION_ID = "68fb595d00158868bf7c";
@@ -2236,7 +2341,7 @@ async function saveDraftIfEditable() {
   const lessonInCache = lessonsCache.find(l => l.baseName === baseName);
   
   if (!lessonInCache) {
-    console.log('🚫 Salvamento bloqueado: Lição não está no cache:', baseName);
+    console.log('🚫 Salvamento bloqueado, talvez a lição esteja sendo postada ou não está no cache:', baseName);
     return;
   }
   
@@ -2789,7 +2894,7 @@ function loadContent() {
 }
 
 /**
- * ✅ NOVA FUNÇÃO AUXILIAR: Carrega apenas o SRT do servidor
+ * ✅ Carrega apenas o SRT do servidor
  * (Extrai a lógica de carregar SRT de previewLesson para reutilização)
  */
 async function loadSrtFromServer(lesson) {
@@ -3418,6 +3523,7 @@ function getBaseName() {
 
 /**
  * Função principal para postar a lição
+ * ATUALIZADO: Verifica origem e deleta post anterior se necessário
  */
 async function postLesson() {
   console.log("=== INÍCIO postLesson() ===");
@@ -3432,12 +3538,11 @@ async function postLesson() {
       throw new Error('Nenhuma legenda carregada. Carregue um arquivo SRT primeiro.');
     }
     
-    // CORRIGIDO: Verifica se há thumbnail capturada
-    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob) {
-      throw new Error('Nenhuma thumbnail capturada. Clique no botão 📸 primeiro.');
+    // ACEITA SE TIVER URL (Edição)
+    if (!window.capturedThumbnailBlob && !appState.thumbnail.blob && !appState.thumbnail.url) {
+      throw new Error('Nenhuma thumbnail encontrada. Capture 📸 ou carregue um vídeo com capa.');
     }
     
-    // CORRIGIDO: Verifica se há vídeo no appState
     if (!appState.video.file && !appState.video.blob && !appState.video.url) {
       throw new Error('Nenhum vídeo carregado.');
     }
@@ -3457,11 +3562,87 @@ async function postLesson() {
     console.log("SRT:", srtFileName);
     console.log("Thumb:", thumbFileName);
     
+    // ============================================================
+    // 🆕 VERIFICA SE É EDIÇÃO DE POST EXISTENTE
+    // ============================================================
+    const lessonInCache = lessonsCache.find(l => l.baseName === baseName);
+    const isEditingExisting = lessonInCache && lessonInCache.docId;
+    
+    if (isEditingExisting) {
+        const confirmDelete = confirm(
+            `⚠️ Ao postar esta lição, a versão anterior será excluída permanentemente.\n\n` +
+            `Lição: "${baseName}"\n\n` +
+            `Deseja continuar?`
+        );
+        
+        if (!confirmDelete) {
+            console.log("❌ Usuário cancelou a postagem");
+            return; // Cancela tudo
+        }
+        
+        // Deleta a versão antiga (Appwrite + Backblaze)
+        showLoading('Excluindo versão anterior...');
+        
+        try {
+            // 1. Deleta do Appwrite
+            if (lessonInCache.docId) {
+                await databases.deleteDocument(
+                    DATABASE_ID, 
+                    POSTS_COLLECTION_ID,
+                    lessonInCache.docId
+                );
+                console.log("✅ Registro Appwrite da versão anterior deletado");
+            }
+            
+            // 2. Deleta os arquivos do Backblaze
+            const filesToDelete = [
+              `${baseName}.mp4`,
+              `${baseName}.srt`,
+              `${baseName}.jpg`
+            ];
+            
+            for (const fileName of filesToDelete) {
+              const versions = await listAllVersions(fileName);
+            
+              if (versions && versions.length > 0) {
+                for (const v of versions) {
+                  await deleteByIdAndName(v.fileId, v.fileName);
+                }
+              }
+            }
+            
+            console.log("✅ Arquivos antigos deletados do Backblaze");
+            
+        } catch (error) {
+            console.error("⚠️ Erro ao deletar versão anterior:", error);
+            // Continua mesmo com erro, pois o upload novo vai sobrescrever
+        }
+        
+        hideLoading();
+    }
+    // ============================================================
+    // 🏁 FIM DA VERIFICAÇÃO DE EDIÇÃO
+    // ============================================================
+    
     // 3. Prepara os arquivos
     showLoading('Preparando arquivos...');
     const videoBlob = await getVideoBlob();
     const srtBlob = getSrtBlob();
-    const thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob; // CORRIGIDO
+    
+    // Lógica para recuperar o Blob
+    let thumbBlob = window.capturedThumbnailBlob || appState.thumbnail.blob;
+
+    // Se não tem blob novo (edição), mas tem URL, baixa a imagem original para re-upload
+    if (!thumbBlob && appState.thumbnail.url) {
+        console.log("♻️ Recuperando thumbnail existente para re-upload...");
+        try {
+            const response = await fetch(appState.thumbnail.url);
+            thumbBlob = await response.blob();
+        } catch (error) {
+            console.error("Erro ao baixar thumbnail antiga:", error);
+            throw new Error("Falha ao processar a thumbnail existente. Por favor, capture uma nova 📸.");
+        }
+    }
     
     console.log("✅ Todos os arquivos preparados");
     
@@ -3494,19 +3675,15 @@ async function postLesson() {
     console.log("Thumb ID:", uploadResults.thumb.fileId);
     hideLoading();
 
-    // ============================================================
-    // 🆕 TRECHO ADICIONADO: Criar registro na Coleção Posts do AW
-    // ============================================================
+    // 5. Criar registro na Coleção Posts do Appwrite
     showLoading('Registrando no Banco de Dados...');
 
-    // 1. Pega dados do usuário e do formulário
     const currentUser = await account.get();
     const descInput = document.querySelector('textarea[name="description"]');
     
-    // 2. Cria o documento
     await databases.createDocument(
         DATABASE_ID,
-        "68ed87f400375b28a7e7", // ID da Coleção POSTS
+        POSTS_COLLECTION_ID,
         ID.unique(),
         {
             postStatus: 'published',
@@ -3516,19 +3693,15 @@ async function postLesson() {
             thumbFileId: uploadResults.thumb.fileId,
             userEditorId: null,
             channelName: currentUser.name || 'Desconhecido',
-            description: descInput ? descInput.value : "" // Pega do textarea
+            description: descInput ? descInput.value : ""
         }
     );
     console.log("✅ Documento criado no Appwrite com sucesso!");
-
-    // ============================================================
-    // 🏁 FIM DO TRECHO ADICIONADO
-    // ============================================================
     
     hideLoading();
     alert('✅ Lição postada e registrada com sucesso!');
     
-    // ✅ Limpa o rascunho específico desta lição
+    // Limpa o rascunho específico desta lição
     try {
         await db.drafts.delete(baseName);
         console.log(`🧹 Rascunho de "${baseName}" limpo após postagem.`);
@@ -3551,9 +3724,39 @@ async function postLesson() {
   }
 }
 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Listar Thumbnails --- 
-// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+/**
+ * Busca o documento do Catbox para uma lição específica
+ * @param {string} postId - ID do post (lesson.docId)
+ * @returns {Promise<Object|null>} Documento do Catbox ou null
+ */
+async function getCatboxDoc(postId) {
+    try {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            CATBOX_COLLECTION_ID,
+            [
+                Appwrite.Query.equal('postId', postId),
+                Appwrite.Query.limit(1)
+            ]
+        );
+        
+        if (response.documents.length > 0) {
+            const doc = response.documents[0];
+            console.log(`✅ Documento Catbox encontrado para postId: ${postId}`);
+            return doc;
+        }
+        
+        console.log(`ℹ️ Nenhum documento Catbox para postId: ${postId}`);
+        return null;
+        
+    } catch (error) {
+        console.warn(`⚠️ Erro ao buscar Catbox para postId ${postId}:`, error);
+        return null;
+    }
+}
 
 /**
  * Gera URL pública para arquivo do Backblaze usando o fileId
@@ -3572,80 +3775,69 @@ async function previewLesson(lesson) {
   try {
     showLoading('Carregando lição...');
 
-    // ✅ CRÍTICO: RESETAR srtData ANTES de carregar nova lição
     srtData.length = 0;
     currentSegment = null;
     undoStack = [];
     redoStack = [];
-    console.log("🧹 srtData resetado (era", srtData.length, "segmentos)");
-
-    // ✅ Atualiza appState IMEDIATAMENTE
     appState.subtitle.name = lesson.srt?.fileName || `${lesson.baseName}.srt`;
-    console.log("🔄 appState.subtitle.name definido para:", appState.subtitle.name);
 
-    // 1️⃣ VIDEO -----------------------------------------
+    // Busca documento do Catbox UMA VEZ
+    const catboxDoc = await getCatboxDoc(lesson.docId);
+
+    // ===== 1️⃣ VIDEO =====
     if (lesson.video) {
       const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
       
-      if (cachedLesson && cachedLesson.video && cachedLesson.video.blobUrl) {
-        console.log("✅ Vídeo já estava no cache:", lesson.video.fileName);
-        appState.video.url = cachedLesson.video.blobUrl;
-        updateAllVideos(cachedLesson.video.blobUrl);
+      // Tem no cache E tem timestamp de quando foi baixado?
+      if (cachedLesson?.video?.blobUrl && cachedLesson.video.cachedAt) {
+          const awDate = new Date(lesson.awUpdatedAt);
+          const cacheDate = new Date(cachedLesson.video.cachedAt);
+          
+          // Cache mais recente que o Appwrite? Usa cache
+          if (cacheDate >= awDate) {
+              console.log("✅ Vídeo do cache está atualizado");
+              appState.video.url = cachedLesson.video.blobUrl;
+              updateAllVideos(cachedLesson.video.blobUrl);
+          } else {
+              console.log("📦 Vídeo do cache está desatualizado. Baixando...");
+              await downloadVideoSmart(lesson, cachedLesson, catboxDoc);
+          }
       } else {
-        console.log("📦 Baixando vídeo pela primeira vez:", lesson.video.fileName);
-        const videoUrl = getBackblazePublicUrl(lesson.video.fileId);
-        const videoResponse = await fetch(videoUrl);
-        const videoBlob = await videoResponse.blob();
-        const blobUrl = URL.createObjectURL(videoBlob);
-        
-        if (cachedLesson && cachedLesson.video) {
-          cachedLesson.video.blobUrl = blobUrl;
-        }
-        
-        appState.video.url = blobUrl;
-        updateAllVideos(blobUrl);
+          // Não tem no cache
+          console.log("📦 Vídeo não está no cache. Baixando...");
+          await downloadVideoSmart(lesson, cachedLesson, catboxDoc);
       }
-    } else {
-      console.warn("⚠️ Esta lição não possui vídeo");
     }
 
-    // 2️⃣ SRT -----------------------------------------
+    // ===== 2️⃣ SRT =====
     if (lesson.srt) {
       const cachedLesson = lessonsCache.find(l => l.baseName === lesson.baseName);
       
-      if (cachedLesson && cachedLesson.srt && cachedLesson.srt.content) {
-        console.log("✅ Legendas já estavam no cache:", lesson.srt.fileName);
-        parseSRT(cachedLesson.srt.content);
+      if (cachedLesson?.srt?.content && cachedLesson.srt.cachedAt) {
+          const awDate = new Date(lesson.awUpdatedAt);
+          const cacheDate = new Date(cachedLesson.srt.cachedAt);
+          
+          if (cacheDate >= awDate) {
+              console.log("✅ SRT do cache está atualizado");
+              parseSRT(cachedLesson.srt.content);
+          } else {
+              console.log("📦 SRT do cache está desatualizado. Baixando...");
+              await downloadSrtSmart(lesson, cachedLesson, catboxDoc);
+          }
       } else {
-        console.log("📦 Baixando legendas pela primeira vez:", lesson.srt.fileName);
-        const srtUrl = getBackblazePublicUrl(lesson.srt.fileId);
-        const response = await fetch(srtUrl);
-        const srtContent = await response.text();
-        
-        if (cachedLesson && cachedLesson.srt) {
-          cachedLesson.srt.content = srtContent;
-        }
-        
-        parseSRT(srtContent);
+          console.log("📦 SRT não está no cache. Baixando...");
+          await downloadSrtSmart(lesson, cachedLesson, catboxDoc);
       }
       
       appState.subtitle.name = lesson.srt.fileName;
-    } else {
-      console.warn("⚠️ Esta lição não possui legendas");
     }
 
-    // 3️⃣ THUMBNAIL -----------------------------------
+    // ===== 3️⃣ THUMBNAIL =====
     if (lesson.thumb) {
       const thumbUrl = getBackblazePublicUrl(lesson.thumb.fileId);
       updateAllThumbnails(thumbUrl);
       appState.thumbnail.url = thumbUrl;
     }
-
-    // ✅ APÓS carregar tudo, log de confirmação
-    console.log("✅ Lição carregada com sucesso!");
-    console.log(`   - baseName: ${lesson.baseName}`);
-    console.log(`   - srtData.length: ${srtData.length} segmentos`);
-    console.log(`   - appState.subtitle.name: ${appState.subtitle.name}`);
 
     hideLoading();
 
@@ -3654,6 +3846,239 @@ async function previewLesson(lesson) {
     hideLoading();
     alert('Erro ao carregar lição: ' + error.message);
   }
+}
+
+// =======================
+// 💡 Funções auxiliares 
+// 🧠 Verifica timestamps
+// =======================
+/**
+ * Baixa vídeo da fonte mais recente (Catbox vs Backblaze)
+ * NOVO: Usa Catbox como fallback se Backblaze falhar
+ */
+async function downloadVideoSmart(lesson, cachedLesson, catboxDoc) {
+    let sourceUrl;
+    let usedCatbox = false;
+    
+    // 1. Decide qual fonte usar baseado em timestamp
+    if (catboxDoc && catboxDoc.catboxVideoLink) {
+        const catboxUpdatedAt = new Date(catboxDoc.$updatedAt);
+        const awUpdatedAt = new Date(lesson.awUpdatedAt);
+        
+        if (catboxUpdatedAt >= awUpdatedAt) {
+            console.log("📥 Usando vídeo do Catbox (mais recente)");
+            sourceUrl = catboxDoc.catboxVideoLink;
+            usedCatbox = true;
+        } else {
+            console.log("📥 Usando vídeo do Backblaze (mais recente)");
+            sourceUrl = getBackblazePublicUrl(lesson.video.fileId);
+        }
+    } else {
+        console.log("📥 Usando vídeo do Backblaze (sem Catbox)");
+        sourceUrl = getBackblazePublicUrl(lesson.video.fileId);
+    }
+    
+    // 2. ✅ NOVO: Tenta baixar com fallback
+    let videoBlob;
+    try {
+        const videoResponse = await safeFetch(sourceUrl);
+        videoBlob = await videoResponse.blob();
+        console.log(`✅ Vídeo baixado com sucesso de ${usedCatbox ? 'Catbox' : 'Backblaze'}`);
+        
+    } catch (error) {
+        console.error(`❌ Falha ao baixar de ${usedCatbox ? 'Catbox' : 'Backblaze'}:`, error);
+        
+        // ✅ FALLBACK: Se falhou e NÃO era Catbox, tenta Catbox
+        if (!usedCatbox && catboxDoc && catboxDoc.catboxVideoLink) {
+            console.log("🔄 Tentando fallback para Catbox...");
+            try {
+                const fallbackResponse = await safeFetch(catboxDoc.catboxVideoLink);
+                videoBlob = await fallbackResponse.blob();
+                console.log("✅ Vídeo baixado do Catbox (fallback)");
+            } catch (fallbackError) {
+                console.error("❌ Fallback do Catbox também falhou:", fallbackError);
+                throw new Error('Vídeo indisponível em ambas as fontes');
+            }
+        } else {
+            throw error; // Re-lança se não tem fallback
+        }
+    }
+    
+    // 3. Cria blob URL e atualiza cache
+    const blobUrl = URL.createObjectURL(videoBlob);
+    
+    if (cachedLesson && cachedLesson.video) {
+        cachedLesson.video.blobUrl = blobUrl;
+        cachedLesson.video.cachedAt = new Date().toISOString();
+    }
+    
+    appState.video.url = blobUrl;
+    updateAllVideos(blobUrl);
+}
+
+/**
+ * Baixa SRT da fonte mais recente (Catbox vs Backblaze)
+ * NOVO: Usa Catbox como fallback se Backblaze falhar
+ */
+async function downloadSrtSmart(lesson, cachedLesson, catboxDoc) {
+    let sourceUrl;
+    let usedCatbox = false;
+    
+    // 1. Decide qual fonte usar baseado em timestamp
+    if (catboxDoc && catboxDoc.catboxSrtLink) {
+        const catboxUpdatedAt = new Date(catboxDoc.$updatedAt);
+        const awUpdatedAt = new Date(lesson.awUpdatedAt);
+        
+        if (catboxUpdatedAt >= awUpdatedAt) {
+            console.log("📥 Usando SRT do Catbox (mais recente)");
+            sourceUrl = catboxDoc.catboxSrtLink;
+            usedCatbox = true;
+        } else {
+            console.log("📥 Usando SRT do Backblaze (mais recente)");
+            sourceUrl = getBackblazePublicUrl(lesson.srt.fileId);
+        }
+    } else {
+        console.log("📥 Usando SRT do Backblaze (sem Catbox)");
+        sourceUrl = getBackblazePublicUrl(lesson.srt.fileId);
+    }
+    
+    // 2. ✅ NOVO: Tenta baixar com fallback
+    let srtContent;
+    try {
+        const response = await safeFetch(sourceUrl);
+        srtContent = await response.text();
+        console.log(`✅ SRT baixado com sucesso de ${usedCatbox ? 'Catbox' : 'Backblaze'}`);
+        
+    } catch (error) {
+        console.error(`❌ Falha ao baixar de ${usedCatbox ? 'Catbox' : 'Backblaze'}:`, error);
+        
+        // ✅ FALLBACK: Se falhou e NÃO era Catbox, tenta Catbox
+        if (!usedCatbox && catboxDoc && catboxDoc.catboxSrtLink) {
+            console.log("🔄 Tentando fallback para Catbox...");
+            try {
+                const fallbackResponse = await safeFetch(catboxDoc.catboxSrtLink);
+                srtContent = await fallbackResponse.text();
+                console.log("✅ SRT baixado do Catbox (fallback)");
+            } catch (fallbackError) {
+                console.error("❌ Fallback do Catbox também falhou:", fallbackError);
+                throw new Error('SRT indisponível em ambas as fontes');
+            }
+        } else {
+            throw error;
+        }
+    }
+    
+    // 3. Atualiza cache
+    if (cachedLesson && cachedLesson.srt) {
+        cachedLesson.srt.content = srtContent;
+        cachedLesson.srt.cachedAt = new Date().toISOString();
+    }
+    
+    parseSRT(srtContent);
+}
+
+/**
+ * CRUDE - CatBox Posts Table
+ * Envia dados do Catbox para o Appwrite (Lógica: Substituição Total)
+ * Verifica se já existe: Se sim, deleta e cria de novo. Se não, apenas cria.
+ */
+/**
+ * Envia dados do Catbox para o Appwrite (Fluxo: Verifica -> Deleta Antigo -> Cria Novo)
+ */
+async function sendCatboxData() {
+    console.log("📤 Iniciando processo de envio CatboxPost...");
+    
+    // Captura inputs
+    const postIdInput = document.getElementById('input-postId');
+    const videoInput = document.getElementById('input-catboxVideoLink');
+    const srtInput = document.getElementById('input-catboxSrtLink');
+    const thumbInput = document.getElementById('input-catboxThumbLink');
+
+    const postId = postIdInput.value.trim();
+    const catboxVideoLink = videoInput.value.trim();
+    const catboxSrtLink = srtInput.value.trim();
+    const catboxThumbLink = thumbInput.value.trim();
+
+    // --- 1. Validações Locais ---
+    if (!postId) return alert('❌ Post ID é obrigatório!');
+    if (!catboxVideoLink) return alert('❌ Link do vídeo é obrigatório!');
+    if (!catboxSrtLink) return alert('❌ Link do SRT é obrigatório!');
+
+    // Validação simples de formato URL
+    if (!catboxVideoLink.startsWith('http') || !catboxSrtLink.startsWith('http')) {
+        return alert('❌ Os links devem começar com http:// ou https://');
+    }
+
+    try {
+        showLoading('Verificando registros...');
+
+        // --- 2. Verifica se já existe (Busca pelo postId) ---
+        const existingDocs = await databases.listDocuments(
+            DATABASE_ID,
+            CATBOX_COLLECTION_ID,
+            [
+                Appwrite.Query.equal('postId', postId)
+            ]
+        );
+
+        // --- 3. Se existir, Deleta o antigo ---
+        if (existingDocs.documents.length > 0) {
+            const oldDoc = existingDocs.documents[0];
+            console.log(`♻️ Substituindo registro antigo: ${oldDoc.$id}`);
+            
+            await databases.deleteDocument(
+                DATABASE_ID,
+                CATBOX_COLLECTION_ID,
+                oldDoc.$id
+            );
+        }
+
+        showLoading('Salvando no Appwrite...');
+
+        // --- 4. Cria o Novo Documento ---
+        const newDoc = await databases.createDocument(
+            DATABASE_ID,
+            CATBOX_COLLECTION_ID, 
+            ID.unique(),
+            {
+                postId: postId,
+                catboxVideoLink: catboxVideoLink,
+                catboxSrtLink: catboxSrtLink,
+                catboxThumbLink: catboxThumbLink || null // Se vazio, manda null
+            }
+        );
+        
+        // Fecha a tela de loading corretamente
+        hideLoading();
+        
+        console.log('✅ Sucesso:', newDoc);
+        alert(`✅ Salvo com sucesso!`);
+        
+        // --- 5. Limpeza e UI ---
+        postIdInput.value = '';
+        videoInput.value = '';
+        srtInput.value = '';
+        thumbInput.value = '';
+        
+        // Reforço fecha a tela de loading corretamente
+        hideLoading();
+
+        // Opcional: Voltar para a Home ou atualizar cache
+        // showSection('home'); 
+
+    } catch (error) {
+        console.error('❌ Erro no processo Catbox:', error);
+        
+        // 🔴 ANTI-TRAVAMENTO: Força o loading a sumir em caso de erro
+        forceHideLoading(); 
+        
+        // Tratamento de erro amigável
+        if (error.message.includes('Invalid document structure')) {
+            alert('❌ Erro de Estrutura no Banco de Dados (Appwrite).\nVerifique se os campos foram criados como URL ou String, e não como IP.');
+        } else {
+            alert('❌ Erro ao enviar: ' + error.message);
+        }
+    }
 }
 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -3699,6 +4124,73 @@ async function loadLessonsToCache() {
 }
 
 /**
+ * Busca URL da thumbnail de forma inteligente (Catbox > Backblaze > Cache)
+ * @param {Object} lesson - Objeto da lição
+ * @returns {Promise<string>} URL da thumbnail
+ */
+async function getSmartThumbUrl(lesson) {
+    try {
+        // 1. Se já tem no cache do objeto, usa
+        if (lesson.thumb.url && !lesson.thumb.url.includes('backblazeb2.com')) {
+            console.log(`✅ Thumb de "${lesson.baseName}" já está no cache`);
+            return lesson.thumb.url;
+        }
+        
+        // 2. Busca no CatboxPost
+        const catboxDoc = await getCatboxDoc(lesson.docId);
+        
+        let sourceUrl;
+        let usedCatbox = false;
+        
+        // 3. Decide qual fonte usar baseado em timestamp
+        if (catboxDoc && catboxDoc.catboxThumbLink) {
+            const catboxUpdatedAt = new Date(catboxDoc.$updatedAt);
+            const awUpdatedAt = new Date(lesson.awUpdatedAt);
+            
+            if (catboxUpdatedAt >= awUpdatedAt) {
+                console.log(`📥 Usando thumb do Catbox para "${lesson.baseName}"`);
+                sourceUrl = catboxDoc.catboxThumbLink;
+                usedCatbox = true;
+            } else {
+                console.log(`📥 Usando thumb do Backblaze para "${lesson.baseName}"`);
+                sourceUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+            }
+        } else {
+            console.log(`📥 Usando thumb do Backblaze para "${lesson.baseName}"`);
+            sourceUrl = getBackblazePublicUrl(lesson.thumb.fileId);
+        }
+        
+        // 4. ✅ NOVO: Tenta carregar com fallback
+        try {
+            // Testa se a URL é válida
+            const testResponse = await fetch(sourceUrl, { method: 'HEAD' });
+            if (testResponse.ok) {
+                lesson.thumb.url = sourceUrl; // Atualiza cache
+                return sourceUrl;
+            }
+            throw new Error('URL inválida');
+            
+        } catch (error) {
+            console.error(`❌ Falha ao acessar thumb de ${usedCatbox ? 'Catbox' : 'Backblaze'}:`, error);
+            
+            // ✅ FALLBACK: Se falhou e NÃO era Catbox, tenta Catbox
+            if (!usedCatbox && catboxDoc && catboxDoc.catboxThumbLink) {
+                console.log(`🔄 Tentando fallback do Catbox para "${lesson.baseName}"`);
+                lesson.thumb.url = catboxDoc.catboxThumbLink;
+                return catboxDoc.catboxThumbLink;
+            }
+            
+            // Se não tem fallback, retorna Backblaze mesmo (vai dar erro no onerror da img)
+            return getBackblazePublicUrl(lesson.thumb.fileId);
+        }
+        
+    } catch (error) {
+        console.error(`❌ Erro ao buscar thumb inteligente para "${lesson.baseName}":`, error);
+        return getBackblazePublicUrl(lesson.thumb.fileId);
+    }
+}
+
+/**
  * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas).
  * Inclui lógica para renderizar botões de Editar/Excluir na seção 'myPosts'.
  * Switch statement para definir clickFunction baseado na seção
@@ -3706,6 +4198,7 @@ async function loadLessonsToCache() {
  * @param {Array<Object>} [dataToRender=lessonsCache] - Array opcional de lições/partidas a serem renderizadas.
  * ATUALIZADO: Renderiza as thumbnails com indicador de progresso
  * Agora adiciona o botão "Continuar" para lições com progresso
+ * Suporta Modo Compacto (Lista) e Modo Card.
  */
 async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     const containerMap = {
@@ -3719,63 +4212,32 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // 1. 👇 OBTER O ID DO USUÁRIO LOGADO (Adicionado)
-    let currentUserId = null;
-    try {
-        const user = await account.get();
-        currentUserId = user.$id;
-    } catch (e) {
-        // Usuário não logado, currentUserId permanece null
-        console.log("Usuário não logado, rascunhos privados ocultos.");
-    }
-
     let itemsToRender;
 
-    // ✅ CORREÇÃO APLICADA AQUI: Filtra os dados usando o ID real
-    if (sectionId === 'myPosts') {
-        // Para "myPosts", mostra publicados OU rascunhos que pertencem ao usuário logado
-        itemsToRender = dataToRender.filter(lesson => 
-            lesson.extraData.postStatus === 'published' || 
-            // 👇 AQUI ESTÁ A MUDANÇA SOLICITADA:
-            (currentUserId && lesson.hostId === currentUserId && lesson.extraData.postStatus === 'editing')
-        );
-        console.log(`Filtrando para "myPosts": ${itemsToRender.length} de ${dataToRender.length} itens serão exibidos.`);
-    } else if (sectionId === 'home') {
-        // Para "home", mostra APENAS os publicados
+    // 1. Filtros
+    if (sectionId === 'home') {
         itemsToRender = dataToRender.filter(lesson => lesson.extraData.postStatus === 'published');
-        console.log(`Filtrando para "home": ${itemsToRender.length} de ${dataToRender.length} itens serão exibidos.`);
     } else {
-        // Para outras seções (como 'challenge'), usa os dados como estão
         itemsToRender = dataToRender;
     }
 
-    // --- CORREÇÃO AQUI: Verifica se está vazio ANTES de logar ou processar ---
+    // 2. Verifica vazio
     if (itemsToRender.length === 0) {
-        container.innerHTML = ''; // Limpa qualquer lixo anterior
-        
-        if (sectionId === 'challenge') {
-             console.log(`ℹ️ Seção ${sectionId}: Nenhum desafio ativo no servidor.`);
-             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
-        } else {
-             console.log(`ℹ️ Seção ${sectionId}: Nenhuma lição disponível.`);
-             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição postada.</p>';
-        }
-        return; // Sai da função aqui, sem imprimir "Renderizando thumbnails..."
+        container.innerHTML = ''; 
+        const msg = sectionId === 'challenge' ? 'Nenhum desafio encontrado.' : 'Nenhuma lição encontrada.';
+        container.innerHTML = `<p style="color: #888; text-align: center; padding: 20px;">${msg}</p>`;
+        return;
     }
     
-    // Se chegou aqui, tem itens. Agora sim logamos.
     console.log(`--- Renderizando ${itemsToRender.length} thumbnails para: ${sectionId} ---`);
-    
-    // Limpa o container para inserir os novos itens
     container.innerHTML = '';
     
-    // 2. Define a função de clique baseada na seção
+    // 3. Define função de clique
     let clickFunction;
-    
     switch(sectionId) {
         case 'home':
         case 'subscriptions':
-            clickFunction = (item) => showSoloPreview(item);
+            clickFunction = (item) => showSoloPreview(item); // Já pergunta se quer continuar
             break;
         case 'challenge':
             clickFunction = (item) => showMultiPreview(item);
@@ -3787,24 +4249,13 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             clickFunction = (item) => previewLesson(item);
     }
 
-    // 3. Verifica se há itens para renderizar
-    if (sectionId === 'challenge') {
-        if (itemsToRender.length === 0) {
-            container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
-            return;
-        }
-    } else if (itemsToRender.length === 0) {
-        container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição postada.</p>';
-        return;
-    }
-
-    // 4. Renderização de cada Item
+    // 4. Loop de Renderização
     for (const item of itemsToRender) {
         const baseName = item.baseName;
-        const thumbnailUrl = item.thumb.url || getBackblazePublicUrl(item.thumb.fileId); 
-        const hostIdDisplay = item.hostId || 'Eu';
-
-        // ✅ NOVO: Verifica se tem progresso salvo (apenas para home/subscriptions)
+        // Tenta buscar thumbnail do Catbox primeiro
+        const thumbnailUrl = await getSmartThumbUrl(item);
+        
+        // --- A. Lógica de Progresso ---
         let hasSavedProgress = false;
         let progressPercentage = 0;
         
@@ -3812,289 +4263,175 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             const progress = await loadSoloProgress(baseName);
             if (progress) {
                 hasSavedProgress = true;
-                // CORREÇÃO: Usa o totalSegments salvo no banco, com fallback para 1 para evitar divisão por zero
                 const total = progress.totalSegments || 1; 
                 progressPercentage = (progress.currentSegmentIndex / total) * 100;
             }
         }
 
-        // Cria o wrapper do post
+        // --- B. Botões de MyPosts ---
+        let metaButtonsHTML = ``;
+        if (sectionId === 'myPosts') {
+            let hasDraft = false;
+            try { const draft = await db.drafts.get(baseName); hasDraft = !!draft; } catch(e){}
+            
+            metaButtonsHTML = `
+                ${hasDraft ? `<span class="general-btn btn-discard-draft" data-basename="${baseName}" style="color: #ff9800; padding: 4px 8px; font-size: 0.85em;">🗑️ Rascunho</span>` : ''}
+                <span class="general-btn btn-delete-post" data-basename="${baseName}" style="color: red; padding: 4px 8px; font-size: 0.85em;">❌</span>
+            `;
+        }
+
+        // --- C. Wrapper (Compacto vs Card) ---
         const postWrapper = document.createElement('div');
         postWrapper.className = 'post-item';
-        postWrapper.style.cssText = 'margin-bottom: 20px; position: relative;';
+
+        if (isCompactMode) {
+            // LISTA COM MINIATURA
+            postWrapper.style.cssText = `
+                margin: 8px 8px 8px 8px; position: relative; background: #000608;
+                border-radius: 6px; padding: 5px; border: 1px solid #333;
+                display: flex; align-items: center; gap: 12px;
+            `;
+        } else {
+            // CARD GRANDE
+            postWrapper.style.cssText = 'margin-bottom: 20px; position: relative;';
+        }
         
-        // ✅ NOVO: Adiciona a barra de progresso se houver
+        // --- D. Barra de Progresso Visual ---
         let progressBarHTML = '';
         if (hasSavedProgress) {
+            // A barra é apenas visual. O clique no card aciona a lógica.
+            const positionStyle = isCompactMode 
+                ? 'position: absolute; bottom: 0; left: 0; width: 100%; border-radius: 0 0 6px 6px;' 
+                : 'position: absolute; bottom: 0; left: 0; width: 100%;';
+            
             progressBarHTML = `
-                <div style="
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    height: 4px;
-                    background: linear-gradient(45deg,rgba(0, 3, 43, 1) 0%, rgba(63, 0, 163, 1) 33%, rgba(0, 3, 43, 1) 66%, rgba(255, 255, 255, 0) 100%);
-                    width: ${progressPercentage}%;
-                    border-radius: 2px;
-                    z-index: 2; /* Garante que fique acima da imagem */
-                "></div>
+                 <div style="${positionStyle} height: 4px; background: #333; z-index: 2;">
+                    <div style="width: ${progressPercentage}%; height: 100%; background: linear-gradient(90deg, #4caf50, #8bc34a);"></div>
+                 </div>
             `;
         }
         
-        // Estrutura do Conteúdo Meta (Ações)
-        let metaButtonsHTML = ``;
+        // --- E. (REMOVIDO BOTÃO CONTINUAR) ---
 
-        // O código JavaScript espera botões .btn-edit-lesson e .btn-delete-lesson
-        if (sectionId === 'myPosts') {
-            metaButtonsHTML = `
-                <span class="general-btn btn-edit-lesson" data-basename="${baseName}">✎ Editar</span>
-                <span class="general-btn btn-delete-lesson" data-basename="${baseName}" style="color: red;">❌ Excluir</span>
-            `;
-        }
-      
-        // ✅ NOVO: Verifica se há rascunho para esta lição (apenas em myPosts)
-        let draftIndicatorHTML = '';
-        if (sectionId === 'myPosts') {
-            try {
-                const draft = await db.drafts.get(baseName);
-                if (draft) {
-                    const draftDate = new Date(draft.lastModified).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    draftIndicatorHTML =  `<div style="
-                            position: absolute;
-                            bottom: 8px;
-                            right: 8px;
-                            background: rgba(255, 182, 73, 0.3); color: #FCEACF;
-                            color: #fceacf;
-                            padding: 4px 8px;
-                            border-radius: 4px;
-                            font-size: 12px;
-                            font-weight: bold;
-                            display: flex;
-                            align-items: center;
-                            gap: 10px;
-                            z-index: 10;
-                        ">
-                            💾 Rascunho (${draftDate})
-                            <button 
-                                class="btn-continue-draft" 
-                                data-basename="${baseName}"
-                                style="
-                                    background: rgba(76, 175, 80, 0.4);
-                                    border: none;
-                                    color: white;
-                                    padding: 2px 6px;
-                                    border-radius: 3px;
-                                    cursor: pointer;
-                                    font-size: 12px;
-                                "
-                                title="Continuar editando">
-                                ✔️
-                            </button>
-                            <button 
-                                class="btn-discard-draft" 
-                                data-basename="${baseName}"
-                                style="
-                                    background: rgba(244, 67, 54, 0.4);
-                                    border: none;
-                                    color: white;
-                                    padding: 2px 6px;
-                                    border-radius: 3px;
-                                    cursor: pointer;
-                                    font-size: 12px;
-                                "
-                                title="Descartar rascunho">
-                                ✖️
-                            </button>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.warn("Erro ao verificar rascunho:", error);
-            }
-        } else {
-            // Para home, challenge, subscriptions - mostra performance
-            const performanceValue = item.extraData?.hostPerformance ?? '99';
-            metaButtonsHTML = `<span class="performance">${performanceValue}%</span>`;
-        }
+        // --- F. Montagem HTML ---
         
-        // 5. Montagem do HTML
+        // 1. Thumbnail
         const thumbSection = document.createElement('div');
         thumbSection.className = 'thumb-section';
         thumbSection.style.cursor = 'pointer';
         thumbSection.style.position = 'relative';
-        thumbSection.innerHTML = `
-            <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
-            ${draftIndicatorHTML}
-            ${progressBarHTML}
-        `;
         
+        if (isCompactMode) {
+            // Miniatura Fixa
+            thumbSection.style.width = '120px';     
+            thumbSection.style.minWidth = '120px';  
+            thumbSection.style.height = '68px';     
+            thumbSection.style.margin = '5px 5px 5px 5px';     
+            
+            thumbSection.innerHTML = `
+                <img src="${thumbnailUrl}" 
+                     onerror="handleThumbError(this, '${thumbnailUrl}')" 
+                     alt="Preview" 
+                     style="display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                ${progressBarHTML} 
+            `;
+        } else {
+            // Card Grande
+            thumbSection.innerHTML = `
+                <img src="${thumbnailUrl}" 
+                     onerror="handleThumbError(this, '${thumbnailUrl}')" 
+                     alt="Preview" 
+                     style="display: block; width: 100%; border-radius: 8px;">
+                ${progressBarHTML} 
+            `;
+        }
+
+        // 2. Info Content (Corrigido: Texto à esquerda, Botões à direita, Altura ajustada)
         const infoContent = document.createElement('div');
         infoContent.className = 'info-content';
         
-        // Adiciona botão "Continuar (Lição)" se houver progresso
-        let continueButtonHTML = '';
-        if (hasSavedProgress) {
-            continueButtonHTML = `
-                <span class="general-btn btn-continue-lesson" style="color: #fff; font-weight: bold;"
-                data-basename="${baseName}">
-                ▶️ Continuar
-                </span>
-            `;
+        if (isCompactMode) {
+            infoContent.style.width = '100%';
+            infoContent.style.padding = '0';
+            infoContent.style.display = 'flex';
+            infoContent.style.alignItems = 'center'; // Centraliza verticalmente
+            infoContent.style.minHeight = '68px';    // Garante altura mínima igual à thumb
         }
-        
-        infoContent.innerHTML = `
+
+        const channelPicHTML = isCompactMode ? '' : `
             <div class="channel-pic">
                 <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
             </div>
-            
-            <div class="video-text">
+        `;
+
+        // MUDANÇAS AQUI:
+        // 1. video-text agora é flex-row (linha) para botões ficarem ao lado.
+        // 2. video-title tem 'flex: 1' (ocupa todo espaço sobrando) e 'text-align: left'.
+        // 3. video-meta tem 'flex-shrink: 0' (não encolhe) para ficar fixo na direita.
+        infoContent.innerHTML = `
+            ${channelPicHTML}
+            <div class="video-text" style="flex: 1; display: flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%;">
                 <span 
                     class="video-title video-title-clickable" 
                     data-basename="${baseName}"
-                    style="cursor: pointer;"
+                    title="${baseName}"
+                    style="
+                        cursor: pointer; 
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                        font-size: ${isCompactMode ? '14px' : '14px'};
+                        line-height: 1.25; 
+                        text-align: left;
+                        margin-right: 10px; /* Afasta o texto dos botões */
+                        flex: 1; /* Força o texto a ocupar o espaço da esquerda */
+                    "
                 >${baseName}</span>
-                <div class="video-meta">
-                    <span class="channel-name">Host: ${hostIdDisplay}</span>
-                    ${continueButtonHTML}
+                
+                <div class="video-meta" style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                    ${!isCompactMode ? '<span class="channel-name" style="margin-right: auto;">Channel Name</span>' : ''}
                     ${metaButtonsHTML}
                 </div>
-            </div>`;
-        
-        // Monta o post completo
+            </div>
+        `;
+
         postWrapper.appendChild(thumbSection);
         postWrapper.appendChild(infoContent);
-        
-        // Adiciona ao container
         container.appendChild(postWrapper);
         
-        // 6. Adicionar event listeners APÓS inserir no DOM
+        // --- G. Event Listeners ---
         
-        // Event listener para a THUMBNAIL (sempre chama a clickFunction da seção)
-        const thumbElement = postWrapper.querySelector('.thumb-section');
-        if (thumbElement) {
-            thumbElement.addEventListener('click', () => {
-                console.log(`Thumbnail clicada em ${sectionId}:`, baseName);
-                clickFunction(item);
-            });
-        }
+        // Clique na Thumb
+        thumbSection.onclick = () => clickFunction(item);
         
-        // Event listener para o TÍTULO (sempre chama a clickFunction da seção)
-        const titleElement = postWrapper.querySelector('.video-title-clickable');
-        if (titleElement) {
-            titleElement.addEventListener('click', () => {
-                console.log(`Título clicado em ${sectionId}:`, baseName);
-                clickFunction(item);
-            });
-        }
-        
-        // Event listeners específicos para MyPosts
+        // Clique no Título
+        const titleEl = postWrapper.querySelector('.video-title-clickable');
+        if(titleEl) titleEl.onclick = () => clickFunction(item);
+
+        // Listeners MyPosts
         if (sectionId === 'myPosts') {
-            // Botão Editar
-            const btnEdit = postWrapper.querySelector('.btn-edit-lesson');
-            if (btnEdit) {
-                btnEdit.addEventListener('click', (e) => {
+            const btnDiscard = postWrapper.querySelector('.btn-discard-draft');
+            if (btnDiscard) {
+                btnDiscard.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    console.log(`Botão Editar clicado:`, baseName);
-                    handleEditLesson(item);
-                });
-            }
-            
-            // Botão Excluir Lição
-            const btnDelete = postWrapper.querySelector('.btn-delete-lesson');
-            if (btnDelete) {
-                btnDelete.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    console.log(`Botão Excluir clicado:`, baseName);
-                    deleteFullLesson(baseName);
-                });
-            }
-
-            // ✅ NOVO: Botão Continuar Rascunho
-            const btnContinueDraft = postWrapper.querySelector('.btn-continue-draft');
-            if (btnContinueDraft) {
-                btnContinueDraft.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    console.log(`✔️ Continuando rascunho:`, baseName);
-                    await handleEditLesson(item); // Já tem lógica de rascunho
-                });
-            }
-            
-            // ✅ Botão Descartar Rascunho
-             // ✅ Botão Descartar Rascunho
-            const btnDiscardDraft = postWrapper.querySelector('.btn-discard-draft');
-            if (btnDiscardDraft) {
-                btnDiscardDraft.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    
-                    if (confirm(`Descartar o rascunho de "${baseName}"?\n\nO status voltará para 'published' e o rascunho local será apagado.`)) {
-                        showLoading('Descartando rascunho...');
-                        try {
-                            // 1. Deleta do Dexie (Local)
-                            await db.drafts.delete(baseName);
-                            console.log(`🗑️ Rascunho local deletado:`, baseName);
-
-                            // 2. Reverte status no Appwrite (Servidor)
-                            if (item.docId) {
-                                console.log(`🔄 Revertendo status no servidor para post ${item.docId}...`);
-                                await databases.updateDocument(
-                                    DATABASE_ID,
-                                    POSTS_COLLECTION_ID,
-                                    item.docId,
-                                    {
-                                        postStatus: 'published',
-                                        userEditorId: null
-                                    }
-                                );
-                                
-                                // Atualiza o cache local imediatamente para refletir a mudança
-                                item.extraData.postStatus = 'published';
-                                item.hostId = null; // Limpa o editor localmente também
-                            }
-
-                            // 3. Atualiza a UI (sem recarregar a página)
-                            await renderThumbnailsFromCache('myPosts', lessonsCache);
-                            
-                            hideLoading();
-                            // alert('Rascunho descartado e post liberado!'); // Opcional, pode remover se achar chato
-
-                        } catch (error) {
-                            console.error('Erro ao descartar:', error);
-                            hideLoading();
-                            alert('Erro ao descartar o rascunho: ' + error.message);
-                        }
+                    if (confirm(`Excluir rascunho local de "${baseName}"?`)) {
+                        await db.drafts.delete(baseName);
+                        await renderThumbnailsFromCache('myPosts', lessonsCache); 
                     }
                 });
             }
-        }
-      
-        // 7. NOVO: Event listener seguro para o botão "Continuar"
-        const btnContinue = postWrapper.querySelector('.btn-continue-lesson');
-        if (btnContinue) {
-            btnContinue.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Evita clicar na thumbnail
-                
-                // Pega o baseName do data-attribute
-                const baseName = e.currentTarget.getAttribute('data-basename');
-                
-                // Busca a lição completa no cache
-                const lessonToContinue = lessonsCache.find(l => l.baseName === baseName);
-                
-                if (lessonToContinue) {
-                    console.log("▶️ Continuando lição:", baseName);
-                    await showSoloPreview(lessonToContinue);
-                } else {
-                    console.error("❌ Lição não encontrada:", baseName);
-                }
-            });
+
+            const btnDelete = postWrapper.querySelector('.btn-delete-post');
+            if (btnDelete) {
+                btnDelete.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteFullLesson(baseName);
+                });
+            }
         }
     }
-    
-    console.log('✅ ' + itemsToRender.length + ' itens renderizados em ' + sectionId);
+    console.log(`✅ ${itemsToRender.length} card(s) inserido(s) no DOM (thumbnails podem ainda estar carregando)`);
 }
 
 /**
@@ -5980,9 +6317,8 @@ async function checkAndOfferContinue(lesson) {
     }
 
     // Monta a mensagem do confirm
-    const message = `📚 Você tem progresso salvo em "${lesson.baseName}"\n\n` +
+    const message = `📚 Você tem progresso salvo em "${lesson.baseName}" ${progress.hostPerformance.toFixed(0)}%\n\n\n\n` +
                     `📍 Última frase concluída:\n"${lastSegment.text}"\n\n` +
-                    `Performance: ${progress.hostPerformance.toFixed(0)}%\n\n` +
                     `Deseja continuar de onde parou?`;
 
     const userChoice = confirm(message);
@@ -6019,29 +6355,29 @@ function formatAppwriteDocToLesson(doc) {
     return {
         baseName: doc.lessonName,
         docId: doc.$id,
-        // Estrutura de Vídeo
+        awUpdatedAt: doc.$updatedAt, // ✅ Timestamp do Appwrite Post
         video: {
             fileId: doc.videoFileId,
             fileName: `${doc.lessonName}.mp4`,
-            blobUrl: null
+            blobUrl: null,
+            cachedAt: null // ✅ Timestamp de quando foi baixado no cache
         },
-        // Estrutura de SRT
         srt: {
             fileId: doc.srtFileId,
             fileName: `${doc.lessonName}.srt`,
-            content: null
+            content: null,
+            cachedAt: null
         },
-        // Estrutura de Thumbnail
         thumb: {
             fileId: doc.thumbFileId,
-            url: thumbUrl
+            url: thumbUrl,
+            cachedAt: null
         },
-        // Dados Extras
         hostId: doc.userEditorId,
         extraData: {
             description: doc.description,
             channelName: doc.channelName,
-            postStatus: doc.postStatus // Importante manter isso para filtros
+            postStatus: doc.postStatus
         }
     };
 }
@@ -6114,6 +6450,82 @@ function subscribeToPostsUpdates() {
         }
     });
 }
+
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+// --- Bloco Fx | Diagnóstico de Rede (Anti-Quebra) ---
+// ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
+
+/**
+ * Função inteligente que tenta baixar e, se falhar, pergunta ao Proxy o motivo.
+ */
+async function safeFetch(url) {
+    try {
+        // 1. Tenta acesso direto (Rápido e barato)
+        const response = await fetch(url);
+        
+        if (response.ok) return response; // Sucesso!
+
+        // Se falhou com 403 ou 404, precisamos investigar
+        console.warn(`⚠️ Falha direta (${response.status}). Iniciando diagnóstico...`);
+        throw new Error(response.status); // Força ir para o catch
+
+    } catch (error) {
+        // 2. Se caiu aqui, é erro de rede (CORS) ou erro HTTP mascarado
+        // Chama o diagnóstico via Proxy para saber a verdade
+        await checkAndLog(url);
+        throw error; // Re-lança o erro para a função original saber que falhou
+    }
+}
+
+async function checkAndLog(url) {
+    // URL do seu Worker/Proxy (Placeholder)
+    const PROXY_BASE = "https://seu-worker-name.seu-usuario.workers.dev/?url="; 
+
+    // 🔴 TRAVA DE SEGURANÇA: Se ainda estiver com o link de exemplo, não faz nada.
+    if (PROXY_BASE.includes("seu-worker-name")) {
+        console.warn("⚠️ Proxy de diagnóstico não configurado. Ignorando diagnóstico detalhado.");
+        // Retorna um status neutro para não quebrar o resto
+        return "proxy_not_configured"; 
+    }
+
+    console.log("🕵️ Diagnosticando URL:", url);
+
+    try {
+        const proxyUrl = PROXY_BASE + encodeURIComponent(url);
+        const proxyResponse = await fetch(proxyUrl);
+        
+        // ... (resto do código igual) ...
+        const responseText = await proxyResponse.text();
+        
+        try {
+            const data = JSON.parse(responseText);
+            if (data.code === "download_cap_exceeded") {
+                console.error("🔴 DIAGNÓSTICO: CAP EXCEDIDO!");
+                return "cap_exceeded";
+            }
+        } catch (e) {}
+
+        if (responseText.includes("download_cap_exceeded")) {
+            return "cap_exceeded";
+        }
+
+        return "error";
+
+    } catch (proxyError) {
+        console.error("❌ Falha no diagnóstico:", proxyError);
+    }
+}
+
+/**
+ * Handler para ser usado no onerror da tag <img>
+ */
+function handleThumbError(imgElement, url) {
+    console.error("❌ Erro ao carregar thumbnail:", url);
+    console.error("   Fonte tentada:", url.includes('catbox') ? 'Catbox' : 'Backblaze');
+    imgElement.onerror = null;
+    checkAndLog(url);
+}
+
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Inicializar --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
@@ -6152,7 +6564,7 @@ async function init() {
   await waitForThumbnailsToRender('home');
   hideLoading();
   
-  console.log("✅ Aplicação inicializada com sucesso!");
+  console.log("✅ Inicialização concluída. Interface pronta.");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
