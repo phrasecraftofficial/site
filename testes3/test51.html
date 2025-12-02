@@ -1,25 +1,6 @@
 <!-- 51
 O que mudou:
-
-Saltar para legenda conforme o player avanca, igual quando clica em 
-avancar ou retroceder mas automaticamente, movendo a lista de legenda.
-Com botao para ativar desativar.
-syncSubtitlesWithVideo() - Verifica o tempo do vídeo e encontra a legenda correspondente
-enableAutoSync() - Cria um intervalo que checa a cada 200ms
-Usa funções existentes - parseTime(), scrollToSegment(), updateEditorFields()
-Não interfere com a edição - Só atualiza visualmente, sem chamar openEditor()
-
-O app ficará muito mais dinâmico! A lista de legendas vai "seguir" o vídeo automaticamente.
-
-em info contente e aparece apenas
-> Excluir racunho (se existir) | > Excluir post
-e se clicar em qualquer outra area do post:
-aparece o confirm, se tiver racunho pergunta se deseja continuar
-se continuar, recupera o rascunho,
-se nao quiser continuar nao recupera o rascunho,
-e segue o fluxo normal ja existente.
-ou seja nao vai mais aparecer editar pois é redundante, 
-ou apenas excluir pois temos duas situaçoes de exclusao.
+modo compacto
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -634,16 +615,16 @@ label input[type="checkbox"] {
 
     <section id="create">
 		<h2>Create</h2>
-        <p>Use this section to create new content.</p>
+      <p>Use this section to create new content.</p>
 			<form>
-                <label for="videoUpload" class="flex column gap">Upload Vídeo
-                <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
-                <input type="file" id="videoUpload" accept="video/*"></label>
-                <label for="srtUpload" class="flex column gap" class="upload-btn">Upload SRT
-                <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
-                <input type="file" id="srtUpload" accept=".srt"></label>
-                <button class="general-btn flex row gap" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
-            </form>
+          <label for="videoUpload" class="flex column gap">Upload Vídeo
+          <input type="text" id="videoUrl" placeholder="Cole a URL do vídeo ou faça o upload">
+          <input type="file" id="videoUpload" accept="video/*"></label>
+          <label for="srtUpload" class="flex column gap" class="upload-btn">Upload SRT
+          <input type="text" id="srtUrl" placeholder="Cole a URL da legenda (.srt) ou faça o upload">
+          <input type="file" id="srtUpload" accept=".srt"></label>
+          <button class="general-btn flex row gap" id="btn-open" onclick="openContent();" type="button">Continuar 👉</button>
+      </form>
     </section>
 
     <!-- Search -->
@@ -660,6 +641,13 @@ label input[type="checkbox"] {
 
     <!-- You -->
     <section id="you">
+      <div class="flex row" style="justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin: 0 auto 20px auto;">
+          <h2 style="margin: 0;">My Lessons Posts</h2>
+          <button id="btn-toggleCompactMode" class="general-btn" onclick="toggleCompactMode()" style="font-size: 12px; padding: 5px 10px;">
+              🕶️ Modo Cards: Off
+          </button>
+      </div>
+      
       <h2>You</h2>
       <p>This section is about your profile.</p>
                       
@@ -703,11 +691,10 @@ label input[type="checkbox"] {
         <h2>My Lessons Posts</h2>
         <p>Use this section to see your lessons posted.</p>
         <div id="user-post-container" id="myPosts-post-container">
-        
-            <!-- Os cards de vídeo serão inseridos aqui -->
+          <!-- Os cards de vídeo serão inseridos aqui -->
         	<div id="thumb-section-myPosts" class="thumb-section" onclick="showSoloPreview()">
-				<img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
-            </div>
+				  <img src="https://files.catbox.moe/bt6lnl.jpg" alt="Preview da Thumbnail">
+          </div>
             
             <div id="info-content-myPosts" class="info-content">
               <div class="channel-pic">
@@ -1125,7 +1112,36 @@ db.version(1).stores({
 //
 // --------- Visbilidade e Chamadas --------
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-	
+
+// --- CONTROLE DE VISUALIZAÇÃO ---
+// Começa ativado (Lista Compacta)
+let isCompactMode = true; 
+
+function toggleCompactMode() {
+    const toggleBtn = document.getElementById('btn-toggleCompactMode');
+
+    // Inverte o estado
+    isCompactMode = !isCompactMode;
+    
+    console.log("Modo compacto:", isCompactMode);
+    
+    // 1. Atualiza o Texto do Botão
+    if (toggleBtn) {
+        if (isCompactMode) {
+            // Se está compacto, os Cards estão "Off"
+            toggleBtn.textContent = '🕶️ Modo Cards: Off'; 
+        } else {
+            // Se não está compacto, os Cards estão "On"
+            toggleBtn.textContent = '👓 Modo Cards: On';
+        }
+    }
+    
+    // 2. Força a re-renderização visual
+    if (appState.currentSection) {
+        renderThumbnailsFromCache(appState.currentSection);
+    }
+}
+  
 // Mantem um estado global e propaga 
 // as mudanças para todos os elementos
 // relevantes quando o estado mudar.
@@ -3715,9 +3731,7 @@ async function loadLessonsToCache() {
  * @param {Array<Object>} [dataToRender=lessonsCache] - Array opcional de lições/partidas a serem renderizadas.
  * ATUALIZADO: Renderiza as thumbnails com indicador de progresso
  * Agora adiciona o botão "Continuar" para lições com progresso
- */
-/**
- * Renderiza thumbnails a partir de um cache (lessonsCache) ou de dados fornecidos (e.g., partidas).
+ * Suporta Modo Compacto (Lista) e Modo Card.
  */
 async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     const containerMap = {
@@ -3731,48 +3745,32 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // 1. 👇 OBTER O ID DO USUÁRIO LOGADO
-    let currentUserId = null;
-    try {
-        const user = await account.get();
-        currentUserId = user.$id;
-    } catch (e) {
-        // Usuário não logado
-    }
-
     let itemsToRender;
 
-    // 2. 👇 FILTRAR ITENS (Lógica corrigida de seleção)
+    // 1. Filtros
     if (sectionId === 'home') {
-        // Para "home", mostra APENAS os publicados
         itemsToRender = dataToRender.filter(lesson => lesson.extraData.postStatus === 'published');
     } else {
-        // Para 'myPosts', 'challenge' e outros, mostra tudo (filtros visuais aplicados depois se necessário)
         itemsToRender = dataToRender;
     }
 
-    // --- Verifica se está vazio ---
+    // 2. Verifica vazio
     if (itemsToRender.length === 0) {
         container.innerHTML = ''; 
-        if (sectionId === 'challenge') {
-             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhum desafio encontrado. Crie um!</p>';
-        } else {
-             container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Nenhuma lição encontrada.</p>';
-        }
+        const msg = sectionId === 'challenge' ? 'Nenhum desafio encontrado.' : 'Nenhuma lição encontrada.';
+        container.innerHTML = `<p style="color: #888; text-align: center; padding: 20px;">${msg}</p>`;
         return;
     }
     
     console.log(`--- Renderizando ${itemsToRender.length} thumbnails para: ${sectionId} ---`);
-    
-    // Limpa o container
     container.innerHTML = '';
     
-    // 3. Define a função de clique
+    // 3. Define função de clique
     let clickFunction;
     switch(sectionId) {
         case 'home':
         case 'subscriptions':
-            clickFunction = (item) => showSoloPreview(item);
+            clickFunction = (item) => showSoloPreview(item); // Já pergunta se quer continuar
             break;
         case 'challenge':
             clickFunction = (item) => showMultiPreview(item);
@@ -3784,13 +3782,12 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             clickFunction = (item) => previewLesson(item);
     }
 
-    // 4. Renderização de cada Item (LOOP PRINCIPAL)
+    // 4. Loop de Renderização
     for (const item of itemsToRender) {
-        const baseName = item.baseName; // ✅ baseName definido aqui dentro
+        const baseName = item.baseName;
         const thumbnailUrl = item.thumb.url || getBackblazePublicUrl(item.thumb.fileId); 
-        const hostIdDisplay = item.hostId || 'Eu';
-
-        // Verifica progresso salvo (apenas home/subs)
+        
+        // --- A. Lógica de Progresso ---
         let hasSavedProgress = false;
         let progressPercentage = 0;
         
@@ -3803,99 +3800,142 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             }
         }
 
-        // --- LÓGICA DE BOTÕES (MOVIDA PARA DENTRO DO LOOP) ---
+        // --- B. Botões de MyPosts ---
         let metaButtonsHTML = ``;
-
         if (sectionId === 'myPosts') {
-            // Verifica se há rascunho LOCAL para ESTE item
             let hasDraft = false;
-            try {
-                const draft = await db.drafts.get(baseName);
-                hasDraft = !!draft;
-            } catch (error) {
-                console.error("Erro ao verificar draft", error);
-            }
+            try { const draft = await db.drafts.get(baseName); hasDraft = !!draft; } catch(e){}
             
-            // Monta os botões específicos
             metaButtonsHTML = `
-                ${hasDraft ? `<span class="general-btn btn-discard-draft" data-basename="${baseName}" style="color: #ff9800;">🗑️ Rascunho</span>` : ''}
-                <span class="general-btn btn-delete-post" data-basename="${baseName}" style="color: red;">❌ Excluir</span>
+                ${hasDraft ? `<span class="general-btn btn-discard-draft" data-basename="${baseName}" style="color: #ff9800; padding: 4px 8px; font-size: 0.85em;">🗑️ Rascunho</span>` : ''}
+                <span class="general-btn btn-delete-post" data-basename="${baseName}" style="color: red; padding: 4px 8px; font-size: 0.85em;">❌</span>
             `;
         }
-        
-        // --- Visual ---
-        const isCompactMode = false; // Defina se necessário
-        
-        // Wrapper do post
+
+        // --- C. Wrapper (Compacto vs Card) ---
         const postWrapper = document.createElement('div');
         postWrapper.className = 'post-item';
-        postWrapper.style.cssText = 'margin-bottom: 20px; position: relative;';
+
+        if (isCompactMode) {
+            // LISTA COM MINIATURA
+            postWrapper.style.cssText = `
+                margin: 8px 8px 8px 8px; position: relative; background: #000608;
+                border-radius: 6px; padding: 5px; border: 1px solid #333;
+                display: flex; align-items: center; gap: 12px;
+            `;
+        } else {
+            // CARD GRANDE
+            postWrapper.style.cssText = 'margin-bottom: 20px; position: relative;';
+        }
         
-        // Barra de progresso
+        // --- D. Barra de Progresso Visual ---
         let progressBarHTML = '';
         if (hasSavedProgress) {
+            // A barra é apenas visual. O clique no card aciona a lógica.
+            const positionStyle = isCompactMode 
+                ? 'position: absolute; bottom: 0; left: 0; width: 100%; border-radius: 0 0 6px 6px;' 
+                : 'position: absolute; bottom: 0; left: 0; width: 100%;';
+            
             progressBarHTML = `
-                <div style="
-                    position: absolute; bottom: 0; left: 0; height: 4px;
-                    background: linear-gradient(45deg,rgba(0, 3, 43, 1) 0%, rgba(63, 0, 163, 1) 33%, rgba(0, 3, 43, 1) 66%, rgba(255, 255, 255, 0) 100%);
-                    width: ${progressPercentage}%; border-radius: 2px; z-index: 2;
-                "></div>
+                 <div style="${positionStyle} height: 4px; background: #333; z-index: 2;">
+                    <div style="width: ${progressPercentage}%; height: 100%; background: linear-gradient(90deg, #4caf50, #8bc34a);"></div>
+                 </div>
             `;
         }
         
-        // Botão Continuar
-        let continueButtonHTML = '';
-        if (hasSavedProgress) {
-            continueButtonHTML = `
-                <span class="general-btn btn-continue-lesson" style="color: #fff; font-weight: bold;" data-basename="${baseName}">
-                ▶️ Continuar
-                </span>
-            `;
-        }
+        // --- E. (REMOVIDO BOTÃO CONTINUAR) ---
+
+        // --- F. Montagem HTML ---
         
-        // HTML Interno
+        // 1. Thumbnail
         const thumbSection = document.createElement('div');
         thumbSection.className = 'thumb-section';
-        // ... (resto da montagem visual mantém igual) ...
+        thumbSection.style.cursor = 'pointer';
+        thumbSection.style.position = 'relative';
+        
+        if (isCompactMode) {
+            // Miniatura Fixa
+            thumbSection.style.width = '120px';     
+            thumbSection.style.minWidth = '120px';  
+            thumbSection.style.height = '68px';     
+            thumbSection.style.margin = '5px 5px 5px 5px';     
+            
+            thumbSection.innerHTML = `
+                <img src="${thumbnailUrl}" alt="Preview" style="display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                ${progressBarHTML} 
+            `;
+        } else {
+            // Card Grande
+            thumbSection.innerHTML = `
+                <img src="${thumbnailUrl}" alt="Preview" style="display: block; width: 100%; border-radius: 8px;">
+                ${progressBarHTML} 
+            `;
+        }
 
-        const infoContentHTML = `
-            <div class="info-content">
-                <div class="channel-pic">
-                    <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
-                </div>
-                <div class="video-text">
-                    <span class="video-title video-title-clickable" data-basename="${baseName}" style="cursor: pointer;">
-                        ${baseName}
-                    </span>
-                    <div class="video-meta">
-                        <span class="channel-name">Channel: Name</span>
-                        ${continueButtonHTML}
-                        ${metaButtonsHTML}
-                    </div>
-                </div>
-            </div>`;
+        // 2. Info Content (Corrigido: Texto à esquerda, Botões à direita, Altura ajustada)
+        const infoContent = document.createElement('div');
+        infoContent.className = 'info-content';
+        
+        if (isCompactMode) {
+            infoContent.style.width = '100%';
+            infoContent.style.padding = '0';
+            infoContent.style.display = 'flex';
+            infoContent.style.alignItems = 'center'; // Centraliza verticalmente
+            infoContent.style.minHeight = '68px';    // Garante altura mínima igual à thumb
+        }
 
-        thumbSection.innerHTML = `
-            <img src="${thumbnailUrl}" alt="Preview da Thumbnail">
-            ${progressBarHTML}
+        const channelPicHTML = isCompactMode ? '' : `
+            <div class="channel-pic">
+                <img src="${thumbnailUrl}" alt="Canal" class="channel-pic">
+            </div>
         `;
-        
+
+        // MUDANÇAS AQUI:
+        // 1. video-text agora é flex-row (linha) para botões ficarem ao lado.
+        // 2. video-title tem 'flex: 1' (ocupa todo espaço sobrando) e 'text-align: left'.
+        // 3. video-meta tem 'flex-shrink: 0' (não encolhe) para ficar fixo na direita.
+        infoContent.innerHTML = `
+            ${channelPicHTML}
+            <div class="video-text" style="flex: 1; display: flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%;">
+                <span 
+                    class="video-title video-title-clickable" 
+                    data-basename="${baseName}"
+                    title="${baseName}"
+                    style="
+                        cursor: pointer; 
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                        font-size: ${isCompactMode ? '14px' : '14px'};
+                        line-height: 1.25; 
+                        text-align: left;
+                        margin-right: 10px; /* Afasta o texto dos botões */
+                        flex: 1; /* Força o texto a ocupar o espaço da esquerda */
+                    "
+                >${baseName}</span>
+                
+                <div class="video-meta" style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                    ${!isCompactMode ? '<span class="channel-name" style="margin-right: auto;">Channel Name</span>' : ''}
+                    ${metaButtonsHTML}
+                </div>
+            </div>
+        `;
+
         postWrapper.appendChild(thumbSection);
-        postWrapper.innerHTML += infoContentHTML; // Adiciona o infoContent
-        
+        postWrapper.appendChild(infoContent);
         container.appendChild(postWrapper);
         
-        // --- EVENT LISTENERS ---
+        // --- G. Event Listeners ---
         
-        // Click Thumbnail
-        const thumbEl = postWrapper.querySelector('.thumb-section');
-        if(thumbEl) thumbEl.onclick = () => clickFunction(item);
+        // Clique na Thumb
+        thumbSection.onclick = () => clickFunction(item);
         
-        // Click Title
+        // Clique no Título
         const titleEl = postWrapper.querySelector('.video-title-clickable');
         if(titleEl) titleEl.onclick = () => clickFunction(item);
 
-        // Listeners Específicos de MyPosts
+        // Listeners MyPosts
         if (sectionId === 'myPosts') {
             const btnDiscard = postWrapper.querySelector('.btn-discard-draft');
             if (btnDiscard) {
@@ -3903,7 +3943,6 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                     e.stopPropagation();
                     if (confirm(`Excluir rascunho local de "${baseName}"?`)) {
                         await db.drafts.delete(baseName);
-                        // Atualiza UI
                         await renderThumbnailsFromCache('myPosts', lessonsCache); 
                     }
                 });
@@ -3917,20 +3956,10 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                 });
             }
         }
-        
-        // Listener Continuar
-        const btnCont = postWrapper.querySelector('.btn-continue-lesson');
-        if (btnCont) {
-            btnCont.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const lessonToContinue = lessonsCache.find(l => l.baseName === baseName);
-                if (lessonToContinue) showSoloPreview(lessonToContinue);
-            });
-        }
     }
-    
     console.log('✅ Itens renderizados com sucesso.');
 }
+
 /**
  * Força atualização do cache (após upload de nova lição)
  */
@@ -5814,9 +5843,8 @@ async function checkAndOfferContinue(lesson) {
     }
 
     // Monta a mensagem do confirm
-    const message = `📚 Você tem progresso salvo em "${lesson.baseName}"\n\n` +
+    const message = `📚 Você tem progresso salvo em "${lesson.baseName}" ${progress.hostPerformance.toFixed(0)}%\n\n\n\n` +
                     `📍 Última frase concluída:\n"${lastSegment.text}"\n\n` +
-                    `Performance: ${progress.hostPerformance.toFixed(0)}%\n\n` +
                     `Deseja continuar de onde parou?`;
 
     const userChoice = confirm(message);
