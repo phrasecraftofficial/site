@@ -1,5 +1,5 @@
 # site
-
+>voz, repeticao, outro botoes que tem no play, pode adicionar repeticao em play, preview e editsrt, pode ter quemontar a frase com voz sintetica, dps voz real dps traducao etc
 >enviar performance para posts, sera a ultima performance obtida
 
 Essa é, sem dúvida, a **arquitetura ideal** para economizar banda e criar uma experiência mais rápida e resiliente (quase como um aplicativo nativo). Você está descrevendo, na essência, o funcionamento de uma **PWA (Progressive Web App) com estratégia de "Cache-First"**.
