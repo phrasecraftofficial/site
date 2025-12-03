@@ -3715,16 +3715,7 @@ async function postLesson() {
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
 // --- Bloco Fx | Listar Thumbnails --- 
 // ⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘
-/**
- * Busca o documento do Catbox para uma lição específica
- * @param {string} postId - ID do post (lesson.docId)
- * @returns {Promise<Object|null>} Documento do Catbox ou null
- */
-/**
- * Busca o documento do Catbox para uma lição específica
- * @param {string} postId - ID do post (lesson.docId)
- * @returns {Promise<Object|null>} Documento do Catbox ou null
- */
+
 /**
  * Busca o documento do Catbox para uma lição específica
  * @param {string} baseName - Nome base da lição (ex: "Lady Gaga - Scheiße")
@@ -4007,7 +3998,6 @@ async function sendCatboxData() {
     if (!baseName) return alert('❌ Nome da lição é obrigatório!');
 
     // --- 1. Validações Locais ---
-    if (!postId) return alert('❌ Post ID é obrigatório!');
     if (!catboxVideoLink) return alert('❌ Link do vídeo é obrigatório!');
     if (!catboxSrtLink) return alert('❌ Link do SRT é obrigatório!');
 
@@ -4019,12 +4009,13 @@ async function sendCatboxData() {
     try {
         showLoading('Verificando registros...');
 
-        // --- 2. Verifica se já existe (Busca pelo postId) ---
+        // --- 2. Verifica se já existe (Busca pelo basename) ---
         const existingDocs = await databases.listDocuments(
             DATABASE_ID,
             CATBOX_COLLECTION_ID,
             [
-                Appwrite.Query.equal('postId', postId)
+                Appwrite.Query.equal('baseName', baseName),
+                Appwrite.Query.limit(1)
             ]
         );
 
@@ -4062,7 +4053,7 @@ async function sendCatboxData() {
         alert(`✅ Salvo com sucesso!`);
         
         // --- 5. Limpeza e UI ---
-        basename.value = '';
+        baseNameInput.value = ''; // Usa a referência correta do elemento DOM
         videoInput.value = '';
         srtInput.value = '';
         thumbInput.value = '';
@@ -4071,7 +4062,7 @@ async function sendCatboxData() {
         hideLoading();
 
         // Opcional: Voltar para a Home ou atualizar cache
-        // showSection('home'); 
+        showSection('home'); 
 
     } catch (error) {
         console.error('❌ Erro no processo Catbox:', error);
