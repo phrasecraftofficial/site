@@ -1,18 +1,6 @@
-<!-- 58
+<!-- 59
 **Resumo das mudanças:**
-Usei Array.from(thumbImages).every(img => img.complete). 
-Isso significa: "O Loading só some quando todas as imagens 
-tiverem terminado de tentar carregar (seja carregando a 
-foto ou dando erro)". Assim que a última imagem der 
-erro de Cap, o loading some na hora.
-
-**Melhorias implementadas em sendCatboxData:**
-Anti-Travamento: Adicionei forceHideLoading() 
-dentro do catch. Isso garante que o loading 
-suma mesmo se ocorrer um erro grave.
-Validação de URL: Verifica se o texto digitado 
-começa com http para evitar erros bobos antes de enviar.
-Fluxo Limpo: Verifica -> Deleta (se existir) -> Cria.
+indicador do 🐆 (Leopardo) quando o Appwrite for mais recente que o Catbox (indicando que o backup está desatualizado),
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -558,7 +546,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.58</span>
+        <span>PhraseCraft v0.59</span>
       </div>
     </div>
     
@@ -684,7 +672,7 @@ label input[type="checkbox"] {
       <form class="flex column" id="catbox-area">
       	<label class="column gap">
         	Lição
-        	<input type="text" id="input-postId" placeholder="Cole o id da lição">
+        	<input type="text" id="input-baseName" placeholder="Cole o nome Aw da lição">
       	</label>
       	<label class="column gap">
         	Video
@@ -3732,28 +3720,44 @@ async function postLesson() {
  * @param {string} postId - ID do post (lesson.docId)
  * @returns {Promise<Object|null>} Documento do Catbox ou null
  */
-async function getCatboxDoc(postId) {
+/**
+ * Busca o documento do Catbox para uma lição específica
+ * @param {string} postId - ID do post (lesson.docId)
+ * @returns {Promise<Object|null>} Documento do Catbox ou null
+ */
+/**
+ * Busca o documento do Catbox para uma lição específica
+ * @param {string} baseName - Nome base da lição (ex: "Lady Gaga - Scheiße")
+ * @returns {Promise<Object|null>} Documento do Catbox ou null
+ */
+async function getCatboxDoc(baseName) {
+    console.log(`🔎 getCatboxDoc chamado com baseName: ${baseName}`);
+    
     try {
+        // ✅ CORREÇÃO: Busca pelo baseName em vez de postId
         const response = await databases.listDocuments(
             DATABASE_ID,
             CATBOX_COLLECTION_ID,
             [
-                Appwrite.Query.equal('postId', postId),
+                Appwrite.Query.equal('baseName', baseName),
                 Appwrite.Query.limit(1)
             ]
         );
         
+        console.log(`  📦 Documentos encontrados: ${response.documents.length}`);
+        
         if (response.documents.length > 0) {
             const doc = response.documents[0];
-            console.log(`✅ Documento Catbox encontrado para postId: ${postId}`);
+            console.log(`  ✅ Documento Catbox encontrado para "${baseName}"`);
+            console.log(`  ✅ $updatedAt: ${doc.$updatedAt}`);
             return doc;
         }
         
-        console.log(`ℹ️ Nenhum documento Catbox para postId: ${postId}`);
+        console.log(`  ℹ️ Nenhum documento Catbox para baseName: ${baseName}`);
         return null;
         
     } catch (error) {
-        console.warn(`⚠️ Erro ao buscar Catbox para postId ${postId}:`, error);
+        console.error(`  ❌ Erro ao buscar Catbox para baseName ${baseName}:`, error);
         return null;
     }
 }
@@ -3989,15 +3993,18 @@ async function sendCatboxData() {
     console.log("📤 Iniciando processo de envio CatboxPost...");
     
     // Captura inputs
-    const postIdInput = document.getElementById('input-postId');
     const videoInput = document.getElementById('input-catboxVideoLink');
     const srtInput = document.getElementById('input-catboxSrtLink');
     const thumbInput = document.getElementById('input-catboxThumbLink');
 
-    const postId = postIdInput.value.trim();
     const catboxVideoLink = videoInput.value.trim();
     const catboxSrtLink = srtInput.value.trim();
     const catboxThumbLink = thumbInput.value.trim();
+
+    // trocado id por basename
+    const baseNameInput = document.getElementById('input-baseName');
+    const baseName = baseNameInput.value.trim();
+    if (!baseName) return alert('❌ Nome da lição é obrigatório!');
 
     // --- 1. Validações Locais ---
     if (!postId) return alert('❌ Post ID é obrigatório!');
@@ -4041,10 +4048,10 @@ async function sendCatboxData() {
             CATBOX_COLLECTION_ID, 
             ID.unique(),
             {
-                postId: postId,
+                baseName: baseName, // ✅ ADICIONE ESTA LINHA (você vai precisar capturar do input)
                 catboxVideoLink: catboxVideoLink,
                 catboxSrtLink: catboxSrtLink,
-                catboxThumbLink: catboxThumbLink || null // Se vazio, manda null
+                catboxThumbLink: catboxThumbLink || null
             }
         );
         
@@ -4055,7 +4062,7 @@ async function sendCatboxData() {
         alert(`✅ Salvo com sucesso!`);
         
         // --- 5. Limpeza e UI ---
-        postIdInput.value = '';
+        basename.value = '';
         videoInput.value = '';
         srtInput.value = '';
         thumbInput.value = '';
@@ -4199,6 +4206,7 @@ async function getSmartThumbUrl(lesson) {
  * ATUALIZADO: Renderiza as thumbnails com indicador de progresso
  * Agora adiciona o botão "Continuar" para lições com progresso
  * Suporta Modo Compacto (Lista) e Modo Card.
+ * Versão Final: Compacto Ajustado, Leopardo, Fallback de Erro Visual e Botões Alinhados.
  */
 async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache) {
     const containerMap = {
@@ -4237,7 +4245,7 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
     switch(sectionId) {
         case 'home':
         case 'subscriptions':
-            clickFunction = (item) => showSoloPreview(item); // Já pergunta se quer continuar
+            clickFunction = (item) => showSoloPreview(item);
             break;
         case 'challenge':
             clickFunction = (item) => showMultiPreview(item);
@@ -4252,10 +4260,77 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
     // 4. Loop de Renderização
     for (const item of itemsToRender) {
         const baseName = item.baseName;
-        // Tenta buscar thumbnail do Catbox primeiro
-        const thumbnailUrl = await getSmartThumbUrl(item);
         
-        // --- A. Lógica de Progresso ---
+        // A. Busca Catbox (para o Leopardo e URL)
+        const catboxDoc = await getCatboxDoc(baseName); // ✅ Agora passa o baseName
+        
+        // B. Busca URL da thumbnail (Inteligente)
+        const thumbnailUrl = await getSmartThumbUrl(item); 
+        
+        // --- C. Lógica do Leopardo 🐆 ---
+        let leopardHTML = '';
+        
+        console.log(`🔍 Verificando leopardo para: ${baseName}`);
+        console.log(`  - catboxDoc existe? ${!!catboxDoc}`);
+        console.log(`  - item.awUpdatedAt: ${item.awUpdatedAt}`);
+        
+        // ✅ CONDIÇÃO 1: Não tem backup no Catbox
+        if (!catboxDoc) {
+            console.log(`  ⚠️ SEM BACKUP! Leopardo deve aparecer.`);
+            leopardHTML = `
+                <div style="
+                    position: absolute; 
+                    top: 4px; 
+                    right: 4px; 
+                    background: rgba(0, 0, 0, 0.8); 
+                    border-radius: 4px; 
+                    padding: 2px 4px; 
+                    font-size: 12px; 
+                    z-index: 10;
+                    pointer-events: none;
+                    border: 1px solid #;
+                " title="Sem backup no Catbox">
+                    🐆
+                </div>
+            `;
+        } 
+        // ✅ CONDIÇÃO 2: Tem backup, mas está desatualizado
+        else if (catboxDoc && item.awUpdatedAt) {
+            const awDate = new Date(item.awUpdatedAt).getTime();
+            const catboxDate = new Date(catboxDoc.$updatedAt).getTime();
+            
+            console.log(`  - awDate (timestamp): ${awDate}`);
+            console.log(`  - catboxDate (timestamp): ${catboxDate}`);
+            console.log(`  - awDate > catboxDate? ${awDate > catboxDate}`);
+            console.log(`  - Data AW: ${new Date(item.awUpdatedAt).toLocaleString()}`);
+            console.log(`  - Data Catbox: ${new Date(catboxDoc.$updatedAt).toLocaleString()}`);
+        
+            // Se Appwrite for mais recente que Catbox -> Backup Desatualizado
+            if (awDate > catboxDate) {
+                console.log(`  ⚠️ BACKUP DESATUALIZADO! Leopardo deve aparecer.`);
+                leopardHTML = `
+                    <div style="
+                        position: absolute; 
+                        top: 4px; 
+                        right: 4px; 
+                        background: rgba(0, 0, 0, 0.8); 
+                        border-radius: 4px; 
+                        padding: 2px 4px; 
+                        font-size: 12px; 
+                        z-index: 10;
+                        pointer-events: none;
+                        border: 1px solid #;
+                    " title="Backup desatualizado (${new Date(catboxDoc.$updatedAt).toLocaleDateString()})">
+                        🐆
+                    </div>
+                `;
+            } else {
+                console.log(`  ✅ Backup está atualizado. Sem leopardo.`);
+            }
+        }
+        console.log(`---`);
+
+        // --- D. Lógica de Progresso ---
         let hasSavedProgress = false;
         let progressPercentage = 0;
         
@@ -4268,38 +4343,52 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             }
         }
 
-        // --- B. Botões de MyPosts ---
+        // --- E. Botões de MyPosts (Invisíveis para manter espaço) ---
         let metaButtonsHTML = ``;
         if (sectionId === 'myPosts') {
             let hasDraft = false;
             try { const draft = await db.drafts.get(baseName); hasDraft = !!draft; } catch(e){}
             
+            const draftStyle = hasDraft 
+                ? 'color: #ff9800; padding: 4px 8px; font-size: 0.85em;' 
+                : 'visibility: hidden; pointer-events: none; padding: 4px 8px; font-size: 0.85em;';
+
             metaButtonsHTML = `
-                ${hasDraft ? `<span class="general-btn btn-discard-draft" data-basename="${baseName}" style="color: #ff9800; padding: 4px 8px; font-size: 0.85em;">🗑️ Rascunho</span>` : ''}
-                <span class="general-btn btn-delete-post" data-basename="${baseName}" style="color: red; padding: 4px 8px; font-size: 0.85em;">❌</span>
+                <span class="general-btn btn-discard-draft" data-basename="${baseName}" style="${draftStyle}">
+                    🗑️ Rascunho
+                </span>
+                <span class="general-btn btn-delete-post" data-basename="${baseName}" style="color: red; padding: 4px 8px; font-size: 0.85em;">
+                    ❌
+                </span>
             `;
         }
 
-        // --- C. Wrapper (Compacto vs Card) ---
+        // --- F. Criação do Wrapper ---
         const postWrapper = document.createElement('div');
         postWrapper.className = 'post-item';
 
         if (isCompactMode) {
-            // LISTA COM MINIATURA
+            // LISTA COM MINIATURA (Corrigido overflow)
             postWrapper.style.cssText = `
-                margin: 8px 8px 8px 8px; position: relative; background: #000608;
-                border-radius: 6px; padding: 5px; border: 1px solid #333;
-                display: flex; align-items: center; gap: 12px;
+                margin: 8px 8px 8px 8px; 
+                position: relative; 
+                background: #000608;
+                border-radius: 6px; 
+                padding: 5px; 
+                border: 1px solid #333;
+                display: flex; 
+                align-items: center; 
+                gap: 12px;
+                overflow: hidden; /* Garante que nada saia */
             `;
         } else {
             // CARD GRANDE
             postWrapper.style.cssText = 'margin-bottom: 20px; position: relative;';
         }
         
-        // --- D. Barra de Progresso Visual ---
+        // --- G. Barra de Progresso Visual ---
         let progressBarHTML = '';
         if (hasSavedProgress) {
-            // A barra é apenas visual. O clique no card aciona a lógica.
             const positionStyle = isCompactMode 
                 ? 'position: absolute; bottom: 0; left: 0; width: 100%; border-radius: 0 0 6px 6px;' 
                 : 'position: absolute; bottom: 0; left: 0; width: 100%;';
@@ -4310,23 +4399,22 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                  </div>
             `;
         }
-        
-        // --- E. (REMOVIDO BOTÃO CONTINUAR) ---
 
-        // --- F. Montagem HTML ---
+        // --- H. Montagem HTML ---
         
         // 1. Thumbnail
         const thumbSection = document.createElement('div');
         thumbSection.className = 'thumb-section';
         thumbSection.style.cursor = 'pointer';
         thumbSection.style.position = 'relative';
+        // Fundo escuro garante que o leopardo apareça mesmo sem imagem
+        thumbSection.style.backgroundColor = '#1a1a1a'; 
         
         if (isCompactMode) {
             // Miniatura Fixa
             thumbSection.style.width = '120px';     
             thumbSection.style.minWidth = '120px';  
             thumbSection.style.height = '68px';     
-            thumbSection.style.margin = '5px 5px 5px 5px';     
             
             thumbSection.innerHTML = `
                 <img src="${thumbnailUrl}" 
@@ -4334,28 +4422,35 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                      alt="Preview" 
                      style="display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
                 ${progressBarHTML} 
-            `;
+                ${leopardHTML}`;
         } else {
-            // Card Grande
+            // Card Grande (Define min-height para garantir área clicável se img falhar)
+            thumbSection.style.minHeight = '180px';
             thumbSection.innerHTML = `
                 <img src="${thumbnailUrl}" 
                      onerror="handleThumbError(this, '${thumbnailUrl}')" 
                      alt="Preview" 
-                     style="display: block; width: 100%; border-radius: 8px;">
+                     style="display: block; width: 100%; border-radius: 8px; min-height: 180px; object-fit: cover;">
                 ${progressBarHTML} 
-            `;
+                ${leopardHTML}`;
         }
 
-        // 2. Info Content (Corrigido: Texto à esquerda, Botões à direita, Altura ajustada)
+        // 2. Info Content (Ajustado: Coluna vertical para Texto em cima, Botões embaixo)
         const infoContent = document.createElement('div');
         infoContent.className = 'info-content';
         
         if (isCompactMode) {
-            infoContent.style.width = '100%';
-            infoContent.style.padding = '0';
+            infoContent.style.flex = '1';      
+            infoContent.style.minWidth = '0';  
+            
+            // CORREÇÃO AQUI: Mudamos de '0 0 0 10px' para '0'
+            // O espaço agora será controlado apenas pelo 'gap: 12px' do container pai
+            infoContent.style.padding = '0'; 
+            
             infoContent.style.display = 'flex';
-            infoContent.style.alignItems = 'center'; // Centraliza verticalmente
-            infoContent.style.minHeight = '68px';    // Garante altura mínima igual à thumb
+            infoContent.style.flexDirection = 'column'; 
+            infoContent.style.justifyContent = 'space-between'; 
+            infoContent.style.minHeight = '68px'; 
         }
 
         const channelPicHTML = isCompactMode ? '' : `
@@ -4364,13 +4459,11 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             </div>
         `;
 
-        // MUDANÇAS AQUI:
-        // 1. video-text agora é flex-row (linha) para botões ficarem ao lado.
-        // 2. video-title tem 'flex: 1' (ocupa todo espaço sobrando) e 'text-align: left'.
-        // 3. video-meta tem 'flex-shrink: 0' (não encolhe) para ficar fixo na direita.
+        // HTML Interno: Título em cima (Full Width), Botões embaixo (Right Aligned)
         infoContent.innerHTML = `
             ${channelPicHTML}
-            <div class="video-text" style="flex: 1; display: flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%;">
+            
+            <div style="width: 100%; margin-bottom: 4px;">
                 <span 
                     class="video-title video-title-clickable" 
                     data-basename="${baseName}"
@@ -4378,21 +4471,28 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
                     style="
                         cursor: pointer; 
                         display: -webkit-box;
-                        -webkit-line-clamp: 2;
+                        -webkit-line-clamp: 2; /* Garante max 2 linhas */
                         -webkit-box-orient: vertical;
                         overflow: hidden;
                         font-size: ${isCompactMode ? '14px' : '14px'};
-                        line-height: 1.25; 
+                        line-height: 1.3; 
                         text-align: left;
-                        margin-right: 10px; /* Afasta o texto dos botões */
-                        flex: 1; /* Força o texto a ocupar o espaço da esquerda */
+                        width: 100%; /* Ocupa toda a largura disponível */
+                        white-space: normal; /* Permite quebra de linha */
                     "
                 >${baseName}</span>
-                
-                <div class="video-meta" style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                    ${!isCompactMode ? '<span class="channel-name" style="margin-right: auto;">Channel Name</span>' : ''}
-                    ${metaButtonsHTML}
-                </div>
+            </div>
+            
+            <div class="video-meta" style="
+                display: flex; 
+                width: 100%; 
+                justify-content: flex-end; /* Joga tudo para a direita */
+                align-items: center; 
+                gap: 10px;
+                margin-top: auto; /* Empurra para o fundo se sobrar espaço */
+            ">
+                ${!isCompactMode ? '<span class="channel-name" style="margin-right: auto;">Channel Name</span>' : ''}
+                ${metaButtonsHTML}
             </div>
         `;
 
@@ -4400,16 +4500,13 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
         postWrapper.appendChild(infoContent);
         container.appendChild(postWrapper);
         
-        // --- G. Event Listeners ---
+        // --- I. Event Listeners ---
         
-        // Clique na Thumb
         thumbSection.onclick = () => clickFunction(item);
         
-        // Clique no Título
         const titleEl = postWrapper.querySelector('.video-title-clickable');
         if(titleEl) titleEl.onclick = () => clickFunction(item);
 
-        // Listeners MyPosts
         if (sectionId === 'myPosts') {
             const btnDiscard = postWrapper.querySelector('.btn-discard-draft');
             if (btnDiscard) {
@@ -4431,9 +4528,9 @@ async function renderThumbnailsFromCache(sectionId, dataToRender = lessonsCache)
             }
         }
     }
-    console.log(`✅ ${itemsToRender.length} card(s) inserido(s) no DOM (thumbnails podem ainda estar carregando)`);
+    console.log('✅ Cards renderizados.');
 }
-
+  
 /**
  * Força atualização do cache (após upload de nova lição)
  */
