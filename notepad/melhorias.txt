@@ -1,0 +1,17 @@
+O texto/títulos aparecem rápido.
+
+As imagens vão surgindo em blocos de 5.
+
+Cada <img> só baixa quando está prestes a aparecer na tela.
+
+let index = 0;
+    while (index < dataToRender.length) {
+        const chunk = dataToRender.slice(index, index + chunkSize);
+        await renderThumbnailsFromCache(sectionId, chunk);
+        index += chunkSize;
+        // opcional: pausa curta para não travar
+        await new Promise(r => setTimeout(r, 200));
+    }
+e
+
+loading="lazy"
