@@ -2,6 +2,8 @@ O texto/títulos aparecem rápido.
 
 As imagens vão surgindo em blocos de 5.
 
+A estratégia é aproveitar a funcao showLoading existente para que ela tenha dois papeis, papel 1 continua do jeito que esta, papel 2 vai usar uma classe CSS (.is-loading-thumb) no container de cada miniatura e adicionar o código que liga e desliga essa classe (showThumbLoading/hideThumbLoading) nos eventos onload e onerror da imagem.
+
 Cada <img> só baixa quando está prestes a aparecer na tela.
 
 let index = 0;
