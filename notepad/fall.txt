@@ -1,0 +1,107 @@
+Olá\! Entendi perfeitamente. Você quer implementar o fallback da thumbnail usando o link do **Catbox** (`catboxThumbLink`), mas precisa de ajuda com o conceito de "atributo de dados" e quer que usemos apenas as funções existentes (`formatAppwriteDocToLesson` e `handleThumbError`) e os campos que você tem.
+
+**Sim, você precisa usar atributos de dados** (ou alguma forma de passar a URL de fallback) porque é o método mais limpo para que o `handleThumbError` (que é chamado pelo navegador no momento da falha) tenha acesso à URL alternativa sem ter que reescrever a lógica de busca de lições.
+
+Como você é leigo e pediu para não criar novas funções, vamos modificar as duas funções existentes de forma estratégica:
+
+-----
+
+## 🛠️ Passo 1: Injetar a URL do Catbox na Estrutura da Lição
+
+Vamos modificar a função `formatAppwriteDocToLesson` para incluir o link de fallback do Catbox na estrutura de dados.
+
+### Modificação em `formatAppwriteDocToLesson`
+
+Se o documento Appwrite (`doc`) possui o campo `catboxThumbLink`, precisamos garantir que ele seja mapeado junto com a URL primária do Backblaze:
+
+```javascript
+/**
+ * Helper: Converte o documento cru do Appwrite para o formato interno de Lição
+ * 🎯 MODIFICADO: Inclui a URL de Fallback do Catbox.
+ */
+function formatAppwriteDocToLesson(doc) {
+    const thumbUrl = getBackblazePublicUrl(doc.thumbFileId);
+    
+    return {
+        baseName: doc.lessonName,
+        docId: doc.$id,
+        awUpdatedAt: doc.$updatedAt,
+        // ... (outros campos)
+        thumb: {
+            fileId: doc.thumbFileId,
+            url: thumbUrl,
+            fallbackUrl: doc.catboxThumbLink, // <--- CAMPO NOVO ADICIONADO
+            cachedAt: null
+        },
+        hostId: doc.userEditorId,
+        // ... (outros campos)
+    };
+}
+```
+
+**O que mudou:** Adicionamos a propriedade `fallbackUrl` no objeto `thumb`, contendo o valor de `doc.catboxThumbLink`. Agora, todos os dados da lição no `lessonsCache` terão o link de fallback pronto.
+
+-----
+
+## 🛠️ Passo 2: O Fallback na Interface
+
+O próximo passo é garantir que, quando a thumbnail for renderizada no HTML, a URL de fallback esteja disponível como um **atributo de dados** (`data-fallback-url`) no elemento `<img>`.
+
+**Aviso:** O trecho de código fornecido não mostra a função que **renderiza** as miniaturas (a função que cria a tag `<img>` e a insere no HTML). No entanto, o código da função `renderThumbnailsFromCache` precisaria ser modificado para adicionar o atributo.
+
+Assumindo que em algum lugar do código há uma linha que se parece com:
+
+```javascript
+// Exemplo (Função de Renderização NÃO FORNECIDA, mas necessária)
+const thumbUrl = lesson.thumb.url;
+const img = document.createElement('img');
+img.src = thumbUrl;
+img.onerror = function() { handleThumbError(this, thumbUrl); };
+//...
+// 💡 Você precisa garantir que esta linha seja adicionada:
+img.setAttribute('data-fallback-url', lesson.thumb.fallbackUrl); 
+```
+
+-----
+
+## 🛠️ Passo 3: Tentar o Fallback no Erro (Usando a URL do Catbox)
+
+Agora, vamos modificar a função `handleThumbError`. Ela lerá o atributo `data-fallback-url` (o link do Catbox) e tentará carregá-lo, evitando um loop de erro infinito.
+
+### Modificação em `handleThumbError`
+
+```javascript
+/**
+ * Handler para ser usado no onerror da tag <img>
+ * 🎯 MODIFICADO: Tenta carregar a URL de fallback do Catbox.
+ */
+function handleThumbError(imgElement, url) {
+    console.error("❌ Erro ao carregar thumbnail primária:", url);
+    
+    // 1. Pega a URL de Fallback (Catbox) do atributo de dados
+    const fallbackUrl = imgElement.getAttribute('data-fallback-url');
+    
+    // 2. Verifica se a tentativa de fallback JÁ FOI FEITA
+    const hasRetried = imgElement.getAttribute('data-retried') === 'true';
+
+    // 3. Se não há fallback OU já tentamos o fallback, para por aqui
+    if (hasRetried || !fallbackUrl) {
+        console.error("🔴 Falha no carregamento. Sem fallback ou já tentado.");
+        imgElement.onerror = null; // Impede loop infinito
+        checkAndLog(url);
+        return;
+    }
+    
+    // 4. Marca que estamos fazendo a tentativa de fallback
+    imgElement.setAttribute('data-retried', 'true');
+    console.log("🔄 Tentando URL de fallback (Catbox):", fallbackUrl);
+    
+    // 5. Tenta carregar a imagem do Catbox, alterando o 'src'
+    imgElement.src = fallbackUrl;
+
+    // Se a URL do Catbox falhar, a função será chamada novamente, 
+    // e o `hasRetried` garantirá que o loop pare no passo 3.
+}
+```
+
+**O que mudou:** A função agora usa **`imgElement.getAttribute('data-fallback-url')`** (que contém o link do Catbox) e, se o link primário falhou, ela **muda o `imgElement.src`** para o link do Catbox, dando uma segunda chance ao carregamento. O atributo `data-retried` garante que a função só tente uma vez, prevenindo loops de erro.
