@@ -1,6 +1,14 @@
-<!-- 59
-**Resumo das mudanças:**
-indicador do 🐆 (Leopardo) quando o Appwrite for mais recente que o Catbox (indicando que o backup está desatualizado),
+<!-- 60
+1. Correção Crítica: Passagem de Parâmetro Errado
+No log de erro, vemos que previewLesson chama o download. 
+O problema é que você está passando o ID do documento do
+Appwrite (lesson.docId) para buscar no Catbox, mas a 
+sua função getCatboxDoc e a sua tabela (print que você mandou) 
+esperam o baseName.
+e
+Preferência: Usa o mais recente (Catbox ou B2).
+Resgate: Se o escolhido falhar (seja B2 ou Catbox),
+tenta imediatamente o outro link, ignorando datas.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -28,7 +36,7 @@ main {
 }
 /* ocupar a tela toda */
 main.full-screen {
-  padding-top: 0 !important;
+  padding-top: 60px !important; /* <-- altura do Header */
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
 }
@@ -546,7 +554,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.59</span>
+        <span>PhraseCraft v0.60</span>
       </div>
     </div>
     
@@ -3848,65 +3856,73 @@ async function previewLesson(lesson) {
 // 🧠 Verifica timestamps
 // =======================
 /**
- * Baixa vídeo da fonte mais recente (Catbox vs Backblaze)
- * NOVO: Usa Catbox como fallback se Backblaze falhar
+ * Baixa vídeo com lógica de fallback robusta.
+ * 1. Tenta a fonte mais recente (timestamp).
+ * 2. Se falhar (403, CORS, Network), tenta a outra fonte imediatamente.
  */
 async function downloadVideoSmart(lesson, cachedLesson, catboxDoc) {
-    let sourceUrl;
-    let usedCatbox = false;
-    
-    // 1. Decide qual fonte usar baseado em timestamp
-    if (catboxDoc && catboxDoc.catboxVideoLink) {
+    const b2Url = getBackblazePublicUrl(lesson.video.fileId);
+    const catboxUrl = catboxDoc?.catboxVideoLink;
+
+    let primaryUrl = b2Url;
+    let fallbackUrl = catboxUrl;
+    let sourceName = "Backblaze";
+
+    // --- 1. Decisão baseada em Timestamp (Otimização) ---
+    if (catboxUrl) {
         const catboxUpdatedAt = new Date(catboxDoc.$updatedAt);
         const awUpdatedAt = new Date(lesson.awUpdatedAt);
-        
+
+        // Se Catbox é mais recente que o Appwrite, ele vira primário
         if (catboxUpdatedAt >= awUpdatedAt) {
-            console.log("📥 Usando vídeo do Catbox (mais recente)");
-            sourceUrl = catboxDoc.catboxVideoLink;
-            usedCatbox = true;
+            console.log("📥 Preferência: Catbox (Mais recente)");
+            primaryUrl = catboxUrl;
+            fallbackUrl = b2Url; // Backblaze vira o backup
+            sourceName = "Catbox";
         } else {
-            console.log("📥 Usando vídeo do Backblaze (mais recente)");
-            sourceUrl = getBackblazePublicUrl(lesson.video.fileId);
+            console.log("📥 Preferência: Backblaze (Catbox desatualizado)");
         }
     } else {
-        console.log("📥 Usando vídeo do Backblaze (sem Catbox)");
-        sourceUrl = getBackblazePublicUrl(lesson.video.fileId);
+        console.log("📥 Apenas Backblaze disponível (Sem Catbox)");
     }
-    
-    // 2. ✅ NOVO: Tenta baixar com fallback
+
+    // --- 2. Tentativa de Download com Fallback (Segurança) ---
     let videoBlob;
+    
     try {
-        const videoResponse = await safeFetch(sourceUrl);
-        videoBlob = await videoResponse.blob();
-        console.log(`✅ Vídeo baixado com sucesso de ${usedCatbox ? 'Catbox' : 'Backblaze'}`);
-        
+        // Tenta baixar da fonte preferencial
+        const response = await safeFetch(primaryUrl);
+        videoBlob = await response.blob();
+        console.log(`✅ Vídeo baixado com sucesso de: ${sourceName}`);
+
     } catch (error) {
-        console.error(`❌ Falha ao baixar de ${usedCatbox ? 'Catbox' : 'Backblaze'}:`, error);
-        
-        // ✅ FALLBACK: Se falhou e NÃO era Catbox, tenta Catbox
-        if (!usedCatbox && catboxDoc && catboxDoc.catboxVideoLink) {
-            console.log("🔄 Tentando fallback para Catbox...");
+        console.warn(`⚠️ Falha ao baixar de ${sourceName}:`, error.message);
+
+        // Se falhou e temos um link de backup (mesmo que antigo), USAMOS ELE.
+        if (fallbackUrl && fallbackUrl !== primaryUrl) {
+            console.log(`🔄 Tentando fallback para: ${sourceName === "Catbox" ? "Backblaze" : "Catbox"}...`);
+            
             try {
-                const fallbackResponse = await safeFetch(catboxDoc.catboxVideoLink);
+                const fallbackResponse = await safeFetch(fallbackUrl);
                 videoBlob = await fallbackResponse.blob();
-                console.log("✅ Vídeo baixado do Catbox (fallback)");
+                console.log("✅ Vídeo salvo pelo Fallback!");
             } catch (fallbackError) {
-                console.error("❌ Fallback do Catbox também falhou:", fallbackError);
-                throw new Error('Vídeo indisponível em ambas as fontes');
+                console.error("❌ Fallback também falhou.");
+                throw new Error("Vídeo indisponível em ambas as fontes.");
             }
         } else {
-            throw error; // Re-lança se não tem fallback
+            // Não tem backup
+            throw error;
         }
     }
-    
-    // 3. Cria blob URL e atualiza cache
+
+    // --- 3. Atualiza Cache ---
     const blobUrl = URL.createObjectURL(videoBlob);
-    
     if (cachedLesson && cachedLesson.video) {
         cachedLesson.video.blobUrl = blobUrl;
         cachedLesson.video.cachedAt = new Date().toISOString();
     }
-    
+
     appState.video.url = blobUrl;
     updateAllVideos(blobUrl);
 }
@@ -3916,62 +3932,55 @@ async function downloadVideoSmart(lesson, cachedLesson, catboxDoc) {
  * NOVO: Usa Catbox como fallback se Backblaze falhar
  */
 async function downloadSrtSmart(lesson, cachedLesson, catboxDoc) {
-    let sourceUrl;
-    let usedCatbox = false;
-    
-    // 1. Decide qual fonte usar baseado em timestamp
-    if (catboxDoc && catboxDoc.catboxSrtLink) {
+    const b2Url = getBackblazePublicUrl(lesson.srt.fileId);
+    const catboxUrl = catboxDoc?.catboxSrtLink;
+
+    let primaryUrl = b2Url;
+    let fallbackUrl = catboxUrl;
+    let sourceName = "Backblaze";
+
+    // 1. Decisão por Timestamp
+    if (catboxUrl) {
         const catboxUpdatedAt = new Date(catboxDoc.$updatedAt);
         const awUpdatedAt = new Date(lesson.awUpdatedAt);
-        
+
         if (catboxUpdatedAt >= awUpdatedAt) {
-            console.log("📥 Usando SRT do Catbox (mais recente)");
-            sourceUrl = catboxDoc.catboxSrtLink;
-            usedCatbox = true;
-        } else {
-            console.log("📥 Usando SRT do Backblaze (mais recente)");
-            sourceUrl = getBackblazePublicUrl(lesson.srt.fileId);
+            primaryUrl = catboxUrl;
+            fallbackUrl = b2Url;
+            sourceName = "Catbox";
         }
-    } else {
-        console.log("📥 Usando SRT do Backblaze (sem Catbox)");
-        sourceUrl = getBackblazePublicUrl(lesson.srt.fileId);
     }
-    
-    // 2. ✅ NOVO: Tenta baixar com fallback
+
+    // 2. Download com Fallback
     let srtContent;
     try {
-        const response = await safeFetch(sourceUrl);
+        const response = await safeFetch(primaryUrl);
         srtContent = await response.text();
-        console.log(`✅ SRT baixado com sucesso de ${usedCatbox ? 'Catbox' : 'Backblaze'}`);
-        
+        console.log(`✅ SRT baixado de: ${sourceName}`);
     } catch (error) {
-        console.error(`❌ Falha ao baixar de ${usedCatbox ? 'Catbox' : 'Backblaze'}:`, error);
+        console.warn(`⚠️ Falha no SRT principal (${sourceName}). Tentando fallback...`);
         
-        // ✅ FALLBACK: Se falhou e NÃO era Catbox, tenta Catbox
-        if (!usedCatbox && catboxDoc && catboxDoc.catboxSrtLink) {
-            console.log("🔄 Tentando fallback para Catbox...");
+        if (fallbackUrl && fallbackUrl !== primaryUrl) {
             try {
-                const fallbackResponse = await safeFetch(catboxDoc.catboxSrtLink);
+                const fallbackResponse = await safeFetch(fallbackUrl);
                 srtContent = await fallbackResponse.text();
-                console.log("✅ SRT baixado do Catbox (fallback)");
-            } catch (fallbackError) {
-                console.error("❌ Fallback do Catbox também falhou:", fallbackError);
-                throw new Error('SRT indisponível em ambas as fontes');
+                console.log("✅ SRT salvo pelo Fallback!");
+            } catch (fbError) {
+                throw new Error("SRT indisponível em ambas as fontes.");
             }
         } else {
             throw error;
         }
     }
-    
-    // 3. Atualiza cache
+
+    // 3. Cache e Parser
     if (cachedLesson && cachedLesson.srt) {
         cachedLesson.srt.content = srtContent;
         cachedLesson.srt.cachedAt = new Date().toISOString();
     }
-    
     parseSRT(srtContent);
 }
-
+	
 /**
  * CRUDE - CatBox Posts Table
  * Envia dados do Catbox para o Appwrite (Lógica: Substituição Total)
