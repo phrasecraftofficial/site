@@ -1,4 +1,14 @@
 ```
+Entrada - Saida = 8h12  
+2 pausas = 20min  
+almoco = 1h  
+---------------------  
+8h12 - 1h20 = 6h52  
+  
+Incentive Plan = 95% das horas logadas produtivas.  
+6h52 * 95% = 6h31  
+```
+```
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
