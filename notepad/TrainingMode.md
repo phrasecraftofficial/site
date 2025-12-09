@@ -1,4 +1,51 @@
 ```
+Tarefas tem o avanco automatico.
+Etapa 1
+A etapa 1 se repete pra todas as frases, a ideia e realizar todas as
+terefas da etapa 1 por frase, ou seja, primeiro realizaremos todas as
+tarefas da etapa 1 para frase 1, depois para frase 2 e assim por
+diante, antes de avancar para etapa 2.
+
+Tarefa 1/3
+Sintetizadro pronuncia cada palavra ao tocar nela.
+Formar pares de palavras da frase.
+Objetivo: saber a traducao das palavras.
+
+Tarefa 2/3
+Sintetizador pronuncia a frase em ingles.
+Mostra o texto da frase em ingles.
+Sintetizador pronuncia cada palavra ao tocar nela,
+para formar a frase em portugues.
+
+Tarefa 3/3
+Sintetizador pronuncia a frase em portugues.
+Mostra o texto da frase em portugues.
+Sintetizador pronuncia cada palavra ao tocar nela,
+para formar a frase em ingles.
+
+Etapa 2
+A etapa 2 se repete pra todas as frases, a ideia e realizar todas as
+terefas da etapa 2 por frase, ou seja, primeiro realizaremos todas as
+tarefas da etapa 2 para frase 1, depois para frase 2 e assim por diante.
+
+Tarefa 1/2
+Toca o trecho do video repetidamente.
+Mostra o texto da frase em portugues.
+Sintetizador NAO pronuncia cada palavra ao tocar nela,
+para formar a frase em ingles.
+
+Tarefa 2/2
+Sintetizador pronuncia a frase em ingles ao tocar nela.
+Mostra o texto da frase em ingles.
+Gera um blob e reproduz o que foi falado.
+Falar a frase.
+
+usar o texto a partir do srt
+criar srt com multiplo de 5
+usar audio a partir do srt
+
+```
+```
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
