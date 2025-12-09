@@ -1,4 +1,111 @@
 ```
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Tradutor com sinonimos</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #f5f5f5;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 {
+      color: #00ffcc;
+    }
+    input {
+      padding: 10px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      width: 250px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #00ffcc;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #00cc99;
+    }
+    #result {
+      margin-top: 20px;
+      max-width: 400px;
+      text-align: left;
+    }
+    .translation {
+      background: #1e1e1e;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tradutor EN → PT</h1>
+  <input type="text" id="wordInput" placeholder="Digite uma palavra em inglês">
+  <button onclick="translateWord()">Traduzir</button>
+  <div id="result"></div>
+
+  <script>
+    async function translateWord() {
+      const word = document.getElementById("wordInput").value.trim();
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "Carregando...";
+
+      if (!word) {
+        resultDiv.innerHTML = "Digite uma palavra!";
+        return;
+      }
+
+      try {
+        // Usando a API gratuita Glosbe
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|pt`);
+        const data = await response.json();
+
+        // Exibe tradução principal
+        let translations = [];
+        if (data.responseData.translatedText) {
+          translations.push(data.responseData.translatedText);
+        }
+
+        // Exibe traduções alternativas
+        if (data.matches) {
+          data.matches.forEach(match => {
+            if (match.translation && !translations.includes(match.translation)) {
+              translations.push(match.translation);
+            }
+          });
+        }
+
+        if (translations.length > 0) {
+          resultDiv.innerHTML = "<h3>Traduções:</h3>";
+          translations.forEach(t => {
+            resultDiv.innerHTML += `<div class="translation">${t}</div>`;
+          });
+        } else {
+          resultDiv.innerHTML = "Nenhuma tradução encontrada.";
+        }
+      } catch (error) {
+        resultDiv.innerHTML = "Erro ao buscar tradução.";
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>
+```
+
+```
 Entrada - Saida = 8h12  
 2 pausas = 20min  
 almoco = 1h  
