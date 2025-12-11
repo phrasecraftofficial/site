@@ -556,7 +556,7 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v68
+            <i class="fa-solid fa-cube"></i> PhraseCraft v69
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1811,8 +1811,6 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
 
     // 3. Speech
     // --- SETUP DA TAREFA DE FALA ---
-
-    // --- SETUP DA TAREFA DE FALA ---
     function setupSpeaking() {
         ui.speechWrapper.classList.remove('hidden');
         ui.prompt.innerText = "Grave sua pronúncia:";
@@ -1844,16 +1842,16 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
         ui.micBtn.classList.remove('listening');
     }
     
-    // --- CONTROLE DE GRAVAÇÃO (MIC) ---
+    // --- CONTROLE MESTRE (MIC) ---
     async function toggleSpeech() {
-        // 1. SE JÁ ESTIVER GRAVANDO -> PARA
+        // 1. SE JÁ ESTIVER GRAVANDO -> PARA TUDO
         if (isListening) { 
             stopRecording();
             return; 
         }
     
-        // 2. SE FOR INICIAR GRAVAÇÃO
-        ui.speechResult.innerText = "Gravando...";
+        // 2. PREPARA UI
+        ui.speechResult.innerText = "Inicializando...";
         ui.speechResult.style.color = "var(--accent-color)";
         ui.micBtn.classList.add('listening');
         isListening = true;
@@ -1861,33 +1859,42 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
         // Limpa player antigo se houver
         const oldPlayer = document.getElementById('user-audio-player');
         if(oldPlayer) oldPlayer.remove();
+        const oldBtn = document.getElementById('btn-continue-speaking');
+        if(oldBtn) oldBtn.remove();
 
-        try {
-            // A. Inicia a Gravação do Áudio (Prioridade)
-            // O navegador vai pedir permissão aqui
-            await recorder.start();
-            console.log("🎙️ Gravação MP3 iniciada");
-
-            // B. Tenta Iniciar o Reconhecimento (Texto) em paralelo
-            // Nota: Em alguns Androids/iOS, isso pode ser bloqueado se o recorder já pegou o Mic.
-            // Mas garantimos que o áudio do aluno será salvo.
-            if (recognition) {
-                try { 
-                    recognition.start(); 
-                    console.log("📝 Reconhecimento de texto iniciado");
-                } catch(e) {
-                    console.warn("⚠️ Reconhecimento bloqueado pelo navegador (foco no áudio):", e);
-                }
+        // 3. INICIA A CADEIA DE EVENTOS
+        if (recognition) {
+            try {
+                // Tenta iniciar o Reconhecimento (Texto) PRIMEIRO
+                // O Gravador (Áudio) será chamado automaticamente no 'onstart' (veja passo 1)
+                recognition.start();
+                console.log("Pedindo permissão ao navegador...");
+            } catch (e) {
+                console.error("Erro ao iniciar SpeechRecognition:", e);
+                // Fallback: Se o reconhecimento falhar (ex: erro de HTTPS), tenta gravar só o áudio
+                ui.speechResult.innerText = "Gravando áudio (sem texto)...";
+                startMp3Recorder();
             }
-
-        } catch (err) {
-            console.error("❌ Erro ao acessar microfone:", err);
-            ui.speechResult.innerText = "Erro: Microfone bloqueado.";
-            isListening = false;
-            ui.micBtn.classList.remove('listening');
+        } else {
+            // Se o navegador não tem reconhecimento de voz, grava só o áudio direto
+            ui.speechResult.innerText = "Gravando áudio...";
+            startMp3Recorder();
         }
     }
-    
+  
+    // --- FUNÇÃO AUXILIAR: Inicia apenas o áudio ---
+    async function startMp3Recorder() {
+        if (recorder) {
+            try {
+                await recorder.start();
+                console.log("🎙️ Gravação MP3 iniciada (Sincronizada)");
+            } catch (err) {
+                console.error("❌ Erro ao iniciar gravador MP3:", err);
+                // Mesmo se o gravador falhar, o texto continua funcionando
+            }
+        }
+    }
+  
     function stopRecording() {
         if (!isListening) return;
 
@@ -2009,16 +2016,22 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
         recognition.interimResults = false; 
         recognition.lang = 'en-US';
         
+        // --- A MÁGICA ACONTECE AQUI ---
+        // Só ligamos o Gravador de MP3 QUANDO o reconhecimento confirmar que está ouvindo
         recognition.onstart = () => { 
-            console.log("👂 Reconhecimento de voz ativo");
+            console.log("👂 Reconhecimento de voz ativo. Iniciando gravador...");
+            ui.speechResult.innerText = "Ouvindo...";
+            
+            // Inicia o mic-recorder-to-mp3 agora que o canal de áudio está aberto
+            startMp3Recorder(); 
         };
         
         recognition.onend = () => { 
             console.log("👂 Reconhecimento de voz parou");
-            // Se parou sozinho mas ainda estamos gravando áudio, não faz nada
+            // Nota: Não paramos o gravador aqui, pois o usuário pode continuar falando
+            // O stopRecording() cuida disso.
         };
 
-        // AQUI É ONDE A MÁGICA ACONTECE
         recognition.onresult = (e) => {
             const transcript = e.results[0][0].transcript;
             console.log("🗣️ Texto reconhecido:", transcript);
@@ -2027,13 +2040,12 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
 
         recognition.onerror = (e) => { 
             console.warn("⚠️ Erro no reconhecimento:", e.error);
-            // Não paramos a gravação aqui, deixamos o aluno continuar falando
+            // Se der erro no texto, não paramos o áudio, deixamos gravar
         };
     } else {
         console.error("❌ Navegador sem suporte a SpeechRecognition");
-        alert("Seu navegador não suporta verificação de voz, mas a gravação de áudio funcionará.");
     }
-
+  
     function processSpeechResult(text) {
         console.log('🎤 Analisando:', text);
         
