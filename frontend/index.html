@@ -2455,40 +2455,38 @@ link com id da lição
         }
     }
 
-    // --- NAVEGAÇÃO MOBILE (HISTORY API) ---
-    
+    // --- NAVEGAÇÃO MOBILE (CORRIGIDA PARA RESPEITAR LINKS) ---
     function initMobileNavigation() {
-        // 1. Define o estado inicial (Home) se não houver nenhum
+        
+        // 1. Configura o estado inicial APENAS se não houver hash na URL
         if (!history.state) {
-            history.replaceState({ view: 'home' }, '', '#home');
+            // Se a URL estiver vazia ou for apenas a raiz, aí sim definimos Home
+            if (!window.location.hash || window.location.hash === '#') {
+                history.replaceState({ view: 'home' }, '', '#home');
+            } else {
+                // Se JÁ TIVER um hash (ex: #lesson-xyz), não fazemos nada aqui.
+                // Deixamos o checkDeepLink ler o hash original depois.
+                console.log("🚀 [MobileNav] Hash inicial detectado (não sobrescrevendo):", window.location.hash);
+            }
         }
 
         // 2. Escuta o evento de "Voltar" do navegador/celular
         window.addEventListener('popstate', (event) => {
             const state = event.state;
-            
+            console.log("⬅️ [PopState] Voltando para:", state);
+
             if (state) {
-                // Se o estado tiver um ID de lição (estamos voltando para um Preview)
                 if (state.view === 'preview' && state.lessonId) {
-                    openPreview(state.lessonId, false); // false = não cria novo histórico
+                    openPreview(state.lessonId, false); 
                 } 
-                // Se for modo treino
                 else if (state.view === 'training') {
-                     // Se o usuário voltou PARA o treino (raro, mas possível), reabre
-                     // Mas geralmente queremos sair dele. 
-                     // Simplificação: Se voltar para 'training', recarrega a view de treino
-                     // Se voltar DE 'training', o state será 'preview' ou 'home'
-                     
-                     // A lógica aqui é invertida: o evento dispara PARA ONDE ESTAMOS INDO.
-                     // Então, se o state for 'home', nós executamos navigateTo('home')
                      navigateTo(state.view, false);
                 }
-                // Navegação padrão (Home, You, Login)
                 else {
-                    navigateTo(state.view, false); // false = não cria novo histórico
+                    navigateTo(state.view, false); 
                 }
             } else {
-                // Fallback: se não tiver estado, vai para home
+                // Fallback de segurança
                 navigateTo('home', false);
             }
         });
