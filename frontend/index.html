@@ -1069,9 +1069,8 @@ link com id da lição
     }
 
     // --- 2. INICIALIZAÇÃO HÍBRIDA (SERVER + LOCAL) ---
-    // --- 2. INICIALIZAÇÃO HÍBRIDA (SERVER + LOCAL) ---
     async function initApp() {
-         // 1. Mostra Loading Bonito
+         // 1. Mostra Loading
         ui.listContainer.innerHTML = `
             <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 50vh; color: #888;">
                 <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 20px;"></i>
@@ -1088,15 +1087,13 @@ link com id da lição
     
         allLessons = [...serverData, ...localUnique];
     
-        // 4. Renderiza a lista
+        // 4. Renderiza
         renderLessonList(allLessons);
 
-        // --- NOVO: CHECA SE ENTROU POR UM LINK DIRETO ---
-        // Só executamos isso agora, porque 'allLessons' já está populado
+        // --- NOVO: CHECA O LINK DEPOIS DE CARREGAR TUDO ---
         checkDeepLink();
-    }  
+    }
 
-    // --- 3. ATUALIZAÇÃO DA RENDERIZAÇÃO ---
     // Agora a função aceita uma lista como parâmetro
     // --- 3. ATUALIZAÇÃO DA RENDERIZAÇÃO (CORRIGIDA PARA LER DO SERVIDOR) ---
     function renderLessonList(lessonsToRender) {
@@ -1166,19 +1163,18 @@ link com id da lição
         if (viewName === 'login') {
              const user = await checkAuthStatus();
              if (user) {
-                 navigateTo('you', addToHistory); // Mantém o addToHistory original
+                 navigateTo('you', addToHistory); 
                  return;
              }
         }
 
-        // --- GERENCIAMENTO DE HISTÓRICO (NOVO) ---
-        // Dentro de openPreview...
+        // --- GERENCIAMENTO DE HISTÓRICO ---
+        // AQUI ESTAVA O ERRO: Certifique-se de usar `viewName` e NÃO `lessonId`
         if (addToHistory) {
-            // O hash deve ser '#lesson-' + o ID da lição
-            history.pushState({ view: 'preview', lessonId: lessonId }, '', `#lesson-${lessonId}`);
+            history.pushState({ view: viewName }, '', `#${viewName}`);
         }
 
-        // --- RESET VISUAL (Igual ao anterior) ---
+        // --- RESET VISUAL ---
         ui.views.forEach(v => v.classList.remove('active'));
         ui.footerItems.forEach(i => i.classList.remove('active'));
         ui.sidebarItems.forEach(i => i.classList.remove('active'));
@@ -1203,37 +1199,34 @@ link com id da lição
     }
 
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
-    // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA) ---
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
     async function openPreview(lessonId, addToHistory = true) {
         
-        // 1. GARANTE A LIMPEZA IMEDIATA DA UI
+        // 1. LIMPEZA INICIAL
         stopVideoPlayback(); 
-        
-        // Remove o modo treino 
         document.body.classList.remove('training-mode'); 
-       
-        // 2. ATIVA O MODO PREVIEW
-        document.body.classList.add('preview-mode');
         
-        // Esconde o botão X
-        if (ui.trainingExit) ui.trainingExit.classList.add('hidden');
-       
-        // --- HISTÓRICO (CORRIGIDO) ---
-        // Agora a variável addToHistory existe porque foi passada no parâmetro acima
-        if (addToHistory) {
-            history.pushState({ view: 'preview', lessonId: lessonId }, '', `#lesson-${lessonId}`);
-        } 
-
-        // 2. Lógica de busca
+        // 2. BUSCA A LIÇÃO PRIMEIRO
+        // Se lessonId for undefined, isso retorna undefined e evita o erro
         let rawLesson = allLessons.find(l => l.id === lessonId);
         
         if(!rawLesson) {
-            console.error("Lição não encontrada");
+            console.error("Lição não encontrada para o ID:", lessonId);
+            ui.previewTitle.innerText = "Lição não encontrada";
+            // Não muda o histórico se falhar
             return;
         }
-        
-        // 3. Feedback visual
+
+        // 3. SE ACHOU, AGORA SIM ATUALIZA A TELA E O HISTÓRICO
+        document.body.classList.add('preview-mode');
+        if (ui.trainingExit) ui.trainingExit.classList.add('hidden');
+       
+        // Histórico seguro: só roda se a lição existe
+        if (addToHistory) {
+            history.pushState({ view: 'preview', lessonId: rawLesson.id }, '', `#lesson-${rawLesson.id}`);
+        } 
+
+        // 4. Feedback visual
         ui.previewTitle.innerText = "Carregando...";
         ui.previewThumb.src = rawLesson.thumb;
         ui.previewThumb.style.objectFit = "contain"; 
@@ -1241,15 +1234,14 @@ link com id da lição
 
         ui.previewSentences.innerHTML = '<li class="preview-item" style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...</li>';
         
-        // 4. Troca de Tela
+        // 5. Troca de Tela
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-preview').classList.add('active');
         
-        // Ativa o ícone da Home no footer
         ui.footerItems.forEach(i => i.classList.remove('active'));
         document.querySelector('.footer-item:nth-child(1)').classList.add('active');
        
-        // 5. Download dos dados
+        // 6. Download dos dados
         const loadedData = await fetchLessonData(rawLesson);
         
         if (!loadedData) {
@@ -2500,28 +2492,28 @@ link com id da lição
     }
 
     // --- DEEP LINKING (ABRIR LINK DIRETO) ---
+    // --- DEEP LINKING (ABRIR LINK DIRETO) ---
     function checkDeepLink() {
         const hash = window.location.hash; // Pega o que está depois do # (ex: #lesson-2)
         
         // 1. Verifica se é um link de lição
-        if (hash.startsWith('#lesson-')) {
+        if (hash && hash.startsWith('#lesson-')) {
             // Extrai o ID. Ex: "#lesson-2" vira "2"
             const idString = hash.replace('#lesson-', '');
-            // Converte para número (se seus IDs forem numéricos) ou string
-            const id = isNaN(idString) ? idString : parseInt(idString);
             
-            console.log("🔗 Link direto detectado para lição ID:", id);
+            // Converte para número (pois seus IDs são numéricos: 1, 2...)
+            const id = parseInt(idString);
             
-            // Abre o preview SEM adicionar ao histórico (pois já estamos na URL certa)
-            // O false é importante para não duplicar o histórico ao recarregar
-            openPreview(id, false); 
+            if (!isNaN(id)) {
+                console.log("🔗 Link direto detectado para lição ID:", id);
+                // Abre o preview SEM adicionar ao histórico (pois já estamos na URL certa)
+                openPreview(id, false); 
+            }
         } 
-        
         // 2. Verifica se é link de perfil
         else if (hash === '#you') {
             navigateTo('you', false);
         }
-        
         // 3. Verifica se é login
         else if (hash === '#login') {
             navigateTo('login', false);
