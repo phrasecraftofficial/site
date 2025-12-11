@@ -758,108 +758,115 @@ link com id da lição
     const lessonsDB = [
     {
         id: 1,
-        title: "Nature & Sunset",
+        title: "Nature & Sunset - test",
         thumb: "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=200&auto=format&fit=crop",
-        video: "https://www.youtube.com/embed/b_CpWmkhwq0?list=RDb_CpWmkhwq0",
-        "srt-en": `
-        1
-        00:00:00,667 --> 00:00:04,963
-        When we're out in a crowd
-        laughing loud
+        // Mantive o vídeo como placeholder para o player não quebrar, 
+        // mas o áudio não vai bater com o texto novo (é apenas para teste técnico)
+        video: "https://www.youtube.com/watch?v=NMJvFi3xY08",
         
-        2
-        00:00:05,046 --> 00:00:08,383
-        And nobody knows why
-        
-        3
-        00:00:12,512 --> 00:00:16,850
-        When we're lost at a club,
-        getting drunk
-        
-        4
-        00:00:16,933 --> 00:00:20,353
-        And you give me that smile
-        
-        5
-        00:00:24,524 --> 00:00:29,028
-        Going home in
-        the back of a car
-        
-        6
-        00:00:29,112 --> 00:00:32,407
-        And your hand touches mine
-        
-        7
-        00:00:36,494 --> 00:00:39,414
-        When we're done making love
-        
-        8
-        00:00:39,497 --> 00:00:44,502
-        And you look up and give
-        me those eyes
-        
-        9
-        00:00:47,964 --> 00:00:53,928
-        'Cause all of the small
-        things that you do
-        
-        10
-        00:00:54,012 --> 00:00:59,893
-        Are what remind me why I
-        fell for you
-        
-        11
-        00:00:59,976 --> 00:01:05,982
-        And when we're apart,
-        and I'm missing you
-        
-        12
-        00:01:06,065 --> 00:01:11,613
-        I close my eyes and all
-        I see is you
-        
-        13
-        00:01:11,696 --> 00:01:14,824
-        And the small things you do
-        
-        14
-        00:01:24,626 --> 00:01:29,130
-        When you call me at night
-        while you're out
-        
-        15
-        00:01:29,214 --> 00:01:32,592
-        Getting high with
-        your friends
-        
-        16
-        00:01:36,513 --> 00:01:44,896
-        Every "hi", every "bye", every "I
-        love you" you've ever said`,
-        
-                // Apenas o vocabulário vinculado pelo ID
-                "data": [
-                    { "vocab": 1, "list": [{ "en": "Sun", "pt": "Sol" }, { "en": "Setting", "pt": "Se pondo" }, { "en": "Behind", "pt": "Atrás" }, { "en": "Mountains", "pt": "Montanhas" }] },
-                    { "vocab": 2, "list": [{ "en": "Sky", "pt": "Céu" }, { "en": "Turned", "pt": "Ficou" }, { "en": "Beautiful", "pt": "Lindo" }, { "en": "Orange", "pt": "Laranja" }] },
-                    { "vocab": 3, "list": [{ "en": "Birds", "pt": "Pássaros" }, { "en": "Flying", "pt": "Voando" }, { "en": "Back", "pt": "De volta" }, { "en": "Nests", "pt": "Ninhos" }] },
-                    { "vocab": 4, "list": [{ "en": "Cool", "pt": "Fresca" }, { "en": "Breeze", "pt": "Brisa" }, { "en": "Blow", "pt": "Soprar" }, { "en": "Gently", "pt": "Suavemente" }] },
-                    { "vocab": 5, "list": [{ "en": "Perfect", "pt": "Perfeito" }, { "en": "End", "pt": "Final" }, { "en": "Long", "pt": "Longo" }, { "en": "Day", "pt": "Dia" }] },
-                    { "vocab": 6, "list": [{ "en": "Stars", "pt": "Estrelas" }, { "en": "Slowly", "pt": "Lentamente" }, { "en": "Appear", "pt": "Aparecer" }, { "en": "Dark", "pt": "Escuro" }] },
-                    { "vocab": 7, "list": [{ "en": "Air", "pt": "Ar" }, { "en": "Calm", "pt": "Calmo" }, { "en": "Peaceful", "pt": "Tranquilo" }, { "en": "Around", "pt": "Ao redor" }] },
-                    { "vocab": 8, "list": [{ "en": "People", "pt": "Pessoas" }, { "en": "Walking", "pt": "Caminhando" }, { "en": "Along", "pt": "Pela" }, { "en": "Beach", "pt": "Praia" }] },
-                    { "vocab": 9, "list": [{ "en": "Waves", "pt": "Ondas" }, { "en": "Soft", "pt": "Suave" }, { "en": "Sound", "pt": "Som" }, { "en": "Shore", "pt": "Costa" }] },
-                    { "vocab": 10, "list": [{ "en": "Night", "pt": "Noite" }, { "en": "Covered", "pt": "Cobriu" }, { "en": "Land", "pt": "Terra" }, { "en": "Blanket", "pt": "Cobertor" }] }
-                ],
-        
-        // --- Estatísticas Manuais para carregamento instantâneo ---
+        "srt-en": `1
+          00:00:01,000 --> 00:00:04,000
+          The sun is setting behind the mountains
+
+          2
+          00:00:04,500 --> 00:00:07,500
+          The sky turned a beautiful orange
+
+          3
+          00:00:08,000 --> 00:00:11,000
+          Birds are flying back to their nests
+
+          4
+          00:00:11,500 --> 00:00:14,500
+          A cool breeze blows gently
+
+          5
+          00:00:15,000 --> 00:00:18,000
+          It is the perfect end to a long day
+
+          6
+          00:00:18,500 --> 00:00:21,500
+          Stars slowly appear in the dark
+
+          7
+          00:00:22,000 --> 00:00:25,000
+          The air is calm and peaceful around
+
+          8
+          00:00:25,500 --> 00:00:28,500
+          People are walking along the beach
+
+          9
+          00:00:29,000 --> 00:00:32,000
+          The waves make a soft sound on the shore
+
+          10
+          00:00:32,500 --> 00:00:35,500
+          Night covered the land like a blanket`,
+
+        "srt-pt": `1
+          00:00:01,000 --> 00:00:04,000
+          O sol está se pondo atrás das montanhas
+
+          2
+          00:00:04,500 --> 00:00:07,500
+          O céu ficou de um lindo laranja
+
+          3
+          00:00:08,000 --> 00:00:11,000
+          Pássaros estão voando de volta para seus ninhos
+
+          4
+          00:00:11,500 --> 00:00:14,500
+          Uma brisa fresca sopra suavemente
+
+          5
+          00:00:15,000 --> 00:00:18,000
+          É o final perfeito para um longo dia
+
+          6
+          00:00:18,500 --> 00:00:21,500
+          Estrelas aparecem lentamente no escuro
+
+          7
+          00:00:22,000 --> 00:00:25,000
+          O ar está calmo e tranquilo ao redor
+
+          8
+          00:00:25,500 --> 00:00:28,500
+          Pessoas estão caminhando pela praia
+
+          9
+          00:00:29,000 --> 00:00:32,000
+          As ondas fazem um som suave na costa
+
+          10
+          00:00:32,500 --> 00:00:35,500
+          A noite cobriu a terra como um cobertor`,
+
+        // Seus dados originais de vocabulário
+        "data": [
+            { "vocab": 1, "list": [{ "en": "Sun", "pt": "Sol" }, { "en": "Setting", "pt": "Se pondo" }, { "en": "Behind", "pt": "Atrás" }, { "en": "Mountains", "pt": "Montanhas" }] },
+            { "vocab": 2, "list": [{ "en": "Sky", "pt": "Céu" }, { "en": "Turned", "pt": "Ficou" }, { "en": "Beautiful", "pt": "Lindo" }, { "en": "Orange", "pt": "Laranja" }] },
+            { "vocab": 3, "list": [{ "en": "Birds", "pt": "Pássaros" }, { "en": "Flying", "pt": "Voando" }, { "en": "Back", "pt": "De volta" }, { "en": "Nests", "pt": "Ninhos" }] },
+            { "vocab": 4, "list": [{ "en": "Cool", "pt": "Fresca" }, { "en": "Breeze", "pt": "Brisa" }, { "en": "Blow", "pt": "Soprar" }, { "en": "Gently", "pt": "Suavemente" }] },
+            { "vocab": 5, "list": [{ "en": "Perfect", "pt": "Perfeito" }, { "en": "End", "pt": "Final" }, { "en": "Long", "pt": "Longo" }, { "en": "Day", "pt": "Dia" }] },
+            { "vocab": 6, "list": [{ "en": "Stars", "pt": "Estrelas" }, { "en": "Slowly", "pt": "Lentamente" }, { "en": "Appear", "pt": "Aparecer" }, { "en": "Dark", "pt": "Escuro" }] },
+            { "vocab": 7, "list": [{ "en": "Air", "pt": "Ar" }, { "en": "Calm", "pt": "Calmo" }, { "en": "Peaceful", "pt": "Tranquilo" }, { "en": "Around", "pt": "Ao redor" }] },
+            { "vocab": 8, "list": [{ "en": "People", "pt": "Pessoas" }, { "en": "Walking", "pt": "Caminhando" }, { "en": "Along", "pt": "Pela" }, { "en": "Beach", "pt": "Praia" }] },
+            { "vocab": 9, "list": [{ "en": "Waves", "pt": "Ondas" }, { "en": "Soft", "pt": "Suave" }, { "en": "Sound", "pt": "Som" }, { "en": "Shore", "pt": "Costa" }] },
+            { "vocab": 10, "list": [{ "en": "Night", "pt": "Noite" }, { "en": "Covered", "pt": "Cobriu" }, { "en": "Land", "pt": "Terra" }, { "en": "Blanket", "pt": "Cobertor" }] }
+        ],
+
+        // Estatísticas atualizadas para refletir o conteúdo
         stats: { 
-            cards: 2,    // Total de pares de palavras no JSON
-            phrases: 10   // Total de blocos na SRT
+            cards: 10,    
+            phrases: 10   
         }
-            },
-        {
+    },
+    {
         id: 2,
-        title: "Midnight Sky",
+        title: "Miley Cyrus - Midnight Sky",
         thumb: "https://f005.backblazeb2.com/file/PhraseCraftStorage/Miley_Cyrus_-_Midnight_Sky.jpg",
         video: "https://youtu.be/aS1no1myeTM?list=RDaS1no1myeTM",
         
