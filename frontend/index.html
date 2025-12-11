@@ -211,8 +211,7 @@ link com id da lição
             background-color: var(--accent-color);
             color: #000;
             border: none;
-            /* Diminuí o padding e a fonte */
-            padding: 10px 30px;
+            padding: 10px 35px;
             font-size: 1rem;
             border-radius: 30px;
             font-weight: bold;
@@ -258,25 +257,25 @@ link com id da lição
             /* Mostra a sidebar e define o estilo "Mini" (YouTube style) */
             .app-sidebar { 
                 display: flex; 
-                width: 72px; /* Largura reduzida para estilo ícone */
-                align-items: center; /* Centraliza tudo */
+                width: 72px;
+                align-items: center;
                 padding-top: 10px;
-            } 
+            }
         
             /* Transforma o item de lado-a-lado para empilhado */
             .sidebar-item {
-                flex-direction: column; /* Ícone em cima, texto em baixo */
+                flex-direction: column;
                 justify-content: center;
                 text-align: center;
-                padding: 16px 0; /* Espaçamento vertical */
-                width: 100%; /* Ocupa a largura da barra */
-                gap: 6px; /* Espaço entre ícone e texto */
-                font-size: 0.65rem; /* Texto pequeno como na imagem */
+                padding: 16px 0;
+                width: 100%;
+                gap: 6px;
+                font-size: 0.65rem;
             }
         
             /* Ajuste do ícone para ficar centralizado e maior */
             .sidebar-item i { 
-                margin-right: 0; /* Remove margem lateral antiga */
+                margin-right: 0;
                 font-size: 1.4rem; 
                 margin-bottom: 2px;
             }
@@ -288,11 +287,49 @@ link com id da lição
         
             /* Esconde footer mobile e ajusta container principal */
             .app-footer { display: none; } 
-            .main-content { padding-bottom: 20px; } 
-            .train-btn-container { position: static; margin-top: 30px; display: block; text-align: center; }
-            .btn-train { display: inline-flex; width: auto; }
+            .main-content { padding-bottom: 20px; }
+        
+            /* --- AJUSTE DOS BOTÕES (DESKTOP) --- */
+            .train-btn-container { 
+                position: fixed; 
+                bottom: 40px; 
+                left: 72px; 
+                right: 0;
+                margin-top: 0; 
+                display: flex;    
+                justify-content: center;
+                align-items: center; 
+                gap: 25px;
+                padding-bottom: 10px;
+                z-index: 100;
+            }
+        
+            /* Botão do meio (Exercícios) maior */
+            .train-btn-container .btn-train:nth-child(2) {
+                display: inline-flex;
+                width: auto;
+                padding: 13px 40px;
+                font-size: 1.4rem;
+                transform: scale(1.1);
+                z-index: 2;
+            }
+        
+            /* Botões laterais (Vídeo e Pronúncia) menores */
+            .train-btn-container .btn-train:first-child,
+            .train-btn-container .btn-train:last-child {
+                display: inline-flex;
+                width: auto;
+                padding: 12px 35px !important;
+                font-size: 1.1rem;
+                opacity: 0.9;
+            }
+            
+            .train-btn-container .btn-train:first-child:hover,
+            .train-btn-container .btn-train:last-child:hover {
+                opacity: 1;
+                transform: translateY(-2px);
+            }
         }
-
         /* --- ESTILOS DO JOGO (QUIZ) --- */
         /* Mantendo os estilos internos do jogo que você aprovou */
         .quiz-container { text-align: center; padding: 10px; }
@@ -552,15 +589,15 @@ link com id da lição
 
                 <div class="train-btn-container">
     
-                    <button class="btn-train" style="padding: 0 20px;" title="Vídeo Aula" onclick="startVideoPractice()">
+                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPractice()">
                         <i class="fa-solid fa-video"></i>
                     </button>
                 
                     <button class="btn-train" onclick="startTraining()" title="Exercícios Mentais">
-                        <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.2rem;"></i> 
+                        <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.6rem;"></i> 
                     </button>
                 
-                    <button class="btn-train" style="padding: 0 20px;" title="Pronúncia" onclick="startSpeakingPractice()">
+                    <button class="btn-train" style=;" title="Pronúncia" onclick="startSpeakingPractice()">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
                 
