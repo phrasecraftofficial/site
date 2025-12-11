@@ -172,7 +172,7 @@ link com id da lição
 
         /* PREVIEW DA LIÇÃO */
         .preview-header { margin-bottom: 20px; text-align: center; }
-        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 80px; }
+        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 150px; }
         .preview-item {
             padding: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -1239,6 +1239,7 @@ link com id da lição
 
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
+    // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA - MANTÉM A FASE) ---
     async function openPreview(lessonId, addToHistory = true) {
         console.log("🚀 [openPreview] Chamado com ID:", lessonId);
 
@@ -1247,14 +1248,25 @@ link com id da lição
         document.body.classList.remove('training-mode'); 
         
         // 2. BUSCA A LIÇÃO (Antes de mudar histórico)
-        let rawLesson = allLessons.find(l => l.id == lessonId); // == permite comparar string com numero
+        let rawLesson = allLessons.find(l => l.id == lessonId);
         
         if(!rawLesson) {
             console.error("❌ Lição não encontrada para o ID:", lessonId);
-            console.log("📂 Lições disponíveis:", allLessons.map(l => l.id)); // Mostra quais IDs existem
             ui.previewTitle.innerText = "Lição não encontrada";
             return;
         }
+
+        // --- LÓGICA DE FASE (AQUI ESTÁ A CORREÇÃO) ---
+        // Verifica se estamos abrindo uma lição NOVA ou voltando para a MESMA
+        // Se currentLesson existir E o ID for igual ao da rawLesson, é a mesma lição.
+        const isSameLesson = currentLesson && currentLesson.id == rawLesson.id;
+
+        if (!isSameLesson) {
+            // Se for uma lição diferente, reseta para a primeira fase
+            currentPhase = 0;
+        } 
+        // Se for a mesma lição (else), NÃO mexemos no currentPhase, mantendo onde estava.
+        // ----------------------------------------------
 
         console.log("✅ Lição carregada:", rawLesson.title);
 
@@ -1274,7 +1286,11 @@ link com id da lição
         ui.previewThumb.style.objectFit = "contain"; 
         ui.previewThumb.style.backgroundColor = "#000";
 
-        ui.previewSentences.innerHTML = '<li class="preview-item" style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...</li>';
+        // Se for a mesma lição, não limpamos a lista para evitar "piscar", 
+        // mas se for nova, mostramos loading.
+        if (!isSameLesson) {
+            ui.previewSentences.innerHTML = '<li class="preview-item" style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...</li>';
+        }
         
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-preview').classList.add('active');
@@ -1282,21 +1298,31 @@ link com id da lição
         ui.footerItems.forEach(i => i.classList.remove('active'));
         document.querySelector('.footer-item:nth-child(1)').classList.add('active');
        
-        const loadedData = await fetchLessonData(rawLesson);
-        
-        if (!loadedData) {
-            ui.previewTitle.innerText = "Erro ao carregar";
-            ui.previewSentences.innerHTML = '<li class="preview-item" style="color:var(--error-color)">Falha no download.</li>';
-            return;
+        // Se já temos os dados dessa lição carregados (cache simples), não baixa de novo
+        // Isso evita resetar se os dados já estão no currentLesson
+        let lessonDataCompiled;
+
+        if (isSameLesson && currentLesson.data && currentLesson.data.length > 0) {
+             lessonDataCompiled = currentLesson.data;
+        } else {
+             const loadedData = await fetchLessonData(rawLesson);
+             if (!loadedData) {
+                ui.previewTitle.innerText = "Erro ao carregar";
+                ui.previewSentences.innerHTML = '<li class="preview-item" style="color:var(--error-color)">Falha no download.</li>';
+                return;
+            }
+            lessonDataCompiled = compileLessonData(loadedData.srtEn, loadedData.srtPt, loadedData.vocabData, rawLesson.video);
         }
         
+        // Atualiza o objeto global
         currentLesson = {
             ...rawLesson,
-            data: compileLessonData(loadedData.srtEn, loadedData.srtPt, loadedData.vocabData, rawLesson.video)
+            data: lessonDataCompiled
         };
         
         ui.previewTitle.innerText = currentLesson.title;
-        currentPhase = 0;
+        
+        // Renderiza usando a currentPhase (que foi preservada ou resetada lá em cima)
         renderPhaseButtons();
         renderPreviewSentences();
     }
