@@ -1,6 +1,12 @@
-<!- 67
-sistema de voltar no mobile
-link com id da lição
+<!- 68
+A Solução: Usar uma Biblioteca de Gravação Robusta
+Para resolver isso e garantir que a gravação funcione (que é sua prioridade agora para o aluno se ouvir), vamos usar uma biblioteca leve chamada mic-recorder-to-mp3.
+
+Ela resolve dois problemas:
+
+Compatibilidade: Garante que o áudio seja gravado corretamente no mobile.
+
+Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou .ogg, que o iPhone odeia reproduzir).
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -9,6 +15,7 @@ link com id da lição
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PhraseCraft App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/mic-recorder-to-mp3@2.2.2/dist/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
     
     <style>
@@ -549,7 +556,7 @@ link com id da lição
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v67
+            <i class="fa-solid fa-cube"></i> PhraseCraft v68
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -929,7 +936,6 @@ link com id da lição
     let matchState = { selectedId: null, selectedSide: null, selectedElement: null, matchesFound: 0 };
 
     let trainingMode = 'full'; // 'full' ou 'speaking'
-    let mediaRecorder = null;
     let audioChunks = [];
     let speakingResults = []; // Nova variável para guardar o histórico da fala
 
@@ -944,6 +950,18 @@ link com id da lição
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // --- VARIÁVEIS GLOBAIS DE ÁUDIO ---
+    let recorder = null; // Instância da biblioteca MP3
+    
+    // Configura a biblioteca ao iniciar o script
+    try {
+        recorder = new MicRecorder({
+            bitRate: 128
+        });
+    } catch (e) {
+        console.error("Erro ao iniciar MicRecorder:", e);
+    }
 
     // --- CONFIGURAÇÃO APPWRITE ---
   
@@ -1793,17 +1811,17 @@ link com id da lição
 
     // 3. Speech
     // --- SETUP DA TAREFA DE FALA ---
+
+    // --- SETUP DA TAREFA DE FALA ---
     function setupSpeaking() {
         ui.speechWrapper.classList.remove('hidden');
         ui.prompt.innerText = "Grave sua pronúncia:";
         
-        // ADICIONADO: Ícone de alto-falante ao lado da frase
         ui.display.innerHTML = `
             ${currentTask.question} 
             <i class="fa-solid fa-volume-high" id="replay-speaking-btn" title="Ouvir referência" style="margin-left:10px; cursor:pointer; color:var(--accent-color); font-size: 0.8em;"></i>
         `;
 
-        // Configura clique do ícone
         document.getElementById('replay-speaking-btn').onclick = (e) => {
             e.stopPropagation();
             speakText(currentTask.question, 'en-US');
@@ -1818,62 +1836,121 @@ link com id da lição
     
         ui.micBtn.classList.remove('hidden'); 
         ui.micBtn.disabled = false;
-        ui.speechResult.innerText = "..."; // Limpa feedback anterior
+        ui.speechResult.innerText = "Toque para gravar"; // Reset texto
+        ui.speechResult.style.color = "#aaa";
+        
+        // Garante que o recorder está limpo
+        isListening = false;
+        ui.micBtn.classList.remove('listening');
     }
     
     // --- CONTROLE DE GRAVAÇÃO (MIC) ---
     async function toggleSpeech() {
-        // Se já estiver ouvindo, para tudo
+        // 1. SE JÁ ESTIVER GRAVANDO -> PARA
         if (isListening) { 
             stopRecording();
             return; 
         }
     
-        // Inicia Reconhecimento de Texto (Score)
-        if (recognition) {
-            try { recognition.start(); } catch(e) {}
-        }
-    
-        // Inicia Gravação de Áudio (Playback)
+        // 2. SE FOR INICIAR GRAVAÇÃO
+        ui.speechResult.innerText = "Gravando...";
+        ui.speechResult.style.color = "var(--accent-color)";
+        ui.micBtn.classList.add('listening');
+        isListening = true;
+
+        // Limpa player antigo se houver
+        const oldPlayer = document.getElementById('user-audio-player');
+        if(oldPlayer) oldPlayer.remove();
+
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-    
-            mediaRecorder.ondataavailable = event => {
-                audioChunks.push(event.data);
-            };
-    
-            mediaRecorder.onstop = () => {
-                console.log('🔴 MediaRecorder parou! Criando player...');
-                console.log('AudioChunks coletados:', audioChunks.length);
-                // Cria o Player de Áudio
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                console.log('🎵 URL do áudio criada:', audioUrl);
-                createAudioPlayer(audioUrl);
-                
-                // Para as tracks do microfone para liberar o ícone de uso no navegador
-                stream.getTracks().forEach(track => track.stop());
-            };
-    
-            mediaRecorder.start();
-            isListening = true; 
-            ui.micBtn.classList.add('listening'); 
-            ui.speechResult.innerText = "Gravando...";
-            ui.speechResult.style.color = "var(--accent-color)";
-    
+            // A. Inicia a Gravação do Áudio (Prioridade)
+            // O navegador vai pedir permissão aqui
+            await recorder.start();
+            console.log("🎙️ Gravação MP3 iniciada");
+
+            // B. Tenta Iniciar o Reconhecimento (Texto) em paralelo
+            // Nota: Em alguns Androids/iOS, isso pode ser bloqueado se o recorder já pegou o Mic.
+            // Mas garantimos que o áudio do aluno será salvo.
+            if (recognition) {
+                try { 
+                    recognition.start(); 
+                    console.log("📝 Reconhecimento de texto iniciado");
+                } catch(e) {
+                    console.warn("⚠️ Reconhecimento bloqueado pelo navegador (foco no áudio):", e);
+                }
+            }
+
         } catch (err) {
-            console.error("Erro ao acessar microfone:", err);
-            ui.speechResult.innerText = "Erro: Microfone não permitido.";
+            console.error("❌ Erro ao acessar microfone:", err);
+            ui.speechResult.innerText = "Erro: Microfone bloqueado.";
+            isListening = false;
+            ui.micBtn.classList.remove('listening');
         }
     }
     
     function stopRecording() {
-        isListening = false;
+        if (!isListening) return;
+
+        // VERIFICAÇÃO INTELIGENTE:
+        // Só muda o texto para "Processando" se NÃO tiver uma nota (simbolo %) na tela.
+        // Isso impede que o aviso de salvamento apague sua nota.
+        const temNotaNaTela = ui.speechResult.innerText.includes('%');
+        
+        if (!temNotaNaTela) {
+            ui.speechResult.innerText = "Gerando áudio...";
+            ui.speechResult.style.color = "#888";
+        }
+
         ui.micBtn.classList.remove('listening');
-        if(recognition) recognition.stop();
-        if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        isListening = false;
+
+        // 1. Para o Reconhecimento de Texto
+        if(recognition) {
+            try { recognition.stop(); } catch(e) {}
+        }
+
+        // 2. Para a Gravação e Gera o Player
+        if (recorder) {
+            recorder.stop().getMp3().then(([buffer, blob]) => {
+                console.log('🔴 Gravação parada. MP3 gerado.');
+                
+                const audioUrl = URL.createObjectURL(blob);
+                createAudioPlayer(audioUrl);
+                
+                // Só mostra mensagem de "Gravado" se não tiver nota na tela
+                if (!temNotaNaTela && ui.speechResult.innerText === "Gerando áudio...") {
+                     ui.speechResult.innerHTML = `
+                        <div style="color: var(--success-color); margin-top:10px;">
+                            <i class="fa-solid fa-check"></i> Áudio salvo.
+                        </div>
+                     `;
+                }
+                
+                // Garante que o botão continuar apareça
+                forceCreateContinueButton();
+
+            }).catch((e) => {
+                console.error('Erro ao gerar MP3:', e);
+                if (!temNotaNaTela) ui.speechResult.innerText = "Erro no áudio.";
+            });
+        }
+    }
+    
+    // --- FUNÇÃO AUXILIAR PARA CRIAR BOTÃO SE O SCORE NÃO VIER ---
+    function forceCreateContinueButton() {
+        const btnId = 'btn-continue-speaking';
+        if (document.getElementById(btnId)) return;
+
+        const btnContinue = document.createElement('button');
+        btnContinue.id = btnId;
+        btnContinue.className = 'check-btn'; 
+        btnContinue.style.marginTop = '15px';
+        btnContinue.style.animation = 'fadeIn 0.5s'; 
+        btnContinue.innerText = "Continuar ❯";
+        btnContinue.onclick = () => {
+            nextTask();
+        };
+        ui.speechWrapper.appendChild(btnContinue);
     }
     
     // --- CRIA PLAYER E BOTÃO CONTINUAR ---
@@ -1911,6 +1988,7 @@ link com id da lição
         console.log('✅ Botão criado e anexado');
     }
 
+    // IF soltos
     // Config Speech API
     if ('webkitSpeechRecognition' in window) {
         recognition = new webkitSpeechRecognition();
@@ -1921,10 +1999,43 @@ link com id da lição
         recognition.onerror = (e) => { isListening = false; ui.micBtn.classList.remove('listening'); };
     }
 
+    // --- CONFIGURAÇÃO DE RECONHECIMENTO DE VOZ (Universal) ---
+    // Tenta pegar a API padrão ou a webkit (para garantir compatibilidade total)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false; 
+        recognition.interimResults = false; 
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = () => { 
+            console.log("👂 Reconhecimento de voz ativo");
+        };
+        
+        recognition.onend = () => { 
+            console.log("👂 Reconhecimento de voz parou");
+            // Se parou sozinho mas ainda estamos gravando áudio, não faz nada
+        };
+
+        // AQUI É ONDE A MÁGICA ACONTECE
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            console.log("🗣️ Texto reconhecido:", transcript);
+            processSpeechResult(transcript);
+        };
+
+        recognition.onerror = (e) => { 
+            console.warn("⚠️ Erro no reconhecimento:", e.error);
+            // Não paramos a gravação aqui, deixamos o aluno continuar falando
+        };
+    } else {
+        console.error("❌ Navegador sem suporte a SpeechRecognition");
+        alert("Seu navegador não suporta verificação de voz, mas a gravação de áudio funcionará.");
+    }
+
     function processSpeechResult(text) {
-        console.log('🎤 processSpeechResult chamado');
-        console.log('Texto capturado:', text);
-        console.log('Modo atual:', trainingMode);
+        console.log('🎤 Analisando:', text);
         
         const similarity = avaliarPronuncia(currentTask.correct, text);
         
@@ -1935,94 +2046,47 @@ link com id da lição
         if (similarity >= 70) {
             color = "var(--success-color)";
             emoji = "✅";
-            feedbackHTML = `
-                <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0;">
-                    ${similarity.toFixed(0)}%
-                </div>
-                <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
-                    ${emoji} Ótima pronúncia!
-                </div>
-                <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
-                    Entendi: "${text}"
-                </div>
-            `;
+            // Incrementa score
             score++; ui.scoreDisplay.innerText = score;
         } else if (similarity >= 50) {
             color = "orange";
             emoji = "⚠️";
-            feedbackHTML = `
-                <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0;">
-                    ${similarity.toFixed(0)}%
-                </div>
-                <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
-                    ${emoji} Quase lá! Tente novamente.
-                </div>
-                <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
-                    Entendi: "${text}"
-                </div>
-            `;
         } else {
             color = "var(--error-color)";
             emoji = "❌";
-            feedbackHTML = `
-                <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0;">
-                    ${similarity.toFixed(0)}%
-                </div>
-                <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
-                    ${emoji} Precisa melhorar
-                </div>
-                <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
-                    Entendi: "${text}"
-                </div>
-            `;
         }
+
+        // Monta o HTML do feedback
+        feedbackHTML = `
+            <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0;">
+                ${similarity.toFixed(0)}%
+            </div>
+            <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
+                ${emoji} ${similarity >= 70 ? "Excelente!" : similarity >= 50 ? "Quase lá!" : "Tente de novo"}
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
+                Entendi: "${text}"
+            </div>
+        `;
     
-        // Atualiza o feedback ANTES de criar o player
+        // 1. PRIMEIRO: Mostra a nota na tela
         ui.speechResult.style.color = color;
         ui.speechResult.innerHTML = feedbackHTML;
-    
-        // Salva resultado para relatório
+        
+        // Salva nos resultados para o relatório final
         if (trainingMode === 'speaking') {
             speakingResults.push({
                 phrase: currentTask.question,
                 score: similarity,
                 userText: text
             });
-            
-            // FORÇA parada do MediaRecorder se ainda estiver gravando
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                console.log('🛑 Forçando parada do MediaRecorder...');
-                mediaRecorder.stop();
-            }
-            
-            // Cria botão após pequeno delay
-            setTimeout(() => {
-                const existingBtn = document.getElementById('btn-continue-speaking');
-                if (!existingBtn) {
-                    console.log('✅ Criando botão Continuar (fallback)');
-                    
-                    const btnContinue = document.createElement('button');
-                    btnContinue.id = 'btn-continue-speaking';
-                    btnContinue.className = 'check-btn'; 
-                    btnContinue.style.marginTop = '15px';
-                    btnContinue.style.animation = 'fadeIn 0.5s'; 
-                    btnContinue.innerText = "Continuar ❯";
-                    btnContinue.onclick = () => {
-                        console.log('▶️ Botão Continuar clicado');
-                        nextTask();
-                    };
-                    ui.speechWrapper.appendChild(btnContinue);
-                } else {
-                    console.log('ℹ️ Botão já existe (criado pelo player)');
-                }
-            }, 800);
-            
-        } else {
-            // Modo FULL: comportamento original
-            if (similarity >= 70) {
-                ui.micBtn.disabled = true;
-                setTimeout(() => { ui.micBtn.disabled = false; nextTask(); }, 2000);
-            }
+        }
+
+        // 2. SEGUNDO: Para a gravação (que vai gerar o player e o botão continuar)
+        // Como já atualizamos o HTML acima, o stopRecording atualizado não vai apagar isso.
+        if (isListening) {
+            console.log('🛑 Parando gravação pois já temos o resultado do texto...');
+            stopRecording();
         }
     }
 
