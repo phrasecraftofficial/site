@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Registros</title>
+
+    <!-- SDK do Appwrite (não é ES module) -->
+      <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script></script>
+</head>
+<body>
+    <h1>Lista de Registros</h1>
+    <div id="result">Carregando...</div>
+
+    <script>
+        const PROJECT_ID = '68ebe8640000ca7c860b';
+        const DATABASE_ID = '68ed87df000874c3e85a';
+        const COLLECTION_ID = '693ad57f00239c68398e';
+
+        const client = new Appwrite.Client()
+            .setEndpoint('https://nyc.cloud.appwrite.io/v1')   // ✔ como pediu
+            .setProject(PROJECT_ID);
+
+        const databases = new Appwrite.Databases(client);
+
+        async function load() {
+            const container = document.getElementById("result");
+
+            try {
+                const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
+
+                if (res.documents.length === 0) {
+                    container.innerHTML = "<p>Nenhum registro encontrado.</p>";
+                    return;
+                }
+
+                container.innerHTML = res.documents.map(doc => `
+                    <div style="padding:10px;border:1px solid #ccc;margin:10px 0;">
+                        <strong>Título:</strong> ${doc.title}<br>
+                        <img src="${doc.thumb}" style="max-width:200px;margin:5px 0;"><br>
+                        <a href="${doc.video}" target="_blank">Vídeo</a><br>
+                        <a href="${doc['srt-en-url']}" target="_blank">SRT EN</a><br>
+                        <a href="${doc['srt-pt-url']}" target="_blank">SRT PT</a><br>
+                        <a href="${doc['pairs-url']}" target="_blank">Pairs</a><br>
+                        <br>
+                        Cards: ${doc.cards}<br>
+                        Frases: ${doc.phrases}<br>
+                        <small>Criado: ${doc.$createdAt}</small>
+                    </div>
+                `).join("");
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = "<p style='color:red;'>Erro ao carregar registros.</p>";
+            }
+        }
+
+        load();
+    </script>
+
+</body>
+</html>
