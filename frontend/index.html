@@ -1047,7 +1047,6 @@ link com id da lição
     // --- 1. BUSCA BLINDADA NO SERVIDOR ---
     async function fetchServerLessons() {
         console.log('🔍 Iniciando busca no Appwrite...');
-        console.log('📊 Configuração:', { PROJECT_ID, DATABASE_ID, COLLECTION_ID });
         
         try {
             const response = await databases.listDocuments(
@@ -1056,14 +1055,17 @@ link com id da lição
                 [Appwrite.Query.orderDesc('$createdAt')]
             );
             
-            console.log('✅ Dados recebidos:', response.documents.length, 'documentos');
+            console.log('✅ Dados brutos recebidos:', response.documents.length);
             
-            // --- A CORREÇÃO ESTÁ AQUI: O RETURN ---
-            return response.documents; 
+            // --- AQUI ESTÁ A MÁGICA QUE FALTAVA ---
+            // Cria uma cópia do $id para id em cada lição
+            return response.documents.map(doc => ({
+                ...doc,       
+                id: doc.$id   
+            }));
             
         } catch (error) {
             console.error("❌ ERRO COMPLETO:", error);
-            // Em caso de erro, retorna array vazio para não quebrar o map
             return []; 
         }
     }
@@ -1201,32 +1203,35 @@ link com id da lição
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
     async function openPreview(lessonId, addToHistory = true) {
-        
+        console.log("🚀 [openPreview] Chamado com ID:", lessonId);
+
         // 1. LIMPEZA INICIAL
         stopVideoPlayback(); 
         document.body.classList.remove('training-mode'); 
         
-        // 2. BUSCA A LIÇÃO PRIMEIRO
-        // Se lessonId for undefined, isso retorna undefined e evita o erro
-        let rawLesson = allLessons.find(l => l.id === lessonId);
+        // 2. BUSCA A LIÇÃO (Antes de mudar histórico)
+        let rawLesson = allLessons.find(l => l.id == lessonId); // == permite comparar string com numero
         
         if(!rawLesson) {
-            console.error("Lição não encontrada para o ID:", lessonId);
+            console.error("❌ Lição não encontrada para o ID:", lessonId);
+            console.log("📂 Lições disponíveis:", allLessons.map(l => l.id)); // Mostra quais IDs existem
             ui.previewTitle.innerText = "Lição não encontrada";
-            // Não muda o histórico se falhar
             return;
         }
 
-        // 3. SE ACHOU, AGORA SIM ATUALIZA A TELA E O HISTÓRICO
+        console.log("✅ Lição carregada:", rawLesson.title);
+
+        // 3. SE ACHOU, ATUALIZA A TELA E URL
         document.body.classList.add('preview-mode');
         if (ui.trainingExit) ui.trainingExit.classList.add('hidden');
        
-        // Histórico seguro: só roda se a lição existe
         if (addToHistory) {
-            history.pushState({ view: 'preview', lessonId: rawLesson.id }, '', `#lesson-${rawLesson.id}`);
+            const newHash = `#lesson-${rawLesson.id}`;
+            console.log("📝 Atualizando URL para:", newHash);
+            history.pushState({ view: 'preview', lessonId: rawLesson.id }, '', newHash);
         } 
 
-        // 4. Feedback visual
+        // 4. UI e Download
         ui.previewTitle.innerText = "Carregando...";
         ui.previewThumb.src = rawLesson.thumb;
         ui.previewThumb.style.objectFit = "contain"; 
@@ -1234,14 +1239,12 @@ link com id da lição
 
         ui.previewSentences.innerHTML = '<li class="preview-item" style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...</li>';
         
-        // 5. Troca de Tela
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-preview').classList.add('active');
         
         ui.footerItems.forEach(i => i.classList.remove('active'));
         document.querySelector('.footer-item:nth-child(1)').classList.add('active');
        
-        // 6. Download dos dados
         const loadedData = await fetchLessonData(rawLesson);
         
         if (!loadedData) {
@@ -2492,29 +2495,20 @@ link com id da lição
     }
 
     // --- DEEP LINKING (ABRIR LINK DIRETO) ---
-    // --- DEEP LINKING (ABRIR LINK DIRETO) ---
     function checkDeepLink() {
-        const hash = window.location.hash; // Pega o que está depois do # (ex: #lesson-2)
-        
-        // 1. Verifica se é um link de lição
+        const hash = window.location.hash; 
+        console.log("🔍 [DeepLink] Hash inicial:", hash);
+
         if (hash && hash.startsWith('#lesson-')) {
-            // Extrai o ID. Ex: "#lesson-2" vira "2"
             const idString = hash.replace('#lesson-', '');
+            console.log("🔍 [DeepLink] Tentando abrir ID:", idString);
             
-            // Converte para número (pois seus IDs são numéricos: 1, 2...)
-            const id = parseInt(idString);
-            
-            if (!isNaN(id)) {
-                console.log("🔗 Link direto detectado para lição ID:", id);
-                // Abre o preview SEM adicionar ao histórico (pois já estamos na URL certa)
-                openPreview(id, false); 
-            }
+            // Passa direto o idString (openPreview com '==' vai resolver se é numero ou texto)
+            openPreview(idString, false); 
         } 
-        // 2. Verifica se é link de perfil
         else if (hash === '#you') {
             navigateTo('you', false);
         }
-        // 3. Verifica se é login
         else if (hash === '#login') {
             navigateTo('login', false);
         }
