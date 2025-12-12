@@ -1,12 +1,18 @@
-<!- 70
-Resumo do Comportamento Novo:
-10 frases: Fases de 5, 5. (Sem alteração)
+<!- 71
+O que mudou na experiência?
+Clique 1: O botão pulsa (branco/padrão), 
+ele escuta o que você falou para dar a nota, 
+mas não mostra a nota ainda. Ele apenas diz "Entendi! Toque para gravar".
 
-11 frases (Resto 1): Antes era 5, 5, 1. Agora será: 5, 3, 3.
+Pausa: O sistema para e fica esperando o usuário. 
+Isso elimina a correria e o corte do áudio.
 
-12 frases (Resto 2): Antes era 5, 5, 2. Agora será: 5, 4, 3.
+Clique 2: O botão pulsa (vermelho/gravando), 
+o usuário repete a frase calmamente para o replay.
 
-6 frases (Resto 1): Antes era 5, 1. Agora será: 3, 3.
+Final: Assim que ele detecta silêncio na 
+segunda vez, ele mostra a nota (baseada no primeiro 
+clique) e o player de áudio (baseado no segundo clique).
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -576,7 +582,7 @@ Resumo do Comportamento Novo:
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v70
+            <i class="fa-solid fa-cube"></i> PhraseCraft v71
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -958,10 +964,12 @@ Resumo do Comportamento Novo:
     let maxIndexReached = 0; 
     let score = 0;
     let currentTask = null;
-    let recognition = null;
-    let isListening = false;
     let matchState = { selectedId: null, selectedSide: null, selectedElement: null, matchesFound: 0 };
-
+  
+    // --- VARIÁVEIS DE FALA ---
+    let recognition = null;
+    let isListening = false;let speechStage = 1; // 1 = Reconhecer Texto, 2 = Gravar Áudio
+    let tempRecognizedText = ""; // Guarda o texto da etapa 1 para usar na etapa 2
     let trainingMode = 'full'; // 'full' ou 'speaking'
     let mediaRecorder = null;
     let audioChunks = [];
@@ -1906,6 +1914,10 @@ Resumo do Comportamento Novo:
         ui.speechWrapper.classList.remove('hidden');
         ui.prompt.innerText = "Grave sua pronúncia:";
         
+        // Reseta para a primeira etapa
+        speechStage = 1;
+        tempRecognizedText = "";
+        
         // ADICIONADO: Ícone de alto-falante ao lado da frase
         ui.display.innerHTML = `
             ${currentTask.question} 
@@ -1926,8 +1938,11 @@ Resumo do Comportamento Novo:
         if(oldContinue) oldContinue.remove();
     
         ui.micBtn.classList.remove('hidden'); 
+        ui.micBtn.classList.remove('listening'); // Garante que não comece pulsando
         ui.micBtn.disabled = false;
-        ui.speechResult.innerText = "..."; // Limpa feedback anterior
+        
+        // Mensagem inicial
+        ui.speechResult.innerHTML = `<span style="color:var(--text-secondary)">Toque para verificar pronúncia</span>`; 
     }
     
     // --- CONTROLE DE GRAVAÇÃO AVANÇADO (LÓGICA NOVA) ---
@@ -2053,65 +2068,83 @@ Resumo do Comportamento Novo:
         if (isListening) return; 
         isListening = true;
 
-        // Limpa UI anterior (Player e Botão)
+        // Limpa UI anterior se necessário
         const oldPlayer = document.getElementById('user-audio-player');
         if(oldPlayer) oldPlayer.remove();
-        const oldBtn = document.getElementById('btn-continue-speaking');
-        if(oldBtn) oldBtn.remove();
 
         try {
-            // PASSO A: Reconhecimento de Texto (Silencioso para o usuário)
-            console.log("🎤 Iniciando reconhecimento de texto...");
-            
-            // Guardamos o texto aqui, mas NÃO mostramos a nota ainda
-            const textReceived = await recognizeSpeechPromise();
-            
-            // PASSO B: Feedback de transição
             // ============================================================
-            // 2️⃣ VISUAL: GRAVANDO ÁUDIO (Mais uma vez)
+            // ETAPA 1: RECONHECIMENTO DE TEXTO (Para Nota)
             // ============================================================
-            ui.speechResult.innerHTML = `
-                <div style="
-                    font-size: 1.6rem; 
-                    font-weight: bold; 
-                    color: var(--accent-color); 
-                    text-align: center; 
-                    margin: 20px 0;
-                    padding: 15px;
-                    border: 2px solid var(--accent-color);
-                    border-radius: 12px;
-                    background: rgba(187, 134, 252, 0.1);
-                    box-shadow: 0 0 15px rgba(187, 134, 252, 0.2);
-                    animation: pulse 1.5s infinite;
-                ">
-                    <i class="fa-solid fa-microphone"></i> 
-                    Só mais uma vez!
-                </div>
-            `;
+            if (speechStage === 1) {
+                console.log("🎤 Etapa 1: Reconhecimento de texto...");
+                
+                // Espera o reconhecimento
+                tempRecognizedText = await recognizeSpeechPromise();
+                
+                // Sucesso na Etapa 1 -> Prepara para Etapa 2
+                speechStage = 2;
+                
+                // Visual "Pronto para gravar"
+                ui.speechResult.innerHTML = `
+                    <div style="
+                        font-size: 1.6rem; 
+                        font-weight: bold; 
+                        color: var(--accent-color); 
+                        text-align: center; 
+                        margin: 20px 0;
+                        padding: 15px;
+                        border: 2px solid var(--accent-color);
+                        border-radius: 12px;
+                        background: rgba(187, 134, 252, 0.1);
+                        box-shadow: 0 0 15px rgba(187, 134, 252, 0.2);
+                        animation: pulse 1.5s infinite;
+                    ">
+                        <i class="fa-solid fa-microphone"></i> 
+                        Toque no microfone para gravar o áudio  novamente...
+                    </div>
+                `;
+                
+                // Tira o pulso do botão para indicar que parou de escutar e espera o clique
+                ui.micBtn.classList.remove('listening');
+            } 
             
-            // Pequeno delay para garantir que o usuário parou de falar a frase antes de gravar o silêncio
-            await new Promise(r => setTimeout(r, 500));
+            // ============================================================
+            // ETAPA 2: GRAVAÇÃO DE ÁUDIO (Para Replay)
+            // ============================================================
+            else if (speechStage === 2) {
+                console.log("🎙️ Etapa 2: Gravação de áudio...");
+                
+                // Visual "Gravando"
+                ui.speechResult.innerHTML = `
+                    <div style="color: var(--error-color); font-weight: bold; animation: pulse 1s infinite;">
+                        <i class="fa-solid fa-circle"></i> Gravando áudio...
+                    </div>
+                `;
 
-            // PASSO C: Gravação de Áudio até Silêncio
-            const audioBlob = await recordUntilSilencePromise();
+                // Grava o áudio
+                const audioBlob = await recordUntilSilencePromise();
 
-            // --- O GRANDE FINAL (MOSTRA TUDO AGORA) ---
-            
-            // 1. Mostra a Nota (usa o texto guardado no passo A)
-            processSpeechResult(textReceived); 
+                // --- FINALIZAÇÃO ---
+                
+                // 1. Mostra a Nota (usa o texto guardado na Etapa 1)
+                processSpeechResult(tempRecognizedText); 
 
-            // 2. Cria Player e Botão Continuar
-            const audioUrl = URL.createObjectURL(audioBlob);
-            createAudioPlayer(audioUrl);
+                // 2. Cria Player e Botão Continuar
+                const audioUrl = URL.createObjectURL(audioBlob);
+                createAudioPlayer(audioUrl);
 
-            // 3. Restaura estado do botão Mic
-            ui.micBtn.classList.remove('listening');
-            ui.micBtn.style.transform = "scale(1)";
+                // 3. Reseta para a próxima vez (embora vá mudar de tela logo)
+                ui.micBtn.classList.remove('listening');
+                ui.micBtn.style.transform = "scale(1)";
+                speechStage = 1; // Reseta estado
+            }
             
         } catch (err) {
             console.error(err);
             ui.speechResult.innerHTML = `<span style="color:var(--error-color)">Não entendi. Tente novamente.</span>`;
             ui.micBtn.classList.remove('listening');
+            // Se der erro, mantém no estágio atual para tentar de novo
         } finally {
             isListening = false;
         }
