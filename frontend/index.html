@@ -1,16 +1,14 @@
-<!- 72
-Resumo das Mudanças
-✅ Modo Video: Agora tem 2 tarefas por frase (antes era 1)
+<!- 73
+O que vai acontecer agora:
+O usuário vai em You > Configurações.
 
-Jumble PT→EN (treino sintético)
-Video Lesson (reforço natural)
+Seleciona, por exemplo, "Baixa (240p)" para economizar dados no 4G.
 
-✅ Modo Full: Agora tem 2 tarefas por frase (antes eram 3)
+Essa escolha fica salva no celular dele.
 
-Match (vocabulário)
-Jumble EN→PT
+Quando ele abrir uma tarefa de vídeo, o sistema dirá ao YouTube: "Por favor, tente carregar em 240p".
 
-✅ Logs adicionados para rastrear exatamente o que está sendo gerado
+Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova qualidade imediatamente.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -580,7 +578,7 @@ Jumble EN→PT
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v72
+            <i class="fa-solid fa-cube"></i> PhraseCraft v73
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -661,6 +659,10 @@ Jumble EN→PT
                         <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
                     </button>
                 </div>
+              
+                <button class="option-btn" style="width: 100%; text-align: center; margin-bottom: 10px;" onclick="navigateTo('settings')">
+                    <i class="fa-solid fa-gear"></i> Configurações
+                </button>
             </section>
           
             <section id="view-login" class="view-section">
@@ -691,6 +693,40 @@ Jumble EN→PT
                 </div>
             </section>
 
+            <section id="view-settings" class="view-section">
+                <div style="padding: 20px;">
+                    <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-arrow-left" onclick="navigateTo('you')" style="cursor: pointer;"></i> 
+                        Configurações
+                    </h2>
+            
+                    <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <label style="display: block; margin-bottom: 10px; color: var(--text-secondary);">Qualidade de Vídeo (Padrão)</label>
+                        
+                        <select id="pref-quality" onchange="saveQualityPreference()" style="
+                            width: 100%; 
+                            padding: 12px; 
+                            background: #121212; 
+                            color: white; 
+                            border: 1px solid var(--border-color); 
+                            border-radius: 6px;
+                            font-size: 1rem;
+                        ">
+                            <option value="default">Automático (Recomendado)</option>
+                            <option value="small">Baixa (240p) - Economia de Dados</option>
+                            <option value="medium">Média (360p)</option>
+                            <option value="large">Alta (480p)</option>
+                            <option value="hd720">HD (720p)</option>
+                            <option value="hd1080">Full HD (1080p)</option>
+                        </select>
+                        
+                        <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">
+                            <i class="fa-solid fa-circle-info"></i> Nota: O YouTube pode ignorar essa configuração dependendo da velocidade da sua conexão.
+                        </p>
+                    </div>
+                </div>
+            </section>
+          
             <section id="view-training" class="view-section">
                 <div class="quiz-container">
                     <div class="nav-controls">
@@ -2577,20 +2613,44 @@ Jumble EN→PT
         document.getElementById('video-feedback').innerText = '';
     
         const videoId = getYoutubeId(currentTask.videoUrl);
+    
+        // 1. Pega a qualidade salva
+        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+        console.log("🎬 Carregando vídeo com qualidade:", userQuality);
+    
         if (!ytPlayer) {
             ytPlayer = new YT.Player('yt-player', {
-                height: '100%', width: '100%', videoId: videoId,
-                playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1, 'fs': 0, 'rel': 0, 'iv_load_policy': 3, 'modestbranding': 1 },
-                events: { 'onReady': () => playSegment(currentTask.start, currentTask.end) }
+                height: '100%', 
+                width: '100%', 
+                videoId: videoId,
+                playerVars: { 
+                    'playsinline': 1, 
+                    'controls': 0, 
+                    'disablekb': 1, 
+                    'fs': 0, 
+                    'rel': 0, 
+                    'iv_load_policy': 3, 
+                    'modestbranding': 1 
+                },
+                events: { 
+                    'onReady': (event) => {
+                        // Tenta setar a qualidade ao carregar
+                        event.target.setPlaybackQuality(userQuality);
+                        playSegment(currentTask.start, currentTask.end); 
+                    }
+                }
             });
         } else {
-            const currentSrc = ytPlayer.getVideoUrl();
-            if (currentSrc && currentSrc.includes(videoId)) {
-                playSegment(currentTask.start, currentTask.end);
-            } else {
-                ytPlayer.loadVideoById(videoId);
-                setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
-            }
+            // Se o player já existe, carregamos o novo vídeo JÁ com a sugestão de qualidade
+            // Usamos loadVideoById com sintaxe de objeto para passar suggestedQuality
+            ytPlayer.loadVideoById({
+                'videoId': videoId,
+                'startSeconds': currentTask.start,
+                'suggestedQuality': userQuality // <--- A MÁGICA ACONTECE AQUI
+            });
+            
+            // Pequeno delay de segurança para o loop
+            setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
         }
     
         let words = currentTask.question
@@ -2949,11 +3009,36 @@ Jumble EN→PT
             navigateTo('login', false);
         }
     }
-  
+
+    // --- PREFERÊNCIAS DE USUÁRIO ---
+
+    // 1. Carrega a preferência salva ao iniciar o app
+    function loadUserPreferences() {
+        const savedQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+        const select = document.getElementById('pref-quality');
+        if(select) select.value = savedQuality;
+        return savedQuality;
+    }
+    
+    // 2. Salva quando o usuário muda o select
+    function saveQualityPreference() {
+        const select = document.getElementById('pref-quality');
+        localStorage.setItem('phrasecraft_quality', select.value);
+        console.log("💾 Qualidade padrão salva:", select.value);
+        
+        // Feedback visual rápido (opcional)
+        const originalBorder = select.style.borderColor;
+        select.style.borderColor = "var(--success-color)";
+        setTimeout(() => select.style.borderColor = originalBorder, 500);
+    }
+    
+
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
+    // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
         initMobileNavigation();
+        loadUserPreferences(); // <--- ADICIONE AQUI
         initApp();
     });
     </script>
