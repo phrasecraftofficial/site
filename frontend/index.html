@@ -1,13 +1,12 @@
-<!- 69
-Sendo assim a plavra fica desabilitada 
-na rodada da palavra que foi errada, ou 
-seja, se a frase for 'o gato mia' e logo 
-na primeira palavra a pessoa clica em gato, 
-gato vai ficar desabilitado pois é uma 
-palvra errada, mas se logo em seguida a 
-pessoa acerta e clica em 'o' entao gato 
-volta a ficar habilitado mesmo a frase não 
-ter sido completa ainda.
+<!- 70
+Resumo do Comportamento Novo:
+10 frases: Fases de 5, 5. (Sem alteração)
+
+11 frases (Resto 1): Antes era 5, 5, 1. Agora será: 5, 3, 3.
+
+12 frases (Resto 2): Antes era 5, 5, 2. Agora será: 5, 4, 3.
+
+6 frases (Resto 1): Antes era 5, 1. Agora será: 3, 3.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -577,7 +576,7 @@ ter sido completa ainda.
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v69
+            <i class="fa-solid fa-cube"></i> PhraseCraft v70
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1407,22 +1406,92 @@ ter sido completa ainda.
             return null;
         }
     }
+
+    // --- LÓGICA DE DISTRIBUIÇÃO INTELIGENTE ---
+    // Retorna um array com o tamanho de cada fase. Ex: para 6 itens retorna [3, 3]
+    function calculatePhaseStructure(totalItems) {
+        const standardSize = 5;
+        let structure = [];
+        
+        // Se tiver menos que 5 itens, é uma fase só
+        if (totalItems <= standardSize) {
+            return [totalItems];
+        }
+
+        const remainder = totalItems % standardSize;
+        const totalStandardPhases = Math.floor(totalItems / standardSize);
+
+        // CASO 1: Resto 1 (Ex: 6, 11, 16...)
+        // Pega o último grupo de 5 + 1 (total 6) e divide em 3 + 3
+        if (remainder === 1) {
+            // Adiciona fases de 5 normais até a penúltima
+            for (let i = 0; i < totalStandardPhases - 1; i++) {
+                structure.push(standardSize);
+            }
+            // As duas últimas fases viram 3 e 3
+            structure.push(3);
+            structure.push(3);
+        }
+        // CASO 2: Resto 2 (Ex: 7, 12, 17...)
+        // Pega o último grupo de 5 + 2 (total 7) e divide em 4 + 3
+        else if (remainder === 2) {
+            // Adiciona fases de 5 normais até a penúltima
+            for (let i = 0; i < totalStandardPhases - 1; i++) {
+                structure.push(standardSize);
+            }
+            // As duas últimas fases viram 4 e 3
+            structure.push(4);
+            structure.push(3);
+        }
+        // CASO PADRÃO: Resto 0, 3 ou 4 (Ex: 5, 8, 9, 10...)
+        // Mantém o padrão (5, 5, ..., resto)
+        else {
+            for (let i = 0; i < totalStandardPhases; i++) {
+                structure.push(standardSize);
+            }
+            if (remainder > 0) {
+                structure.push(remainder);
+            }
+        }
+        
+        return structure;
+    }
+
+    // Função auxiliar para pegar o start e end de uma fase específica
+    function getPhaseIndices(phaseIndex, totalItems) {
+        const structure = calculatePhaseStructure(totalItems);
+        
+        // Proteção contra índice inválido
+        if (phaseIndex >= structure.length) phaseIndex = 0;
+
+        let start = 0;
+        // Soma os tamanhos das fases anteriores para achar o start
+        for (let i = 0; i < phaseIndex; i++) {
+            start += structure[i];
+        }
+        
+        const end = start + structure[phaseIndex];
+        return { start, end, totalPhases: structure.length };
+    }
+  
     // Gera os botões de paginação
     function renderPhaseButtons() {
         const container = document.getElementById('phase-controls');
         container.innerHTML = '';
-    
-        const totalPhases = Math.ceil(currentLesson.data.length / itemsPerPhase);
+        
+        // AQUI MUDOU: Usa a lógica inteligente para contar fases
+        const structure = calculatePhaseStructure(currentLesson.data.length);
+        const totalPhases = structure.length;
     
         for (let i = 0; i < totalPhases; i++) {
             const btn = document.createElement('button');
             btn.className = `phase-btn ${i === currentPhase ? 'active' : ''}`;
-            btn.innerText = i + 1; // Mostra Fase 1, Fase 2...
+            btn.innerText = i + 1; 
             
             btn.onclick = () => {
                 currentPhase = i;
-                renderPhaseButtons(); // Atualiza visual do botão ativo
-                renderPreviewSentences(); // Atualiza lista
+                renderPhaseButtons(); 
+                renderPreviewSentences(); 
             };
             
             container.appendChild(btn);
@@ -1430,12 +1499,13 @@ ter sido completa ainda.
     }
     
     // Renderiza apenas as 5 frases da fase atual
+    // Renderiza apenas as frases da fase atual (com tamanho dinâmico)
     function renderPreviewSentences() {
         ui.previewSentences.innerHTML = '';
         
-        const start = currentPhase * itemsPerPhase;
-        const end = start + itemsPerPhase;
-        const phaseData = currentLesson.data.slice(start, end); // Pega só o trecho
+        // AQUI MUDOU: Pega os índices calculados
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(start, end); 
     
         if (phaseData.length === 0) {
             ui.previewSentences.innerHTML = '<li class="preview-item">Sem frases.</li>';
@@ -1445,12 +1515,11 @@ ter sido completa ainda.
         phaseData.forEach((item, index) => {
             const li = document.createElement('li');
             li.className = 'preview-item';
-            // Adicionei o número real da frase para facilitar (start + index + 1)
+            // Usa (start + index + 1) para manter a numeração correta globalmente
             li.innerText = `${start + index + 1}. ${item.en}`; 
             ui.previewSentences.appendChild(li);
         });
     }
-
     // --- PARSER DE SRT ---
   
     // Converte "00:00:02,500" para segundos (float)
@@ -1531,8 +1600,7 @@ ter sido completa ainda.
         ui.finalScreen.classList.add('hidden');
         
         // Filtra os dados antes de iniciar o Quiz
-        const start = currentPhase * itemsPerPhase;
-        const end = start + itemsPerPhase;
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
         const phaseData = currentLesson.data.slice(start, end);
 
         // Envia só as 5 frases para o gerador de tarefas
@@ -2360,8 +2428,7 @@ ter sido completa ainda.
         ui.quizContainer.classList.remove('hidden');
         ui.finalScreen.classList.add('hidden');
     
-        const start = currentPhase * itemsPerPhase;
-        const end = start + itemsPerPhase;
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
         const phaseData = currentLesson.data.slice(start, end);
     
         initQuizLogic(phaseData); 
@@ -2507,8 +2574,8 @@ ter sido completa ainda.
         ui.finalScreen.classList.add('hidden');
     
         // Pega as frases da fase atual (paginação)
-        const start = currentPhase * itemsPerPhase;
-        const end = start + itemsPerPhase;
+        // const start = currentPhase * itemsPerPhase;
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
         const phaseData = currentLesson.data.slice(start, end);
     
         // Inicia a lógica
