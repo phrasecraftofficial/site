@@ -1,23 +1,13 @@
-<!- 68
-O que mudou?
-Fluxo Linear: Ao invés de tentar fazer duas coisas 
-ao mesmo tempo, agora o código segue a ordem lógica do seu exemplo:
-
-Primeiro entende o texto (SpeechRecognition).
-
-Exibe a nota (Score).
-
-Espera um pouco.
-
-Grava o áudio real usando AudioContext para 
-detectar quando você parou de falar automaticamente.
-
-Detecção de Silêncio: Adicionei a função recordUntilSilencePromise 
-que analisa o volume do microfone em tempo real. Ela só para de 
-gravar quando você fica em silêncio por 1 segundo (configurável em silenceDelay).
-
-Interface: Atualizei para usar os elementos do PhraseCraft 
-(ui.speechResult, ui.micBtn) para dar feedback visual durante as etapas.
+<!- 69
+Sendo assim a plavra fica desabilitada 
+na rodada da palavra que foi errada, ou 
+seja, se a frase for 'o gato mia' e logo 
+na primeira palavra a pessoa clica em gato, 
+gato vai ficar desabilitado pois é uma 
+palvra errada, mas se logo em seguida a 
+pessoa acerta e clica em 'o' entao gato 
+volta a ficar habilitado mesmo a frase não 
+ter sido completa ainda.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -560,13 +550,34 @@ Interface: Atualizei para usar os elementos do PhraseCraft
         .login-input:focus {
             border-color: var(--accent-color);
         }
+
+      /* Palavra desabilitada (Acumulativo) */
+      .disabled-word {
+          opacity: 0.4 !important;
+          pointer-events: none !important; /* O clique não funciona */
+          background-color: #2a2a2a !important; /* Fica escuro */
+          color: #666 !important; /* Texto apagado */
+          border-color: #444 !important;
+          transform: scale(0.95);
+          transition: all 0.2s;
+      }
+      
+      /* Animação de erro (Tremida) */
+      @keyframes shake-horizontal {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+      }
+      .shake-anim {
+          animation: shake-horizontal 0.4s ease-in-out;
+      }
     </style>
 </head>
 <body>
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v68
+            <i class="fa-solid fa-cube"></i> PhraseCraft v69
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -934,6 +945,13 @@ Interface: Atualizei para usar os elementos do PhraseCraft
     
     // Constante para dividir de 5 em 5
     const itemsPerPhase = 5;
+  
+    // --- VARIÁVEIS DE CONTROLE DE PALAVRAS ---
+    let expectedWordIndex = 0; // Controla qual é a próxima palavra correta
+    let currentTargetSentence = []; // Guarda a frase correta fatiada em array
+    
+    // Helper para limpar texto (remover pontuação e minúsculas para comparação)
+    const normalizeWord = (str) => str.toLowerCase().replace(/[.,?!":;]/g, '').trim();
 
     let currentLesson = null;
     let quizQueue = [];
@@ -1653,6 +1671,10 @@ Interface: Atualizei para usar os elementos do PhraseCraft
             finishQuiz();
             return;
         }
+      
+        // --- RESET DA LÓGICA INCREMENTAL (NOVO) ---
+        expectedWordIndex = 0; 
+        currentTargetSentence = [];
     
         updateNavButtons(); 
         currentTask = quizQueue[currentIndex];
@@ -2117,12 +2139,15 @@ Interface: Atualizei para usar os elementos do PhraseCraft
         }
     }
   
-    // --- 4. Jumble (ORGANIZAR FRASE) ---
+
+    // --- 4. Jumble (ORGANIZAR FRASE - COM VALIDAÇÃO INCREMENTAL) ---
+    // --- (COM REABILITAÇÃO APÓS ACERTO) ---
     function setupJumble() {
         ui.jumbleWrapper.classList.remove('hidden');
         
-        // Configura o Display com Ícone de Áudio
-        // Usamos innerHTML para incluir o ícone FontAwesome
+        // Prepara frase alvo
+        currentTargetSentence = currentTask.correct.split(' ').map(w => normalizeWord(w));
+        
         ui.display.innerHTML = `
             ${currentTask.display} 
             <i class="fa-solid fa-volume-high" id="replay-audio-btn" title="Ouvir novamente"></i>
@@ -2132,22 +2157,10 @@ Interface: Atualizei para usar os elementos do PhraseCraft
             ? "Traduza para Português:" 
             : "Ouça e monte em Inglês:";
         
-        // Configura o clique no ícone para repetir o áudio
         const replayBtn = document.getElementById('replay-audio-btn');
-        replayBtn.onclick = (e) => {
-            e.stopPropagation(); // Evita bolha de evento
-            speakText(currentTask.audioStart, currentTask.audioLang);
-        };
+        replayBtn.onclick = (e) => { e.stopPropagation(); speakText(currentTask.audioStart, currentTask.audioLang); };
+        if (currentTask.audioStart) setTimeout(() => speakText(currentTask.audioStart, currentTask.audioLang), 300);
     
-        // Toca áudio inicial automaticamente
-        if (currentTask.audioStart) {
-            // Pequeno delay para a UI renderizar antes de bloquear
-            setTimeout(() => {
-                speakText(currentTask.audioStart, currentTask.audioLang);
-            }, 300);
-        }
-    
-        // Prepara palavras (limpa pontuação)
         let cleanCorrect = currentTask.correct.replace(/[.?!]/g, ''); 
         let words = cleanCorrect.split(' ').sort(() => Math.random() - 0.5);
     
@@ -2157,17 +2170,60 @@ Interface: Atualizei para usar os elementos do PhraseCraft
             span.innerText = word;
             
             span.onclick = function() { 
-                // Toca áudio da palavra se habilitado (apenas EN)
-                if (currentTask.wordAudio) {
-                    speakText(word, 'en-US');
+                if (currentTask.wordAudio) speakText(word, 'en-US');
+                
+                const clickedClean = normalizeWord(word);
+                const expectedClean = currentTargetSentence[expectedWordIndex];
+
+                if (clickedClean === expectedClean) {
+                    // --- ACERTOU ---
+                    ui.answerZone.appendChild(this);
+                    expectedWordIndex++;
+                    
+                    // >>> AQUI ESTÁ A CORREÇÃO <<<
+                    // Assim que acerta, todas as erradas voltam a ficar clicáveis
+                    const disabledWords = ui.wordBank.querySelectorAll('.disabled-word');
+                    disabledWords.forEach(w => w.classList.remove('disabled-word'));
+                    // -----------------------------
+
+                    if (expectedWordIndex === currentTargetSentence.length) {
+                        checkJumbleSuccess();
+                    }
+
+                } else {
+                    // --- ERROU ---
+                    this.classList.add('disabled-word');
+                    this.style.backgroundColor = "var(--error-color)";
+                    this.style.color = "white";
+                    
+                    // Remove o vermelho após um tempo, mas mantem disabled-word até o próximo acerto
+                    setTimeout(() => {
+                        this.style.backgroundColor = ""; 
+                        this.style.color = "";
+                    }, 500);
                 }
-                // Move palavra
-                const target = this.parentElement === ui.wordBank ? ui.answerZone : ui.wordBank;
-                target.appendChild(this); 
             };
             
             ui.wordBank.appendChild(span);
         });
+        
+        const checkBtns = ui.jumbleWrapper.querySelectorAll('.check-btn');
+        checkBtns.forEach(btn => btn.style.display = 'none');
+    }
+  
+    // Função auxiliar para finalizar Jumble com sucesso
+    function checkJumbleSuccess() {
+        ui.answerZone.style.borderColor = "var(--success-color)";
+        score++; 
+        ui.scoreDisplay.innerText = score;
+
+        if (currentTask.finalAudio) {
+            speakText(currentTask.finalAudio, 'en-US', () => {
+                setTimeout(nextTask, 500);
+            });
+        } else {
+            setTimeout(nextTask, 1000);
+        }
     }
     
     function checkJumble() {
@@ -2311,38 +2367,29 @@ Interface: Atualizei para usar os elementos do PhraseCraft
         initQuizLogic(phaseData); 
     }
 
-    // --- INÍCIO DA PRÁTICA COM VIDEO ---
+    // --- INÍCIO DA PRÁTICA COM VIDEO (COM VALIDAÇÃO INCREMENTAL) ---
+    // --- VIDEO (COM REABILITAÇÃO APÓS ACERTO) ---
     function setupVideo() {
         ui.videoWrapper.classList.remove('hidden');
         isVideoTaskComplete = false;
         
-        // UI Limpa
+        currentTargetSentence = currentTask.question
+            .replace(/\r?\n|\r/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .map(w => normalizeWord(w));
+
         document.getElementById('video-answer-zone').innerHTML = '';
         document.getElementById('video-word-bank').innerHTML = '';
         document.getElementById('video-answer-zone').style.borderColor = '#444';
         document.getElementById('video-feedback').innerText = '';
     
-        // 1. Configura Player (Mantido igual)
         const videoId = getYoutubeId(currentTask.videoUrl);
-        // nem o teclado funcione (ex: apertar espaço para pausar se o vídeo estiver focado), 
-        // atualize os `playerVars` na função `setupVideo()` para ser o mais restritivo possível.
         if (!ytPlayer) {
             ytPlayer = new YT.Player('yt-player', {
-                height: '100%', 
-                width: '100%', 
-                videoId: videoId,
-                playerVars: { 
-                    'playsinline': 1, 
-                    'controls': 0,     // Esconde a barra
-                    'disablekb': 1,    // Desativa teclado (espaço/setas)
-                    'fs': 0,           // Desativa botão fullscreen
-                    'rel': 0,          // Evita vídeos relacionados ao final
-                    'iv_load_policy': 3, // Esconde anotações
-                    'modestbranding': 1 // Remove logo grande do YT
-                },
-                events: {
-                    'onReady': () => playSegment(currentTask.start, currentTask.end)
-                }
+                height: '100%', width: '100%', videoId: videoId,
+                playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1, 'fs': 0, 'rel': 0, 'iv_load_policy': 3, 'modestbranding': 1 },
+                events: { 'onReady': () => playSegment(currentTask.start, currentTask.end) }
             });
         } else {
             const currentSrc = ytPlayer.getVideoUrl();
@@ -2354,14 +2401,12 @@ Interface: Atualizei para usar os elementos do PhraseCraft
             }
         }
     
-        // 2. Prepara Palavras (CORRIGIDO PARA MANTER PONTUAÇÃO)
-        // Não removemos mais pontuações, apenas quebras de linha
         let words = currentTask.question
-            .replace(/\r?\n|\r/g, ' ')  // 1. Troca Enter por espaço
-            .trim()                     // 2. Limpa espaços nas pontas
-            .split(/\s+/)               // 3. Divide por espaços
-            .filter(w => w.length > 0)  // 4. Garante que não há vazios
-            .sort(() => Math.random() - 0.5); // 5. Embaralha
+            .replace(/\r?\n|\r/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .filter(w => w.length > 0)
+            .sort(() => Math.random() - 0.5);
     
         const bank = document.getElementById('video-word-bank');
         const zone = document.getElementById('video-answer-zone');
@@ -2369,38 +2414,78 @@ Interface: Atualizei para usar os elementos do PhraseCraft
         words.forEach(word => {
             const span = document.createElement('span');
             span.className = 'word-tag'; 
-            span.innerText = word; // Exibe "apart," ou "you." visualmente
+            span.innerText = word;
             
             span.onclick = function() { 
-                // A. PREVENÇÃO DE CLIQUE DUPLO
                 if (document.body.classList.contains('audio-playing')) return;
-    
+                
                 document.body.classList.add('audio-playing');
-    
-                // B. LIMPA A PALAVRA SÓ PARA A FALA
-                // Remove pontuação para o áudio ficar limpo (ex: "apart" em vez de "apart vírgula")
                 const cleanWordForAudio = word.replace(/[.,?!":;]/g, '');
-    
                 const utterance = new SpeechSynthesisUtterance(cleanWordForAudio);
                 utterance.lang = 'en-US';
-                utterance.rate = 1.0;
-                
                 const unlock = () => document.body.classList.remove('audio-playing');
                 utterance.onend = unlock;
                 utterance.onerror = unlock;
-                
                 window.speechSynthesis.cancel();
                 window.speechSynthesis.speak(utterance);
     
-                // C. LÓGICA DO JOGO (Move a palavra com pontuação e tudo)
-                const target = this.parentElement === bank ? zone : bank;
-                target.appendChild(this); 
-                
-                checkVideoAnswer();
+                const clickedClean = normalizeWord(word);
+                const expectedClean = currentTargetSentence[expectedWordIndex];
+
+                if (clickedClean === expectedClean) {
+                    // --- ACERTOU ---
+                    zone.appendChild(this);
+                    expectedWordIndex++;
+
+                    // >>> AQUI ESTÁ A CORREÇÃO <<<
+                    // Reabilita as erradas do banco
+                    const disabledWords = bank.querySelectorAll('.disabled-word');
+                    disabledWords.forEach(w => w.classList.remove('disabled-word'));
+                    // -----------------------------
+
+                    if (expectedWordIndex === currentTargetSentence.length) {
+                        finishVideoTaskSuccess();
+                    }
+                } else {
+                    // --- ERROU ---
+                    this.classList.add('disabled-word');
+                    this.animate([
+                        { transform: 'translateX(0)' }, 
+                        { transform: 'translateX(-5px)' }, 
+                        { transform: 'translateX(5px)' }, 
+                        { transform: 'translateX(0)' }
+                    ], { duration: 300 });
+                }
             };
-            
             bank.appendChild(span);
         });
+    }
+
+    // Função auxiliar para sucesso no Vídeo
+    function finishVideoTaskSuccess() {
+        const zone = document.getElementById('video-answer-zone');
+        zone.style.borderColor = "var(--success-color)";
+        document.getElementById('video-feedback').innerHTML = `<p>Muito Bom!</p><p>Ouça só mais uma vez!</p>`;
+        score++;
+        ui.scoreDisplay.innerText = score;
+        isVideoTaskComplete = true; 
+
+        // Toca o trecho do vídeo e avança
+        setTimeout(() => {
+            if(ytPlayer && ytPlayer.seekTo) {
+                ytPlayer.seekTo(currentTask.start);
+                ytPlayer.playVideo();
+                let finalCheck = setInterval(() => {
+                    if(ytPlayer.getCurrentTime() >= currentTask.end) {
+                        ytPlayer.pauseVideo();
+                        clearInterval(finalCheck);
+                        setTimeout(nextTask, 1000); 
+                    }
+                }, 100);
+            } else {
+                setTimeout(nextTask, 1500);
+            }
+        }, 500);
     }
   
     // FUNÇÃO DE INÍCIO DA PRÁTICA COM VIDEO
