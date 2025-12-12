@@ -1,18 +1,16 @@
-<!- 71
-O que mudou na experiência?
-Clique 1: O botão pulsa (branco/padrão), 
-ele escuta o que você falou para dar a nota, 
-mas não mostra a nota ainda. Ele apenas diz "Entendi! Toque para gravar".
+<!- 72
+Resumo das Mudanças
+✅ Modo Video: Agora tem 2 tarefas por frase (antes era 1)
 
-Pausa: O sistema para e fica esperando o usuário. 
-Isso elimina a correria e o corte do áudio.
+Jumble PT→EN (treino sintético)
+Video Lesson (reforço natural)
 
-Clique 2: O botão pulsa (vermelho/gravando), 
-o usuário repete a frase calmamente para o replay.
+✅ Modo Full: Agora tem 2 tarefas por frase (antes eram 3)
 
-Final: Assim que ele detecta silêncio na 
-segunda vez, ele mostra a nota (baseada no primeiro 
-clique) e o player de áudio (baseado no segundo clique).
+Match (vocabulário)
+Jumble EN→PT
+
+✅ Logs adicionados para rastrear exatamente o que está sendo gerado
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -582,7 +580,7 @@ clique) e o player de áudio (baseado no segundo clique).
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v71
+            <i class="fa-solid fa-cube"></i> PhraseCraft v72
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1658,18 +1656,37 @@ clique) e o player de áudio (baseado no segundo clique).
         ui.scoreDisplay.innerText = "0";
     
         data.forEach(sentence => {
-            // MODO VIDEO
-            if (trainingMode === 'video') {
-                quizQueue.push({ 
-                    type: 'video_lesson', 
-                    question: sentence.en, 
-                    pt: sentence.pt,
-                    start: sentence.start, // <--- IMPORTANTE
-                    end: sentence.end,     // <--- IMPORTANTE
-                    videoUrl: sentence.videoUrl // <--- IMPORTANTE
-                });
-                return; 
-            }
+
+          // MODO VIDEO
+      if (trainingMode === 'video') {
+          console.log(`🎬 [Video Mode] Adicionando tarefas para frase ${sentence.id}: "${sentence.en}"`);
+          
+          // TAREFA 1: Jumble PT→EN (Treino com voz sintética)
+          console.log(`  ✅ [Video] Tarefa 1/2: jumble_pt_to_en (Treino sintético)`);
+          quizQueue.push({ 
+              type: 'jumble_pt_to_en', 
+              display: sentence.pt,          // Mostra em português
+              audioStart: sentence.en,       // Toca áudio em inglês
+              audioLang: 'en-US',
+              correct: sentence.en,          // Resposta correta em inglês
+              wordAudio: true,               // Fala palavra ao clicar
+              finalAudio: sentence.en        // Áudio de confirmação
+          });
+          
+          // TAREFA 2: Video Lesson (Reforço com áudio natural)
+          console.log(`  ✅ [Video] Tarefa 2/2: video_lesson (Reforço natural)`);
+          quizQueue.push({ 
+              type: 'video_lesson', 
+              question: sentence.en, 
+              pt: sentence.pt,
+              start: sentence.start,
+              end: sentence.end,
+              videoUrl: sentence.videoUrl
+          });
+          
+          console.log(`✅ [Video Mode] 2 tarefas adicionadas para frase ${sentence.id}`);
+          return; 
+      }
             
             // MODO APENAS FALA
             if (trainingMode === 'speaking') {
@@ -1681,11 +1698,17 @@ clique) e o player de áudio (baseado no segundo clique).
                 return; // Pula o resto e vai para a próxima frase
             }
     
-            // MODO COMPLETO (Seu código anterior do loop T1->T2->T3)
+            // MODO COMPLETO (Agora com apenas 2 tarefas por frase)
+            console.log(`📚 [Full Mode] Processando frase ${sentence.id}: "${sentence.en}"`);
+            
+            // TAREFA 1: Match (se houver vocabulário)
             if(sentence.vocab && sentence.vocab.length > 0) {
+                console.log(`  ✅ [Full] Tarefa 1: match (${sentence.vocab.length} pares)`);
                 quizQueue.push({ type: 'match', vocab: sentence.vocab });
             }
             
+            // TAREFA 2: Jumble EN→PT (única tarefa jumble no modo full agora)
+            console.log(`  ✅ [Full] Tarefa 2: jumble_en_to_pt`);
             quizQueue.push({ 
                 type: 'jumble_en_to_pt', 
                 display: sentence.en,     
@@ -1694,18 +1717,27 @@ clique) e o player de áudio (baseado no segundo clique).
                 correct: sentence.pt,     
                 finalAudio: sentence.en   
             });
-    
-            quizQueue.push({ 
-                type: 'jumble_pt_to_en', 
-                display: sentence.pt,     
-                audioStart: sentence.en,
-                audioLang: 'en-US',
-                correct: sentence.en,     
-                wordAudio: true,
-                finalAudio: sentence.en
-            });
+            
+            console.log(`✅ [Full Mode] Tarefas adicionadas para frase ${sentence.id}`);
         });
     
+        console.log(`
+        🎯 ==========================================
+           FILA DE TAREFAS GERADA
+        🎯 ==========================================
+           Modo: ${trainingMode}
+           Total de Tarefas: ${quizQueue.length}
+           Frases Processadas: ${data.length}
+        ------------------------------------------
+        `);
+        
+        // Log detalhado de cada tarefa
+        quizQueue.forEach((task, index) => {
+            console.log(`[${index + 1}] ${task.type} | Display: "${task.display || task.question || 'N/A'}"`);
+        });
+        
+        console.log(`==========================================\n`);
+        
         loadTask();
     }
 
@@ -1911,6 +1943,8 @@ clique) e o player de áudio (baseado no segundo clique).
     // o user tera que falar a mesma frase 2x
     // --- SETUP DA TAREFA DE FALA ---
     function setupSpeaking() {
+        console.log('🎤 [Speaking] Setup iniciado');
+        
         ui.speechWrapper.classList.remove('hidden');
         ui.prompt.innerText = "Grave sua pronúncia:";
         
@@ -1923,10 +1957,11 @@ clique) e o player de áudio (baseado no segundo clique).
             ${currentTask.question} 
             <i class="fa-solid fa-volume-high" id="replay-speaking-btn" title="Ouvir referência" style="margin-left:10px; cursor:pointer; color:var(--accent-color); font-size: 0.8em;"></i>
         `;
-
+    
         // Configura clique do ícone
         document.getElementById('replay-speaking-btn').onclick = (e) => {
             e.stopPropagation();
+            console.log('🔊 [Speaking] Replay manual solicitado');
             speakText(currentTask.question, 'en-US');
         };
         
@@ -1938,11 +1973,54 @@ clique) e o player de áudio (baseado no segundo clique).
         if(oldContinue) oldContinue.remove();
     
         ui.micBtn.classList.remove('hidden'); 
-        ui.micBtn.classList.remove('listening'); // Garante que não comece pulsando
-        ui.micBtn.disabled = false;
+        ui.micBtn.classList.remove('listening');
         
-        // Mensagem inicial
-        ui.speechResult.innerHTML = `<span style="color:var(--text-secondary)">Toque para verificar pronúncia</span>`; 
+        // 🔥 NOVIDADE: Desabilita o microfone durante o áudio
+        ui.micBtn.disabled = true;
+        ui.micBtn.style.opacity = '0.5';
+        ui.micBtn.style.cursor = 'wait';
+        
+        // Mensagem enquanto toca
+        ui.speechResult.innerHTML = `
+            <div style="
+                font-size: 1.2rem; 
+                color: var(--accent-color); 
+                text-align: center; 
+                padding: 15px;
+                animation: fadeIn 0.5s;
+            ">
+                <i class="fa-solid fa-volume-high fa-beat"></i> 
+                Ouça a frase modelo...
+            </div>
+        `; 
+        
+        // 🔥 TOCA O ÁUDIO AUTOMATICAMENTE e libera o microfone quando terminar
+        console.log('🔊 [Speaking] Iniciando áudio automático:', currentTask.question);
+        setTimeout(() => {
+            speakText(currentTask.question, 'en-US', () => {
+                console.log('✅ [Speaking] Áudio terminado. Liberando microfone.');
+                
+                // Libera o microfone
+                ui.micBtn.disabled = false;
+                ui.micBtn.style.opacity = '1';
+                ui.micBtn.style.cursor = 'pointer';
+                
+                // Atualiza a mensagem para convidar a falar
+                ui.speechResult.innerHTML = `
+                    <div style="
+                        font-size: 1.2rem; 
+                        font-weight: bold;
+                        color: var(--success-color); 
+                        text-align: center; 
+                        padding: 15px;
+                        animation: fadeIn 0.5s;
+                    ">
+                        <i class="fa-solid fa-microphone"></i> 
+                        Agora é sua vez! Toque para gravar.
+                    </div>
+                `;
+            });
+        }, 300); // Pequeno delay para garantir que a UI carregou
     }
     
     // --- CONTROLE DE GRAVAÇÃO AVANÇADO (LÓGICA NOVA) ---
@@ -1965,12 +2043,15 @@ clique) e o player de áudio (baseado no segundo clique).
                 // ============================================================
                 ui.speechResult.innerHTML = `
                     <div style="
+                        display: table;        /* Comporta-se como bloco, mas ajusta ao conteúdo */
+                        margin: 20px auto;     /* 'auto' nas laterais centraliza o elemento table */
+                        width: fit-content;    /* Garante compatibilidade moderna */
+                        padding: 10px 15px;
+                    
                         font-size: 1.6rem; 
                         font-weight: bold; 
                         color: #fff; 
                         text-align: center; 
-                        margin: 20px 0;
-                        padding: 15px;
                         border: 2px dashed #555;
                         border-radius: 12px;
                         background: rgba(255,255,255,0.05);
@@ -2088,21 +2169,26 @@ clique) e o player de áudio (baseado no segundo clique).
                 // Visual "Pronto para gravar"
                 ui.speechResult.innerHTML = `
                     <div style="
-                        font-size: 1.6rem; 
-                        font-weight: bold; 
-                        color: var(--accent-color); 
-                        text-align: center; 
-                        margin: 20px 0;
-                        padding: 15px;
-                        border: 2px solid var(--accent-color);
-                        border-radius: 12px;
-                        background: rgba(187, 134, 252, 0.1);
-                        box-shadow: 0 0 15px rgba(187, 134, 252, 0.2);
-                        animation: pulse 1.5s infinite;
-                    ">
-                        <i class="fa-solid fa-microphone"></i> 
-                        Toque no microfone para gravar o áudio  novamente...
-                    </div>
+                    /* --- AJUSTE DE CENTRALIZAÇÃO --- */
+                    display: table;        /* Comporta-se como bloco, mas ajusta ao conteúdo */
+                    margin: 20px auto;     /* 'auto' nas laterais centraliza o elemento table */
+                    width: fit-content;    /* Garante compatibilidade moderna */
+            
+                    font-size: 1.3rem; 
+                    font-weight: bold; 
+                    color: var(--accent-color); 
+                    text-align: center; 
+                    
+                    padding: 10px 15px;
+                    border: 2px solid var(--accent-color);
+                    border-radius: 12px;
+                    background: rgba(187, 134, 252, 0.1);
+                    box-shadow: 0 0 15px rgba(187, 134, 252, 0.2);
+                    animation: pulse 1.5s infinite;
+                ">
+                    <i class="fa-solid fa-microphone"></i> 
+                    Grave mais uma vez...
+                </div>
                 `;
                 
                 // Tira o pulso do botão para indicar que parou de escutar e espera o clique
@@ -2117,7 +2203,13 @@ clique) e o player de áudio (baseado no segundo clique).
                 
                 // Visual "Gravando"
                 ui.speechResult.innerHTML = `
-                    <div style="color: var(--error-color); font-weight: bold; animation: pulse 1s infinite;">
+                    <div style="
+                    display: table;        /* Comporta-se como bloco, mas ajusta ao conteúdo */
+                    margin: 20px auto;     /* 'auto' nas laterais centraliza o elemento table */
+                    width: fit-content;    /* Garante compatibilidade moderna */
+                    padding: 10px 15px;
+                    border-radius: 12px;
+                    color: var(--error-color); font-weight: bold; animation: pulse 1s infinite;">
                         <i class="fa-solid fa-circle"></i> Gravando áudio...
                     </div>
                 `;
