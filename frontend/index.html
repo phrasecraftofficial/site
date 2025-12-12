@@ -1,12 +1,23 @@
 <!- 68
-A Solução: Usar uma Biblioteca de Gravação Robusta
-Para resolver isso e garantir que a gravação funcione (que é sua prioridade agora para o aluno se ouvir), vamos usar uma biblioteca leve chamada mic-recorder-to-mp3.
+O que mudou?
+Fluxo Linear: Ao invés de tentar fazer duas coisas 
+ao mesmo tempo, agora o código segue a ordem lógica do seu exemplo:
 
-Ela resolve dois problemas:
+Primeiro entende o texto (SpeechRecognition).
 
-Compatibilidade: Garante que o áudio seja gravado corretamente no mobile.
+Exibe a nota (Score).
 
-Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou .ogg, que o iPhone odeia reproduzir).
+Espera um pouco.
+
+Grava o áudio real usando AudioContext para 
+detectar quando você parou de falar automaticamente.
+
+Detecção de Silêncio: Adicionei a função recordUntilSilencePromise 
+que analisa o volume do microfone em tempo real. Ela só para de 
+gravar quando você fica em silêncio por 1 segundo (configurável em silenceDelay).
+
+Interface: Atualizei para usar os elementos do PhraseCraft 
+(ui.speechResult, ui.micBtn) para dar feedback visual durante as etapas.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -15,7 +26,6 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PhraseCraft App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/mic-recorder-to-mp3@2.2.2/dist/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
     
     <style>
@@ -556,7 +566,7 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v69
+            <i class="fa-solid fa-cube"></i> PhraseCraft v68
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -936,6 +946,7 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
     let matchState = { selectedId: null, selectedSide: null, selectedElement: null, matchesFound: 0 };
 
     let trainingMode = 'full'; // 'full' ou 'speaking'
+    let mediaRecorder = null;
     let audioChunks = [];
     let speakingResults = []; // Nova variável para guardar o histórico da fala
 
@@ -950,18 +961,6 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    // --- VARIÁVEIS GLOBAIS DE ÁUDIO ---
-    let recorder = null; // Instância da biblioteca MP3
-    
-    // Configura a biblioteca ao iniciar o script
-    try {
-        recorder = new MicRecorder({
-            bitRate: 128
-        });
-    } catch (e) {
-        console.error("Erro ao iniciar MicRecorder:", e);
-    }
 
     // --- CONFIGURAÇÃO APPWRITE ---
   
@@ -1810,16 +1809,20 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
     }
 
     // 3. Speech
+    // como o microfone do android para navegador não grava e reconhece ao mesmo tempo
+    // o user tera que falar a mesma frase 2x
     // --- SETUP DA TAREFA DE FALA ---
     function setupSpeaking() {
         ui.speechWrapper.classList.remove('hidden');
         ui.prompt.innerText = "Grave sua pronúncia:";
         
+        // ADICIONADO: Ícone de alto-falante ao lado da frase
         ui.display.innerHTML = `
             ${currentTask.question} 
             <i class="fa-solid fa-volume-high" id="replay-speaking-btn" title="Ouvir referência" style="margin-left:10px; cursor:pointer; color:var(--accent-color); font-size: 0.8em;"></i>
         `;
 
+        // Configura clique do ícone
         document.getElementById('replay-speaking-btn').onclick = (e) => {
             e.stopPropagation();
             speakText(currentTask.question, 'en-US');
@@ -1834,221 +1837,236 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
     
         ui.micBtn.classList.remove('hidden'); 
         ui.micBtn.disabled = false;
-        ui.speechResult.innerText = "Toque para gravar"; // Reset texto
-        ui.speechResult.style.color = "#aaa";
-        
-        // Garante que o recorder está limpo
-        isListening = false;
-        ui.micBtn.classList.remove('listening');
+        ui.speechResult.innerText = "..."; // Limpa feedback anterior
     }
     
-    // --- CONTROLE MESTRE (MIC) ---
+    // --- CONTROLE DE GRAVAÇÃO AVANÇADO (LÓGICA NOVA) ---
+
+    // 1. Promessa de Reconhecimento de Texto
+    function recognizeSpeechPromise() {
+        return new Promise((resolve, reject) => {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return reject("Reconhecimento não suportado.");
+
+            const rec = new SR();
+            rec.lang = "en-US"; // Importante: mantemos inglês para a lição
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            rec.onstart = () => {
+                ui.micBtn.classList.add('listening');
+                // ============================================================
+                // 1️⃣ VISUAL: ESCUTANDO (Reconhecimento de Texto)
+                // ============================================================
+                ui.speechResult.innerHTML = `
+                    <div style="
+                        font-size: 1.6rem; 
+                        font-weight: bold; 
+                        color: #fff; 
+                        text-align: center; 
+                        margin: 20px 0;
+                        padding: 15px;
+                        border: 2px dashed #555;
+                        border-radius: 12px;
+                        background: rgba(255,255,255,0.05);
+                    ">
+                        <i class="fa-solid fa-ear-listen fa-beat" style="--fa-animation-duration: 1s;"></i> 
+                        Escutando...
+                    </div>
+                `;
+            };
+
+            rec.onresult = e => resolve(e.results[0][0].transcript);
+            
+            rec.onerror = err => {
+                ui.micBtn.classList.remove('listening');
+                reject(err);
+            };
+            
+            rec.onend = () => {
+                // Não removemos a classe 'listening' aqui ainda, pois vamos gravar áudio em seguida
+            };
+
+            rec.start();
+        });
+    }
+
+    // 2. Promessa de Gravação até o Silêncio
+    async function recordUntilSilencePromise() {
+        // Configurações de sensibilidade
+        const silenceDelay = 1000; // Tempo de silêncio para parar (ms)
+        const threshold = 15;      // Sensibilidade (aumente se parar muito cedo)
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+        
+        const audioCtx = new AudioContext();
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        
+        const dataArray = new Uint8Array(analyser.fftSize);
+        source.connect(analyser);
+
+        let silenceStart = Date.now();
+        let speakingDetected = false;
+        let rafID = null;
+
+        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.start();
+
+        return new Promise(resolve => {
+            function checkSilence() {
+                analyser.getByteTimeDomainData(dataArray);
+
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    const v = (dataArray[i] - 128) / 128;
+                    sum += v * v;
+                }
+                const volume = Math.sqrt(sum / dataArray.length) * 1000;
+                const now = Date.now();
+
+                // Se volume alto, reseta o timer de silêncio
+                if (volume > threshold) {
+                    speakingDetected = true;
+                    silenceStart = now;
+                    ui.micBtn.style.transform = "scale(1.1)"; // Efeito visual de som
+                    ui.micBtn.style.borderColor = "#fff";
+                } else {
+                    ui.micBtn.style.transform = "scale(1)";
+                    ui.micBtn.style.borderColor = "var(--error-color)";
+                }
+
+                // Lógica de Parada: Detectou fala antes E passou o tempo de silêncio
+                if (speakingDetected && (now - silenceStart > silenceDelay)) {
+                    recorder.stop();
+                    stream.getTracks().forEach(t => t.stop());
+                    cancelAnimationFrame(rafID);
+                    
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: "audio/wav" });
+                        resolve(blob);
+                    };
+                    return;
+                }
+                
+                rafID = requestAnimationFrame(checkSilence);
+            }
+            checkSilence();
+        });
+    }
+
+    // 3. Função Principal (Orquestrador)
     async function toggleSpeech() {
-        // 1. SE JÁ ESTIVER GRAVANDO -> PARA TUDO
-        if (isListening) { 
-            stopRecording();
-            return; 
-        }
-    
-        // 2. PREPARA UI
-        ui.speechResult.innerText = "Inicializando...";
-        ui.speechResult.style.color = "var(--accent-color)";
-        ui.micBtn.classList.add('listening');
+        if (isListening) return; 
         isListening = true;
 
-        // Limpa player antigo se houver
+        // Limpa UI anterior (Player e Botão)
         const oldPlayer = document.getElementById('user-audio-player');
         if(oldPlayer) oldPlayer.remove();
         const oldBtn = document.getElementById('btn-continue-speaking');
         if(oldBtn) oldBtn.remove();
 
-        // 3. INICIA A CADEIA DE EVENTOS
-        if (recognition) {
-            try {
-                // Tenta iniciar o Reconhecimento (Texto) PRIMEIRO
-                // O Gravador (Áudio) será chamado automaticamente no 'onstart' (veja passo 1)
-                recognition.start();
-                console.log("Pedindo permissão ao navegador...");
-            } catch (e) {
-                console.error("Erro ao iniciar SpeechRecognition:", e);
-                // Fallback: Se o reconhecimento falhar (ex: erro de HTTPS), tenta gravar só o áudio
-                ui.speechResult.innerText = "Gravando áudio (sem texto)...";
-                startMp3Recorder();
-            }
-        } else {
-            // Se o navegador não tem reconhecimento de voz, grava só o áudio direto
-            ui.speechResult.innerText = "Gravando áudio...";
-            startMp3Recorder();
-        }
-    }
-  
-    // --- FUNÇÃO AUXILIAR: Inicia apenas o áudio ---
-    async function startMp3Recorder() {
-        if (recorder) {
-            try {
-                await recorder.start();
-                console.log("🎙️ Gravação MP3 iniciada (Sincronizada)");
-            } catch (err) {
-                console.error("❌ Erro ao iniciar gravador MP3:", err);
-                // Mesmo se o gravador falhar, o texto continua funcionando
-            }
-        }
-    }
-  
-    function stopRecording() {
-        if (!isListening) return;
+        try {
+            // PASSO A: Reconhecimento de Texto (Silencioso para o usuário)
+            console.log("🎤 Iniciando reconhecimento de texto...");
+            
+            // Guardamos o texto aqui, mas NÃO mostramos a nota ainda
+            const textReceived = await recognizeSpeechPromise();
+            
+            // PASSO B: Feedback de transição
+            // ============================================================
+            // 2️⃣ VISUAL: GRAVANDO ÁUDIO (Mais uma vez)
+            // ============================================================
+            ui.speechResult.innerHTML = `
+                <div style="
+                    font-size: 1.6rem; 
+                    font-weight: bold; 
+                    color: var(--accent-color); 
+                    text-align: center; 
+                    margin: 20px 0;
+                    padding: 15px;
+                    border: 2px solid var(--accent-color);
+                    border-radius: 12px;
+                    background: rgba(187, 134, 252, 0.1);
+                    box-shadow: 0 0 15px rgba(187, 134, 252, 0.2);
+                    animation: pulse 1.5s infinite;
+                ">
+                    <i class="fa-solid fa-microphone"></i> 
+                    Só mais uma vez!
+                </div>
+            `;
+            
+            // Pequeno delay para garantir que o usuário parou de falar a frase antes de gravar o silêncio
+            await new Promise(r => setTimeout(r, 500));
 
-        // VERIFICAÇÃO INTELIGENTE:
-        // Só muda o texto para "Processando" se NÃO tiver uma nota (simbolo %) na tela.
-        // Isso impede que o aviso de salvamento apague sua nota.
-        const temNotaNaTela = ui.speechResult.innerText.includes('%');
-        
-        if (!temNotaNaTela) {
-            ui.speechResult.innerText = "Gerando áudio...";
-            ui.speechResult.style.color = "#888";
-        }
+            // PASSO C: Gravação de Áudio até Silêncio
+            const audioBlob = await recordUntilSilencePromise();
 
-        ui.micBtn.classList.remove('listening');
-        isListening = false;
+            // --- O GRANDE FINAL (MOSTRA TUDO AGORA) ---
+            
+            // 1. Mostra a Nota (usa o texto guardado no passo A)
+            processSpeechResult(textReceived); 
 
-        // 1. Para o Reconhecimento de Texto
-        if(recognition) {
-            try { recognition.stop(); } catch(e) {}
-        }
+            // 2. Cria Player e Botão Continuar
+            const audioUrl = URL.createObjectURL(audioBlob);
+            createAudioPlayer(audioUrl);
 
-        // 2. Para a Gravação e Gera o Player
-        if (recorder) {
-            recorder.stop().getMp3().then(([buffer, blob]) => {
-                console.log('🔴 Gravação parada. MP3 gerado.');
-                
-                const audioUrl = URL.createObjectURL(blob);
-                createAudioPlayer(audioUrl);
-                
-                // Só mostra mensagem de "Gravado" se não tiver nota na tela
-                if (!temNotaNaTela && ui.speechResult.innerText === "Gerando áudio...") {
-                     ui.speechResult.innerHTML = `
-                        <div style="color: var(--success-color); margin-top:10px;">
-                            <i class="fa-solid fa-check"></i> Áudio salvo.
-                        </div>
-                     `;
-                }
-                
-                // Garante que o botão continuar apareça
-                forceCreateContinueButton();
-
-            }).catch((e) => {
-                console.error('Erro ao gerar MP3:', e);
-                if (!temNotaNaTela) ui.speechResult.innerText = "Erro no áudio.";
-            });
+            // 3. Restaura estado do botão Mic
+            ui.micBtn.classList.remove('listening');
+            ui.micBtn.style.transform = "scale(1)";
+            
+        } catch (err) {
+            console.error(err);
+            ui.speechResult.innerHTML = `<span style="color:var(--error-color)">Não entendi. Tente novamente.</span>`;
+            ui.micBtn.classList.remove('listening');
+        } finally {
+            isListening = false;
         }
     }
     
-    // --- FUNÇÃO AUXILIAR PARA CRIAR BOTÃO SE O SCORE NÃO VIER ---
-    function forceCreateContinueButton() {
-        const btnId = 'btn-continue-speaking';
-        if (document.getElementById(btnId)) return;
-
-        const btnContinue = document.createElement('button');
-        btnContinue.id = btnId;
-        btnContinue.className = 'check-btn'; 
-        btnContinue.style.marginTop = '15px';
-        btnContinue.style.animation = 'fadeIn 0.5s'; 
-        btnContinue.innerText = "Continuar ❯";
-        btnContinue.onclick = () => {
-            nextTask();
-        };
-        ui.speechWrapper.appendChild(btnContinue);
-    }
-    
-    // --- CRIA PLAYER E BOTÃO CONTINUAR ---
+   // --- CRIA PLAYER E BOTÃO CONTINUAR ---
     function createAudioPlayer(url) {
-        console.log('🎵 Player criado. Modo:', trainingMode);
+        console.log('🎵 Criando Player e Botão Continuar...');
         
-        // 1. LIMPEZA: Remove player e botão antigos
-        const oldPlayer = document.getElementById('user-audio-player');
-        if (oldPlayer) oldPlayer.remove();
-    
+        // 1. Remove botão antigo se houver
         const oldBtn = document.getElementById('btn-continue-speaking');
         if (oldBtn) oldBtn.remove();
     
-        // 2. Cria Player de Áudio COM AUTOPLAY
+        // 2. Cria o container do Player
         const playerContainer = document.createElement('div');
         playerContainer.id = 'user-audio-player';
         playerContainer.style.marginTop = '20px';
+        playerContainer.style.animation = 'fadeIn 0.5s';
         playerContainer.innerHTML = `
             <audio controls src="${url}" style="width: 100%; max-width: 300px;" autoplay></audio>
         `;
         ui.speechWrapper.appendChild(playerContainer);
     
-        // 3. SEMPRE cria botão Continuar
+        // 3. AGORA SIM: Cria o botão Continuar
         const btnContinue = document.createElement('button');
         btnContinue.id = 'btn-continue-speaking';
         btnContinue.className = 'check-btn'; 
         btnContinue.style.marginTop = '15px';
+        btnContinue.style.width = '100%'; // Fica bonito no mobile
+        btnContinue.style.maxWidth = '300px';
         btnContinue.style.animation = 'fadeIn 0.5s'; 
-        btnContinue.innerText = "Continuar ❯";
+        btnContinue.innerHTML = "Continuar <i class='fa-solid fa-chevron-right'></i>";
+        
         btnContinue.onclick = () => {
-            console.log('▶️ Botão Continuar clicado');
             nextTask();
         };
+        
         ui.speechWrapper.appendChild(btnContinue);
-        console.log('✅ Botão criado e anexado');
-    }
-
-    // IF soltos
-    // Config Speech API
-    if ('webkitSpeechRecognition' in window) {
-        recognition = new webkitSpeechRecognition();
-        recognition.continuous = false; recognition.interimResults = false; recognition.lang = 'en-US';
-        recognition.onstart = () => { isListening = true; ui.micBtn.classList.add('listening'); ui.speechResult.innerText = "Ouvindo..."; };
-        recognition.onend = () => { isListening = false; ui.micBtn.classList.remove('listening'); };
-        recognition.onresult = (e) => processSpeechResult(e.results[0][0].transcript);
-        recognition.onerror = (e) => { isListening = false; ui.micBtn.classList.remove('listening'); };
-    }
-
-    // --- CONFIGURAÇÃO DE RECONHECIMENTO DE VOZ (Universal) ---
-    // Tenta pegar a API padrão ou a webkit (para garantir compatibilidade total)
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (SpeechRecognition) {
-        recognition = new SpeechRecognition();
-        recognition.continuous = false; 
-        recognition.interimResults = false; 
-        recognition.lang = 'en-US';
         
-        // --- A MÁGICA ACONTECE AQUI ---
-        // Só ligamos o Gravador de MP3 QUANDO o reconhecimento confirmar que está ouvindo
-        recognition.onstart = () => { 
-            console.log("👂 Reconhecimento de voz ativo. Iniciando gravador...");
-            ui.speechResult.innerText = "Ouvindo...";
-            
-            // Inicia o mic-recorder-to-mp3 agora que o canal de áudio está aberto
-            startMp3Recorder(); 
-        };
-        
-        recognition.onend = () => { 
-            console.log("👂 Reconhecimento de voz parou");
-            // Nota: Não paramos o gravador aqui, pois o usuário pode continuar falando
-            // O stopRecording() cuida disso.
-        };
-
-        recognition.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            console.log("🗣️ Texto reconhecido:", transcript);
-            processSpeechResult(transcript);
-        };
-
-        recognition.onerror = (e) => { 
-            console.warn("⚠️ Erro no reconhecimento:", e.error);
-            // Se der erro no texto, não paramos o áudio, deixamos gravar
-        };
-    } else {
-        console.error("❌ Navegador sem suporte a SpeechRecognition");
+        // Rola a tela para baixo para garantir que o usuário veja o botão
+        btnContinue.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  
+
     function processSpeechResult(text) {
-        console.log('🎤 Analisando:', text);
-        
+        // Calcula a nota
         const similarity = avaliarPronuncia(currentTask.correct, text);
         
         let feedbackHTML = "";
@@ -2058,50 +2076,47 @@ Formato: Converte automaticamente para MP3 (o MediaRecorder nativo gera .webm ou
         if (similarity >= 70) {
             color = "var(--success-color)";
             emoji = "✅";
-            // Incrementa score
+            feedbackHTML = `
+                <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0; animation: fadeIn 0.5s;">
+                    ${similarity.toFixed(0)}%
+                </div>
+                <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
+                    ${emoji} Ótima pronúncia!
+                </div>
+                <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
+                    Entendi: "${text}"
+                </div>
+            `;
             score++; ui.scoreDisplay.innerText = score;
-        } else if (similarity >= 50) {
-            color = "orange";
-            emoji = "⚠️";
         } else {
-            color = "var(--error-color)";
-            emoji = "❌";
+            // Lógica para nota média ou baixa...
+            color = similarity >= 50 ? "orange" : "var(--error-color)";
+            emoji = similarity >= 50 ? "⚠️" : "❌";
+            const msg = similarity >= 50 ? "Quase lá!" : "Precisa melhorar";
+            
+            feedbackHTML = `
+                <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0; animation: fadeIn 0.5s;">
+                    ${similarity.toFixed(0)}%
+                </div>
+                <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
+                    ${emoji} ${msg}
+                </div>
+                <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
+                    Entendi: "${text}"
+                </div>
+            `;
         }
-
-        // Monta o HTML do feedback
-        feedbackHTML = `
-            <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0;">
-                ${similarity.toFixed(0)}%
-            </div>
-            <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
-                ${emoji} ${similarity >= 70 ? "Excelente!" : similarity >= 50 ? "Quase lá!" : "Tente de novo"}
-            </div>
-            <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
-                Entendi: "${text}"
-            </div>
-        `;
     
-        // 1. PRIMEIRO: Mostra a nota na tela
+        // Atualiza a DIV de resultado
         ui.speechResult.style.color = color;
         ui.speechResult.innerHTML = feedbackHTML;
-        
-        // Salva nos resultados para o relatório final
+    
+        // Salva no histórico
         if (trainingMode === 'speaking') {
-            speakingResults.push({
-                phrase: currentTask.question,
-                score: similarity,
-                userText: text
-            });
-        }
-
-        // 2. SEGUNDO: Para a gravação (que vai gerar o player e o botão continuar)
-        // Como já atualizamos o HTML acima, o stopRecording atualizado não vai apagar isso.
-        if (isListening) {
-            console.log('🛑 Parando gravação pois já temos o resultado do texto...');
-            stopRecording();
+            speakingResults.push({ phrase: currentTask.question, score: similarity, userText: text });
         }
     }
-
+  
     // --- 4. Jumble (ORGANIZAR FRASE) ---
     function setupJumble() {
         ui.jumbleWrapper.classList.remove('hidden');
