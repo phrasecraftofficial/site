@@ -20,7 +20,6 @@ Recíprocos (Reciprocal)
 Quantifiers (Some, Any, Much, Many, Few, Little, A lot of),
 
 ###II. Auxiliares e Verbos de Estrutura
-3. Verbo To Be (Ser/Estar)
 4. Do / Does (Simple Present)
 5. Did (Simple Past)
 6. Will (Future)
@@ -51,14 +50,10 @@ Quantifiers (Some, Any, Much, Many, Few, Little, A lot of),
 24. Conectores de Comparação (Than, As... As, Like)
 
 
----. no ultimo capitulo Tempos Verbais Avançados
+###VII. Tempos Verbais Avançados
 Present Continuous / Past Continuous (I am studying / They were playing)
-
 Present Perfect vs. Past Simple (I have seen that movie / I saw that movie)
-
 Future Forms além de “will” (going to, present continuous for future)
-
 Perfect Continuous Tenses (I have been studying for two hours.)
-
 Frases condicionais completas (First, Second, Third Conditional)
 
