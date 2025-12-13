@@ -1,7 +1,7 @@
 # 📘 Estrutura Gramatical: Lista de Tópicos Otimizada
 
 ## I. Blocos Fundamentais
-1. Pronomes Pessoais (Sujeito e Objeto)
+1. Pronomes Pessoais (Sujeito) e Auxiliar To Be (Ser/Estar)
 2. Artigos e Determinantes (A, An, The, Zero Article)
 3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
 
@@ -15,7 +15,7 @@
 10. Pronomes Relativos (Relative Pronouns)
 
 ## III. Auxiliares e Estruturas de Tempo
-11. Auxiliar To Be (Ser/Estar)
+11. Pronomes Pessoais (Objeto) e Auxiliar To Be (Ser/Estar)
 12. Dummy Subjects (It e There)
 13. Do / Does (Simple Present)
 14. Did (Simple Past)
