@@ -19,11 +19,20 @@ Relativos (Relative)
 Recíprocos (Reciprocal)
 Quantifiers (Some, Any, Much, Many, Few, Little, A lot of),
 
+Dummy Subjects (it e there)
+
 ###II. Auxiliares e Verbos de Estrutura
 4. Do / Does (Simple Present)
 5. Did (Simple Past)
 6. Will (Future)
 7. Have / Has / Had (Tempos Perfeitos)
+7. Tabela de Verbos Irregulares/Particípios)
+
+###---. Formas Verbais Não Finitas (Gerúndio e Infinitivo)
+Gerúndio (Gerund - V-ing):
+Infinitivo (Infinitive - To + V):
+Bare Infinitive (Infinitivo sem "To"):
+Verbos que admitem Ambos:
 
 ###III. Modais e Obrigações
 9. Modal Verbs (Can, Could, May, Might, Must, Should, Shall, Would)
@@ -56,4 +65,9 @@ Present Perfect vs. Past Simple (I have seen that movie / I saw that movie)
 Future Forms além de “will” (going to, present continuous for future)
 Perfect Continuous Tenses (I have been studying for two hours.)
 Frases condicionais completas (First, Second, Third Conditional)
+
+Reported Speech (Direct and Indirect Speech) (She said that she was tired.)
+Passive Voice (Voz Passiva) (The book was written by her.)
+
+
 
