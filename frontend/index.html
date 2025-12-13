@@ -1,14 +1,38 @@
-<!-- 73
-O que vai acontecer agora:
-O usuário vai em You > Configurações.
+<!-- 74
+Teste
 
-Seleciona, por exemplo, "Baixa (240p)" para economizar dados no 4G.
+Modo Treino (Jumble):
 
-Essa escolha fica salva no celular dele.
+Entre em qualquer lição
+Clique em "Exercícios"
+Na primeira tarefa Jumble, veja as palavras escuras
+Ouça o áudio
+Palavras devem "acender" quando o áudio terminar
 
-Quando ele abrir uma tarefa de vídeo, o sistema dirá ao YouTube: "Por favor, tente carregar em 240p".
 
-Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova qualidade imediatamente.
+Modo Video:
+
+Clique em "Vídeo"
+Palavras devem estar escuras
+Vídeo toca sozinho
+Palavras acendem quando o trecho terminar
+
+
+Logs no Console:
+
+🔊 [Jumble] Tocando áudio e bloqueando palavras
+✅ [Jumble] Áudio terminado. Liberando palavras.
+🎥 [Video] Bloqueando palavras até vídeo tocar
+✅ [Video] Primeira reprodução terminada. Liberando palavras.
+
+------ &
+
+✅ Solução aplicada:
+Agora, quando o usuário clica na última palavra:
+
+✅ A palavra é pronunciada individualmente (speakText(word, 'en-US', ...))
+✅ Só depois que esse áudio termina (callback), verifica se a frase acabou
+✅ Aí sim chama checkJumbleSuccess() que toca a frase completa
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -578,7 +602,7 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v73
+            <i class="fa-solid fa-cube"></i> PhraseCraft v74
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -2387,54 +2411,115 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
             : "Ouça e monte em Inglês:";
         
         const replayBtn = document.getElementById('replay-audio-btn');
-        replayBtn.onclick = (e) => { e.stopPropagation(); speakText(currentTask.audioStart, currentTask.audioLang); };
-        if (currentTask.audioStart) setTimeout(() => speakText(currentTask.audioStart, currentTask.audioLang), 300);
-    
+        replayBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            window.speechSynthesis.cancel(); // 🔥 CANCELA ANTES
+            speakText(currentTask.audioStart, currentTask.audioLang); 
+        };
+        
+        // 🔥 CANCELA QUALQUER ÁUDIO ANTERIOR ANTES DE INICIAR
+        if (currentTask.audioStart) {
+            setTimeout(() => {
+                window.speechSynthesis.cancel(); // 🔥 CANCELA ANTES
+                speakText(currentTask.audioStart, currentTask.audioLang);
+            }, 300);
+        }
+
         let cleanCorrect = currentTask.correct.replace(/[.?!]/g, ''); 
         let words = cleanCorrect.split(' ').sort(() => Math.random() - 0.5);
     
         words.forEach(word => {
             const span = document.createElement('span');
-            span.className = 'word-tag'; 
+            span.className = 'word-tag disabled-word'; // 🔥 JÁ COMEÇA DESABILITADA
             span.innerText = word;
             
             span.onclick = function() { 
-                if (currentTask.wordAudio) speakText(word, 'en-US');
+                // 🔥 PROTEÇÃO: Não faz nada se estiver desabilitada
+                if (this.classList.contains('disabled-word')) {
+                    console.log('⚠️ [Jumble] Palavra bloqueada durante áudio:', word);
+                    return;
+                }
                 
                 const clickedClean = normalizeWord(word);
                 const expectedClean = currentTargetSentence[expectedWordIndex];
-
+            
                 if (clickedClean === expectedClean) {
                     // --- ACERTOU ---
                     ui.answerZone.appendChild(this);
                     expectedWordIndex++;
                     
-                    // >>> AQUI ESTÁ A CORREÇÃO <<<
-                    // Assim que acerta, todas as erradas voltam a ficar clicáveis
                     const disabledWords = ui.wordBank.querySelectorAll('.disabled-word');
                     disabledWords.forEach(w => w.classList.remove('disabled-word'));
-                    // -----------------------------
-
-                    if (expectedWordIndex === currentTargetSentence.length) {
-                        checkJumbleSuccess();
-                    }
-
-                } else {
-                    // --- ERROU ---
-                    this.classList.add('disabled-word');
-                    this.style.backgroundColor = "var(--error-color)";
-                    this.style.color = "white";
                     
-                    // Remove o vermelho após um tempo, mas mantem disabled-word até o próximo acerto
+                    // 🔥 CORREÇÃO: Toca áudio da palavra ANTES de verificar se é a última
+                    if (currentTask.wordAudio) {
+                        window.speechSynthesis.cancel();
+                        speakText(word, 'en-US', () => {
+                            // Callback: Só verifica se acabou DEPOIS do áudio da palavra
+                            if (expectedWordIndex === currentTargetSentence.length) {
+                                checkJumbleSuccess();
+                            }
+                        });
+                    } else {
+                        // Se não tiver wordAudio, verifica direto
+                        if (expectedWordIndex === currentTargetSentence.length) {
+                            checkJumbleSuccess();
+                        }
+                    }
+                } else {
+                    // --- ERROU (CLICOU NA PALAVRA FORA DE ORDEM) ---
+                    
+                    // Animação visual de erro (tremida lateral)
+                    this.animate([
+                        { transform: 'translateX(0)' }, 
+                        { transform: 'translateX(-5px)' }, 
+                        { transform: 'translateX(5px)' }, 
+                        { transform: 'translateX(0)' }
+                    ], { duration: 300 });
+
+                    // Feedback visual (cor) temporário
+                    const originalColor = this.style.borderColor;
+                    this.style.borderColor = 'var(--error-color)';
+                    this.style.color = 'var(--error-color)';
+                    
                     setTimeout(() => {
-                        this.style.backgroundColor = ""; 
-                        this.style.color = "";
-                    }, 500);
+                        this.style.borderColor = originalColor;
+                        this.style.color = ''; // Volta ao CSS original
+                    }, 400);
+
+                    // Feedback tátil (vibrar no celular)
+                    if (navigator.vibrate) navigator.vibrate(50);
                 }
-            };
+            }; // Fim do onclick
             
             ui.wordBank.appendChild(span);
         });
+
+        // 🔥 TOCA O ÁUDIO E LIBERA AS PALAVRAS QUANDO TERMINAR
+        if (currentTask.audioStart) {
+            console.log('🔊 [Jumble] Tocando áudio e bloqueando palavras:', currentTask.audioStart);
+            
+            // Feedback visual durante o áudio
+            ui.answerZone.style.borderColor = 'var(--accent-color)';
+            ui.answerZone.innerHTML = '<span style="color: var(--accent-color); animation: pulse 1s infinite;"><i class="fa-solid fa-volume-high"></i> Ouça atentamente...</span>';
+            
+            speakText(currentTask.audioStart, currentTask.audioLang, () => {
+                console.log('✅ [Jumble] Áudio terminado. Liberando palavras.');
+                
+                // Limpa o feedback visual
+                ui.answerZone.innerHTML = '';
+                ui.answerZone.style.borderColor = '#444';
+                
+                // 🔥 LIBERA TODAS AS PALAVRAS
+                const allWords = ui.wordBank.querySelectorAll('.word-tag');
+                allWords.forEach(w => w.classList.remove('disabled-word'));
+            });
+        } else {
+            // Se não houver áudio (improvável), libera direto
+            console.log('⚠️ [Jumble] Sem áudio definido. Liberando palavras.');
+            const allWords = ui.wordBank.querySelectorAll('.word-tag');
+            allWords.forEach(w => w.classList.remove('disabled-word'));
+        }
         
         const checkBtns = ui.jumbleWrapper.querySelectorAll('.check-btn');
         checkBtns.forEach(btn => btn.style.display = 'none');
@@ -2595,7 +2680,6 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
         initQuizLogic(phaseData); 
     }
 
-    // --- INÍCIO DA PRÁTICA COM VIDEO (COM VALIDAÇÃO INCREMENTAL) ---
     // --- VIDEO (COM REABILITAÇÃO APÓS ACERTO) ---
     function setupVideo() {
         ui.videoWrapper.classList.remove('hidden');
@@ -2606,7 +2690,7 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
             .trim()
             .split(/\s+/)
             .map(w => normalizeWord(w));
-
+    
         document.getElementById('video-answer-zone').innerHTML = '';
         document.getElementById('video-word-bank').innerHTML = '';
         document.getElementById('video-answer-zone').style.borderColor = '#444';
@@ -2614,15 +2698,18 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
     
         const videoId = getYoutubeId(currentTask.videoUrl);
     
-        // 1. Pega a qualidade salva
+        // 🔥 PEGA A QUALIDADE SALVA
         const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
-        console.log("🎬 Carregando vídeo com qualidade:", userQuality);
+        console.log("🎬 [Video] Carregando com qualidade:", userQuality);
     
         if (!ytPlayer) {
+            // --- PRIMEIRA VEZ: CRIA O PLAYER ---
+            console.log("🎬 [Video] Criando player pela primeira vez");
+            
             ytPlayer = new YT.Player('yt-player', {
                 height: '100%', 
                 width: '100%', 
-                videoId: videoId,
+                videoId: videoId, // Carrega o vídeo direto
                 playerVars: { 
                     'playsinline': 1, 
                     'controls': 0, 
@@ -2630,29 +2717,40 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
                     'fs': 0, 
                     'rel': 0, 
                     'iv_load_policy': 3, 
-                    'modestbranding': 1 
+                    'modestbranding': 1,
+                    'vq': userQuality // 🔥 DEFINE QUALIDADE NOS PARAMS
                 },
                 events: { 
                     'onReady': (event) => {
-                        // Tenta setar a qualidade ao carregar
+                        console.log("✅ [Video] Player pronto");
+                        // Tenta forçar a qualidade (backup)
                         event.target.setPlaybackQuality(userQuality);
+                        
+                        // 🔥 CANCELA QUALQUER ÁUDIO ANTES DE TOCAR O VÍDEO
+                        window.speechSynthesis.cancel();
+                        
                         playSegment(currentTask.start, currentTask.end); 
                     }
                 }
             });
         } else {
-            // Se o player já existe, carregamos o novo vídeo JÁ com a sugestão de qualidade
-            // Usamos loadVideoById com sintaxe de objeto para passar suggestedQuality
+            // --- PLAYER JÁ EXISTE: CARREGA NOVO VÍDEO ---
+            console.log("🎬 [Video] Recarregando player existente");
+            
+            // 🔥 CANCELA ÁUDIO ANTES DE CARREGAR NOVO VÍDEO
+            window.speechSynthesis.cancel();
+            
             ytPlayer.loadVideoById({
                 'videoId': videoId,
                 'startSeconds': currentTask.start,
-                'suggestedQuality': userQuality // <--- A MÁGICA ACONTECE AQUI
+                'suggestedQuality': userQuality
             });
             
-            // Pequeno delay de segurança para o loop
+            // Pequeno delay para garantir que o vídeo carregou antes do loop
             setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
         }
     
+        // --- RESTO DO CÓDIGO (PALAVRAS) PERMANECE IGUAL ---
         let words = currentTask.question
             .replace(/\r?\n|\r/g, ' ')
             .trim()
@@ -2665,11 +2763,19 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
     
         words.forEach(word => {
             const span = document.createElement('span');
-            span.className = 'word-tag'; 
+            span.className = 'word-tag disabled-word';
             span.innerText = word;
             
             span.onclick = function() { 
+                if (this.classList.contains('disabled-word')) {
+                    console.log('⚠️ [Video] Palavra bloqueada:', word);
+                    return;
+                }
+                
                 if (document.body.classList.contains('audio-playing')) return;
+                
+                // 🔥 CANCELA ÁUDIO ANTERIOR ANTES DE FALAR
+                window.speechSynthesis.cancel();
                 
                 document.body.classList.add('audio-playing');
                 const cleanWordForAudio = word.replace(/[.,?!":;]/g, '');
@@ -2678,28 +2784,22 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
                 const unlock = () => document.body.classList.remove('audio-playing');
                 utterance.onend = unlock;
                 utterance.onerror = unlock;
-                window.speechSynthesis.cancel();
                 window.speechSynthesis.speak(utterance);
-    
+            
                 const clickedClean = normalizeWord(word);
                 const expectedClean = currentTargetSentence[expectedWordIndex];
-
+            
                 if (clickedClean === expectedClean) {
-                    // --- ACERTOU ---
                     zone.appendChild(this);
                     expectedWordIndex++;
-
-                    // >>> AQUI ESTÁ A CORREÇÃO <<<
-                    // Reabilita as erradas do banco
+            
                     const disabledWords = bank.querySelectorAll('.disabled-word');
                     disabledWords.forEach(w => w.classList.remove('disabled-word'));
-                    // -----------------------------
-
+            
                     if (expectedWordIndex === currentTargetSentence.length) {
                         finishVideoTaskSuccess();
                     }
                 } else {
-                    // --- ERROU ---
                     this.classList.add('disabled-word');
                     this.animate([
                         { transform: 'translateX(0)' }, 
@@ -2711,6 +2811,34 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
             };
             bank.appendChild(span);
         });
+    
+        // 🔥 BLOQUEIO ATÉ O VÍDEO TOCAR
+        console.log('🎥 [Video] Bloqueando palavras até vídeo tocar');
+        
+        let videoStarted = false;
+        const checkVideoInterval = setInterval(() => {
+            if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
+                if (!videoStarted) {
+                    videoStarted = true;
+                    clearInterval(checkVideoInterval);
+                    
+                    setTimeout(() => {
+                        console.log('✅ [Video] Primeira reprodução terminada. Liberando palavras.');
+                        const allWords = bank.querySelectorAll('.word-tag');
+                        allWords.forEach(w => w.classList.remove('disabled-word'));
+                    }, (currentTask.end - currentTask.start) * 1000);
+                }
+            }
+        }, 100);
+        
+        setTimeout(() => {
+            if (!videoStarted) {
+                console.log('⚠️ [Video] Timeout: Liberando palavras por segurança');
+                clearInterval(checkVideoInterval);
+                const allWords = bank.querySelectorAll('.word-tag');
+                allWords.forEach(w => w.classList.remove('disabled-word'));
+            }
+        }, 10000);
     }
 
     // Função auxiliar para sucesso no Vídeo
@@ -2781,28 +2909,40 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
         const match = url.match(regExp);
         return (match && match[2].length === 11) ? match[2] : null;
     }
+  
     // Controla o segmento
     function playSegment(start, end) {
         if (!ytPlayer || !ytPlayer.seekTo) return;
     
-        // Pula para o início da frase
+        // Se a tarefa já foi concluída, não faz loop, toca só uma vez
+        if (isVideoTaskComplete) {
+            ytPlayer.seekTo(start);
+            ytPlayer.playVideo();
+            return; 
+        }
+    
         ytPlayer.seekTo(start);
         ytPlayer.playVideo();
     
-        // Limpa timer anterior
         if (videoTimer) clearInterval(videoTimer);
     
-        // Cria verificação para pausar no final da frase
         videoTimer = setInterval(() => {
             if (!ytPlayer.getCurrentTime) return;
             
             const current = ytPlayer.getCurrentTime();
-            // Se passou do tempo final (com margem de 0.5s para não cortar abruptamente)
+            
+            // Chegou ao fim do trecho?
             if (current >= end) {
-                ytPlayer.pauseVideo();
-                clearInterval(videoTimer);
+                if (videoLoopEnabled && !isVideoTaskComplete) {
+                    // Se Loop ON e não acabou: Volta pro início
+                    ytPlayer.seekTo(start);
+                } else {
+                    // Se Loop OFF ou acabou: Pausa
+                    ytPlayer.pauseVideo();
+                    clearInterval(videoTimer);
+                }
             }
-        }, 100); // Checa a cada 100ms
+        }, 100);
     }
     
     function replayVideoSegment() {
@@ -2841,40 +2981,6 @@ Se o player já estiver carregado, ele recarrega o vídeo aplicando a nova quali
             btn.className = 'check-btn loop-inactive';
             btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Loop: OFF</span>';
         }
-    }
-
-    function playSegment(start, end) {
-        if (!ytPlayer || !ytPlayer.seekTo) return;
-  
-        // Se a tarefa já foi concluída, não faz loop, toca só uma vez
-        if (isVideoTaskComplete) {
-            ytPlayer.seekTo(start);
-            ytPlayer.playVideo();
-            return; 
-        }
-    
-        ytPlayer.seekTo(start);
-        ytPlayer.playVideo();
-    
-        if (videoTimer) clearInterval(videoTimer);
-    
-        videoTimer = setInterval(() => {
-            if (!ytPlayer.getCurrentTime) return;
-            
-            const current = ytPlayer.getCurrentTime();
-            
-            // Chegou ao fim do trecho?
-            if (current >= end) {
-                if (videoLoopEnabled && !isVideoTaskComplete) {
-                    // Se Loop ON e não acabou: Volta pro início
-                    ytPlayer.seekTo(start);
-                } else {
-                    // Se Loop OFF ou acabou: Pausa
-                    ytPlayer.pauseVideo();
-                    clearInterval(videoTimer);
-                }
-            }
-        }, 100);
     }
   
     function checkVideoAnswer() {
