@@ -1,0 +1,16 @@
+Start
+The teacher shows a sentence/excerpt from a video.
+
+Stage 1 (What was understood):
+The student says what they understood.
+
+Stage 2 (The Answer):
+Only after two attempts, if the student still doesn't get it right,
+the teacher reveals the text/explains the sentence.
+
+If the student misunderstood the word ou sentence 
+because of the fast pronunciation (connected speech),
+use the excerpt to explain phenomena such as
+linking (joining of sounds),
+elision (dropping of sounds), and
+reductions (words that lose their emphasis, like "gonna," "wanna").
