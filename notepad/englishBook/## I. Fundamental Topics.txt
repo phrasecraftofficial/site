@@ -1,12 +1,34 @@
 ## I. Fundamental Topics
 1. Personal Pronouns (Subject) and the Auxiliary Verb To Be
-I am happy in the morning. Am I ready for school? I am not late, so I take my time getting ready.
-You are my best friend, and we're going to the park together. Are you excited about the game we're playing? You are not nervous, are you?
-We are classmates at the park, and we're all looking forward to the match. Are we early for the game? We are not tired, so we can warm up and get ready to play.
-He is a good player, and he's always helping us improve our skills. Is he the captain of the team? He is not angry, even when we make mistakes.
-She is very smart and always comes up with great ideas. Is she the leader of the group? She is not shy, so she speaks up and shares her thoughts.
-It is a sunny day, perfect for a game outside. Is it too hot outside? It is not cloudy, so we should be fine.
-They are strong runners, and they're always competing to see who can run the fastest. Are they prepared for the race? They are not afraid, so they're going to give it their all.
+### Story: A Day at the Park
+
+I am happy in the morning.  
+Am I ready for school?  
+I am not late.  
+
+You are my best friend.  
+Are you excited about the game?  
+You are not nervous.  
+
+We are classmates at the park.  
+Are we early for the match?  
+We are not tired.  
+
+He is a good player.  
+Is he the captain of the team?  
+He is not angry.  
+
+She is very smart.  
+Is she the leader of the group?  
+She is not shy.  
+
+It is a sunny day.  
+Is it too hot outside?  
+It is not cloudy.  
+
+They are strong runners.  
+Are they prepared for the race?  
+They are not afraid.  
 
 2. Articles and Determiners (A, An, The, Zero Article)
 
