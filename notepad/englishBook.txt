@@ -1,73 +1,65 @@
-Com base em toda a nossa discussão, esta é a lista completa dos tópicos para o seu Tutorial de Estrutura Gramatical, organizados logicamente:
+# 📘 Estrutura Gramatical: Lista de Tópicos Otimizada
 
----
+## I. Blocos Fundamentais
+1. Pronomes Pessoais (Sujeito e Objeto)
+2. Artigos e Determinantes (A, An, The, Zero Article)
+3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
 
-##📘 Estrutura Gramatical: Lista de Tópicos###
+## II. Pronomes Detalhados
+4. Possessivos (Possessive Pronouns e Adjectives)
+5. Reflexivos (Reflexive Pronouns)
+6. Demonstrativos (Demonstrative Pronouns)
+7. Indefinidos (Indefinite Pronouns - Inclui Something)
+8. Interrogativos (Interrogative Pronouns)
+9. Recíprocos (Reciprocal Pronouns)
+10. Pronomes Relativos (Relative Pronouns)
 
-###I. Blocos Fundamentais
-1. Pronomes Pessoais
-2. Auxiliar To Be
-3. Artigos e Determinantes (A, An, The, Zero Article)
+## III. Auxiliares e Estruturas de Tempo
+11. Auxiliar To Be (Ser/Estar)
+12. Dummy Subjects (It e There)
+13. Do / Does (Simple Present)
+14. Did (Simple Past)
+15. Will (Future)
+16. Have / Has / Had (Tempos Perfeitos)
+17. Tabela de Verbos Irregulares / Particípios
 
-###II. Pronouns
-4. Possessivos (Possessive Pronouns)  
-5. Reflexivos (Reflexive Pronouns)  
-6. Demonstrativos (Demonstrative Pronouns)  
-7. Indefinidos (Indefinite Pronouns)  
-8. Interrogativos (Interrogative Pronouns)  
-9. Relativos (Relative Pronouns)  
-10. Recíprocos (Reciprocal Pronouns)  
-11. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)   
+## IV. Modais e Obrigações
+18. Modal Verbs (Can, Could, May, Might, Must, Should, Shall, Would)
+19. Must vs. Have To (Obrigação e Proibição)
+20. Used To e Ought To (Hábitos Passados e Dever Formal)
 
+## V. Formas Verbais Não Finitas
+21. Gerúndio (Gerund - V-ing)
+22. Infinitivo (Infinitive - To + V)
+23. Bare Infinitive (Infinitivo sem "To")
+24. Verbos que admitem Ambos (Gerúndio e Infinitivo)
 
-### III. Auxiliares e Verbos de Estrutura
-12. Dummy Subjects (it e there)  
-13. Do / Does (Simple Present)  
-14. Did (Simple Past)  
-15. Will (Future)  
-16. Have / Has / Had (Tempos Perfeitos)  
-17. Tabela de Verbos Irregulares / Particípios  
+## VI. Verbos Multifuncionais
+25. Verbos Chave: Get e Take
+26. Phrasal Verbs (Introdução ao conceito)
 
-### IV. Formas Verbais Não Finitas (Gerúndio e Infinitivo)
-18. Gerúndio (Gerund - V-ing)  
-19. Infinitivo (Infinitive - To + V)  
-20. Bare Infinitive (Infinitivo sem "To")  
-21. Verbos que admitem Ambos  
+## VII. Advérbios e Partículas Essenciais
+27. Advérbios de Tempo (Yet, Still, Already)
+28. Advérbios de Frequência (Always, Never, Usually, Often)
+29. Advérbios de Grau e Certeza (Very, Too, So, Perhaps, Certainly)
+30. Partículas e Interjeições Funcionais (Please, Sorry, Well, Kind of)
 
-### V. Modais e Obrigações
-22. Modal Verbs (Can, Could, May, Might, Must, Should, Shall, Would)  
-23. Must vs. Have To (Obrigação e Proibição)  
-24. Used To e Ought To (Hábitos Passados e Dever Formal)  
+## VIII. Elementos de Conexão (Preposições e Conectores)
+31. Preposições Chave (Tempo, Lugar, Relação)
+32. Conectores de Contraste e Concessão (But, However, Although)
+33. Conectores de Causa e Razão (Because, Since, Why)
+34. Conectores de Adição (And, Also, Moreover, As well as)
+35. Conectores Condicionais (If, Unless, Without, Provided that)
+36. Conectores de Tempo e Sequência (When, Before, After, Then)
+37. Conectores de Comparação (Than, As... As, Like)
 
-### VI. Verbos Multifuncionais
-25. Verbos Chave: Get e Take  
-26. Phrasal Verbs (Introdução ao conceito)  
-
-### VII. Advérbios e Partículas Essenciais
-27. Advérbios de Tempo (Yet, Still, Already)  
-28. Advérbios de Frequência (Always, Never, Usually, Often)  
-29. Advérbios de Grau e Certeza (Very, Too, So, Perhaps, Certainly)  
-30. Partículas e Interjeições Funcionais (Please, Sorry, Well, Kind of)  
-
-### VIII. Elementos de Conexão (Preposições e Conectores)
-31. Preposições Chave (Tempo, Lugar, Relação)  
-32. Conectores de Contraste e Concessão (But, However, Although)  
-33. Conectores de Causa e Razão (Because, Since, Why)  
-34. Conectores de Adição (And, Also, Moreover, As well as)  
-35. Conectores Condicionais (If, Unless, Without, Provided that)  
-36. Conectores de Tempo e Sequência (When, Before, After, Then)  
-37. Conectores de Comparação (Than, As... As, Like)  
-
-### IX. Tempos Verbais Avançados
-38. Present Continuous / Past Continuous (I am studying / They were playing)  
-39. Present Perfect vs. Past Simple (I have seen that movie / I saw that movie)  
-40. Future Forms além de “will” (going to, present continuous for future)  
-41. Perfect Continuous Tenses (I have been studying for two hours.)  
+## IX. Tempos Verbais Avançados
+38. Present Continuous / Past Continuous
+39. Present Perfect vs. Past Simple
+40. Future Forms além de “will” (going to, present continuous for future)
+41. Perfect Continuous Tenses
 42. Frases condicionais completas (First, Second, Third Conditional)
 
-### X. Estruturas Especiais
-43. Reported Speech (Direct and Indirect Speech) (She said that she was tired.)  
-44. Passive Voice (Voz Passiva) (The book was written by her.)  
-
-
-
+## X. Estruturas Especiais
+43. Reported Speech (Direct and Indirect Speech)
+44. Passive Voice (Voz Passiva)
