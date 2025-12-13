@@ -1,0 +1,5 @@
+https://github.com/phrasecraftofficial/site/new/main/notepad/englishBook
+## I. Blocos Fundamentais
+1. Pronomes Pessoais (Sujeito e Objeto)
+2. Artigos e Determinantes (A, An, The, Zero Article)
+3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
