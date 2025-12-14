@@ -1,5 +1,6 @@
 <!-- 76
 add duels section
+and path section and code
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -592,7 +593,7 @@ add duels section
             <a class="sidebar-item" onclick="navigateTo('challenges')">
                 <span class="material-symbols-outlined">swords</span> Duels
             </a>
-            <a class="sidebar-item" onclick="navigateTo('paths')">
+            <a class="sidebar-item" onclick="navigateTo('path')">
                 <i class="fa-solid fa-map-marked-alt"></i> Path
             </a>
             
@@ -645,7 +646,28 @@ add duels section
             <section id="view-challenges" class="view-section">
             </section>
 
-            <section id="path" class="view-section">
+            <section id="view-path" class="view-section">
+                <h2 style="margin-bottom: 20px;">Trilhas de Aprendizado</h2>
+                <div id="path-list"></div>
+            </section>
+            
+            <!-- NOVA SECTION: Detalhes da Trilha -->
+            <section id="view-path-detail" class="view-section">
+                <div style="margin-bottom: 20px;">
+                    <button onclick="navigateTo('path')" style="background: transparent; border: none; color: var(--text-primary); cursor: pointer; font-size: 1.2rem;">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                </div>
+                
+                <div style="background: var(--surface-color); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h2 id="path-detail-title" style="color: var(--accent-color); margin-bottom: 10px;">Carregando...</h2>
+                    <p id="path-detail-description" style="color: var(--text-secondary); margin-bottom: 15px;">...</p>
+                    <div class="progress-bar" style="height: 8px;">
+                        <div id="path-detail-progress" class="progress-fill"></div>
+                    </div>
+                </div>
+            
+                <div id="path-lessons-list"></div>
             </section>
           
             <section id="view-you" class="view-section">
@@ -846,7 +868,7 @@ add duels section
             <span class="material-symbols-outlined">swords</span>
             <span>Duels</span>
         </div>
-        <div class="footer-item" onclick="navigateTo('paths')">
+        <div class="footer-item" onclick="navigateTo('path')">
             <i class="fa-solid fa-map-marked-alt"></i>
             <span>Path</span>
         </div>
@@ -1025,6 +1047,28 @@ function reloadWithFeedback(event) {
         },
     ];
 
+    // --- BASE DE DADOS DE path (TRILHAS) ---
+    const pathDB = [
+        {
+            id: 'beginner-path',
+            title: 'Trilha Iniciante',
+            description: 'Aprenda o básico do inglês',
+            thumb: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400',
+            lessons: [1, 2], // IDs das lições (na ordem)
+            currentLesson: 0, // Índice da lição desbloqueada (0 = primeira)
+            progress: 0 // % de conclusão (0-100)
+        },
+        {
+            id: 'intermediate-path',
+            title: 'Trilha Intermediária',
+            description: 'Expanda seu vocabulário',
+            thumb: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400',
+            lessons: [1, 2],
+            currentLesson: 0,
+            progress: 0
+        }
+    ];
+  
     // 0 = primeira página (1-5)
     let currentPhase = 0;
     
@@ -1259,11 +1303,56 @@ function reloadWithFeedback(event) {
         renderLessonList(allLessons);
 
         // --- NOVO: CHECA O LINK DEPOIS DE CARREGAR TUDO ---
-        checkDeepLink();
+        checkDeepLink();// Dentro de initApp(), após renderLessonList():
+      
+        renderPathList(pathDB); // Pre-carrega os path
     }
-
-    // Agora a função aceita uma lista como parâmetro
-    // --- 3. ATUALIZAÇÃO DA RENDERIZAÇÃO (CORRIGIDA PARA LER DO SERVIDOR) ---
+  
+    // --- FUNÇÃO GENÉRICA PARA CRIAR CARD ---
+    function createLessonCard(lesson, onClick, isLocked = false) {
+        const card = document.createElement('div');
+        card.className = 'lesson-card';
+        
+        // Se estiver bloqueado, adiciona classe e desabilita clique
+        if (isLocked) {
+            card.style.opacity = '0.5';
+            card.style.cursor = 'not-allowed';
+            card.onclick = () => {
+                alert('🔒 Complete a lição anterior para desbloquear!');
+            };
+        } else {
+            card.onclick = onClick;
+        }
+    
+        // Lógica de subtítulo (mantida igual)
+        let subtitleText = "";
+        if (lesson.cards != null && lesson.phrases != null) {
+            subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
+        } else if (lesson.stats) {
+            subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
+        } else if (Array.isArray(lesson.data)) {
+            const totalPhrases = lesson.data.length;
+            const totalCards = lesson.data.reduce((acc, item) => acc + (item.vocab ? item.vocab.length : 0), 0);
+            subtitleText = `${totalCards} cards | ${totalPhrases} frases`;
+        } else {
+            subtitleText = "..."; 
+        }
+    
+        card.innerHTML = `
+            ${isLocked ? '<div style="position:absolute; top:10px; right:10px; font-size:1.5rem;">🔒</div>' : ''}
+            <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
+            <div class="lesson-info">
+                <div class="lesson-title">${lesson.title}</div>
+                <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--accent-color);">
+                    <i class="fa-solid fa-layer-group"></i> ${subtitleText}
+                </div>
+            </div>
+        `;
+        
+        return card;
+    }
+    
+    // --- RENDERIZA LISTA AVULSA (HOME) ---
     function renderLessonList(lessonsToRender) {
         ui.listContainer.innerHTML = '';
         
@@ -1271,49 +1360,98 @@ function reloadWithFeedback(event) {
             ui.listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#888">Nenhuma lição disponível.</p>';
             return;
         }
-
+    
         lessonsToRender.forEach(lesson => {
-            const card = document.createElement('div');
-            card.className = 'lesson-card';
-            card.onclick = () => openPreview(lesson.id);
-
-            // --- LÓGICA DE SUBTÍTULO OTIMIZADA ---
-            let subtitleText = "";
-
-            // 1. Prioridade: Dados diretos do Appwrite (na raiz do objeto)
-            // Usamos != null para garantir que pegue mesmo se for 0, mas ignore undefined
-            if (lesson.cards != null && lesson.phrases != null) {
-                subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
-            }
-            // 2. Fallback: Dados manuais locais (objeto stats antigo)
-            else if (lesson.stats) {
-                subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
-            } 
-            // 3. Fallback: Cálculo se os dados brutos já estiverem carregados
-            else if (Array.isArray(lesson.data)) {
-                const totalPhrases = lesson.data.length;
-                const totalCards = lesson.data.reduce((acc, item) => acc + (item.vocab ? item.vocab.length : 0), 0);
-                subtitleText = `${totalCards} cards | ${totalPhrases} frases`;
-            } 
-            // 4. Último caso: Deixa vazio ou coloca um placeholder discreto
-            else {
-                subtitleText = "..."; 
-            }
-
-            // Renderiza o card
-            card.innerHTML = `
-                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
-                <div class="lesson-info">
-                    <div class="lesson-title">${lesson.title}</div>
-                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--accent-color);">
-                        <i class="fa-solid fa-layer-group"></i> ${subtitleText}
-                    </div>
-                </div>
-            `;
+            const card = createLessonCard(lesson, () => openPreview(lesson.id));
             ui.listContainer.appendChild(card);
         });
     }
-
+  
+    // --- RENDERIZA TRILHAS (PATH) ---
+    function renderPathList(pathToRender) {
+        const pathContainer = document.getElementById('path-list');
+        if (!pathContainer) {
+            console.error('Elemento #path-list não encontrado');
+            return;
+        }
+        
+        pathContainer.innerHTML = '';
+        
+        if (!pathToRender || pathToRender.length === 0) {
+            pathContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#888">Nenhuma trilha disponível.</p>';
+            return;
+        }
+    
+        pathToRender.forEach(path => {
+            const pathCard = document.createElement('div');
+            pathCard.className = 'lesson-card';
+            pathCard.style.borderLeft = '4px solid var(--accent-color)'; // Destaque visual
+            pathCard.onclick = () => openPath(path.id);
+    
+            pathCard.innerHTML = `
+                <img src="${path.thumb}" class="lesson-thumb" alt="${path.title}" loading="lazy">
+                <div class="lesson-info">
+                    <div class="lesson-title">${path.title}</div>
+                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--text-secondary);">
+                        ${path.description}
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.8em; color: var(--accent-color);">
+                        <i class="fa-solid fa-route"></i> ${path.lessons.length} lições | ${path.progress}% concluído
+                    </div>
+                    <div class="progress-bar" style="margin-top: 8px; height: 4px;">
+                        <div class="progress-fill" style="width: ${path.progress}%; background: var(--accent-color);"></div>
+                    </div>
+                </div>
+            `;
+            
+            pathContainer.appendChild(pathCard);
+        });
+    }
+    
+    // --- ABRE UMA TRILHA (MOSTRA LIÇÕES SEQUENCIAIS) ---
+    function openPath(pathId) {
+        const path = pathDB.find(p => p.id === pathId);
+        if (!path) {
+            alert('Trilha não encontrada');
+            return;
+        }
+    
+        // Atualiza URL
+        history.pushState({ view: 'path-detail', pathId: pathId }, '', `#path-${pathId}`);
+    
+        // Mostra a view de detalhes do path
+        ui.views.forEach(v => v.classList.remove('active'));
+        const pathDetailView = document.getElementById('view-path-detail');
+        if (pathDetailView) pathDetailView.classList.add('active');
+    
+        // Renderiza cabeçalho
+        document.getElementById('path-detail-title').innerText = path.title;
+        document.getElementById('path-detail-description').innerText = path.description;
+        document.getElementById('path-detail-progress').style.width = `${path.progress}%`;
+    
+        // Renderiza lições da trilha
+        const lessonsContainer = document.getElementById('path-lessons-list');
+        lessonsContainer.innerHTML = '';
+    
+        path.lessons.forEach((lessonId, index) => {
+            const lesson = allLessons.find(l => l.id == lessonId);
+            if (!lesson) return;
+    
+            const isLocked = index > path.currentLesson;
+            const card = createLessonCard(
+                lesson, 
+                () => {
+                    if (!isLocked) {
+                        openPreview(lesson.id);
+                    }
+                },
+                isLocked
+            );
+            
+            lessonsContainer.appendChild(card);
+        });
+    }
+  
     // Adicionado parâmetro 'addToHistory' com padrão true
     async function navigateTo(viewName, addToHistory = true) {
         stopVideoPlayback();
@@ -1334,6 +1472,11 @@ function reloadWithFeedback(event) {
                  navigateTo('you', addToHistory); 
                  return;
              }
+        }
+            
+        // Dentro de navigateTo(), adicione:
+        if (viewName === 'path') {
+            renderPathList(pathDB);
         }
 
         // --- GERENCIAMENTO DE HISTÓRICO ---
