@@ -580,7 +580,7 @@ add duels section
     </header>
 
     <div class="app-body">
-        
+      
         <aside class="app-sidebar">
             <a class="sidebar-item active" onclick="navigateTo('home')">
                 <i class="fa-solid fa-house"></i> Home
@@ -588,6 +588,14 @@ add duels section
             <a class="sidebar-item" onclick="navigateTo('you')">
                 <i class="fa-regular fa-user"></i> You
             </a>
+            <!-- NOVOS ITENS ADICIONADOS -->
+            <a class="sidebar-item" onclick="navigateTo('challenges')">
+                <span class="material-symbols-outlined">swords</span> Duels
+            </a>
+            <a class="sidebar-item" onclick="navigateTo('paths')">
+                <i class="fa-solid fa-map-marked-alt"></i> Path
+            </a>
+            
             <div style="margin-top: auto; padding: 20px; font-size: 0.8rem; color: #555;">
                 PhraseCraft v1.0
             </div>
@@ -636,6 +644,9 @@ add duels section
 
             <section id="view-challenges" class="view-section">
             </section>
+
+            <section id="path" class="view-section">
+            </section>
           
             <section id="view-you" class="view-section">
                 <div style="background: var(--surface-color); padding: 30px 20px; text-align: center; border-bottom: 1px solid var(--border-color);">
@@ -658,15 +669,17 @@ add duels section
                     </div>
                 </div>
 
-                <div style="padding: 20px;">
-                    <button class="option-btn" style="width: 100%; text-align: center; margin-bottom: 10px; color: var(--error-color); border-color: var(--error-color);" onclick="handleLogout()">
+                <div style="padding: 20px; margin: ; display: flex; flex-direction: column; align-items: center;">
+    
+                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 20px;" onclick="navigateTo('settings')">
+                        <i class="fa-solid fa-gear"></i> Configurações
+                    </button>
+                    
+                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 20px; color: var(--error-color); border-color: var(--error-color);" onclick="handleLogout()">
                         <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
                     </button>
+                    
                 </div>
-              
-                <button class="option-btn" style="width: 100%; text-align: center; margin-bottom: 10px;" onclick="navigateTo('settings')">
-                    <i class="fa-solid fa-gear"></i> Configurações
-                </button>
             </section>
           
             <section id="view-login" class="view-section">
@@ -699,10 +712,18 @@ add duels section
 
             <section id="view-settings" class="view-section">
                 <div style="padding: 20px;">
-                    <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-arrow-left" onclick="navigateTo('you')" style="cursor: pointer;"></i> 
-                        Configurações
-                    </h2>
+                    <div style="position: relative; text-align: center; padding-bottom: 20px;">
+        
+                        <i 
+                            class="fa-solid fa-arrow-left" 
+                            onclick="showView('profile')" 
+                            style="cursor: pointer; position: absolute; left: 0; top: 5px; font-size: 1.5rem; color: var(--text-primary);"
+                        ></i>
+                        
+                        <h2 style="margin-bottom: 0; color: var(--accent-color);">
+                            Configurações
+                        </h2>
+                    </div>
             
                     <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
                         <label style="display: block; margin-bottom: 10px; color: var(--text-secondary);">Qualidade de Vídeo (Padrão)</label>
@@ -822,10 +843,12 @@ add duels section
             <span>You</span>
         </div>
         <div class="footer-item" onclick="navigateTo('challenges')">
-            <span class="material-symbols-outlined">
-swords
-</span>
+            <span class="material-symbols-outlined">swords</span>
             <span>Duels</span>
+        </div>
+        <div class="footer-item" onclick="navigateTo('paths')">
+            <i class="fa-solid fa-map-marked-alt"></i>
+            <span>Path</span>
         </div>
     </footer>
 
