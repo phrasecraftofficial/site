@@ -1307,11 +1307,11 @@ function renderStageCards() {
         stageCardsContainer.appendChild(card);
     });
     
-        // 3. Seleção Automática Inicial (Estágio 1). O handleStageClick cuidará do Tópico 1.1.
-        if (structuredData.length > 0) {
-            const initialStage = structuredData[0];
-            handleStageClick(initialStage.id, initialStage.title);
-        }
+    // 3. Seleção Automática Inicial (Estágio 1). O handleStageClick cuidará do Tópico 1.1.
+    if (structuredData.length > 0) {
+        const initialStage = structuredData[0];
+        handleStageClick(initialStage.id, initialStage.title);
+    }
 }
 
 function renderTopicCards(stageId) {
@@ -1606,6 +1606,9 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (targetView) targetView.classList.add('active');
 
         // Menu Ativo
+        if(viewName === 'path') {
+            setLayoutMode('immersive');
+        } 
         if(viewName === 'home' || viewName === 'preview') {
             document.querySelector('.footer-item:nth-child(1)').classList.add('active');
             document.querySelector('.sidebar-item:nth-child(1)').classList.add('active');
