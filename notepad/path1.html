@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stage & Topics Viewer</title>
-    <link rel="stylesheet" href="style.css">
     <style>
     :root {
     --bg-dark: #121212;
@@ -12,323 +11,274 @@
     --accent-color: #bb86fc; /* Cor de destaque para o tema dark */
     --card-bg: #1e1e1e;
     --card-hover: #2c2c2c;
-}
+    }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-light);
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-}
-
-/* --- Títulos --- */
-.title-area {
-    padding: 15px 0;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-#stage-title {
-    font-size: 2.5em;
-    color: var(--accent-color);
-    margin: 0;
-}
-
-#topic-title {
-    font-size: 1.8em;
-    color: var(--text-light);
-    margin: 0;
-}
-
-/* --- Separador --- */
-hr {
-    border: none;
-    height: 1px;
-    background-color: var(--card-bg);
-    width: 80%;
-    margin: 10px 0;
-}
-
-/* --- Área de Cards --- */
-.card-area {
-    width: 100%;
-    max-width: 1000px;
-    margin-bottom: 30px;
-}
-
-.card-label {
-    font-size: 0.75em;
-    color: var(--accent-color);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-}
-
-.mini-cards {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 15px;
-    background-color: var(--card-bg);
-    border-radius: 8px;
-    min-height: 50px; /* Para manter a área visível mesmo vazia */
-}
-
-.mini-card {
-    background-color: var(--bg-dark);
-    color: var(--text-light);
-    border: 1px solid var(--accent-color);
-    border-radius: 4px;
-    padding: 8px 15px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.mini-card:hover {
-    background-color: var(--card-hover);
-    transform: translateY(-2px);
-}
-
-.mini-card.active {
-    background-color: var(--accent-color);
-    color: var(--bg-dark); /* Texto escuro no card ativo */
-    border-color: var(--accent-color);
-}
-
-.placeholder-text {
-    color: #888;
-    font-style: italic;
-}
-
-/* Responsividade básica */
-@media (max-width: 600px) {
     body {
-        padding: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-light);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
     }
+
+    /* --- Títulos --- */
+    .title-area {
+        padding: 15px 0;
+        text-align: center;
+        margin-bottom: 20px;
+        width: 100%;
+        max-width: 1000px;
+    }
+
     #stage-title {
-        font-size: 2em;
+        font-size: 2.5em;
+        color: var(--accent-color);
+        margin: 0;
     }
+
     #topic-title {
-        font-size: 1.5em;
+        font-size: 1.8em;
+        color: var(--text-light);
+        margin: 0;
     }
+
+    /* --- Separador --- */
+    hr {
+        border: none;
+        height: 1px;
+        background-color: var(--card-bg);
+        width: 80%;
+        max-width: 900px;
+        margin: 10px 0 30px 0;
+    }
+
+    /* --- Área de Cards --- */
+    .card-area {
+        width: 100%;
+        max-width: 1000px;
+        margin-bottom: 30px;
+    }
+
+    .card-label {
+        font-size: 0.75em;
+        color: var(--accent-color);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        text-align: left;
+    }
+
     .mini-cards {
-        justify-content: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 15px;
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        min-height: 50px; /* Para manter a área visível mesmo vazia */
+        justify-content: flex-start; /* Alinha os cards à esquerda */
     }
-}
+
+    .mini-card {
+        background-color: var(--bg-dark);
+        color: var(--text-light);
+        border: 1px solid var(--accent-color);
+        border-radius: 4px;
+        padding: 8px 15px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s, transform 0.1s;
+        /* Estilo para ter apenas o número e ser compacto */
+        width: 40px; /* Largura fixa para o número */
+        height: 40px; /* Altura fixa para o número */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+    }
+
+    .mini-card:hover {
+        background-color: var(--card-hover);
+        transform: translateY(-2px);
+    }
+
+    .mini-card.active {
+        background-color: var(--accent-color);
+        color: var(--bg-dark); /* Texto escuro no card ativo */
+        border-color: var(--accent-color);
+    }
+
+    .placeholder-text {
+        color: #888;
+        font-style: italic;
+    }
+
+    /* Responsividade básica */
+    @media (max-width: 600px) {
+        body {
+            padding: 10px;
+        }
+        #stage-title {
+            font-size: 2em;
+        }
+        #topic-title {
+            font-size: 1.5em;
+        }
+        .mini-cards {
+            justify-content: center;
+        }
+    }
     </style>
 </head>
 <body>
 
-    <section class="stage-container">
-        <div class="title-area">
-            <h1 id="stage-title">Selecione um Stage</h1>
-        </div>
+    <div class="title-area">
+        <h1 id="stage-title">Selecione um Estágio</h1>
+    </div>
 
-        <div class="card-area">
-            <p class="card-label">STAGE</p>
-            <div class="mini-cards" id="stage-cards">
-                </div>
-        </div>
-    </section>
+    <div class="card-area">
+        <div class="card-label">Estágios</div>
+        <div class="mini-cards" id="stage-cards-container">
+            </div>
+    </div>
 
     <hr>
 
-    <section class="topic-container">
-        <div class="title-area">
-            <h2 id="topic-title">Selecione um Tópico</h2>
-        </div>
+    <div class="title-area">
+        <h2 id="topic-title">Selecione um Tópico</h2>
+    </div>
 
-        <div class="card-area">
-            <p class="card-label">TOPICS</p>
-            <div class="mini-cards" id="topic-cards">
-                <p class="placeholder-text">Clique em um Stage acima para ver os tópicos.</p>
+    <div class="card-area">
+        <div class="card-label">Tópicos Relacionados ao Estágio Selecionado</div>
+        <div class="mini-cards" id="topic-cards-container">
+            <span class="placeholder-text">Clique em um Estágio para ver os Tópicos.</span>
             </div>
-        </div>
-    </section>
+    </div>
 
     <script>
-    // Estrutura de dados: 10 Stages com Tópicos variados
-const stagesData = [
-    { 
-        title: "Stage 1: Introdução à Plataforma", 
-        topics: [
-            "Visão Geral", 
-            "Configuração Inicial", 
-            "Estrutura de Arquivos"
-        ] 
-    },
-    { 
-        title: "Stage 2: Fundamentos do Front-End", 
-        topics: [
-            "HTML Semântico", 
-            "CSS Avançado", 
-            "Responsividade", 
-            "Introdução ao DOM"
-        ] 
-    },
-    { 
-        title: "Stage 3: Lógica e JavaScript", 
-        topics: [
-            "Variáveis e Tipos", 
-            "Estruturas de Controle", 
-            "Funções e Escopo"
-        ] 
-    },
-    { 
-        title: "Stage 4: Manipulação de Dados", 
-        topics: [
-            "Arrays e Objetos", 
-            "Métodos de Iteração", 
-            "Fetch API e Assincronismo"
-        ] 
-    },
-    { 
-        title: "Stage 5: Ferramentas de Desenvolvimento", 
-        topics: [
-            "Git e Versionamento", 
-            "Terminal Básico", 
-            "NPM e Dependências"
-        ] 
-    },
-    { 
-        title: "Stage 6: Banco de Dados", 
-        topics: [
-            "Conceitos SQL", 
-            "Modelagem", 
-            "Queries Avançadas", 
-            "NoSQL Básico"
-        ] 
-    },
-    { 
-        title: "Stage 7: Back-End com Node.js", 
-        topics: [
-            "Setup do Servidor", 
-            "Rotas e Middleware", 
-            "Autenticação JWT"
-        ] 
-    },
-    { 
-        title: "Stage 8: Otimização e Performance", 
-        topics: [
-            "Caching", 
-            "Otimização de Imagens", 
-            "Web Vitals"
-        ] 
-    },
-    { 
-        title: "Stage 9: Testes e Qualidade", 
-        topics: [
-            "Testes Unitários", 
-            "Testes de Integração", 
-            "Revisão de Código"
-        ] 
-    },
-    { 
-        title: "Stage 10: Deploy e Produção", 
-        topics: [
-            "Configuração de Ambiente", 
-            "CI/CD", 
-            "Monitoramento"
-        ] 
-    },
-];
+        // --- Dados de Exemplo ---
+        const stagesData = [
+            { id: 1, title: 'Iniciação do Projeto' },
+            { id: 2, title: 'Planejamento Detalhado' },
+            { id: 3, title: 'Execução e Monitoramento' },
+            { id: 4, title: 'Encerramento e Revisão' }
+        ];
 
-const stageCardsDiv = document.getElementById('stage-cards');
-const topicCardsDiv = document.getElementById('topic-cards');
-const stageTitleH1 = document.getElementById('stage-title');
-const topicTitleH2 = document.getElementById('topic-title');
+        const topicsData = {
+            1: [ // Tópicos para Estágio 1
+                { id: 1.1, title: 'Definição de Escopo' },
+                { id: 1.2, title: 'Análise de Viabilidade' },
+                { id: 1.3, title: 'Termo de Abertura' }
+            ],
+            2: [ // Tópicos para Estágio 2
+                { id: 2.1, title: 'Cronograma' },
+                { id: 2.2, title: 'Gestão de Riscos' },
+                { id: 2.3, title: 'Orçamento' },
+                { id: 2.4, title: 'Comunicação' }
+            ],
+            3: [ // Tópicos para Estágio 3
+                { id: 3.1, title: 'Gerenciamento de Equipe' },
+                { id: 3.2, title: 'Relatórios de Status' },
+                { id: 3.3, title: 'Controle de Mudanças' }
+            ],
+            4: [ // Tópicos para Estágio 4
+                { id: 4.1, title: 'Lições Aprendidas' },
+                { id: 4.2, title: 'Entrega Final' },
+                { id: 4.3, title: 'Fechamento de Contratos' }
+            ]
+        };
 
-let activeStageIndex = -1; // -1 indica que nenhum stage está ativo
-let activeTopicIndex = -1; // -1 indica que nenhum tópico está ativo
+        // --- Elementos DOM ---
+        const stageTitleEl = document.getElementById('stage-title');
+        const topicTitleEl = document.getElementById('topic-title');
+        const stageCardsContainer = document.getElementById('stage-cards-container');
+        const topicCardsContainer = document.getElementById('topic-cards-container');
 
-// 1. GERA OS CARDS DE STAGE
-function renderStageCards() {
-    stageCardsDiv.innerHTML = ''; // Limpa cards anteriores
-    stagesData.forEach((stage, index) => {
-        const card = document.createElement('div');
-        card.classList.add('mini-card');
-        card.textContent = index + 1; // Número do stage (1 a 10)
-        card.dataset.stageIndex = index; // Guarda o índice real no array
+        let activeStageId = null;
 
-        // Adiciona a classe 'active' se for o stage ativo
-        if (index === activeStageIndex) {
-            card.classList.add('active');
+        // --- Funções ---
+
+        // Cria e injeta os mini cards de Estágio na DOM
+        function renderStageCards() {
+            stageCardsContainer.innerHTML = '';
+            stagesData.forEach(stage => {
+                const card = document.createElement('div');
+                card.classList.add('mini-card', 'stage-card');
+                card.dataset.id = stage.id;
+                card.textContent = stage.id; // Apenas o número
+
+                card.addEventListener('click', () => handleStageClick(stage.id, stage.title));
+
+                stageCardsContainer.appendChild(card);
+            });
         }
 
-        // Adiciona o evento de clique
-        card.addEventListener('click', () => {
-            handleStageClick(index);
-        });
+        // Cria e injeta os mini cards de Tópico na DOM
+        function renderTopicCards(stageId) {
+            topicCardsContainer.innerHTML = '';
+            const currentTopics = topicsData[stageId];
 
-        stageCardsDiv.appendChild(card);
-    });
-}
+            if (!currentTopics || currentTopics.length === 0) {
+                topicCardsContainer.innerHTML = '<span class="placeholder-text">Nenhum tópico encontrado para este estágio.</span>';
+                return;
+            }
 
-// 2. FUNÇÃO DE CLIQUE NO STAGE
-function handleStageClick(index) {
-    // 1. Atualiza o estado
-    activeStageIndex = index;
-    activeTopicIndex = -1; // Sempre reseta o tópico ao mudar de stage
+            currentTopics.forEach(topic => {
+                const card = document.createElement('div');
+                card.classList.add('mini-card', 'topic-card');
+                card.dataset.id = topic.id;
+                card.textContent = topic.id; // Apenas o número (ou número do tópico)
 
-    // 2. Atualiza o título do Stage
-    stageTitleH1.textContent = stagesData[index].title;
+                card.addEventListener('click', () => handleTopicClick(topic.id, topic.title));
 
-    // 3. Atualiza o título do Tópico para o padrão
-    topicTitleH2.textContent = "Selecione um Tópico";
-
-    // 4. Re-renderiza os cards de Stage para destacar o ativo
-    renderStageCards();
-
-    // 5. Renderiza os cards de Tópico para o Stage selecionado
-    renderTopicCards(index);
-}
-
-// 3. GERA OS CARDS DE TÓPICO
-function renderTopicCards(stageIndex) {
-    topicCardsDiv.innerHTML = ''; // Limpa cards anteriores
-
-    const topics = stagesData[stageIndex].topics;
-
-    topics.forEach((topicTitle, index) => {
-        const card = document.createElement('div');
-        card.classList.add('mini-card');
-        card.textContent = index + 1; // Número do tópico
-        card.dataset.topicIndex = index; // Guarda o índice do tópico no array
-
-        // Adiciona a classe 'active' se for o tópico ativo
-        if (index === activeTopicIndex) {
-            card.classList.add('active');
+                topicCardsContainer.appendChild(card);
+            });
         }
 
-        // Adiciona o evento de clique
-        card.addEventListener('click', () => {
-            handleTopicClick(index, topicTitle);
+        // Lida com o clique em um mini card de Estágio
+        function handleStageClick(stageId, stageTitle) {
+            // Atualiza o título do Estágio
+            stageTitleEl.textContent = `Estágio ${stageId}: ${stageTitle}`;
+            activeStageId = stageId;
+
+            // Remove a classe 'active' de todos os cards de Estágio
+            document.querySelectorAll('.stage-card').forEach(card => {
+                card.classList.remove('active');
+            });
+
+            // Adiciona a classe 'active' ao card clicado
+            document.querySelector(`.stage-card[data-id="${stageId}"]`).classList.add('active');
+
+            // Renderiza os cards de Tópico para o Estágio selecionado
+            renderTopicCards(stageId);
+
+            // Reseta o título do Tópico
+            topicTitleEl.textContent = 'Selecione um Tópico';
+        }
+
+        // Lida com o clique em um mini card de Tópico
+        function handleTopicClick(topicId, topicTitle) {
+            // Atualiza o título do Tópico
+            topicTitleEl.textContent = `Tópico ${topicId}: ${topicTitle}`;
+
+            // Remove a classe 'active' de todos os cards de Tópico
+            document.querySelectorAll('.topic-card').forEach(card => {
+                card.classList.remove('active');
+            });
+
+            // Adiciona a classe 'active' ao card clicado
+            document.querySelector(`.topic-card[data-id="${topicId}"]`).classList.add('active');
+        }
+
+        // Inicialização: Renderiza os cards de Estágio ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStageCards();
         });
-
-        topicCardsDiv.appendChild(card);
-    });
-}
-
-// 4. FUNÇÃO DE CLIQUE NO TÓPICO
-function handleTopicClick(index, title) {
-    // 1. Atualiza o estado
-    activeTopicIndex = index;
-
-    // 2. Atualiza o título do Tópico
-    topicTitleH2.textContent = title;
-
-    // 3. Re-renderiza os cards de Tópico para destacar o ativo
-    renderTopicCards(activeStageIndex);
-}
-
-// Inicializa a página
-renderStageCards();
     </script>
+
 </body>
 </html>
