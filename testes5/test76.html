@@ -567,6 +567,110 @@ and path section and code
       .shake-anim {
           animation: shake-horizontal 0.4s ease-in-out;
       }
+      /* --- ESTILOS DA SEÇÃO PATH (TRILHA) --- */
+      .path-container {
+          display: flex;
+          height: calc(100vh - 140px); /* Ajusta altura descontando header/nav */
+          gap: 10px;
+          margin-top: 10px;
+      }
+      
+      /* Sidebar interna do Path */
+      .path-sidebar {
+          width: 120px;
+          background: var(--surface-color);
+          display: flex;
+          flex-direction: column;
+          padding: 10px;
+          gap: 10px;
+          border-radius: 8px;
+          overflow-y: auto;
+          border: 1px solid var(--border-color);
+      }
+      
+      /* Área principal do Path */
+      .path-main {
+          flex: 1;
+          padding: 20px;
+          background: var(--surface-color);
+          border-radius: 8px;
+          border: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          overflow-y: auto;
+      }
+      
+      /* Minicards */
+      .minicard {
+          background: var(--bg-color); /* Fundo mais escuro */
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          padding: 12px;
+          text-align: center;
+          cursor: pointer;
+          font-size: 12px;
+          transition: all 0.2s;
+          color: var(--text-secondary);
+      }
+      
+      .minicard:hover {
+          border-color: var(--accent-color);
+          color: var(--text-primary);
+      }
+      
+      .minicard.active {
+          background: var(--accent-color);
+          color: #000; /* Texto preto no destaque */
+          border-color: var(--accent-color);
+          font-weight: bold;
+      }
+      
+      /* Títulos internos */
+      .path-title {
+          font-size: 1.2rem;
+          font-weight: bold;
+          color: var(--accent-color);
+      }
+      
+      /* Container de Etapas */
+      .path-stages {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+      }
+      
+      /* Botão de ação do Path */
+      .btn-path-action {
+          background: var(--accent-color);
+          border: none;
+          color: #000;
+          padding: 10px 14px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: bold;
+          width: fit-content;
+      }
+      
+      .btn-path-action:hover {
+          opacity: 0.9;
+      }
+      
+      /* Mobile responsivo para o Path */
+      @media (max-width: 600px) {
+          .path-container {
+              flex-direction: column;
+          }
+          .path-sidebar {
+              width: 100%;
+              flex-direction: row;
+              height: auto;
+              overflow-x: auto;
+          }
+          .minicard {
+              min-width: 80px;
+          }
+      }
     </style>
 </head>
 <body>
@@ -581,7 +685,7 @@ and path section and code
     </header>
 
     <div class="app-body">
-      
+        
         <aside class="app-sidebar">
             <a class="sidebar-item active" onclick="navigateTo('home')">
                 <i class="fa-solid fa-house"></i> Home
@@ -589,14 +693,12 @@ and path section and code
             <a class="sidebar-item" onclick="navigateTo('you')">
                 <i class="fa-regular fa-user"></i> You
             </a>
-            <!-- NOVOS ITENS ADICIONADOS -->
             <a class="sidebar-item" onclick="navigateTo('challenges')">
                 <span class="material-symbols-outlined">swords</span> Duels
             </a>
             <a class="sidebar-item" onclick="navigateTo('path')">
-                <i class="fa-solid fa-map-marked-alt"></i> Path
+                <i class="fa-solid fa-map-location-dot"></i> Path
             </a>
-            
             <div style="margin-top: auto; padding: 20px; font-size: 0.8rem; color: #555;">
                 PhraseCraft v1.0
             </div>
@@ -616,6 +718,37 @@ and path section and code
                 <div id="lessons-list"></div>
             </section>
 
+            <section id="view-challenges" class="view-section">
+                <div style="text-align: center; padding: 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 10px;">swords</span>
+                    <h2 style="margin-bottom: 10px;">Arena de Duelos</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Desafie amigos ou enfrente a IA para ganhar XP extra.</p>
+                    
+                    <div id="challenges-list" style="display: flex; flex-direction: column; gap: 15px;">
+                        </div>
+                </div>
+            </section>
+
+            <section id="view-path" class="view-section">
+                <h2 style="margin-bottom: 10px;">Trilha de Aprendizado</h2>
+                
+                <div class="path-container">
+                    <div class="path-sidebar" id="path-sidebar-passos"></div>
+
+                    <div class="path-main">
+                        <div id="step-title" class="path-title hidden"></div>
+
+                        <div id="stages-container" class="path-stages hidden"></div>
+
+                        <div id="stage-title" class="path-title hidden" style="margin-top: 20px;"></div>
+                        
+                        <button id="open-content-btn" class="btn-path-action hidden">Abrir Conteúdo →</button>
+
+                        <div id="path-content" class="content hidden"></div>
+                    </div>
+                </div>
+            </section>
+          
             <section id="view-preview" class="view-section">
                 <div class="preview-header">
                     <img id="preview-thumb" src="" alt="Thumbnail" style="width: 100%; height: 250px; background-color: #000; object-fit: contain; border-radius: 12px; margin-bottom: 15px; display: block;">
@@ -636,40 +769,13 @@ and path section and code
                         <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.6rem;"></i> 
                     </button>
                 
-                    <button class="btn-train" style="color: ;" title="Pronúncia" onclick="startSpeakingPractice()">
+                    <<button class="btn-train" style="color: ;" title="Pronúncia" onclick="startSpeakingPractice()">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
                 
                 </div>
             </section>
 
-            <section id="view-challenges" class="view-section">
-            </section>
-
-            <section id="view-path" class="view-section">
-                <h2 style="margin-bottom: 20px;">Trilhas de Aprendizado</h2>
-                <div id="path-list"></div>
-            </section>
-            
-            <!-- NOVA SECTION: Detalhes da Trilha -->
-            <section id="view-path-detail" class="view-section">
-                <div style="margin-bottom: 20px;">
-                    <button onclick="navigateTo('path')" style="background: transparent; border: none; color: var(--text-primary); cursor: pointer; font-size: 1.2rem;">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                </div>
-                
-                <div style="background: var(--surface-color); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                    <h2 id="path-detail-title" style="color: var(--accent-color); margin-bottom: 10px;">Carregando...</h2>
-                    <p id="path-detail-description" style="color: var(--text-secondary); margin-bottom: 15px;">...</p>
-                    <div class="progress-bar" style="height: 8px;">
-                        <div id="path-detail-progress" class="progress-fill"></div>
-                    </div>
-                </div>
-            
-                <div id="path-lessons-list"></div>
-            </section>
-          
             <section id="view-you" class="view-section">
                 <div style="background: var(--surface-color); padding: 30px 20px; text-align: center; border-bottom: 1px solid var(--border-color);">
                     <div id="profile-avatar" style="width: 80px; height: 80px; background: var(--accent-color); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin: 0 auto 15px auto; border: 3px solid #fff;">
@@ -691,17 +797,15 @@ and path section and code
                     </div>
                 </div>
 
-                <div style="padding: 20px; margin: ; display: flex; flex-direction: column; align-items: center;">
-    
-                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 20px;" onclick="navigateTo('settings')">
-                        <i class="fa-solid fa-gear"></i> Configurações
-                    </button>
-                    
-                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 20px; color: var(--error-color); border-color: var(--error-color);" onclick="handleLogout()">
+                <div style="padding: 20px;">
+                    <button class="option-btn" style="width: 100%; text-align: center; margin-bottom: 10px; color: var(--error-color); border-color: var(--error-color);" onclick="handleLogout()">
                         <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
                     </button>
-                    
                 </div>
+              
+                <button class="option-btn" style="width: 100%; text-align: center; margin-bottom: 10px;" onclick="navigateTo('settings')">
+                    <i class="fa-solid fa-gear"></i> Configurações
+                </button>
             </section>
           
             <section id="view-login" class="view-section">
@@ -734,18 +838,10 @@ and path section and code
 
             <section id="view-settings" class="view-section">
                 <div style="padding: 20px;">
-                    <div style="position: relative; text-align: center; padding-bottom: 20px;">
-        
-                        <i 
-                            class="fa-solid fa-arrow-left" 
-                            onclick="showView('profile')" 
-                            style="cursor: pointer; position: absolute; left: 0; top: 5px; font-size: 1.5rem; color: var(--text-primary);"
-                        ></i>
-                        
-                        <h2 style="margin-bottom: 0; color: var(--accent-color);">
-                            Configurações
-                        </h2>
-                    </div>
+                    <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-arrow-left" onclick="navigateTo('you')" style="cursor: pointer;"></i> 
+                        Configurações
+                    </h2>
             
                     <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
                         <label style="display: block; margin-bottom: 10px; color: var(--text-secondary);">Qualidade de Vídeo (Padrão)</label>
@@ -869,7 +965,7 @@ and path section and code
             <span>Duels</span>
         </div>
         <div class="footer-item" onclick="navigateTo('path')">
-            <i class="fa-solid fa-map-marked-alt"></i>
+            <i class="fa-solid fa-map-location-dot"></i>
             <span>Path</span>
         </div>
     </footer>
@@ -1047,28 +1143,6 @@ function reloadWithFeedback(event) {
         },
     ];
 
-    // --- BASE DE DADOS DE path (TRILHAS) ---
-    const pathDB = [
-        {
-            id: 'beginner-path',
-            title: 'Trilha Iniciante',
-            description: 'Aprenda o básico do inglês',
-            thumb: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400',
-            lessons: [1, 2], // IDs das lições (na ordem)
-            currentLesson: 0, // Índice da lição desbloqueada (0 = primeira)
-            progress: 0 // % de conclusão (0-100)
-        },
-        {
-            id: 'intermediate-path',
-            title: 'Trilha Intermediária',
-            description: 'Expanda seu vocabulário',
-            thumb: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400',
-            lessons: [1, 2],
-            currentLesson: 0,
-            progress: 0
-        }
-    ];
-  
     // 0 = primeira página (1-5)
     let currentPhase = 0;
     
@@ -1303,56 +1377,187 @@ function reloadWithFeedback(event) {
         renderLessonList(allLessons);
 
         // --- NOVO: CHECA O LINK DEPOIS DE CARREGAR TUDO ---
-        checkDeepLink();// Dentro de initApp(), após renderLessonList():
-      
-        renderPathList(pathDB); // Pre-carrega os path
+        checkDeepLink();
     }
-  
-    // --- FUNÇÃO GENÉRICA PARA CRIAR CARD ---
-    function createLessonCard(lesson, onClick, isLocked = false) {
-        const card = document.createElement('div');
-        card.className = 'lesson-card';
+
+    // --- LÓGICA DO PATH (TRILHA) ---
+    
+    // Base de dados simulada
+    // Note que mantive os títulos reais (Intro, Saudações) no objeto, 
+    // mas na visualização vamos mascarar como "Topic X"
+    const pathDB = [
+      {
+        id: 'beginner-path',
+        title: 'Trilha Iniciante',
+        description: 'Aprenda o básico do inglês',
+        steps: [
+          {
+            id: 'step-1',
+            title: 'Stage 1', // Alterado de Passo 1 para Stage 1
+            stages: [
+              { id: 'stage-1', title: 'Intro', lessonId: 1 },
+              { id: 'stage-2', title: 'Saudações', lessonId: 2 }
+            ]
+          },
+          {
+            id: 'step-2',
+            title: 'Stage 2', // Alterado de Passo 2 para Stage 2
+            stages: [
+              { id: 'stage-3', title: 'Verbo To Be', lessonId: 3 },
+              { id: 'stage-4', title: 'Cores', lessonId: 4 }
+            ]
+          },
+           {
+            id: 'step-3',
+            title: 'Stage 3',
+            stages: [
+              { id: 'stage-5', title: 'Presente', lessonId: 5 }
+            ]
+          }
+        ],
+        currentStep: 0
+      }
+    ];
+
+    const currentPath = pathDB[0];
+    let selectedStep = null;
+    let selectedStage = null;
+
+    // Elementos do DOM
+    function initPathElements() {
+        const sidebar = document.getElementById('path-sidebar-passos');
+        const stepTitle = document.getElementById('step-title');
+        const stagesContainer = document.getElementById('stages-container');
+        const stageTitle = document.getElementById('stage-title');
+        const openContentBtn = document.getElementById('open-content-btn');
+        const content = document.getElementById('path-content');
         
-        // Se estiver bloqueado, adiciona classe e desabilita clique
-        if (isLocked) {
-            card.style.opacity = '0.5';
-            card.style.cursor = 'not-allowed';
-            card.onclick = () => {
-                alert('🔒 Complete a lição anterior para desbloquear!');
-            };
-        } else {
-            card.onclick = onClick;
-        }
-    
-        // Lógica de subtítulo (mantida igual)
-        let subtitleText = "";
-        if (lesson.cards != null && lesson.phrases != null) {
-            subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
-        } else if (lesson.stats) {
-            subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
-        } else if (Array.isArray(lesson.data)) {
-            const totalPhrases = lesson.data.length;
-            const totalCards = lesson.data.reduce((acc, item) => acc + (item.vocab ? item.vocab.length : 0), 0);
-            subtitleText = `${totalCards} cards | ${totalPhrases} frases`;
-        } else {
-            subtitleText = "..."; 
-        }
-    
-        card.innerHTML = `
-            ${isLocked ? '<div style="position:absolute; top:10px; right:10px; font-size:1.5rem;">🔒</div>' : ''}
-            <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
-            <div class="lesson-info">
-                <div class="lesson-title">${lesson.title}</div>
-                <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--accent-color);">
-                    <i class="fa-solid fa-layer-group"></i> ${subtitleText}
+        return { sidebar, stepTitle, stagesContainer, stageTitle, openContentBtn, content };
+    }
+
+    // Renderiza a Sidebar (Stages)
+    function renderPathSteps() {
+        const els = initPathElements();
+        if(!els.sidebar) return;
+
+        els.sidebar.innerHTML = '';
+
+        currentPath.steps.forEach((step, index) => {
+            const card = document.createElement('div');
+            card.className = 'minicard';
+            
+            // Aqui usamos o título definido no DB (Stage 1, Stage 2...)
+            card.textContent = step.title; 
+            
+            if (selectedStep && selectedStep.id === step.id) {
+                card.classList.add('active');
+            }
+
+            card.onclick = () => selectPathStep(index, card);
+            els.sidebar.appendChild(card);
+        });
+    }
+
+    // Seleciona um Stage na Sidebar
+    function selectPathStep(index, card) {
+        const els = initPathElements();
+        selectedStep = currentPath.steps[index];
+        selectedStage = null;
+
+        [...els.sidebar.children].forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+
+        els.stepTitle.textContent = selectedStep.title;
+        els.stepTitle.classList.remove('hidden');
+        
+        // Esconde o título do tópico anterior se houver
+        els.stageTitle.classList.add('hidden');
+        els.openContentBtn.classList.add('hidden');
+
+        renderPathStages();
+        hidePathContent();
+    }
+
+    // Renderiza os Minicards (Topics)
+    function renderPathStages() {
+        const els = initPathElements();
+        els.stagesContainer.innerHTML = '';
+
+        selectedStep.stages.forEach((stage, index) => {
+            const card = document.createElement('div');
+            card.className = 'minicard';
+            
+            // --- AQUI ESTÁ A MUDANÇA SOLICITADA ---
+            // Em vez de stage.title, exibimos genericamente "Topic X"
+            card.textContent = `Topic ${index + 1}`;
+
+            card.onclick = () => selectPathStage(stage, card);
+            els.stagesContainer.appendChild(card);
+        });
+
+        els.stagesContainer.classList.remove('hidden');
+    }
+
+    // Seleciona um Topic específico
+    function selectPathStage(stage, card) {
+        const els = initPathElements();
+        selectedStage = stage;
+
+        [...els.stagesContainer.children].forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+
+        // --- MOSTRA O NOME REAL SÓ AGORA ---
+        // Exibe o título real (ex: "Intro") abaixo dos cards
+        els.stageTitle.innerHTML = `<span style="color:var(--text-secondary); font-size:0.8em; display:block;">Topic Selecionado:</span> ${stage.title}`;
+        els.stageTitle.classList.remove('hidden');
+
+        els.openContentBtn.classList.remove('hidden');
+        
+        // Configura o botão de abrir conteúdo
+        els.openContentBtn.onclick = () => {
+             els.sidebar.classList.add('hidden');
+             els.stagesContainer.classList.add('hidden');
+             els.stepTitle.classList.add('hidden');
+             els.stageTitle.classList.add('hidden');
+             els.openContentBtn.classList.add('hidden');
+
+             els.content.innerHTML = `
+                <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <button id="btn-voltar-path" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:1rem;">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar
+                    </button>
+                    <h2 style="margin: 0 auto; color: var(--accent-color);">${stage.title}</h2>
                 </div>
-            </div>
-        `;
-        
-        return card;
+                <div style="text-align:center; padding: 40px;">
+                    <i class="fa-solid fa-person-chalkboard" style="font-size:3rem; margin-bottom:20px;"></i>
+                    <p style="margin-bottom:20px;">Pronto para iniciar esta lição?</p>
+                    <button class="check-btn" onclick="openPreview(${stage.lessonId})">Ir para a Lição</button>
+                </div>
+             `;
+             
+             els.content.classList.remove('hidden');
+             document.getElementById('btn-voltar-path').onclick = voltarParaPathEtapas;
+        };
     }
-    
-    // --- RENDERIZA LISTA AVULSA (HOME) ---
+
+    function voltarParaPathEtapas() {
+        const els = initPathElements();
+        els.content.classList.add('hidden');
+        els.content.innerHTML = '';
+
+        els.sidebar.classList.remove('hidden');
+        els.stepTitle.classList.remove('hidden');
+        els.stagesContainer.classList.remove('hidden');
+        els.stageTitle.classList.remove('hidden');
+        els.openContentBtn.classList.remove('hidden');
+    }
+
+    function hidePathContent() {
+        const els = initPathElements();
+        els.content.classList.add('hidden');
+    }
+    // Agora a função aceita uma lista como parâmetro
+    // --- 3. ATUALIZAÇÃO DA RENDERIZAÇÃO (CORRIGIDA PARA LER DO SERVIDOR) ---
     function renderLessonList(lessonsToRender) {
         ui.listContainer.innerHTML = '';
         
@@ -1360,98 +1565,49 @@ function reloadWithFeedback(event) {
             ui.listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#888">Nenhuma lição disponível.</p>';
             return;
         }
-    
+
         lessonsToRender.forEach(lesson => {
-            const card = createLessonCard(lesson, () => openPreview(lesson.id));
-            ui.listContainer.appendChild(card);
-        });
-    }
-  
-    // --- RENDERIZA TRILHAS (PATH) ---
-    function renderPathList(pathToRender) {
-        const pathContainer = document.getElementById('path-list');
-        if (!pathContainer) {
-            console.error('Elemento #path-list não encontrado');
-            return;
-        }
-        
-        pathContainer.innerHTML = '';
-        
-        if (!pathToRender || pathToRender.length === 0) {
-            pathContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#888">Nenhuma trilha disponível.</p>';
-            return;
-        }
-    
-        pathToRender.forEach(path => {
-            const pathCard = document.createElement('div');
-            pathCard.className = 'lesson-card';
-            pathCard.style.borderLeft = '4px solid var(--accent-color)'; // Destaque visual
-            pathCard.onclick = () => openPath(path.id);
-    
-            pathCard.innerHTML = `
-                <img src="${path.thumb}" class="lesson-thumb" alt="${path.title}" loading="lazy">
+            const card = document.createElement('div');
+            card.className = 'lesson-card';
+            card.onclick = () => openPreview(lesson.id);
+
+            // --- LÓGICA DE SUBTÍTULO OTIMIZADA ---
+            let subtitleText = "";
+
+            // 1. Prioridade: Dados diretos do Appwrite (na raiz do objeto)
+            // Usamos != null para garantir que pegue mesmo se for 0, mas ignore undefined
+            if (lesson.cards != null && lesson.phrases != null) {
+                subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
+            }
+            // 2. Fallback: Dados manuais locais (objeto stats antigo)
+            else if (lesson.stats) {
+                subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
+            } 
+            // 3. Fallback: Cálculo se os dados brutos já estiverem carregados
+            else if (Array.isArray(lesson.data)) {
+                const totalPhrases = lesson.data.length;
+                const totalCards = lesson.data.reduce((acc, item) => acc + (item.vocab ? item.vocab.length : 0), 0);
+                subtitleText = `${totalCards} cards | ${totalPhrases} frases`;
+            } 
+            // 4. Último caso: Deixa vazio ou coloca um placeholder discreto
+            else {
+                subtitleText = "..."; 
+            }
+
+            // Renderiza o card
+            card.innerHTML = `
+                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
                 <div class="lesson-info">
-                    <div class="lesson-title">${path.title}</div>
-                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--text-secondary);">
-                        ${path.description}
-                    </div>
-                    <div style="margin-top: 8px; font-size: 0.8em; color: var(--accent-color);">
-                        <i class="fa-solid fa-route"></i> ${path.lessons.length} lições | ${path.progress}% concluído
-                    </div>
-                    <div class="progress-bar" style="margin-top: 8px; height: 4px;">
-                        <div class="progress-fill" style="width: ${path.progress}%; background: var(--accent-color);"></div>
+                    <div class="lesson-title">${lesson.title}</div>
+                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--accent-color);">
+                        <i class="fa-solid fa-layer-group"></i> ${subtitleText}
                     </div>
                 </div>
             `;
-            
-            pathContainer.appendChild(pathCard);
+            ui.listContainer.appendChild(card);
         });
     }
-    
-    // --- ABRE UMA TRILHA (MOSTRA LIÇÕES SEQUENCIAIS) ---
-    function openPath(pathId) {
-        const path = pathDB.find(p => p.id === pathId);
-        if (!path) {
-            alert('Trilha não encontrada');
-            return;
-        }
-    
-        // Atualiza URL
-        history.pushState({ view: 'path-detail', pathId: pathId }, '', `#path-${pathId}`);
-    
-        // Mostra a view de detalhes do path
-        ui.views.forEach(v => v.classList.remove('active'));
-        const pathDetailView = document.getElementById('view-path-detail');
-        if (pathDetailView) pathDetailView.classList.add('active');
-    
-        // Renderiza cabeçalho
-        document.getElementById('path-detail-title').innerText = path.title;
-        document.getElementById('path-detail-description').innerText = path.description;
-        document.getElementById('path-detail-progress').style.width = `${path.progress}%`;
-    
-        // Renderiza lições da trilha
-        const lessonsContainer = document.getElementById('path-lessons-list');
-        lessonsContainer.innerHTML = '';
-    
-        path.lessons.forEach((lessonId, index) => {
-            const lesson = allLessons.find(l => l.id == lessonId);
-            if (!lesson) return;
-    
-            const isLocked = index > path.currentLesson;
-            const card = createLessonCard(
-                lesson, 
-                () => {
-                    if (!isLocked) {
-                        openPreview(lesson.id);
-                    }
-                },
-                isLocked
-            );
-            
-            lessonsContainer.appendChild(card);
-        });
-    }
-  
+
     // Adicionado parâmetro 'addToHistory' com padrão true
     async function navigateTo(viewName, addToHistory = true) {
         stopVideoPlayback();
@@ -1472,11 +1628,6 @@ function reloadWithFeedback(event) {
                  navigateTo('you', addToHistory); 
                  return;
              }
-        }
-            
-        // Dentro de navigateTo(), adicione:
-        if (viewName === 'path') {
-            renderPathList(pathDB);
         }
 
         // --- GERENCIAMENTO DE HISTÓRICO ---
@@ -1503,9 +1654,42 @@ function reloadWithFeedback(event) {
             document.querySelector('.footer-item:nth-child(1)').classList.add('active');
             document.querySelector('.sidebar-item:nth-child(1)').classList.add('active');
         } 
+        // Menu Ativo
+        if(viewName === 'home' || viewName === 'preview') {
+            document.querySelector('.footer-item:nth-child(1)').classList.add('active');
+            document.querySelector('.sidebar-item:nth-child(1)').classList.add('active');
+        } 
+        // --- ADICIONE ESTE BLOCO ---
+        else if (viewName === 'path') {
+            // Footer (o path é o segundo item no footer agora, entre home e you)
+            // Se você colocou no footer como o 2º item (entre home e you), use nth-child(2)
+            // Mas cuidado: você tem 3 itens no footer agora (Home, Path, You). 
+            // Home = 1, Path = 2, You = 3.
+            
+            // Vamos garantir removendo de todos e adicionando manualmente
+            ui.footerItems.forEach(i => i.classList.remove('active'));
+            ui.sidebarItems.forEach(i => i.classList.remove('active'));
+
+            // Assumindo que você inseriu Path no meio no HTML:
+            // Sidebar Desktop (Home=1, Path=2, You=3)
+            const sbItem = document.querySelectorAll('.sidebar-item')[1]; 
+            if(sbItem) sbItem.classList.add('active');
+
+            // Footer Mobile (Home=1, Path=2, You=3)
+            const ftItem = document.querySelectorAll('.footer-item')[1]; 
+            if(ftItem) ftItem.classList.add('active');
+            
+            // Inicializa a trilha ao entrar
+            renderPathSteps();
+        }
+        // ---------------------------
         else if (viewName === 'you' || viewName === 'login') {
-            document.querySelector('.footer-item:nth-child(2)').classList.add('active');
-            document.querySelector('.sidebar-item:nth-child(2)').classList.add('active');
+            // Ajuste aqui se a ordem mudou. Se You é o 3º, use nth-child(3)
+             const sbItem = document.querySelectorAll('.sidebar-item')[2]; 
+             if(sbItem) sbItem.classList.add('active');
+             
+             const ftItem = document.querySelectorAll('.footer-item')[2]; 
+             if(ftItem) ftItem.classList.add('active');
         }
     }
 
