@@ -545,9 +545,7 @@ path adicionado com sucesso
       .shake-anim {
           animation: shake-horizontal 0.4s ease-in-out;
       }
-      
-
-    /* --- PATH --- */
+          /* --- PATH --- */
 
     /* --- Títulos --- */
     .title-area {
@@ -584,7 +582,7 @@ path adicionado com sucesso
     .card-area {
         width: 100%;
         max-width: 1000px;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
 
     .card-label {
@@ -662,7 +660,7 @@ path adicionado com sucesso
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v75
+            <i class="fa-solid fa-cube"></i> PhraseCraft v77
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -943,134 +941,34 @@ path adicionado com sucesso
     </footer>
 
 <script>
-
-        // --- Dados de Exemplo ---
-        const stagesData = [
-            { id: 1, title: 'Iniciação do Projeto' },
-            { id: 2, title: 'Planejamento Detalhado' },
-            { id: 3, title: 'Execução e Monitoramento' },
-            { id: 4, title: 'Encerramento e Revisão' }
-        ];
-
-        const topicsData = {
-            1: [ // Tópicos para Estágio 1
-                { id: 1.1, title: 'Definição de Escopo' },
-                { id: 1.2, title: 'Análise de Viabilidade' },
-                { id: 1.3, title: 'Termo de Abertura' }
-            ],
-            2: [ // Tópicos para Estágio 2
-                { id: 2.1, title: 'Cronograma' },
-                { id: 2.2, title: 'Gestão de Riscos' },
-                { id: 2.3, title: 'Orçamento' },
-                { id: 2.4, title: 'Comunicação' }
-            ],
-            3: [ // Tópicos para Estágio 3
-                { id: 3.1, title: 'Gerenciamento de Equipe' },
-                { id: 3.2, title: 'Relatórios de Status' },
-                { id: 3.3, title: 'Controle de Mudanças' }
-            ],
-            4: [ // Tópicos para Estágio 4
-                { id: 4.1, title: 'Lições Aprendidas' },
-                { id: 4.2, title: 'Entrega Final' },
-                { id: 4.3, title: 'Fechamento de Contratos' }
-            ]
-        };
-
-        // --- Elementos DOM ---
-        const stageTitleEl = document.getElementById('stage-title');
-        const topicTitleEl = document.getElementById('topic-title');
-        const stageCardsContainer = document.getElementById('stage-cards-container');
-        const topicCardsContainer = document.getElementById('topic-cards-container');
-
-        let activeStageId = null;
-
-        // --- Funções ---
-
-        // Cria e injeta os mini cards de Estágio na DOM
-        function renderStageCards() {
-            stageCardsContainer.innerHTML = '';
-            stagesData.forEach(stage => {
-                const card = document.createElement('div');
-                card.classList.add('mini-card', 'stage-card');
-                card.dataset.id = stage.id;
-                card.textContent = stage.id; // Apenas o número
-
-                card.addEventListener('click', () => handleStageClick(stage.id, stage.title));
-
-                stageCardsContainer.appendChild(card);
-            });
-        }
-
-        // Cria e injeta os mini cards de Tópico na DOM
-        function renderTopicCards(stageId) {
-            topicCardsContainer.innerHTML = '';
-            const currentTopics = topicsData[stageId];
-
-            if (!currentTopics || currentTopics.length === 0) {
-                topicCardsContainer.innerHTML = '<span class="placeholder-text">Nenhum tópico encontrado para este estágio.</span>';
-                return;
-            }
-
-            currentTopics.forEach(topic => {
-                const card = document.createElement('div');
-                card.classList.add('mini-card', 'topic-card');
-                card.dataset.id = topic.id;
-                card.textContent = topic.id; // Apenas o número (ou número do tópico)
-
-                card.addEventListener('click', () => handleTopicClick(topic.id, topic.title));
-
-                topicCardsContainer.appendChild(card);
-            });
-        }
-
-        // Lida com o clique em um mini card de Estágio
-        function handleStageClick(stageId, stageTitle) {
-            // Atualiza o título do Estágio
-            stageTitleEl.textContent = `Estágio ${stageId}: ${stageTitle}`;
-            activeStageId = stageId;
-
-            // Remove a classe 'active' de todos os cards de Estágio
-            document.querySelectorAll('.stage-card').forEach(card => {
-                card.classList.remove('active');
-            });
-
-            // Adiciona a classe 'active' ao card clicado
-            document.querySelector(`.stage-card[data-id="${stageId}"]`).classList.add('active');
-
-            // Renderiza os cards de Tópico para o Estágio selecionado
-            renderTopicCards(stageId);
-
-            // Reseta o título do Tópico
-            topicTitleEl.textContent = 'Selecione um Tópico';
-        }
-
-        // Lida com o clique em um mini card de Tópico
-        function handleTopicClick(topicId, topicTitle) {
-            // Atualiza o título do Tópico
-            topicTitleEl.textContent = `Tópico ${topicId}: ${topicTitle}`;
-
-            // Remove a classe 'active' de todos os cards de Tópico
-            document.querySelectorAll('.topic-card').forEach(card => {
-                card.classList.remove('active');
-            });
-
-            // Adiciona a classe 'active' ao card clicado
-            document.querySelector(`.topic-card[data-id="${topicId}"]`).classList.add('active');
-        }
-// Feedback visual do page reload
-function reloadWithFeedback(event) {
-    event.preventDefault();
-    
-    // Feedback visual
-    const link = event.currentTarget;
-    link.style.color = '#00ff00';
-    link.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...';
-    
-    // Aguarda 300ms e recarrega
-    setTimeout(() => {
-        location.reload();
-    }, 300);
-}    
+const projectData = [
+    {
+        title: 'Iniciação do Projeto',
+        topics: [
+            { title: 'Definição de Escopo', content: 'Detalhes sobre como definir o escopo inicial.' },
+            { title: 'Análise de Viabilidade', content: 'Métodos para avaliar a viabilidade do projeto.' },
+            { title: 'Termo de Abertura', content: 'Guia para a criação do Termo de Abertura (Project Charter).' }
+        ]
+    },
+    {
+        title: 'Planejamento Detalhado',
+        topics: [
+            { title: 'Cronograma', content: 'Como estruturar o cronograma principal.' },
+            { title: 'Gestão de Riscos', content: 'Identificação e mitigação de riscos.' },
+            { title: 'Orçamento', content: 'Processo de detalhamento orçamentário.' },
+            { title: 'Comunicação', content: 'Plano de comunicação e stakeholders.' } // Este será o 2.4
+        ]
+    },
+    {
+        title: 'Execução e Monitoramento',
+        topics: [
+            { title: 'Gerenciamento de Equipe', content: 'Técnicas de liderança e gestão de equipe.' },
+            { title: 'Relatórios de Status', content: 'Frequência e formato dos relatórios de status.' },
+            { title: 'Controle de Mudanças', content: 'Protocolo para gerenciar solicitações de mudança.' }
+        ]
+    }
+    // Adicione mais estágios aqui, se necessário
+];   
     // --- 1. BASE DE DADOS (LIÇÕES) ---
     const lessonsDB = [
     {
@@ -1292,6 +1190,15 @@ function reloadWithFeedback(event) {
     // 4. Inicialize o Account (Autenticação)
     const account = new Appwrite.Account(client);
   
+    // --- Elementos DOM PATH ---
+    const stageTitleEl = document.getElementById('stage-title');
+    const topicTitleEl = document.getElementById('topic-title');
+    const stageCardsContainer = document.getElementById('stage-cards-container');
+    const topicCardsContainer = document.getElementById('topic-cards-container');
+    
+    let activeStageId = null;
+    let structuredData = []; // Aqui será armazenada a estrutura de dados com os IDs gerados
+  
     // --- 2. GESTÃO DE UI E NAVEGAÇÃO ---
     const ui = {
         views: document.querySelectorAll('.view-section'),
@@ -1333,9 +1240,140 @@ function reloadWithFeedback(event) {
         videoWrapper: document.getElementById('video-area-wrapper'),
         videoContextText: document.getElementById('video-context-text')
     };
-  
-    // --- AUTH FUNCTIONS ---
 
+// Feedback visual do page reload
+function reloadWithFeedback(event) {
+    event.preventDefault();
+    
+    // Feedback visual
+    const link = event.currentTarget;
+    link.style.color = '#00ff00';
+    link.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...';
+    
+    // Aguarda 300ms e recarrega
+    setTimeout(() => {
+        location.reload();
+    }, 300);
+}     
+    
+    // --- PATH ---
+  
+// --- Função de Geração Dinâmica de IDs ---
+function generateDynamicIds(data) {
+    const structured = [];
+    
+    // Itera sobre os Estágios (Stage Index + 1 = Stage ID)
+    data.forEach((stage, stageIndex) => {
+        const stageId = stageIndex + 1;
+        
+        const topicsWithIds = stage.topics.map((topic, topicIndex) => ({
+            stageId: stageId,
+            id: parseFloat(`${stageId}.${topicIndex + 1}`), // Gera ID como 1.1, 1.2, 2.1, etc.
+            title: topic.title,
+            content: topic.content 
+        }));
+        
+        structured.push({
+            id: stageId,
+            title: stage.title,
+            topics: topicsWithIds
+        });
+    });
+    
+    return structured;
+}
+
+// --- Funções de Renderização e Click (Ajustadas para usar structuredData) ---
+
+function renderStageCards() {
+    stageCardsContainer.innerHTML = '';
+    structuredData.forEach(stage => {
+        const card = document.createElement('div');
+        card.classList.add('mini-card', 'stage-card');
+        card.dataset.id = stage.id;
+        card.textContent = stage.id;
+
+        // O handleStageClick é chamado com os novos IDs
+        card.addEventListener('click', () => handleStageClick(stage.id, stage.title));
+
+        stageCardsContainer.appendChild(card);
+    });
+    
+    // 3. Seleção Automática Inicial (Estágio 1). 
+    // O handleStageClick cuidará do Tópico 1.1.
+    if (structuredData.length > 0) {
+        const initialStage = structuredData[0];
+        handleStageClick(initialStage.id, initialStage.title);
+    }
+}
+
+function renderTopicCards(stageId) {
+    topicCardsContainer.innerHTML = '';
+    
+    // Encontra o estágio correto na estrutura de dados
+    const currentStage = structuredData.find(s => s.id === stageId);
+
+    if (!currentStage || currentStage.topics.length === 0) {
+        return;
+    }
+
+    currentStage.topics.forEach(topic => {
+        const card = document.createElement('div');
+        card.classList.add('mini-card', 'topic-card');
+        card.dataset.id = topic.id;
+        card.textContent = topic.id; // Ex: 1.1, 2.4
+
+        // O handleTopicClick é chamado com os novos IDs
+        card.addEventListener('click', () => handleTopicClick(topic.id, topic.title, topic.content));
+
+        topicCardsContainer.appendChild(card);
+    });
+}
+
+function handleStageClick(stageId, stageTitle) {
+    stageTitleEl.textContent = `Estágio ${stageId}: ${stageTitle}`;
+    activeStageId = stageId;
+
+    // Atualiza o destaque do Estágio
+    document.querySelectorAll('.stage-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    document.querySelector(`.stage-card[data-id="${stageId}"]`).classList.add('active');
+
+    // Renderiza os cards de Tópico
+    renderTopicCards(stageId);
+
+    // Seleção Automática do Primeiro Tópico do novo Estágio
+    const currentStage = structuredData.find(s => s.id === stageId);
+    
+    if (currentStage && currentStage.topics.length > 0) {
+        const firstTopic = currentStage.topics[0];
+        // Note que o handleTopicClick agora espera o content
+        handleTopicClick(firstTopic.id, firstTopic.title, firstTopic.content);
+    } else {
+        // Se não houver tópicos, limpa o título
+        topicTitleEl.textContent = 'Nenhum Tópico Encontrado';
+    }
+}
+
+// O handleTopicClick foi ajustado para aceitar e, futuramente, exibir o Content
+function handleTopicClick(topicId, topicTitle, topicContent) {
+    // Atualiza o título do Tópico
+    topicTitleEl.textContent = `Tópico ${topicId}: ${topicTitle}`;
+    
+    // Futuramente: Exibir o Content. Exemplo:
+    // console.log("Conteúdo do Tópico:", topicContent); 
+
+    // Atualiza o destaque do Tópico
+    document.querySelectorAll('.topic-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    const activeTopicCard = document.querySelector(`.topic-card[data-id="${topicId}"]`);
+    if (activeTopicCard) {
+        activeTopicCard.classList.add('active');
+    }
+}
+  
     // Verifica status (Mockado para FALSE como pedido)
     // --- AUTH FUNCTIONS (REAL APPWRITE) ---
 
@@ -3560,9 +3598,14 @@ function validateTrainingData() {
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
         initMobileNavigation();
-        renderStageCards();
         loadUserPreferences(); // <--- ADICIONE AQUI
         initApp();
+      
+        // 1. Gera a estrutura de dados completa com IDs
+        structuredData = generateDynamicIds(projectData);
+    
+        // 2. Renderiza os Estágios
+        renderStageCards();      
     });
     </script>
 </body>
