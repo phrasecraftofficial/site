@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stage & Topics Viewer</title>
-    <style>
+<style>
     :root {
     --bg-dark: #121212;
     --text-light: #e0e0e0;
@@ -18,7 +18,7 @@
         background-color: var(--bg-dark);
         color: var(--text-light);
         margin: 0;
-        padding: 20px;
+        padding: 10px; /* Reduzido de 20px para 10px */
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -27,21 +27,21 @@
 
     /* --- Títulos --- */
     .title-area {
-        padding: 15px 0;
+        padding: 10px 0; /* Reduzido padding vertical */
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 10px; /* Reduzido de 20px para 10px */
         width: 100%;
-        max-width: 1000px;
+        max-width: 600px;
     }
 
     #stage-title {
-        font-size: 2.5em;
+        font-size: 2.2em; /* Levemente reduzido */
         color: var(--accent-color);
         margin: 0;
     }
 
     #topic-title {
-        font-size: 1.8em;
+        font-size: 1.6em; /* Levemente reduzido */
         color: var(--text-light);
         margin: 0;
     }
@@ -51,36 +51,38 @@
         border: none;
         height: 1px;
         background-color: var(--card-bg);
-        width: 80%;
-        max-width: 900px;
-        margin: 10px 0 30px 0;
+        width: 90%; /* Aumentado para preencher mais */
+        max-width: 600px;
+        margin: 5px 0 20px 0; /* Espaço reduzido após a linha */
     }
 
     /* --- Área de Cards --- */
     .card-area {
         width: 100%;
-        max-width: 1000px;
-        margin-bottom: 30px;
+        max-width: 600px;
+        margin-bottom: 40px; /* Reduzido de 30px para 15px */
     }
 
     .card-label {
-        font-size: 0.75em;
+        font-size: 0.7em; /* Levemente reduzido */
         color: var(--accent-color);
-        letter-spacing: 2px;
+        margin: 0 40px;
+        letter-spacing: 1px; /* Reduzido o espaçamento entre letras */
         text-transform: uppercase;
-        margin-bottom: 10px;
+        margin-bottom: 5px; /* Reduzido de 10px para 5px */
         text-align: left;
     }
 
     .mini-cards {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        padding: 15px;
+        margin: 0 40px;
+        gap: 5px; /* Reduzido de 10px para 5px */
+        padding: 10px; /* Reduzido de 15px para 10px */
         background-color: var(--card-bg);
         border-radius: 8px;
-        min-height: 50px; /* Para manter a área visível mesmo vazia */
-        justify-content: flex-start; /* Alinha os cards à esquerda */
+        min-height: 40px; 
+        justify-content: center;
     }
 
     .mini-card {
@@ -88,13 +90,14 @@
         color: var(--text-light);
         border: 1px solid var(--accent-color);
         border-radius: 4px;
-        padding: 8px 15px;
+        padding: 5px 20px; /* Reduzido para um card mais compacto */
         cursor: pointer;
         font-weight: bold;
         transition: background-color 0.2s, transform 0.1s;
         /* Estilo para ter apenas o número e ser compacto */
-        width: 40px; /* Largura fixa para o número */
-        height: 40px; /* Altura fixa para o número */
+        width: 35px; /* Reduzido de 40px para 35px */
+        height: 35px; /* Reduzido de 40px para 35px */
+        font-size: 0.9em; /* Levemente reduzido o tamanho da fonte */
         display: flex;
         justify-content: center;
         align-items: center;
@@ -108,7 +111,7 @@
 
     .mini-card.active {
         background-color: var(--accent-color);
-        color: var(--bg-dark); /* Texto escuro no card ativo */
+        color: var(--bg-dark);
         border-color: var(--accent-color);
     }
 
@@ -120,19 +123,23 @@
     /* Responsividade básica */
     @media (max-width: 600px) {
         body {
-            padding: 10px;
+            padding: 5px; /* Mais compacto em telas pequenas */
         }
         #stage-title {
-            font-size: 2em;
+            font-size: 1.8em;
         }
         #topic-title {
-            font-size: 1.5em;
+            font-size: 1.3em;
         }
         .mini-cards {
             justify-content: center;
         }
+        .mini-card {
+            width: 30px;
+            height: 30px;
+        }
     }
-    </style>
+</style>
 </head>
 <body>
 
