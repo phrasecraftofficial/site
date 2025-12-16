@@ -1,5 +1,5 @@
-<!-- 76
-path e duels
+<!-- 77
+stages & topic added
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -589,7 +589,7 @@ path e duels
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v76
+            PhraseCraft v77
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleTrainingExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -932,33 +932,101 @@ path e duels
 
 <script>
 const projectData = [
-    {
-        title: 'Iniciação do Projeto',
-        topics: [
-            { title: 'Definição de Escopo', content: 'Detalhes sobre como definir o escopo inicial.' },
-            { title: 'Análise de Viabilidade', content: 'Métodos para avaliar a viabilidade do projeto.' },
-            { title: 'Termo de Abertura', content: 'Guia para a criação do Termo de Abertura (Project Charter).' }
-        ]
-    },
-    {
-        title: 'Planejamento Detalhado',
-        topics: [
-            { title: 'Cronograma', content: 'Como estruturar o cronograma principal.' },
-            { title: 'Gestão de Riscos', content: 'Identificação e mitigação de riscos.' },
-            { title: 'Orçamento', content: 'Processo de detalhamento orçamentário.' },
-            { title: 'Comunicação', content: 'Plano de comunicação e stakeholders.' } // Este será o 2.4
-        ]
-    },
-    {
-        title: 'Execução e Monitoramento',
-        topics: [
-            { title: 'Gerenciamento de Equipe', content: 'Técnicas de liderança e gestão de equipe.' },
-            { title: 'Relatórios de Status', content: 'Frequência e formato dos relatórios de status.' },
-            { title: 'Controle de Mudanças', content: 'Protocolo para gerenciar solicitações de mudança.' }
-        ]
-    }
-    // Adicione mais estágios aqui, se necessário
-];   
+  {
+    title: 'Blocos Fundamentais',
+    topics: [
+      { title: 'Pronomes Pessoais e To Be', content: 'Pronomes pessoais (sujeito) e o auxiliar To Be (ser/estar).' },
+      { title: 'Artigos e Determinantes', content: 'Uso de A, An, The e Zero Article.' },
+      { title: 'Quantifiers', content: 'Some, Any, Much, Many, Few, Little, A lot of.' }
+    ]
+  },
+  {
+    title: 'Pronomes Detalhados',
+    topics: [
+      { title: 'Pronomes Possessivos', content: 'Possessive pronouns e possessive adjectives.' },
+      { title: 'Pronomes Reflexivos', content: 'Uso dos reflexive pronouns.' },
+      { title: 'Pronomes Demonstrativos', content: 'This, That, These, Those.' },
+      { title: 'Pronomes Indefinidos', content: 'Indefinite pronouns, incluindo Something, Anything, etc.' },
+      { title: 'Pronomes Interrogativos', content: 'Who, What, Which, Whose, Whom.' },
+      { title: 'Pronomes Recíprocos', content: 'Each other e one another.' },
+      { title: 'Pronomes Relativos', content: 'Who, Which, That, Where, When.' }
+    ]
+  },
+  {
+    title: 'Auxiliares e Estruturas de Tempo',
+    topics: [
+      { title: 'Pronomes Objeto e To Be', content: 'Pronomes pessoais (objeto) e revisão do To Be.' },
+      { title: 'Dummy Subjects', content: 'Uso de It e There como sujeito.' },
+      { title: 'Do / Does', content: 'Formação do Simple Present.' },
+      { title: 'Did', content: 'Formação do Simple Past.' },
+      { title: 'Will', content: 'Formação do futuro simples.' },
+      { title: 'Have / Has / Had', content: 'Tempos verbais perfeitos.' },
+      { title: 'Verbos Irregulares', content: 'Tabela de verbos irregulares e particípios.' }
+    ]
+  },
+  {
+    title: 'Modais e Obrigações',
+    topics: [
+      { title: 'Modal Verbs', content: 'Can, Could, May, Might, Must, Should, Shall, Would.' },
+      { title: 'Must vs Have To', content: 'Diferença entre obrigação e proibição.' },
+      { title: 'Used To e Ought To', content: 'Hábitos passados e dever formal.' }
+    ]
+  },
+  {
+    title: 'Formas Verbais Não Finitas',
+    topics: [
+      { title: 'Gerúndio', content: 'Uso do gerund (V-ing).' },
+      { title: 'Infinitivo', content: 'Infinitive (To + verb).' },
+      { title: 'Bare Infinitive', content: 'Infinitivo sem o uso do "to".' },
+      { title: 'Gerúndio vs Infinitivo', content: 'Verbos que admitem ambas as formas.' }
+    ]
+  },
+  {
+    title: 'Verbos Multifuncionais',
+    topics: [
+      { title: 'Verbos Get e Take', content: 'Principais usos e significados.' },
+      { title: 'Phrasal Verbs', content: 'Introdução ao conceito de phrasal verbs.' }
+    ]
+  },
+  {
+    title: 'Advérbios e Partículas Essenciais',
+    topics: [
+      { title: 'Advérbios de Tempo', content: 'Yet, Still, Already.' },
+      { title: 'Advérbios de Frequência', content: 'Always, Never, Usually, Often.' },
+      { title: 'Advérbios de Grau e Certeza', content: 'Very, Too, So, Perhaps, Certainly.' },
+      { title: 'Partículas e Interjeições', content: 'Please, Sorry, Well, Kind of.' }
+    ]
+  },
+  {
+    title: 'Preposições e Conectores',
+    topics: [
+      { title: 'Preposições Chave', content: 'Preposições de tempo, lugar e relação.' },
+      { title: 'Conectores de Contraste', content: 'But, However, Although.' },
+      { title: 'Conectores de Causa', content: 'Because, Since, Why.' },
+      { title: 'Conectores de Adição', content: 'And, Also, Moreover, As well as.' },
+      { title: 'Conectores Condicionais', content: 'If, Unless, Without, Provided that.' },
+      { title: 'Conectores de Tempo', content: 'When, Before, After, Then.' },
+      { title: 'Conectores de Comparação', content: 'Than, As... As, Like.' }
+    ]
+  },
+  {
+    title: 'Tempos Verbais Avançados',
+    topics: [
+      { title: 'Continuous Tenses', content: 'Present Continuous e Past Continuous.' },
+      { title: 'Present Perfect vs Past Simple', content: 'Diferenças e usos.' },
+      { title: 'Future Forms', content: 'Going to e present continuous para futuro.' },
+      { title: 'Perfect Continuous', content: 'Tempos verbais perfect continuous.' },
+      { title: 'Conditionals', content: 'First, Second e Third Conditional.' }
+    ]
+  },
+  {
+    title: 'Estruturas Especiais',
+    topics: [
+      { title: 'Reported Speech', content: 'Discurso direto e indireto.' },
+      { title: 'Passive Voice', content: 'Formação e uso da voz passiva.' }
+    ]
+  }
+];
     // --- 1. BASE DE DADOS (LIÇÕES) ---
     const lessonsDB = [
     {
@@ -1335,7 +1403,8 @@ function renderTopicCards (stageId) {
 
 // Função: handleStageClick
 function handleStageClick(stageId, stageTitle) {
-    stageTitleEl.textContent = `Estágio ${stageId}: ${stageTitle}`;
+    stageTitleEl.style.whiteSpace = 'pre-line';
+    stageTitleEl.textContent = `Estágio ${stageId}\n${stageTitle}`;
     activeStageId = stageId;
 
     // 🔥 Limpa o destaque de TODOS os botões de Estágio e Tópico no Path
@@ -1364,8 +1433,9 @@ function handleStageClick(stageId, stageTitle) {
 
 // Função: handleTopicClick
 function handleTopicClick(topicId, topicTitle, topicContent) {
-    topicTitleEl.textContent = `Tópico ${topicId}: ${topicTitle}`;
-    
+    topicTitleEl.style.whiteSpace = 'pre-line';
+    topicTitleEl.textContent = `Tópico ${topicId}\n${topicTitle}`;
+      
     // ⚠️ Limpa apenas os TÓPICOS para manter o Estágio ativo
     document.querySelectorAll('#topic-cards-container .phase-btn').forEach(card => {
         card.classList.remove('active');
