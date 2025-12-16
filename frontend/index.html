@@ -132,6 +132,11 @@ path e duels
             color: var(--text-secondary);
             font-size: 0.75rem;
             cursor: pointer;
+            /* remove seleção */
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            -webkit-tap-highlight-color: transparent; /* remove highlight azul no mobile */
         }
         .footer-item.active { color: var(--text-primary); }
         .footer-item i { font-size: 1.2rem; margin-bottom: 4px; }
@@ -645,8 +650,8 @@ path e duels
 
                     <div class="card-label">
                       <span class="material-symbols-outlined">
-bookmark_stacks
-</span>
+                        bookmark_stacks
+                        </span>
                       <span>Estágios</span>
                     </div>
 
@@ -912,9 +917,7 @@ bookmark_stacks
             <span>Home</span>
         </div>
         <div class="footer-item" onclick="navigateTo('you')">
-            <span class="material-symbols-outlined">
-              psychology
-            </span>
+            <span class="material-symbols-outlined">psychology</span>
             <span>You</span>
         </div>
         <div class="footer-item" onclick="navigateTo('duels')">
@@ -1332,7 +1335,7 @@ function renderTopicCards (stageId) {
 
 // Função: handleStageClick
 function handleStageClick(stageId, stageTitle) {
-    stageTitleEl.textContent = `${stageId}: ${stageTitle}`;
+    stageTitleEl.textContent = `Estágio ${stageId}: ${stageTitle}`;
     activeStageId = stageId;
 
     // 🔥 Limpa o destaque de TODOS os botões de Estágio e Tópico no Path
