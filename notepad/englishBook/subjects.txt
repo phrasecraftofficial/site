@@ -1,65 +1,96 @@
-# Ingle em 10 passos
-
-## Passo I. Blocos Fundamentais
-1. Pronomes Pessoais (Sujeito) e Auxiliar To Be (Ser/Estar)
-2. Artigos e Determinantes (A, An, The, Zero Article)
-3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
-
-## Passo II. Pronomes Detalhados
-4. Possessivos (Possessive Pronouns e Adjectives)
-5. Reflexivos (Reflexive Pronouns)
-6. Demonstrativos (Demonstrative Pronouns)
-7. Indefinidos (Indefinite Pronouns - Inclui Something)
-8. Interrogativos (Interrogative Pronouns)
-9. Recíprocos (Reciprocal Pronouns)
-10. Pronomes Relativos (Relative Pronouns)
-
-## Passo III. Auxiliares e Estruturas de Tempo
-11. Pronomes Pessoais (Objeto) e Auxiliar To Be (Ser/Estar)
-12. Dummy Subjects (It e There)
-13. Do / Does (Simple Present)
-14. Did (Simple Past)
-15. Will (Future)
-16. Have / Has / Had (Tempos Perfeitos)
-17. Tabela de Verbos Irregulares / Particípios
-
-## Passo IV. Modais e Obrigações
-18. Modal Verbs (Can, Could, May, Might, Must, Should, Shall, Would)
-19. Must vs. Have To (Obrigação e Proibição)
-20. Used To e Ought To (Hábitos Passados e Dever Formal)
-
-## Passo V. Formas Verbais Não Finitas
-21. Gerúndio (Gerund - V-ing)
-22. Infinitivo (Infinitive - To + V)
-23. Bare Infinitive (Infinitivo sem "To")
-24. Verbos que admitem Ambos (Gerúndio e Infinitivo)
-
-## Passo VI. Verbos Multifuncionais
-25. Verbos Chave: Get e Take
-26. Phrasal Verbs (Introdução ao conceito)
-
-## Passo VII. Advérbios e Partículas Essenciais
-27. Advérbios de Tempo (Yet, Still, Already)
-28. Advérbios de Frequência (Always, Never, Usually, Often)
-29. Advérbios de Grau e Certeza (Very, Too, So, Perhaps, Certainly)
-30. Partículas e Interjeições Funcionais (Please, Sorry, Well, Kind of)
-
-## Passo VIII. Elementos de Conexão (Preposições e Conectores)
-31. Preposições Chave (Tempo, Lugar, Relação)
-32. Conectores de Contraste e Concessão (But, However, Although)
-33. Conectores de Causa e Razão (Because, Since, Why)
-34. Conectores de Adição (And, Also, Moreover, As well as)
-35. Conectores Condicionais (If, Unless, Without, Provided that)
-36. Conectores de Tempo e Sequência (When, Before, After, Then)
-37. Conectores de Comparação (Than, As... As, Like)
-
-## Passo IX. Tempos Verbais Avançados
-38. Present Continuous / Past Continuous
-39. Present Perfect vs. Past Simple
-40. Future Forms além de “will” (going to, present continuous for future)
-41. Perfect Continuous Tenses
-42. Frases condicionais completas (First, Second, Third Conditional)
-
-## Passo X. Estruturas Especiais
-43. Reported Speech (Direct and Indirect Speech)
-44. Passive Voice (Voz Passiva)
+const projectData = [
+  {
+    title: 'Blocos Fundamentais',
+    topics: [
+      { title: 'Pronomes Pessoais e To Be', content: 'Pronomes pessoais (sujeito) e o auxiliar To Be (ser/estar).' },
+      { title: 'Artigos e Determinantes', content: 'Uso de A, An, The e Zero Article.' },
+      { title: 'Quantifiers', content: 'Some, Any, Much, Many, Few, Little, A lot of.' }
+    ]
+  },
+  {
+    title: 'Pronomes Detalhados',
+    topics: [
+      { title: 'Pronomes Possessivos', content: 'Possessive pronouns e possessive adjectives.' },
+      { title: 'Pronomes Reflexivos', content: 'Uso dos reflexive pronouns.' },
+      { title: 'Pronomes Demonstrativos', content: 'This, That, These, Those.' },
+      { title: 'Pronomes Indefinidos', content: 'Indefinite pronouns, incluindo Something, Anything, etc.' },
+      { title: 'Pronomes Interrogativos', content: 'Who, What, Which, Whose, Whom.' },
+      { title: 'Pronomes Recíprocos', content: 'Each other e one another.' },
+      { title: 'Pronomes Relativos', content: 'Who, Which, That, Where, When.' }
+    ]
+  },
+  {
+    title: 'Auxiliares e Estruturas de Tempo',
+    topics: [
+      { title: 'Pronomes Objeto e To Be', content: 'Pronomes pessoais (objeto) e revisão do To Be.' },
+      { title: 'Dummy Subjects', content: 'Uso de It e There como sujeito.' },
+      { title: 'Do / Does', content: 'Formação do Simple Present.' },
+      { title: 'Did', content: 'Formação do Simple Past.' },
+      { title: 'Will', content: 'Formação do futuro simples.' },
+      { title: 'Have / Has / Had', content: 'Tempos verbais perfeitos.' },
+      { title: 'Verbos Irregulares', content: 'Tabela de verbos irregulares e particípios.' }
+    ]
+  },
+  {
+    title: 'Modais e Obrigações',
+    topics: [
+      { title: 'Modal Verbs', content: 'Can, Could, May, Might, Must, Should, Shall, Would.' },
+      { title: 'Must vs Have To', content: 'Diferença entre obrigação e proibição.' },
+      { title: 'Used To e Ought To', content: 'Hábitos passados e dever formal.' }
+    ]
+  },
+  {
+    title: 'Formas Verbais Não Finitas',
+    topics: [
+      { title: 'Gerúndio', content: 'Uso do gerund (V-ing).' },
+      { title: 'Infinitivo', content: 'Infinitive (To + verb).' },
+      { title: 'Bare Infinitive', content: 'Infinitivo sem o uso do "to".' },
+      { title: 'Gerúndio vs Infinitivo', content: 'Verbos que admitem ambas as formas.' }
+    ]
+  },
+  {
+    title: 'Verbos Multifuncionais',
+    topics: [
+      { title: 'Verbos Get e Take', content: 'Principais usos e significados.' },
+      { title: 'Phrasal Verbs', content: 'Introdução ao conceito de phrasal verbs.' }
+    ]
+  },
+  {
+    title: 'Advérbios e Partículas Essenciais',
+    topics: [
+      { title: 'Advérbios de Tempo', content: 'Yet, Still, Already.' },
+      { title: 'Advérbios de Frequência', content: 'Always, Never, Usually, Often.' },
+      { title: 'Advérbios de Grau e Certeza', content: 'Very, Too, So, Perhaps, Certainly.' },
+      { title: 'Partículas e Interjeições', content: 'Please, Sorry, Well, Kind of.' }
+    ]
+  },
+  {
+    title: 'Preposições e Conectores',
+    topics: [
+      { title: 'Preposições Chave', content: 'Preposições de tempo, lugar e relação.' },
+      { title: 'Conectores de Contraste', content: 'But, However, Although.' },
+      { title: 'Conectores de Causa', content: 'Because, Since, Why.' },
+      { title: 'Conectores de Adição', content: 'And, Also, Moreover, As well as.' },
+      { title: 'Conectores Condicionais', content: 'If, Unless, Without, Provided that.' },
+      { title: 'Conectores de Tempo', content: 'When, Before, After, Then.' },
+      { title: 'Conectores de Comparação', content: 'Than, As... As, Like.' }
+    ]
+  },
+  {
+    title: 'Tempos Verbais Avançados',
+    topics: [
+      { title: 'Continuous Tenses', content: 'Present Continuous e Past Continuous.' },
+      { title: 'Present Perfect vs Past Simple', content: 'Diferenças e usos.' },
+      { title: 'Future Forms', content: 'Going to e present continuous para futuro.' },
+      { title: 'Perfect Continuous', content: 'Tempos verbais perfect continuous.' },
+      { title: 'Conditionals', content: 'First, Second e Third Conditional.' }
+    ]
+  },
+  {
+    title: 'Estruturas Especiais',
+    topics: [
+      { title: 'Reported Speech', content: 'Discurso direto e indireto.' },
+      { title: 'Passive Voice', content: 'Formação e uso da voz passiva.' }
+    ]
+  }
+];
