@@ -76,7 +76,6 @@ stages & topic added
             display: flex;
             flex: 1;
             margin-top: var(--header-height);
-            height: calc(100vh - var(--header-height));
             overflow: hidden;
         }
 
@@ -192,7 +191,7 @@ stages & topic added
 
         /* PREVIEW DA LIÇÃO */
         .preview-header { margin-bottom: 20px; text-align: center; }
-        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 150px; }
+        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 110px; }
         .preview-item {
             padding: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -1747,6 +1746,8 @@ function toggleTrainingExit(action) {
 
 // --- GERENCIAMENTO CENTRALIZADO DE LAYOUT ---
 function setLayoutMode(mode) {
+    console.log(`🎨 [Layout] Mudando para modo: ${mode}`);
+    
     const modes = {
         'full': {
             hideHeader: false,
@@ -1778,36 +1779,43 @@ function setLayoutMode(mode) {
     
     // Header
     const header = document.querySelector('.app-header');
+    const appBody = document.querySelector('.app-body');
+    
     if (config.hideHeader) {
         header.style.display = 'none';
-        document.body.style.setProperty('--header-height', '0px');
+        appBody.style.marginTop = '0'; // 🔥 CORREÇÃO: Remove margem
+        console.log('📦 [Layout] Header ESCONDIDO (margin-top = 0)');
     } else {
         header.style.display = 'flex';
-        document.body.style.setProperty('--header-height', '60px');
+        appBody.style.marginTop = '60px'; // 🔥 CORREÇÃO: Adiciona margem fixa
+        console.log('📦 [Layout] Header VISÍVEL (margin-top = 60px)');
     }
 
     // Footer
     const footer = document.querySelector('.app-footer');
     if (config.hideFooter) {
         footer.style.display = 'none';
-        document.body.style.setProperty('--footer-height', '0px');
+        console.log('📦 [Layout] Footer ESCONDIDO');
     } else {
         footer.style.display = 'flex';
-        document.body.style.setProperty('--footer-height', '60px');
+        console.log('📦 [Layout] Footer VISÍVEL');
     }
 
     // Sidebar
     const sidebar = document.querySelector('.app-sidebar');
     if (config.hideSidebar) {
         sidebar.style.display = 'none';
+        console.log('📦 [Layout] Sidebar ESCONDIDA');
     } else {
-        // Restaura display original (none no mobile, flex no desktop)
         sidebar.style.display = '';
+        console.log('📦 [Layout] Sidebar VISÍVEL (responsiva)');
     }
 
     // Main Content Padding
     const mainContent = document.querySelector('.main-content');
     mainContent.style.paddingBottom = config.hideFooter ? '20px' : '80px';
+    
+    console.log(`✅ [Layout] Modo "${mode}" aplicado com sucesso`);
 }
 
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
