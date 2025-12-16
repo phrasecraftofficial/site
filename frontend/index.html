@@ -1,11 +1,5 @@
-<!-- 75
-E agora precisamos de um confirm qnd nao tiver pt srt ou pairs data para o modo treino. Assim qnd clicar no modo treino se nao tiver deve aparecer O modo treino na está disponível para essa lição. Deseja solicitar? Se confirmada sera direcionado para um link. Acho melhor so criar uma função separada e só adicionar um if na função de treino para nao estragar ela.
-Oque foi corrigido:
-No modo vídeo, cada frase gera 2 tarefas:
-jumble_pt_to_en (treino sintético)
-video_lesson (vídeo real)
-Porém, dentro do loop data.forEach(), você usa return após adicionar as tarefas do vídeo, o que interrompe apenas a iteração atual, não o loop inteiro. Isso pode causar comportamentos estranhos dependendo de como o JavaScript otimiza o código.
-Além disso, não há logs suficientes para rastrear qual frase está sendo processada em qual momento.
+<!-- 76
+path e duels
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -13,9 +7,12 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PhraseCraft App</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
     <style>
         :root {
             --bg-color: #121212;
@@ -26,6 +23,7 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
             --accent-color: #bb86fc;
             --success-color: #03dac6;
             --error-color: #cf6679;
+            --step-color: #7b7cff;
             --border-color: #333;
             --header-height: 60px;
             --footer-height: 60px; /* Mobile footer */
@@ -146,6 +144,7 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
         /* LISTA DE LIÇÕES (Home) */
         .lesson-card {
             display: flex;
+            height: 100px;      /* Altura fixa (Torna a caixa quadrada para acomodar ambos) */
             background-color: var(--surface-color);
             border-radius: 12px;
             overflow: hidden;
@@ -159,20 +158,31 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
         /* Procure por .lesson-thumb e SUBSTITUA por isso: */
       	.lesson-thumb {
             width: 100px;       /* Largura fixa da caixa */
-            height: 100px;      /* Altura fixa (Torna a caixa quadrada para acomodar ambos) */
+            height: auto;      /* Altura fixa (Torna a caixa quadrada para acomodar ambos) */
             background-color: #333; /* Fundo preto para as faixas laterais do Short */
             object-fit: contain;    /* O TRUQUE: A imagem se ajusta dentro sem cortar */
             border-radius: 0;     /* Bordas levemente arredondadas */
             flex-shrink: 0;         /* Garante que não amasse no flexbox */
         } 
         .lesson-info {
-            padding: 15px;
+            padding: 5px 5px 5px 10px;
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-        .lesson-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        .lesson-title { 
+            font-weight: bold; 
+            font-size: 1rem; 
+            margin-bottom: 5px; 
+            
+            /* Propriedades para limitar a 3 linhas */
+            display: -webkit-box;
+            -webkit-line-clamp: 3;       /* Limita a 3 linhas */
+            -webkit-box-orient: vertical;
+            overflow: hidden;            /* Esconde o que passar */
+            text-overflow: ellipsis;     /* Adiciona os ... */
+        }
         .lesson-subtitle { color: var(--text-secondary); font-size: 0.9rem; }
 
         /* PREVIEW DA LIÇÃO */
@@ -185,38 +195,25 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
             font-style: italic;
         }
         .preview-item:last-child { border-bottom: none; }
-
-        /* MODO PREVIEW (Novo): Esconde navegação para focar no conteúdo */
-        body.preview-mode .app-footer { display: none; }
-        body.preview-mode .app-sidebar { display: none; }
-
-        /* Ajusta o conteúdo para ocupar toda a tela */
-        body.preview-mode .main-content { 
-            padding-bottom: 20px; /* Remove o espaço do footer */
-            max-height: calc(100vh - var(--header-height)); /* Altura exata disponível */
-        }
-        
-        /* Ajusta o grid no Desktop para ocupar largura total */
-        body.preview-mode .app-body { display: block; }
         
         .train-btn-container {
             position: fixed;
-            /* Mudei de 70px para 30px para aproveitar o espaço do footer oculto */
             bottom: 30px; 
             left: 0; 
             right: 0;
             display: flex; 
             justify-content: center;
-            pointer-events: none; /* Permite clicar no fundo se não acertar o botão */
-            gap: 20px;
-            z-index: 1000; /* Garante que fique acima de tudo */
+            pointer-events: none;
+            gap: 10px; 
+            z-index: 1000; 
+            padding: 0 10px; 
         }
         .btn-train {
             pointer-events: auto;
             background-color: var(--accent-color);
             color: #000;
             border: none;
-            padding: 10px 35px;
+            padding: 6px 28px;
             font-size: 1rem;
             border-radius: 30px;
             font-weight: bold;
@@ -239,7 +236,7 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
             background-color: var(--surface-color);
             border: 1px solid var(--border-color);
             color: var(--text-secondary);
-            padding: 8px 16px;
+            padding: 8px 20px;
             border-radius: 4px; /* Retangular com cantos suaves */
             cursor: pointer;
             font-weight: bold;
@@ -422,12 +419,6 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-5px); } 50% { transform: translateX(5px); } }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(207, 102, 121, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
 
-        /* TRAINING MODE OVERRIDES */
-        /* Esconde footer e sidebar quando estiver no modo treino */
-        body.training-mode .app-footer { display: none; }
-        body.training-mode .app-sidebar { display: none; }
-        body.training-mode .app-body { grid-template-columns: 1fr; } /* Desktop full width */
-
       /* --- ESTADO DE ÁUDIO TOCANDO --- */
       body.audio-playing .btn-train,
       body.audio-playing .nav-btn,
@@ -569,15 +560,33 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
       .shake-anim {
           animation: shake-horizontal 0.4s ease-in-out;
       }
+          /* --- PATH --- */
+
+    /* --- Área de Cards --- */
+    .card-label {
+      padding: 0 8px 0 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--accent-color);
+      background-color: #333;
+      cursor: pointer;
+    }
+
     </style>
 </head>
 <body>
 
     <header class="app-header">
         <div class="header-title" onclick="navigateTo('home')">
-            <i class="fa-solid fa-cube"></i> PhraseCraft v75
+            <span class="material-symbols-outlined">
+            owl
+            </span> 
+            PhraseCraft v76
         </div>
-        <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="openPreview(currentLesson.id)">
+        <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleTrainingExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
         </div>
     </header>
@@ -589,7 +598,16 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
                 <i class="fa-solid fa-house"></i> Home
             </a>
             <a class="sidebar-item" onclick="navigateTo('you')">
-                <i class="fa-regular fa-user"></i> You
+                <span class="material-symbols-outlined">
+                  psychology
+                </span>
+                You
+            </a>
+            <a class="sidebar-item" onclick="navigateTo('duels')">
+                <span class="material-symbols-outlined">swords</span> Duels
+            </a>
+            <a class="sidebar-item" onclick="navigateTo('path')">
+                <i class="fa-solid fa-map-location-dot"></i> Path
             </a>
             <div style="margin-top: auto; padding: 20px; font-size: 0.8rem; color: #555;">
                 PhraseCraft v1.0
@@ -608,6 +626,76 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
                     </a>
                 </div>
                 <div id="lessons-list"></div>
+            </section>
+
+            <section id="view-duels" class="view-section">
+                <div style="text-align: center; padding: 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 10px;">swords</span>
+                    <h2 style="margin-bottom: 10px;">Arena de Duelos</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Desafie amigos ou enfrente a IA para ganhar XP extra.</p>
+                    
+                    <div id="duels" style="display: flex; flex-direction: column; gap: 15px;">
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-path" class="view-section">
+            
+                <div class="lesson-card">
+
+                    <div class="card-label">
+                      <span class="material-symbols-outlined">
+bookmark_stacks
+</span>
+                      <span>Estágios</span>
+                    </div>
+
+                	<div class="lesson-info">
+                      <h2 class="lesson-title" id="stage-title">
+                      Choose your stage
+                      </h2>
+                	</div>
+                    
+                </div>
+            
+                <div class="phase-controls" id="stage-cards-container" style="
+            margin: 0 0 0 0;"></div>
+                
+                <h2 class="" style="color: #b9b9b9; text-align: center; margin: 25px;">
+                    <i class="lesson-title fa-solid fa-arrow-down"></i> 
+                </h2>
+            
+                <div class="lesson-card">
+
+                    <div class="card-label">
+                      <span class="material-symbols-outlined">
+                      move_up
+                      </span>
+                      <span>Tópicos</span>
+                    </div>
+
+                	<div class="lesson-info">
+                      <h2 class="lesson-title" id="topic-title">
+                      Choose your topic
+                      </h2>
+                	</div>
+                    
+                </div>
+                
+                <div class="phase-controls" id="topic-cards-container"></div>
+
+                <div style="display: flex; justify-content: center; margin-top: ;">
+                
+                    <button class="btn-train" style="
+            margin: 20px 0 0 0;">
+                    
+                        <span class="btn-train material-symbols-outlined icon-pulsing" style="cursor: pointer; font-size: 1.6rem;">
+                        rocket_launch
+                        </span>
+                        
+                    </button>
+                    
+                </div>
             </section>
 
             <section id="view-preview" class="view-section">
@@ -630,7 +718,7 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
                         <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.6rem;"></i> 
                     </button>
                 
-                    <<button class="btn-train" style="color: ;" title="Pronúncia" onclick="startSpeakingPractice()">
+                    <button class="btn-train" style="color: ;" title="Pronúncia" onclick="startSpeakingPractice()">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
                 
@@ -658,15 +746,15 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
                     </div>
                 </div>
 
-                <div style="padding: 20px;">
-                    <button class="option-btn" style="width: 100%; text-align: center; margin-bottom: 10px; color: var(--error-color); border-color: var(--error-color);" onclick="handleLogout()">
+                <div style="padding: 20px; text-align: center;">
+                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 15px;" onclick="navigateTo('settings')">
+                        <i class="fa-solid fa-gear"></i> Configurações
+                    </button>
+
+                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 10px; color: var(--error-color); border-color: var(--error-color);" onclick="handleLogout()">
                         <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
                     </button>
                 </div>
-              
-                <button class="option-btn" style="width: 100%; text-align: center; margin-bottom: 10px;" onclick="navigateTo('settings')">
-                    <i class="fa-solid fa-gear"></i> Configurações
-                </button>
             </section>
           
             <section id="view-login" class="view-section">
@@ -698,11 +786,18 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
             </section>
 
             <section id="view-settings" class="view-section">
-                <div style="padding: 20px;">
-                    <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-arrow-left" onclick="navigateTo('you')" style="cursor: pointer;"></i> 
-                        Configurações
-                    </h2>
+                <div style="text-align: center; padding: 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 10px;">
+                    	tools_power_drill
+                    </span>
+                    
+                    <h2 style="margin-bottom: 10px;">Configurações</h2>
+                    
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Defina o seu modo de aprender.</p>
+                    
+                    <div id="duels" style="display: flex; flex-direction: column; gap: 15px;">
+                    </div>
+                </div>
             
                     <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
                         <label style="display: block; margin-bottom: 10px; color: var(--text-secondary);">Qualidade de Vídeo (Padrão)</label>
@@ -728,7 +823,6 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
                             <i class="fa-solid fa-circle-info"></i> Nota: O YouTube pode ignorar essa configuração dependendo da velocidade da sua conexão.
                         </p>
                     </div>
-                </div>
             </section>
           
             <section id="view-training" class="view-section">
@@ -818,26 +912,50 @@ Além disso, não há logs suficientes para rastrear qual frase está sendo proc
             <span>Home</span>
         </div>
         <div class="footer-item" onclick="navigateTo('you')">
-            <i class="fa-regular fa-user"></i>
+            <span class="material-symbols-outlined">
+              psychology
+            </span>
             <span>You</span>
+        </div>
+        <div class="footer-item" onclick="navigateTo('duels')">
+            <span class="material-symbols-outlined">swords</span>
+            <span>Duels</span>
+        </div>
+        <div class="footer-item" onclick="navigateTo('path')">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span>Path</span>
         </div>
     </footer>
 
 <script>
-// Feedback visual do page reload
-function reloadWithFeedback(event) {
-    event.preventDefault();
-    
-    // Feedback visual
-    const link = event.currentTarget;
-    link.style.color = '#00ff00';
-    link.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...';
-    
-    // Aguarda 300ms e recarrega
-    setTimeout(() => {
-        location.reload();
-    }, 300);
-}    
+const projectData = [
+    {
+        title: 'Iniciação do Projeto',
+        topics: [
+            { title: 'Definição de Escopo', content: 'Detalhes sobre como definir o escopo inicial.' },
+            { title: 'Análise de Viabilidade', content: 'Métodos para avaliar a viabilidade do projeto.' },
+            { title: 'Termo de Abertura', content: 'Guia para a criação do Termo de Abertura (Project Charter).' }
+        ]
+    },
+    {
+        title: 'Planejamento Detalhado',
+        topics: [
+            { title: 'Cronograma', content: 'Como estruturar o cronograma principal.' },
+            { title: 'Gestão de Riscos', content: 'Identificação e mitigação de riscos.' },
+            { title: 'Orçamento', content: 'Processo de detalhamento orçamentário.' },
+            { title: 'Comunicação', content: 'Plano de comunicação e stakeholders.' } // Este será o 2.4
+        ]
+    },
+    {
+        title: 'Execução e Monitoramento',
+        topics: [
+            { title: 'Gerenciamento de Equipe', content: 'Técnicas de liderança e gestão de equipe.' },
+            { title: 'Relatórios de Status', content: 'Frequência e formato dos relatórios de status.' },
+            { title: 'Controle de Mudanças', content: 'Protocolo para gerenciar solicitações de mudança.' }
+        ]
+    }
+    // Adicione mais estágios aqui, se necessário
+];   
     // --- 1. BASE DE DADOS (LIÇÕES) ---
     const lessonsDB = [
     {
@@ -995,6 +1113,9 @@ function reloadWithFeedback(event) {
         // ou use a nova lógica que vou passar.
         },
     ];
+  
+    // --- SISTEMA DE NAVEGAÇÃO (APP STATE) ---
+    let navigationStack = []; // Pilha para rastrear histórico de telas
 
     // 0 = primeira página (1-5)
     let currentPhase = 0;
@@ -1059,6 +1180,15 @@ function reloadWithFeedback(event) {
     // 4. Inicialize o Account (Autenticação)
     const account = new Appwrite.Account(client);
   
+    // --- Elementos DOM PATH ---
+    const stageTitleEl = document.getElementById('stage-title');
+    const topicTitleEl = document.getElementById('topic-title');
+    const stageCardsContainer = document.getElementById('stage-cards-container');
+    const topicCardsContainer = document.getElementById('topic-cards-container');
+    
+    let activeStageId = null;
+    let structuredData = []; // Aqui será armazenada a estrutura de dados com os IDs gerados
+  
     // --- 2. GESTÃO DE UI E NAVEGAÇÃO ---
     const ui = {
         views: document.querySelectorAll('.view-section'),
@@ -1100,9 +1230,152 @@ function reloadWithFeedback(event) {
         videoWrapper: document.getElementById('video-area-wrapper'),
         videoContextText: document.getElementById('video-context-text')
     };
-  
-    // --- AUTH FUNCTIONS ---
 
+// Feedback visual do page reload
+function reloadWithFeedback(event) {
+    event.preventDefault();
+    
+    // Feedback visual
+    const link = event.currentTarget;
+    link.style.color = '#00ff00';
+    link.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...';
+    
+    // Aguarda 300ms e recarrega
+    setTimeout(() => {
+        location.reload();
+    }, 300);
+}     
+    
+// --- PATH ---
+// --- Função de Geração Dinâmica de IDs ---
+function generateDynamicIds(data) {
+    const structured = [];
+    
+    // Itera sobre os Estágios (Stage Index + 1 = Stage ID)
+    data.forEach((stage, stageIndex) => {
+        const stageId = stageIndex + 1;
+        
+        const topicsWithIds = stage.topics.map((topic, topicIndex) => ({
+            stageId: stageId,
+            id: parseFloat(`${stageId}.${topicIndex + 1}`), // Gera ID como 1.1, 1.2, 2.1, etc.
+            title: topic.title,
+            content: topic.content 
+        }));
+        
+        structured.push({
+            id: stageId,
+            title: stage.title,
+            topics: topicsWithIds
+        });
+    });
+    
+    return structured;
+}
+
+// --- Funções de Renderização e Click (Ajustadas para usar structuredData) ---
+
+// Função: renderStageCards
+function renderStageCards () {
+    stageCardsContainer.innerHTML = '';
+
+    // CORREÇÃO DE LÓGICA: Renderiza Estágios do Path
+    structuredData.forEach(stage => {
+        const btn = document.createElement('button');
+        btn.className = `phase-btn`;
+        btn.id = `stage-${stage.id}`;
+        btn.innerText = stage.id; // <--- AGORA EXIBE SOMENTE O ID (1, 2, 3...)
+        
+        btn.onclick = () => {
+            handleStageClick(stage.id, stage.title);
+        };
+        
+        stageCardsContainer.appendChild(btn);
+    });
+  
+    // 3. SELEÇÃO INICIAL: Seleciona o primeiro estágio, que automaticamente seleciona o primeiro tópico
+    if (structuredData.length > 0) {
+        handleStageClick(structuredData[0].id, structuredData[0].title);
+    }
+}
+  
+// Função: renderTopicCards
+function renderTopicCards (stageId) {
+    topicCardsContainer.innerHTML = '';
+    
+    // CORREÇÃO DE LÓGICA: Renderiza Tópicos do Path
+    if (!stageId) {
+        topicCardsContainer.innerHTML = '<span class="placeholder-text">Click on a Stage to view the Topics.</span>';
+        topicTitleEl.textContent = 'Choose your topic';
+        return;
+    }
+
+    const stage = structuredData.find(s => s.id === stageId);
+    if (!stage || stage.topics.length === 0) {
+        topicCardsContainer.innerHTML = '<span class="placeholder-text">No Topics found for this Stage.</span>';
+        topicTitleEl.textContent = 'No Topics found';
+        return;
+    }
+
+    stage.topics.forEach(topic => {
+        const btn = document.createElement('button');
+        btn.className = `phase-btn`;
+        btn.id = `topic-${topic.id}`;
+        btn.innerText = topic.id; // <--- AGORA EXIBE SOMENTE O ID (1.1, 1.2, 2.1...)
+        
+        btn.onclick = () => {
+            handleTopicClick(topic.id, topic.title, topic.content);
+        };
+        
+        topicCardsContainer.appendChild(btn);
+    });
+}
+
+// Função: handleStageClick
+function handleStageClick(stageId, stageTitle) {
+    stageTitleEl.textContent = `${stageId}: ${stageTitle}`;
+    activeStageId = stageId;
+
+    // 🔥 Limpa o destaque de TODOS os botões de Estágio e Tópico no Path
+    document.querySelectorAll('#stage-cards-container .phase-btn, #topic-cards-container .phase-btn').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Ativa o cartão de Estágio pelo ID
+    const activeStageCard = document.getElementById(`stage-${stageId}`);
+
+    if (activeStageCard) {
+        activeStageCard.classList.add('active');
+    }
+
+    renderTopicCards(stageId);
+    
+    // Seleção Automática do Primeiro Tópico
+    const currentStage = structuredData.find(s => s.id === stageId);
+    if (currentStage && currentStage.topics.length > 0) {
+        const firstTopic = currentStage.topics[0];
+        handleTopicClick(firstTopic.id, firstTopic.title, firstTopic.content);
+    } else {
+        topicTitleEl.textContent = 'Nenhum Tópico Encontrado';
+    }
+}
+
+// Função: handleTopicClick
+function handleTopicClick(topicId, topicTitle, topicContent) {
+    topicTitleEl.textContent = `Tópico ${topicId}: ${topicTitle}`;
+    
+    // ⚠️ Limpa apenas os TÓPICOS para manter o Estágio ativo
+    document.querySelectorAll('#topic-cards-container .phase-btn').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Ativa o tópico pelo ID
+    const activeTopicCard = document.getElementById(`topic-${topicId}`);
+    
+    if (activeTopicCard) {
+        activeTopicCard.classList.add('active');
+    }
+}
+  
     // Verifica status (Mockado para FALSE como pedido)
     // --- AUTH FUNCTIONS (REAL APPWRITE) ---
 
@@ -1285,10 +1558,41 @@ function reloadWithFeedback(event) {
         });
     }
 
+    // --- FUNÇÃO DE LIMPEZA GLOBAL ---
+    function clean() {
+        console.log('🧹 [Clean] Limpando recursos...');
+        
+        // 1. Cancela qualquer síntese de voz ativa
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            console.log('🔇 [Clean] Sintetizador cancelado');
+        }
+        
+        // 2. Para reconhecimento de voz se estiver ativo
+        if (isListening && recognition) {
+            try {
+                recognition.stop();
+                isListening = false;
+                console.log('🎤 [Clean] Reconhecimento parado');
+            } catch(e) {
+                console.warn('⚠️ Recognition já estava parado');
+            }
+        }
+        
+        // 3. Para o player do YouTube
+        stopVideoPlayback();
+        
+        // 4. Remove classe de bloqueio de UI
+        document.body.classList.remove('audio-playing');
+        
+        console.log('✅ [Clean] Limpeza concluída');
+    }
+  
     // Adicionado parâmetro 'addToHistory' com padrão true
     async function navigateTo(viewName, addToHistory = true) {
-        stopVideoPlayback();
-
+        // 🔥 CHAMA CLEAN ANTES DE QUALQUER COISA
+        clean();
+    
         // --- PROTEÇÃO DE ROTA ---
         if (viewName === 'you') {
             const user = await checkAuthStatus();
@@ -1306,27 +1610,29 @@ function reloadWithFeedback(event) {
                  return;
              }
         }
-
+    
         // --- GERENCIAMENTO DE HISTÓRICO ---
-        // AQUI ESTAVA O ERRO: Certifique-se de usar `viewName` e NÃO `lessonId`
         if (addToHistory) {
-            history.pushState({ view: viewName }, '', `#${viewName}`);
+             navigationStack.push(viewName);
         }
-
+    
         // --- RESET VISUAL ---
         ui.views.forEach(v => v.classList.remove('active'));
         ui.footerItems.forEach(i => i.classList.remove('active'));
         ui.sidebarItems.forEach(i => i.classList.remove('active'));
-        document.body.classList.remove('training-mode');
-        document.body.classList.remove('preview-mode');
-        if(ui.trainingExit) ui.trainingExit.classList.add('hidden');
-        if(isListening && recognition) recognition.stop();
 
+        // Ajustes visuais e navegação
+        setLayoutMode('full');
+        toggleTrainingExit('hide');
+    
         // --- ATIVAÇÃO DA VIEW ---
         const targetView = document.getElementById(`view-${viewName}`);
         if (targetView) targetView.classList.add('active');
-
+    
         // Menu Ativo
+        if(viewName === 'home' || viewName === 'you' || viewName === 'path' || viewName === 'duels') {
+            toggleTrainingExit('hide');
+        } 
         if(viewName === 'home' || viewName === 'preview') {
             document.querySelector('.footer-item:nth-child(1)').classList.add('active');
             document.querySelector('.sidebar-item:nth-child(1)').classList.add('active');
@@ -1337,15 +1643,109 @@ function reloadWithFeedback(event) {
         }
     }
 
+// --- CONTROLE CENTRALIZADO DO BOTÃO X ---
+function toggleTrainingExit(action) {
+    const exitBtn = ui.trainingExit;
+    if (!exitBtn) return;
+    
+    if (action === 'show') {
+        exitBtn.classList.remove('hidden');
+    } 
+    else if (action === 'hide') {
+        exitBtn.classList.add('hidden');
+    }
+    else if (action === 'goback') {
+        // Remove a tela atual da pilha
+        navigationStack.pop();
+        
+        // Pega a tela anterior (se existir)
+        const previousView = navigationStack.length > 0 
+            ? navigationStack[navigationStack.length - 1] 
+            : 'home';
+        
+        // Se a tela anterior era preview, precisa do ID da lição
+        if (previousView === 'preview' && currentLesson && currentLesson.id) {
+            openPreview(currentLesson.id, false); // false = não adiciona ao histórico
+        } else {
+            navigateTo(previousView, false); // false = não adiciona ao histórico
+        }
+    }
+}
+
+// --- GERENCIAMENTO CENTRALIZADO DE LAYOUT ---
+function setLayoutMode(mode) {
+    const modes = {
+        'full': {
+            hideHeader: false,
+            hideFooter: false,
+            hideSidebar: false,
+            contentPadding: '20px'
+        },
+        'preview': {
+            hideHeader: false,
+            hideFooter: true,
+            hideSidebar: true,
+            contentPadding: '20px'
+        },
+        'training': {
+            hideHeader: false,
+            hideFooter: true,
+            hideSidebar: true,
+            contentPadding: '10px'
+        },
+        'immersive': {
+            hideHeader: true,
+            hideFooter: true,
+            hideSidebar: true,
+            contentPadding: '0'
+        }
+    };
+
+    const config = modes[mode] || modes['full'];
+    
+    // Header
+    const header = document.querySelector('.app-header');
+    if (config.hideHeader) {
+        header.style.display = 'none';
+        document.body.style.setProperty('--header-height', '0px');
+    } else {
+        header.style.display = 'flex';
+        document.body.style.setProperty('--header-height', '60px');
+    }
+
+    // Footer
+    const footer = document.querySelector('.app-footer');
+    if (config.hideFooter) {
+        footer.style.display = 'none';
+        document.body.style.setProperty('--footer-height', '0px');
+    } else {
+        footer.style.display = 'flex';
+        document.body.style.setProperty('--footer-height', '60px');
+    }
+
+    // Sidebar
+    const sidebar = document.querySelector('.app-sidebar');
+    if (config.hideSidebar) {
+        sidebar.style.display = 'none';
+    } else {
+        // Restaura display original (none no mobile, flex no desktop)
+        sidebar.style.display = '';
+    }
+
+    // Main Content Padding
+    const mainContent = document.querySelector('.main-content');
+    mainContent.style.paddingBottom = config.hideFooter ? '20px' : '80px';
+}
+
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
-    // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA - MANTÉM A FASE) ---
     async function openPreview(lessonId, addToHistory = true) {
         console.log("🚀 [openPreview] Chamado com ID:", lessonId);
 
-        // 1. LIMPEZA INICIAL
-        stopVideoPlayback(); 
-        document.body.classList.remove('training-mode'); 
+        // 1. 🔥 LIMPEZA INICIAL
+        clean();
+        
+        setLayoutMode('full');
         
         // 2. BUSCA A LIÇÃO (Antes de mudar histórico)
         let rawLesson = allLessons.find(l => l.id == lessonId);
@@ -1371,14 +1771,17 @@ function reloadWithFeedback(event) {
         console.log("✅ Lição carregada:", rawLesson.title);
 
         // 3. SE ACHOU, ATUALIZA A TELA E URL
-        document.body.classList.add('preview-mode');
-        if (ui.trainingExit) ui.trainingExit.classList.add('hidden');
+        setLayoutMode('preview');
+        
+        toggleTrainingExit('hide');
        
         if (addToHistory) {
             const newHash = `#lesson-${rawLesson.id}`;
             console.log("📝 Atualizando URL para:", newHash);
             history.pushState({ view: 'preview', lessonId: rawLesson.id }, '', newHash);
-        } 
+            
+            navigationStack.push('preview');
+        }
 
         // 4. UI e Download
         ui.previewTitle.innerText = "Carregando...";
@@ -1708,13 +2111,15 @@ function validateTrainingData() {
         
         // --- HISTÓRICO (NOVO) ---
         history.pushState({ view: 'training' }, '', '#training');
+        navigationStack.push('training');
         
         // CORREÇÃO: Reseta o modo para 'full' explicitamente
         trainingMode = 'full';
         
         // Ajustes de Layout para Treino
-        document.body.classList.add('training-mode'); // Esconde footer/sidebar
-        ui.trainingExit.classList.remove('hidden'); // Mostra botão de sair no header
+        setLayoutMode('training'); // Esconde footer/sidebar
+        
+        toggleTrainingExit('show'); // Mostra botão de sair no header
         
         // Mostra view de treino
         ui.views.forEach(v => v.classList.remove('active'));
@@ -2731,7 +3136,7 @@ function validateTrainingData() {
             }
         }
 
-        document.body.classList.remove('training-mode');
+        setLayoutMode('full');
     }
     
     function nextTask() {
@@ -2763,9 +3168,12 @@ function validateTrainingData() {
         
         speakingResults = []; // <--- LIMPA RESULTADOS ANTERIORES
         trainingMode = 'speaking';
-        
-        document.body.classList.add('training-mode'); 
-        ui.trainingExit.classList.remove('hidden');
+
+        // Ajustes visuais e navegação
+        setLayoutMode('training');
+        toggleTrainingExit('show');
+        history.pushState({ view: 'training' }, '', '#training');
+        navigationStack.push('training');
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
@@ -2991,9 +3399,11 @@ function validateTrainingData() {
         // Define o modo
         trainingMode = 'video';
         
-        // Ajustes visuais (entra na tela de treino)
-        document.body.classList.add('training-mode'); 
-        ui.trainingExit.classList.remove('hidden');
+        // Ajustes visuais e navegação
+        setLayoutMode('training');
+        toggleTrainingExit('show');
+        history.pushState({ view: 'training' }, '', '#training');
+        navigationStack.push('training');
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
@@ -3258,8 +3668,14 @@ function validateTrainingData() {
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
         initMobileNavigation();
-        loadUserPreferences(); // <--- ADICIONE AQUI
+        loadUserPreferences();
         initApp();
+      
+        // 1. Gera a estrutura de dados completa com IDs
+        structuredData = generateDynamicIds(projectData);
+    
+        // 2. Renderiza os Estágios
+        renderStageCards();      
     });
     </script>
 </body>
