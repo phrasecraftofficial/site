@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pronunciation Practice</title>
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    :root {
+      --accent: #bb86fc;
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #eaeaea;
+      --muted: #aaaaaa;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 400px;
+      padding: 24px;
+    }
+
+    .sentence-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .sentence {
+      font-size: 18px;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .speak-btn {
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 22px;
+    }
+
+    .mic {
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .mic i {
+      font-size: 56px;
+      color: var(--accent);
+    }
+
+    .status {
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .status.recording {
+      color: var(--accent);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px 28px;
+      font-size: 15px;
+      border-radius: 24px;
+      cursor: pointer;
+    }
+
+    .result {
+      display: none;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .score {
+      font-size: 22px;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    audio {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Frase + Speaker -->
+  <div class="sentence-row">
+    <div class="sentence">
+      He was doing a Jackson dance!
+    </div>
+    <i id="speakBtn" class="material-icons speak-btn">volume_up</i>
+  </div>
+
+  <!-- Microfone -->
+  <div class="mic">
+    <i class="material-icons">mic</i>
+  </div>
+
+  <!-- Status -->
+  <div id="status" class="status">
+    Ouça a frase e grave sua pronúncia
+  </div>
+
+  <!-- Botão -->
+  <div class="controls">
+    <button id="recordBtn">Gravar</button>
+  </div>
+
+  <!-- Resultado -->
+  <div id="result" class="result">
+    <div id="score" class="score"></div>
+    <audio id="audioPlayer" controls></audio>
+  </div>
+
+</div>
+
+<script>
+  const sentenceText = "He was doing a Jackson dance!";
+  
+  // Elementos do DOM
+  const statusEl = document.getElementById("status");
+  const recordBtn = document.getElementById("recordBtn");
+  const speakBtn = document.getElementById("speakBtn");
+  const resultEl = document.getElementById("result");
+  const scoreEl = document.getElementById("score");
+  const audioPlayer = document.getElementById("audioPlayer");
+
+  // --- Variáveis de Controle ---
+  // Step 1: Início -> Clique leva a Avaliação
+  // Step 2: Avaliando (Ouvindo) -> Clique leva a Parar Avaliação
+  // Step 3: Pronto para Gravar Áudio -> Clique leva a Gravando
+  // Step 4: Gravando Áudio -> Clique leva a Parar e Mostrar Resultado
+  // Step 5: Fim (Reiniciar)
+  let step = 1; 
+  
+  let savedScore = 0; 
+  let finalTranscript = ""; // Acumula o texto falado
+  let isSpeaking = false; // Controle do TTS
+
+  // --- Audio Context & Recorder ---
+  let mediaRecorder;
+  let audioChunks = [];
+  let currentBlobUrl = null;
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // --- Configuração do Reconhecimento (STT) ---
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = true; // IMPEDIR QUE PARE NO SILÊNCIO
+  recognition.interimResults = false; 
+  recognition.maxAlternatives = 1;
+
+  // --- Algoritmo de Levenshtein ---
+  function levenshteinDistance(a, b) {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  function calculateSimilarity(original, spoken) {
+    const normalize = (str) => str.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+    const s1 = normalize(original);
+    const s2 = normalize(spoken);
+    if (!s1 || !s2) return 0;
+    const distance = levenshteinDistance(s1, s2);
+    const maxLength = Math.max(s1.length, s2.length);
+    return Math.max(0, Math.floor(((maxLength - distance) / maxLength) * 100));
+  }
+
+  // --- Funções Auxiliares ---
+  function playBeep(freq = 880) {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = freq;
+    osc.type = "sine";
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+  }
+
+  function speakSentence() {
+    if (isSpeaking) return;
+    const u = new SpeechSynthesisUtterance(sentenceText);
+    u.lang = "en-US";
+    isSpeaking = true;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+    u.onend = () => isSpeaking = false;
+  }
+
+  // --- Lógica de Controle do Botão Principal ---
+  recordBtn.addEventListener("click", () => {
+    switch (step) {
+      case 1: // Iniciar Avaliação
+        startEvaluation();
+        break;
+      case 2: // Parar Avaliação Manualmente
+        stopEvaluation();
+        break;
+      case 3: // Iniciar Gravação de Áudio
+        startAudioRecording();
+        break;
+      case 4: // Parar Gravação de Áudio
+        stopAudioRecording();
+        break;
+      case 5: // Reiniciar
+        resetAll();
+        break;
+    }
+  });
+
+  // --- ETAPA 1: AVALIAÇÃO (STT) ---
+  function startEvaluation() {
+    playBeep(880);
+    finalTranscript = ""; // Limpa anterior
+    statusEl.textContent = "Ouvindo... Clique em Parar ao terminar.";
+    statusEl.classList.add("recording");
+    recordBtn.textContent = "Parar";
+    
+    try {
+      recognition.start();
+      step = 2; // Agora estamos no estado 'Ouvindo'
+    } catch (e) {
+      console.error(e);
+      statusEl.textContent = "Erro ao iniciar reconhecimento.";
+    }
+  }
+
+  // Acumula resultados (caso fale pausadamente)
+  recognition.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript + " ";
+      }
+    }
+  };
+
+  function stopEvaluation() {
+    recognition.stop();
+    // O cálculo real acontece no onend para garantir que pegamos tudo
+    // Mas mudamos o texto visualmente já
+    statusEl.classList.remove("recording");
+    recordBtn.textContent = "Processando...";
+    recordBtn.disabled = true; 
+  }
+
+  recognition.onend = () => {
+    // Só avança se estivéssemos no passo 2 (significa que o usuário parou ou caiu)
+    if (step === 2) {
+      // Se o usuário não clicou em parar mas o STT caiu sozinho (timeout),
+      // forçamos o encerramento da etapa.
+      
+      console.log("Texto reconhecido: ", finalTranscript);
+      savedScore = calculateSimilarity(sentenceText, finalTranscript || "");
+      
+      // Prepara para a próxima etapa
+      statusEl.textContent = "Nota capturada! Agora grave o áudio.";
+      recordBtn.textContent = "Gravar Áudio";
+      recordBtn.disabled = false;
+      step = 3; 
+    }
+  };
+
+  // --- ETAPA 2: GRAVAÇÃO DE ÁUDIO (MediaRecorder) ---
+  async function startAudioRecording() {
+    try {
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      playBeep(880);
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      
+      mediaRecorder.onstop = () => {
+        playBeep(440);
+        const blob = new Blob(audioChunks, { type: "audio/webm" });
+        if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = URL.createObjectURL(blob);
+        showResults();
+      };
+
+      mediaRecorder.start();
+      statusEl.textContent = "Gravando áudio...";
+      statusEl.classList.add("recording");
+      recordBtn.textContent = "Parar";
+      step = 4;
+
+    } catch (err) {
+      console.error("Erro mic:", err);
+      statusEl.textContent = "Erro ao acessar microfone.";
+    }
+  }
+
+  function stopAudioRecording() {
+    mediaRecorder.stop();
+    // onstop fará o resto
+  }
+
+  // --- RESULTADOS ---
+  function showResults() {
+    statusEl.classList.remove("recording");
+    statusEl.textContent = "Concluído!";
+    
+    scoreEl.textContent = `Nota: ${savedScore}`;
+    audioPlayer.src = currentBlobUrl;
+    audioPlayer.play();
+    resultEl.style.display = "block";
+    
+    recordBtn.textContent = "Reiniciar";
+    step = 5;
+  }
+
+  function resetAll() {
+    resultEl.style.display = "none";
+    audioPlayer.pause();
+    audioPlayer.src = "";
+    savedScore = 0;
+    finalTranscript = "";
+    step = 1;
+    statusEl.textContent = "Ouça a frase e grave sua pronúncia";
+    recordBtn.textContent = "Gravar";
+  }
+
+  // TTS Botão
+  speakBtn.addEventListener("click", speakSentence);
+
+  // Auto-play ao carregar
+  window.addEventListener("load", () => {
+    speakSentence();
+    statusEl.textContent = "Ouça a frase e clique em Gravar";
+  });
+
+</script>
+
+</body>
+</html>
