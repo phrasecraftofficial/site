@@ -1,4 +1,18 @@
 # site
+##########
+No plano gratuito do Appwrite Cloud, os limites de solicitações (requests) são definidos por tipo de operação e são aplicados por mês, por projeto: 
+Operações de leitura (reads) no banco de dados: 500.000 por mês.
+Operações de escrita (writes) no banco de dados: 250.000 por mês.
+Execuções de funções (functions): 750.000 por mês. 
+Além disso, existem outros limites no plano gratuito: 
+Usuários ativos mensalmente: 75.000.
+Largura de banda (bandwidth): 5GB.
+Armazenamento (storage): 2GB.
+Projetos: Limite de 2 projetos por organização.
+Outros limites de recursos por projeto (como 1 banco de dados, 1 bucket, 5 funções). 
+Quando esses limites são atingidos no plano gratuito, as operações adicionais são limitadas (throttled), o que significa que as solicitações além do limite não serão processadas. 
+#########
+
 >voz, repeticao, outro botoes que tem no play, pode adicionar repeticao em play, preview e editsrt, pode ter quemontar a frase com voz sintetica, dps voz real dps traducao etc
 >enviar performance para posts, sera a ultima performance obtida
 
