@@ -351,6 +351,7 @@ novo modo speak
         .nav-controls {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px;
             padding: 0 5px;
         }
@@ -831,17 +832,17 @@ novo modo speak
           
             <section id="view-training" class="view-section">
                 <div class="quiz-container">
+                    
                     <div class="nav-controls">
                         <button id="nav-prev" class="nav-btn" onclick="prevTask()">❰</button>
+                        <div class="progress-bar" style="flex: 1; margin: 0 10px;"><div class="progress-fill" id="progress-fill"></div></div>
                         <button id="nav-next" class="nav-btn" onclick="manualNextTask()">❱</button>
                     </div>
-
+                  
                     <div class="stats">
                         <span id="progress-text">Carregando...</span>
                         <span>Score: <span id="score">0</span></span>
                     </div>
-                    
-                    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
             
                     <div class="question-box">
                         <div class="prompt-text" id="prompt-text">...</div>
