@@ -901,9 +901,9 @@ novo modo speak
                 </div>
 
                 <div id="final-screen" class="hidden" style="text-align: center; padding-top: 40px;">
-                    <i class="fa-solid fa-trophy" style="font-size: 3rem; color: var(--success-color);"></i>
+                    <i class="fa-solid fa-trophy" style="font-size: 2.8rem; color: var(--success-color);"></i>
                     <h1 style="color: var(--success-color); margin: 20px 0;">Lição Concluída!</h1>
-                    <p style="font-size: 1.5em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
+                    <p style="font-size: 1.3em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
                     <button class="check-btn" onclick="openPreview(currentLesson.id)">Voltar para a Lição</button>
                 </div>
             </section>
@@ -1752,7 +1752,7 @@ function toggleTrainingExit(action) {
     }
 }
 
-// --- GERENCIAMENTO CENTRALIZADO DE LAYOUT ---
+// --- GERENCIAMENTO CENTRALIZADO DE LAYOUT (CORRIGIDO) ---
 function setLayoutMode(mode) {
     console.log(`🎨 [Layout] Mudando para modo: ${mode}`);
     
@@ -1773,7 +1773,7 @@ function setLayoutMode(mode) {
             hideHeader: false,
             hideFooter: true,
             hideSidebar: true,
-            contentPadding: '10px'
+            contentPadding: '20px' // AQUI: Garante padding uniforme no treino
         },
         'immersive': {
             hideHeader: true,
@@ -1785,47 +1785,47 @@ function setLayoutMode(mode) {
 
     const config = modes[mode] || modes['full'];
     
-    // Header
+    // 1. Header & App Body Margin
     const header = document.querySelector('.app-header');
     const appBody = document.querySelector('.app-body');
     
     if (config.hideHeader) {
         header.style.display = 'none';
-        appBody.style.marginTop = '0'; // 🔥 CORREÇÃO: Remove margem
-        console.log('📦 [Layout] Header ESCONDIDO (margin-top = 0)');
+        appBody.style.marginTop = '0'; 
     } else {
         header.style.display = 'flex';
-        appBody.style.marginTop = '60px'; // 🔥 CORREÇÃO: Adiciona margem fixa
-        console.log('📦 [Layout] Header VISÍVEL (margin-top = 60px)');
+        appBody.style.marginTop = '60px'; // Garante que o corpo comece DEPOIS do header
     }
 
-    // Footer
+    // 2. Footer
     const footer = document.querySelector('.app-footer');
     if (config.hideFooter) {
         footer.style.display = 'none';
-        console.log('📦 [Layout] Footer ESCONDIDO');
     } else {
         footer.style.display = 'flex';
-        console.log('📦 [Layout] Footer VISÍVEL');
     }
 
-    // Sidebar
+    // 3. Sidebar
     const sidebar = document.querySelector('.app-sidebar');
     if (config.hideSidebar) {
         sidebar.style.display = 'none';
-        console.log('📦 [Layout] Sidebar ESCONDIDA');
     } else {
-        sidebar.style.display = '';
-        console.log('📦 [Layout] Sidebar VISÍVEL (responsiva)');
+        sidebar.style.display = ''; // Reseta para o padrão do CSS (flex ou none via media query)
     }
 
-    // Main Content Padding
+    // 4. Main Content Padding (A CORREÇÃO ESTÁ AQUI)
     const mainContent = document.querySelector('.main-content');
+    
+    // Aplica o padding geral definido na config (ex: '20px')
+    // Isso garante que o topo tenha espaço e não cole no header
+    mainContent.style.padding = config.contentPadding; 
+    
+    // Ajusta o bottom especificamente se tiver footer ou não (sobrescreve o padding geral embaixo)
     mainContent.style.paddingBottom = config.hideFooter ? '20px' : '80px';
     
-    console.log(`✅ [Layout] Modo "${mode}" aplicado com sucesso`);
+    console.log(`✅ [Layout] Modo "${mode}" aplicado. Padding: ${config.contentPadding}`);
 }
-
+  
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
     async function openPreview(lessonId, addToHistory = true) {
@@ -2604,20 +2604,33 @@ function validateTrainingData() {
       // Reinicia o texto
       tempRecognizedText = "";
   
+      // ... dentro de startManualSTT ...
+
       globalRecognition.onresult = (event) => {
-          // Pega o último resultado (interino ou final) e atualiza a variável
+          // --- CORREÇÃO MOBILE (ANTI-ECO) ---
+          // No Android, não devemos usar += com base no resultIndex, pois ele duplica.
+          // A solução é reconstruir as variáveis tempRecognizedText e interimTranscript
+          // do zero a cada evento, iterando sobre todo o array event.results.
+
           let interimTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
+          let finalTranscript = ''; 
+
+          // Começamos o loop do 0 (zero), ignorando o event.resultIndex
+          for (let i = 0; i < event.results.length; ++i) {
               if (event.results[i].isFinal) {
-                  tempRecognizedText += event.results[i][0].transcript + " ";
+                  // Se já é final, adiciona ao texto consolidado
+                  finalTranscript += event.results[i][0].transcript + " ";
               } else {
+                  // Se ainda é provisório, guarda no interim
                   interimTranscript += event.results[i][0].transcript;
               }
           }
           
-          // Opcional: Mostrar feedback visual do que está sendo entendido em tempo real
-          // ui.speechResult.innerText = tempRecognizedText + interimTranscript;
-          console.log("Ouvindo:", tempRecognizedText + interimTranscript);
+          // Atualiza a variável global APENAS com o texto final limpo reconstruído
+          tempRecognizedText = finalTranscript;
+          
+          // Log para debug (pode remover depois)
+          console.log("👂 Ouvindo:", tempRecognizedText + interimTranscript);
       };
   
       globalRecognition.onerror = (event) => {
@@ -3084,17 +3097,25 @@ function validateTrainingData() {
         playerDiv.style.animation = 'fadeIn 0.5s';
         
         playerDiv.innerHTML = `
-            <audio controls autoplay src="${url}" style="width: 50%; height: 40px; margin-bottom: 20px; border-radius: 20px;"></audio>
+            <audio controls autoplay src="${url}" style="
+                display: block;
+                width: 300px; 
+                height: 40px; 
+                margin: 0 auto 20px auto; 
+                border-radius: 20px;">
+            </audio>
             
             <button onclick="nextTask()" class="check-btn" style="
-                width: 50%; 
+                display: block;
+                width: 200px; 
+                margin: 0 auto 20px auto;
                 background-color: var(--accent-color); 
                 color: var(--bg-color);
             ">
                 Continuar <i class="fa-solid fa-chevron-right"></i>
             </button>
         `;
-
+      
         resultContainer.appendChild(playerDiv);
         
         // Scroll para ver o resultado
@@ -3150,7 +3171,7 @@ function validateTrainingData() {
                 <div style="background: rgba(255,255,255,0.05);
                             display: flex;
                             padding: 10px; 
-                            width: 50%;
+                            width: 100%;
                             border-radius: 8px; 
                             font-size: 1.3rem; 
                             text-align: center; 
@@ -3376,7 +3397,7 @@ function validateTrainingData() {
             // Monta HTML da lista
             let reportHTML = `
                 <h2 style="color:var(--accent-color); margin-bottom:10px;">Resultado da Pronúncia</h2>
-                <div style="font-size: 1.5rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
+                <div style="font-size: 1.2rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
                     ${average}%
                 </div>
                 <div style="text-align:left; max-height: 300px; overflow-y:auto; background:var(--surface-color); padding:10px; border-radius:8px; margin-bottom:20px;">
