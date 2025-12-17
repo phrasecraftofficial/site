@@ -1,15 +1,8 @@
-<!-- 84
-Agora no modo training, gostaria de mudar o fluxo na tarefa de formar pares.
-Vamos usar o mesmo icone de auto falante que tem ao lado das frases.
-Vamos exibir ele, mas nao a frase.
-A ideia é poder ouvir o audio da frase nessa tarefa agora.
-Mudança, o usuario continua vendo os pares embaralhados.
-Mas agora ele deve formar os pares na ordem especifica predeterminada.
-Ele deve sempre começar formando os pares com as palavras em ingles e sempre na ordem da frase.
-Não quero mais mudanças no layout, apenas o autofalnte, nada mais.
-e a frase Conecte os pares se torna Conecte os pares da frase
-onde ajusto?
-lembre de usar as variaveis existentes e limpar elas
+<!-- 85
+Resumo Visual da Correção
+Antes: O navegador rolava o "papel de parede" (body) inteiro. O header e footer eram adesivos colados no vidro da frente.
+
+Depois: O "papel de parede" (body) é fixo. O header e footer são molduras sólidas. Apenas o "papel do meio" (.main-content) se move dentro da moldura.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -56,57 +49,52 @@ lembre de usar as variaveis existentes e limpar elas
                 
         /* ADICIONE no início do <style>, após as variáveis CSS */
         /* --- CORREÇÃO DE LAYOUT PULANDO --- */
-        html {
-            height: 100%;
-            overflow: hidden; /* Impede que o navegador role a página inteira */
+        /* No seu CSS */
+        html, body {
+            height: 100%;       /* Garante altura total */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;   /* 🔥 O SEGREDO: Remove o scroll da janela inteira */
         }
-
+        
         body {
-            font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            
-            /* O TRUQUE: 100dvh ignora a barra de endereço do celular */
-            height: 100dvh; 
-            width: 100%;
-            
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Trava o corpo */
-            position: fixed; /* Garante que não se mova no iOS */
         }
 
         /* A área de conteúdo agora tem rolagem interna independente */
         .main-content {
-            flex: 1;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 10px;
+            flex: 1; /* Ocupa todo o espaço disponível na largura */
             
-            overflow-y: auto; /* A rolagem acontece AQUI dentro */
+            /* 🔥 AQUI NASCE A BARRA DE ROLAGEM CORRETA */
+            overflow-y: auto; 
             overflow-x: hidden;
+        
+            /* Ajuste fino para o conteúdo não colar nas bordas */
+            padding: 20px 10px;
+        
+            /* Garante que o scroll vá até o final, mas deixe espaço para o footer não tapar o texto */
+            padding-bottom: calc(var(--footer-height) + 20px); 
             
-            /* Ajustes de espaçamento para cabeçalho e rodapé */
-            padding-bottom: calc(var(--footer-height) + 40px);
-            padding-top: 10px; 
-            
-            /* Scroll suave */
+            /* Propriedades de UX para scroll suave */
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
         }
 
         /* Ajuste do container principal */
         .app-body {
+            /* Ocupa toda a altura menos o header */
+            height: calc(100vh - var(--header-height)); 
+            
+            /* Empurra para baixo para não ficar atrás do header fixo */
+            margin-top: var(--header-height); 
+            
+            /* Prepara para conter o scroll interno */
             display: flex;
-            flex: 1;
-            height: 100%; /* Ocupa todo o espaço disponível abaixo do header */
-            overflow: hidden; /* Impede vazamento */
-            position: relative;
+            overflow: hidden; 
         }
-
+      
         /* --- LAYOUT SHELL --- */
-        
         /* HEADER */
         .app-header {
             height: var(--header-height);
@@ -338,7 +326,6 @@ lembre de usar as variaveis existentes e limpar elas
         
             /* Esconde footer mobile e ajusta container principal */
             .app-footer { display: none; } 
-            .main-content { padding-bottom: 20px; }
         
             /* --- AJUSTE DOS BOTÕES (DESKTOP) --- */
             .train-btn-container { 
@@ -675,7 +662,7 @@ lembre de usar as variaveis existentes e limpar elas
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v84
+            PhraseCraft v85
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
