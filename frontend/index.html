@@ -2604,17 +2604,15 @@ function validateTrainingData() {
       // Reinicia o texto
       tempRecognizedText = "";
   
-      // ... dentro de startManualSTT ...
-
       globalRecognition.onresult = (event) => {
           // --- CORREÇÃO MOBILE (ANTI-ECO) ---
           // No Android, não devemos usar += com base no resultIndex, pois ele duplica.
           // A solução é reconstruir as variáveis tempRecognizedText e interimTranscript
           // do zero a cada evento, iterando sobre todo o array event.results.
-
+      
           let interimTranscript = '';
           let finalTranscript = ''; 
-
+      
           // Começamos o loop do 0 (zero), ignorando o event.resultIndex
           for (let i = 0; i < event.results.length; ++i) {
               if (event.results[i].isFinal) {
