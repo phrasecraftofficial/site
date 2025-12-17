@@ -1,5 +1,17 @@
-<!-- 78
-novo modo speak
+<!-- 79
+Resumo das Mudanças
+MapsTo: Agora verifica MENU_VIEWS. 
+Se você clicar em Home, Duels, You ou Path, 
+ele zera o array para ['home'], ['duels'], etc. 
+Isso resolve o crescimento infinito lateral.
+
+start...: Removemos o push. Agora entrar no 
+treino é apenas uma mudança visual de estado ("Overlay"), 
+não uma navegação de página.
+
+goBack: Agora verifica primeiro se existe um currentTaskMode. 
+Se sim, ele apenas "fecha" o treino e restaura a view que 
+estava por baixo (Preview), mantendo o stack intacto.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -220,7 +232,7 @@ novo modo speak
         
         .train-btn-container {
             position: fixed;
-            bottom: 30px; 
+            bottom: 80px; 
             left: 0; 
             right: 0;
             display: flex; 
@@ -613,9 +625,9 @@ novo modo speak
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v78
+            PhraseCraft v79
         </div>
-        <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleTrainingExit('goback')">
+        <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
         </div>
     </header>
@@ -739,11 +751,11 @@ novo modo speak
 
                 <div class="train-btn-container">
     
-                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPractice()">
+                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPratice()">
                         <i class="fa-solid fa-video"></i>
                     </button>
                 
-                    <button class="btn-train" onclick="startTraining()" title="Exercícios Mentais">
+                    <button class="btn-train" onclick="startTrainingMode()" title="Exercícios Mentais">
                         <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.6rem;"></i> 
                     </button>
                 
@@ -1211,6 +1223,9 @@ const projectData = [
   
     // --- SISTEMA DE NAVEGAÇÃO (APP STATE) ---
     let navigationStack = []; // Pilha para rastrear histórico de telas
+    let currentView = null;
+    let currentTaskMode = null; // training | speaking | video | null
+    const MENU_VIEWS = ['home', 'you', 'duels', 'path'];
 
     // 0 = primeira página (1-5)
     let currentPhase = 0;
@@ -1662,7 +1677,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         });
     }
 
-    // --- FUNÇÃO DE LIMPEZA GLOBAL ---
+    // --- FUNÇÃO DE LIMPEZA GERAL ---
     function clean() {
         console.log('🧹 [Clean] Limpando recursos...');
         
@@ -1693,62 +1708,95 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     }
   
     // Adicionado parâmetro 'addToHistory' com padrão true
-    async function navigateTo(viewName, addToHistory = true) {
-        // 🔥 CHAMA CLEAN ANTES DE QUALQUER COISA
-        clean();
-    
-        // --- PROTEÇÃO DE ROTA ---
-        if (viewName === 'you') {
-            const user = await checkAuthStatus();
-            if (!user) {
-                viewName = 'login'; 
-            } else {
-                loadUserProfile(user);
-            }
-        }
+    // Stack é a ÚNICA fonte de verdade
+    // history.state NÃO é usado
+    // fromBack controla se empilha ou não
+    // --- CORREÇÃO DA NAVEGAÇÃO ---
+    function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
         
-        if (viewName === 'login') {
-             const user = await checkAuthStatus();
-             if (user) {
-                 navigateTo('you', addToHistory); 
-                 return;
-             }
+        // 1. Se for uma das telas principais (Abas), SEMPRE reseta o stack
+        if (MENU_VIEWS.includes(view)) {
+            navigationStack = [view]; // O stack vira apenas ['home'] ou ['you'], etc.
+            resetStack = true; // Força o comportamento de reset visual se necessário
+        } 
+        // 2. Navegação normal (Drill down, ex: Home -> Preview)
+        else if (!fromBack && currentView !== view) {
+            // Só empilha se NÃO for um reset
+            navigationStack.push(view);
         }
     
-        // --- GERENCIAMENTO DE HISTÓRICO ---
-        if (addToHistory) {
-             navigationStack.push(viewName);
+        currentView = view;
+        // NÃO limpamos o currentTaskMode aqui se estivermos entrando em training
+        // Mas se estiver saindo para uma view normal, limpamos:
+        if (view !== 'training') {
+            currentTaskMode = null; 
         }
     
-        // --- RESET VISUAL ---
+        console.log(`📍 [Nav] Indo para: ${view} | Stack:`, navigationStack);
+    
+        // Lógica de UI (Ativa a section correta)
         ui.views.forEach(v => v.classList.remove('active'));
-        ui.footerItems.forEach(i => i.classList.remove('active'));
-        ui.sidebarItems.forEach(i => i.classList.remove('active'));
-
-        // Ajustes visuais e navegação
-        setLayoutMode('full');
-        toggleTrainingExit('hide');
-    
-        // --- ATIVAÇÃO DA VIEW ---
-        const targetView = document.getElementById(`view-${viewName}`);
+        const targetView = document.getElementById(`view-${view}`);
         if (targetView) targetView.classList.add('active');
     
-        // Menu Ativo
-        if(viewName === 'home' || viewName === 'you' || viewName === 'path' || viewName === 'duels') {
-            toggleTrainingExit('hide');
-        } 
-        if(viewName === 'home' || viewName === 'preview') {
-            document.querySelector('.footer-item:nth-child(1)').classList.add('active');
-            document.querySelector('.sidebar-item:nth-child(1)').classList.add('active');
-        } 
-        else if (viewName === 'you' || viewName === 'login') {
-            document.querySelector('.footer-item:nth-child(2)').classList.add('active');
-            document.querySelector('.sidebar-item:nth-child(2)').classList.add('active');
+        // Atualiza Footer (Menu inferior)
+        ui.footerItems.forEach(item => item.classList.remove('active'));
+        // Lógica simples para ativar o ícone do footer baseado no nome da view
+        const activeFooter = Array.from(ui.footerItems).find(i => 
+            i.innerText.toLowerCase().includes(view) || 
+            (view === 'home' && i.innerText.includes('Home'))
+        );
+        if (activeFooter) activeFooter.classList.add('active');
+        
+        // Atualiza Sidebar (Desktop)
+        ui.sidebarItems.forEach(item => item.classList.remove('active'));
+        if (MENU_VIEWS.includes(view)) {
+             // Lógica simplificada para sidebar
+             // (Você pode refinar isso pelo index ou ID se preferir)
         }
     }
+  
+    function goBack() {
+      // 1. Prioridade: Se estiver em MODO TAREFA, apenas encerra a tarefa
+      if (currentTaskMode) {
+          console.log('🔙 [Back] Encerrando modo tarefa:', currentTaskMode);
+          clean(); // Para vídeos e áudios
+          
+          // Volta visualmente para o Preview
+          // Como não empilhamos 'training', o stack atual ainda deve ser algo como ['home', 'preview']
+          // Então basta recarregar a view que está no topo do stack
+          const lastView = navigationStack[navigationStack.length - 1];
+          
+          // Se por acaso o stack estiver vazio ou errado, fallback para preview ou home
+          if (lastView) {
+              navigateTo(lastView, { fromBack: true });
+          } else {
+               navigateTo('home');
+          }
+          
+          currentTaskMode = null; // Limpa o modo
+          toggleCloseExit('hide'); // Esconde o X
+          setLayoutMode('full'); // Volta layout normal
+          return; // Pára por aqui, não faz pop no stack
+      }
+  
+      // 2. Navegação Padrão (Histórico)
+      if (navigationStack.length > 1) {
+          navigationStack.pop(); // Remove tela atual
+          const previousView = navigationStack[navigationStack.length - 1];
+          
+          console.log('🔙 [Back] Voltando para:', previousView, '| Stack:', navigationStack);
+          
+          // fromBack=true impede que navigateTo empilhe novamente
+          navigateTo(previousView, { fromBack: true });
+      } else {
+          console.log('🏠 [Nav] Na raiz - Stack já está no mínimo:', navigationStack);
+          // Opcional: Confirmar saída do app ou não fazer nada
+      }
+  }
 
-// --- CONTROLE CENTRALIZADO DO BOTÃO X ---
-function toggleTrainingExit(action) {
+  // --- CONTROLE CENTRALIZADO DO BOTÃO X ---
+  function toggleCloseExit(action) {
     const exitBtn = ui.trainingExit;
     if (!exitBtn) return;
     
@@ -1759,20 +1807,7 @@ function toggleTrainingExit(action) {
         exitBtn.classList.add('hidden');
     }
     else if (action === 'goback') {
-        // Remove a tela atual da pilha
-        navigationStack.pop();
-        
-        // Pega a tela anterior (se existir)
-        const previousView = navigationStack.length > 0 
-            ? navigationStack[navigationStack.length - 1] 
-            : 'home';
-        
-        // Se a tela anterior era preview, precisa do ID da lição
-        if (previousView === 'preview' && currentLesson && currentLesson.id) {
-            openPreview(currentLesson.id, false); // false = não adiciona ao histórico
-        } else {
-            navigateTo(previousView, false); // false = não adiciona ao histórico
-        }
+        goBack();
     }
 }
 
@@ -1835,7 +1870,7 @@ function setLayoutMode(mode) {
         console.log('Layout Modo', mode, 'aplicado. Padding:', config.contentPadding);
     }
   
-    // PREVENÇÃO GLOBAL DE VIEWPORT SHIFT
+    // PREVENÇÃO GERAL DE VIEWPORT SHIFT
     function fixViewportShift() {
         const mainContent = document.querySelector('.main-content');
         if (mainContent) {
@@ -1861,91 +1896,92 @@ function setLayoutMode(mode) {
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
     async function openPreview(lessonId, addToHistory = true) {
         console.log("🚀 [openPreview] Chamado com ID:", lessonId);
-
+    
         // 1. 🔥 LIMPEZA INICIAL
         clean();
-        
         setLayoutMode('full');
-        
-        // 2. BUSCA A LIÇÃO (Antes de mudar histórico)
+    
+        // 2. BUSCA A LIÇÃO
         let rawLesson = allLessons.find(l => l.id == lessonId);
-        
-        if(!rawLesson) {
+    
+        if (!rawLesson) {
             console.error("❌ Lição não encontrada para o ID:", lessonId);
             ui.previewTitle.innerText = "Lição não encontrada";
             return;
         }
-
-        // --- LÓGICA DE FASE (AQUI ESTÁ A CORREÇÃO) ---
-        // Verifica se estamos abrindo uma lição NOVA ou voltando para a MESMA
-        // Se currentLesson existir E o ID for igual ao da rawLesson, é a mesma lição.
+    
+        // --- LÓGICA DE FASE ---
         const isSameLesson = currentLesson && currentLesson.id == rawLesson.id;
-
+    
         if (!isSameLesson) {
-            // Se for uma lição diferente, reseta para a primeira fase
             currentPhase = 0;
-        } 
-        // Se for a mesma lição (else), NÃO mexemos no currentPhase, mantendo onde estava.
-        // ----------------------------------------------
-
-        console.log("✅ Lição carregada:", rawLesson.title);
-
-        // 3. SE ACHOU, ATUALIZA A TELA E URL
-        setLayoutMode('preview');
-        
-        toggleTrainingExit('hide');
-       
-        if (addToHistory) {
-            const newHash = `#lesson-${rawLesson.id}`;
-            console.log("📝 Atualizando URL para:", newHash);
-            history.pushState({ view: 'preview', lessonId: rawLesson.id }, '', newHash);
-            
-            navigationStack.push('preview');
         }
-
-        // 4. UI e Download
+    
+        console.log("✅ Lição carregada:", rawLesson.title);
+    
+        // 3. NAVEGAÇÃO (centralizada)
+        navigateTo('preview', {
+            addToStack: addToHistory,
+            lessonId: rawLesson.id
+        });
+    
+        toggleCloseExit('hide');
+    
+        // 4. UI inicial
         ui.previewTitle.innerText = "Carregando...";
         ui.previewThumb.src = rawLesson.thumb;
-        ui.previewThumb.style.objectFit = "contain"; 
+        ui.previewThumb.style.objectFit = "contain";
         ui.previewThumb.style.backgroundColor = "#000";
-
-        // Se for a mesma lição, não limpamos a lista para evitar "piscar", 
-        // mas se for nova, mostramos loading.
+    
         if (!isSameLesson) {
-            ui.previewSentences.innerHTML = '<li class="preview-item" style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...</li>';
+            ui.previewSentences.innerHTML = `
+                <li class="preview-item" style="text-align:center; padding: 20px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...
+                </li>
+            `;
         }
-        
+    
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-preview').classList.add('active');
-        
+    
         ui.footerItems.forEach(i => i.classList.remove('active'));
         document.querySelector('.footer-item:nth-child(1)').classList.add('active');
-       
-        // Se já temos os dados dessa lição carregados (cache simples), não baixa de novo
-        // Isso evita resetar se os dados já estão no currentLesson
+    
+        // 5. CARREGAMENTO / CACHE DA LIÇÃO
         let lessonDataCompiled;
-
+    
         if (isSameLesson && currentLesson.data && currentLesson.data.length > 0) {
-             lessonDataCompiled = currentLesson.data;
+            lessonDataCompiled = currentLesson.data;
         } else {
-             const loadedData = await fetchLessonData(rawLesson);
-             if (!loadedData) {
+            const loadedData = await fetchLessonData(rawLesson);
+    
+            if (!loadedData) {
                 ui.previewTitle.innerText = "Erro ao carregar";
-                ui.previewSentences.innerHTML = '<li class="preview-item" style="color:var(--error-color)">Falha no download.</li>';
+                ui.previewSentences.innerHTML = `
+                    <li class="preview-item" style="color:var(--error-color)">
+                        Falha no download.
+                    </li>
+                `;
                 return;
             }
-            lessonDataCompiled = compileLessonData(loadedData.srtEn, loadedData.srtPt, loadedData.vocabData, rawLesson.video);
+    
+            lessonDataCompiled = compileLessonData(
+                loadedData.srtEn,
+                loadedData.srtPt,
+                loadedData.vocabData,
+                rawLesson.video
+            );
         }
-        
-        // Atualiza o objeto global
+    
+        // 6. ATUALIZA ESTADO GLOBAL
         currentLesson = {
             ...rawLesson,
             data: lessonDataCompiled
         };
-        
+    
         ui.previewTitle.innerText = currentLesson.title;
-        
-        // Renderiza usando a currentPhase (que foi preservada ou resetada lá em cima)
+    
+        // 7. RENDER FINAL (fase preservada ou resetada)
         renderPhaseButtons();
         renderPreviewSentences();
     }
@@ -2221,39 +2257,6 @@ function validateTrainingData() {
     console.log("✅ [Validação] Dados completos. Iniciando treino...");
     return true;
 }
-
-    function startTraining() {
-        // 🔥 VALIDAÇÃO ANTES DE INICIAR
-        if (!validateTrainingData()) {
-            console.log("❌ [Training] Validação falhou. Treino cancelado.");
-            return; // Para aqui se a validação falhar
-        }
-        
-        // --- HISTÓRICO (NOVO) ---
-        history.pushState({ view: 'training' }, '', '#training');
-        navigationStack.push('training');
-        
-        // CORREÇÃO: Reseta o modo para 'full' explicitamente
-        trainingMode = 'full';
-        
-        // Ajustes de Layout para Treino
-        setLayoutMode('training'); // Esconde footer/sidebar
-        
-        toggleTrainingExit('show'); // Mostra botão de sair no header
-        
-        // Mostra view de treino
-        ui.views.forEach(v => v.classList.remove('active'));
-        document.getElementById('view-training').classList.add('active');
-        ui.quizContainer.classList.remove('hidden');
-        ui.finalScreen.classList.add('hidden');
-        
-        // Filtra os dados antes de iniciar o Quiz
-        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
-        const phaseData = currentLesson.data.slice(start, end);
-
-        // Envia só as 5 frases para o gerador de tarefas
-        initQuizLogic(phaseData); 
-    }
 
     // --- HELPER DE ÁUDIO COM BLOQUEIO ---
     function speakText(text, lang = 'en-US', onComplete = null) {
@@ -3492,20 +3495,49 @@ function validateTrainingData() {
         return total / cleanExp.length;
     }
 
-    // --- FUNÇÃO DE INÍCIO DA PRÁTICA DE FALA ---
+    // --- FUNÇÕES DE INÍCIO DA PRÁTICA ---
+    // Modo Speak
     function startSpeakingPractice() {
         console.log('🚀 startSpeakingPractice iniciado');
-        console.log('Definindo trainingMode = "speaking"');
         if (!currentLesson || currentLesson.data.length === 0) return;
         
-        speakingResults = []; // <--- LIMPA RESULTADOS ANTERIORES
+        speakingResults = []; 
         trainingMode = 'speaking';
-
-        // Ajustes visuais e navegação
+        currentTaskMode = 'speaking'; // Define o modo
+    
+        // Ajustes visuais
         setLayoutMode('training');
-        toggleTrainingExit('show');
-        history.pushState({ view: 'training' }, '', '#training');
-        navigationStack.push('training');
+        toggleCloseExit('show'); // Mostra o X
+    
+        // ❌ REMOVA ESTAS LINHAS:
+        // history.pushState({ view: 'training' }, '', '#training');
+        // navigationStack.push('training'); 
+    
+        // Ativa a view visualmente, mas sem mexer no stack de navegação
+        ui.views.forEach(v => v.classList.remove('active'));
+        document.getElementById('view-training').classList.add('active');
+        
+        ui.quizContainer.classList.remove('hidden');
+        ui.finalScreen.classList.add('hidden');
+    
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(start, end);
+        initQuizLogic(phaseData); 
+    }
+    // Modo Video
+    function startVideoPratice() {
+        console.log('🎥 startVideoPratice iniciado');
+        if (!currentLesson || currentLesson.data.length === 0) return;
+    
+        trainingMode = 'video';
+        currentTaskMode = 'video'; // Define o modo
+    
+        setLayoutMode('training');
+        toggleCloseExit('show');
+    
+        // ❌ REMOVA ESTAS LINHAS:
+        // history.pushState({ view: 'training' }, '', '#training');
+        // navigationStack.push('training');
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
@@ -3514,8 +3546,30 @@ function validateTrainingData() {
     
         const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
         const phaseData = currentLesson.data.slice(start, end);
-    
         initQuizLogic(phaseData); 
+    }
+    // Modo Treino
+    function startTrainingMode() {
+        if (!validateTrainingData()) return;
+    
+        currentTaskMode = 'training'; // Define o modo
+        trainingMode = 'full';
+    
+        console.log('[Task] training iniciado');
+    
+        setLayoutMode('training');
+        toggleCloseExit('show');
+    
+        // ❌ SE HOUVER, REMOVA: navigationStack.push('training');
+        
+        // Apenas troca a tela visualmente
+        ui.views.forEach(v => v.classList.remove('active'));
+        document.getElementById('view-training').classList.add('active');
+        
+        // Inicia lógica (se necessário chamar initQuizLogic aqui também)
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(start, end);
+        initQuizLogic(phaseData);
     }
 
     // --- VIDEO (COM REABILITAÇÃO APÓS ACERTO) ---
@@ -3720,35 +3774,6 @@ function validateTrainingData() {
                 setTimeout(nextTask, 1500);
             }
         }, 500);
-    }
-  
-    // FUNÇÃO DE INÍCIO DA PRÁTICA COM VIDEO
-    function startVideoPractice() {
-        console.log('🎥 startVideoPractice iniciado');
-        
-        if (!currentLesson || currentLesson.data.length === 0) return;
-        
-        // Define o modo
-        trainingMode = 'video';
-        
-        // Ajustes visuais e navegação
-        setLayoutMode('training');
-        toggleTrainingExit('show');
-        history.pushState({ view: 'training' }, '', '#training');
-        navigationStack.push('training');
-    
-        ui.views.forEach(v => v.classList.remove('active'));
-        document.getElementById('view-training').classList.add('active');
-        ui.quizContainer.classList.remove('hidden');
-        ui.finalScreen.classList.add('hidden');
-    
-        // Pega as frases da fase atual (paginação)
-        // const start = currentPhase * itemsPerPhase;
-        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
-        const phaseData = currentLesson.data.slice(start, end);
-    
-        // Inicia a lógica
-        initQuizLogic(phaseData); 
     }
   
     // Função chamada automaticamente pela API quando pronta
@@ -3998,6 +4023,20 @@ function validateTrainingData() {
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
+    window.addEventListener('load', async () => {
+      const hash = location.hash;
+      if (!hash.startsWith('#lesson-')) return;
+  
+      while (!window.allLessons || allLessons.length === 0) {
+          await new Promise(r => setTimeout(r, 50));
+      }
+  
+      const id = hash.replace('#lesson-', '');
+  
+      navigateTo('home', { resetStack: true });
+      openPreview(id, true);
+  });
+
     document.addEventListener('DOMContentLoaded', () => {
         initMobileNavigation();
         loadUserPreferences();
