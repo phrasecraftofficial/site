@@ -1,0 +1,4234 @@
+<!-- 85
+Resumo Visual da Correção
+Antes: O navegador rolava o "papel de parede" (body) inteiro. O header e footer eram adesivos colados no vidro da frente.
+
+Depois: O "papel de parede" (body) é fixo. O header e footer são molduras sólidas. Apenas o "papel do meio" (.main-content) se move dentro da moldura.
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PhraseCraft App</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@18.2.0"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --surface-hover: #2c2c2c;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --accent-color: #bb86fc;
+            --success-color: #03dac6;
+            --error-color: #cf6679;
+            --step-color: #7b7cff;
+            --border-color: #333;
+            --header-height: 60px;
+            --footer-height: 60px; /* Mobile footer */
+            --sidebar-width: 240px; /* Desktop sidebar */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* SUBSTITUA ESTE TRECHO COMPLETO */
+        body {
+            font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh; /* MUDANÇA: min-height ao invés de height */
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden; /* MUDANÇA: só horizontal */
+            /* REMOVE: overflow: hidden e height: 100vh */
+        }
+                
+        /* ADICIONE no início do <style>, após as variáveis CSS */
+        /* --- CORREÇÃO DE LAYOUT PULANDO --- */
+        /* No seu CSS */
+        html, body {
+            height: 100%;       /* Garante altura total */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;   /* 🔥 O SEGREDO: Remove o scroll da janela inteira */
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* A área de conteúdo agora tem rolagem interna independente */
+        .main-content {
+            flex: 1; /* Ocupa todo o espaço disponível na largura */
+            
+            /* 🔥 AQUI NASCE A BARRA DE ROLAGEM CORRETA */
+            overflow-y: auto; 
+            overflow-x: hidden;
+        
+            /* Ajuste fino para o conteúdo não colar nas bordas */
+            padding: 20px 10px;
+        
+            /* Garante que o scroll vá até o final, mas deixe espaço para o footer não tapar o texto */
+            padding-bottom: calc(var(--footer-height) + 20px); 
+            
+            /* Propriedades de UX para scroll suave */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Ajuste do container principal */
+        .app-body {
+            /* Ocupa toda a altura menos o header */
+            height: calc(100vh - var(--header-height)); 
+            
+            /* Empurra para baixo para não ficar atrás do header fixo */
+            margin-top: var(--header-height); 
+            
+            /* Prepara para conter o scroll interno */
+            display: flex;
+            overflow: hidden; 
+        }
+      
+        /* --- LAYOUT SHELL --- */
+        /* HEADER */
+        .app-header {
+            height: var(--header-height);
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            cursor: pointer; /* A mãozinha indica que é clicável */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        /* Efeito visual ao passar o mouse */
+        .header-title:hover {
+            opacity: 0.8;
+        }
+
+        /* SIDEBAR (Desktop) */
+        .app-sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            display: none; /* Mobile first: hidden */
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            color: var(--text-primary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sidebar-item:hover, .sidebar-item.active { background-color: var(--surface-hover); }
+        .sidebar-item i { margin-right: 20px; width: 20px; text-align: center; font-size: 1.1rem; }
+
+        /* MOBILE FOOTER */
+        .app-footer {
+            height: var(--footer-height);
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 100;
+        }
+
+        .footer-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            /* remove seleção */
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            -webkit-tap-highlight-color: transparent; /* remove highlight azul no mobile */
+        }
+        .footer-item.active { color: var(--text-primary); }
+        .footer-item i { font-size: 1.2rem; margin-bottom: 4px; }
+
+        /* --- VIEWS --- */
+        .view-section { display: none; width: 100%; max-width: 800px; margin: 0 auto; }
+        .view-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* LISTA DE LIÇÕES (Home) */
+        .lesson-card {
+            display: flex;
+            height: 100px;      /* Altura fixa (Torna a caixa quadrada para acomodar ambos) */
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .lesson-card:hover { transform: translateY(-2px); background-color: var(--surface-hover); }
+        
+        /* Procure por .lesson-thumb e SUBSTITUA por isso: */
+      	.lesson-thumb {
+            width: 100px;       /* Largura fixa da caixa */
+            height: auto;      /* Altura fixa (Torna a caixa quadrada para acomodar ambos) */
+            background-color: #333; /* Fundo preto para as faixas laterais do Short */
+            object-fit: contain;    /* O TRUQUE: A imagem se ajusta dentro sem cortar */
+            border-radius: 0;     /* Bordas levemente arredondadas */
+            flex-shrink: 0;         /* Garante que não amasse no flexbox */
+        } 
+        .lesson-info {
+            padding: 5px 5px 5px 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .lesson-title { 
+            font-weight: bold; 
+            font-size: 1rem; 
+            margin-bottom: 5px; 
+            
+            /* Propriedades para limitar a 3 linhas */
+            display: -webkit-box;
+            -webkit-line-clamp: 3;       /* Limita a 3 linhas */
+            -webkit-box-orient: vertical;
+            overflow: hidden;            /* Esconde o que passar */
+            text-overflow: ellipsis;     /* Adiciona os ... */
+        }
+        .lesson-subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+
+        /* PREVIEW DA LIÇÃO */
+        .preview-header { margin-bottom: 20px; text-align: center; }
+        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 50px; }
+        .preview-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .preview-item:last-child { border-bottom: none; }
+        
+        .train-btn-container {
+            position: fixed;
+            bottom: 80px; 
+            left: 0; 
+            right: 0;
+            display: flex; 
+            justify-content: center;
+            pointer-events: none;
+            gap: 10px; 
+            z-index: 1000; 
+            padding: 0 10px; 
+        }
+        .btn-train {
+            pointer-events: auto;
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 6px 28px;
+            font-size: 1rem;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(187, 134, 252, 0.4);
+            cursor: pointer;
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+        /* --- PAGINAÇÃO DE FASES (PREVIEW) --- */
+        .phase-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .phase-btn {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 20px;
+            border-radius: 4px; /* Retangular com cantos suaves */
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            min-width: 40px;
+        }
+        
+        .phase-btn:hover {
+            border-color: var(--accent-color);
+            color: var(--text-primary);
+        }
+        
+        .phase-btn.active {
+            background-color: var(--accent-color);
+            color: #000;
+            border-color: var(--accent-color);
+        }
+        /* --- MEDIA QUERIES (DESKTOP) --- */
+        @media (min-width: 768px) {
+            /* Mostra a sidebar e define o estilo "Mini" (YouTube style) */
+            .app-sidebar { 
+                display: flex; 
+                width: 72px;
+                align-items: center;
+                padding-top: 10px;
+            }
+        
+            /* Transforma o item de lado-a-lado para empilhado */
+            .sidebar-item {
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                padding: 16px 0;
+                width: 100%;
+                gap: 6px;
+                font-size: 0.65rem;
+            }
+        
+            /* Ajuste do ícone para ficar centralizado e maior */
+            .sidebar-item i { 
+                margin-right: 0;
+                font-size: 1.4rem; 
+                margin-bottom: 2px;
+            }
+        
+            /* Esconde o texto de versão que não cabe mais */
+            .app-sidebar div:last-child {
+                display: none;
+            }
+        
+            /* Esconde footer mobile e ajusta container principal */
+            .app-footer { display: none; } 
+        
+            /* --- AJUSTE DOS BOTÕES (DESKTOP) --- */
+            .train-btn-container { 
+                position: fixed; 
+                bottom: 40px; 
+                left: 72px; 
+                right: 0;
+                margin-top: 0; 
+                display: flex;    
+                justify-content: center;
+                align-items: center; 
+                gap: 25px;
+                padding-bottom: 10px;
+                z-index: 100;
+            }
+        
+            /* Botão do meio (Exercícios) maior */
+            .train-btn-container .btn-train:nth-child(2) {
+                display: inline-flex;
+                width: auto;
+                padding: 13px 40px;
+                font-size: 1.4rem;
+                transform: scale(1.1);
+                z-index: 2;
+            }
+        
+            /* Botões laterais (Vídeo e Pronúncia) menores */
+            .train-btn-container .btn-train:first-child,
+            .train-btn-container .btn-train:last-child {
+                display: inline-flex;
+                width: auto;
+                padding: 12px 35px !important;
+                font-size: 1.1rem;
+                opacity: 0.9;
+            }
+            
+            .train-btn-container .btn-train:first-child:hover,
+            .train-btn-container .btn-train:last-child:hover {
+                opacity: 1;
+                transform: translateY(-2px);
+            }
+        }
+        /* --- ESTILOS DO JOGO (QUIZ) --- */
+        /* Mantendo os estilos internos do jogo que você aprovou */
+        .quiz-container { 
+            text-align: center; 
+            padding: 10px;
+            overflow-y: auto;        /* 🔥 PERMITE SCROLL VERTICAL */
+            max-height: 100%;        /* 🔥 LIMITA À ALTURA DISPONÍVEL */
+            -webkit-overflow-scrolling: touch; /* 🔥 SCROLL SUAVE NO iOS */
+        }
+        .stats {
+            display: flex;               /* Para alinhar lado a lado */
+            justify-content: space-between; /* Um na esquerda, outro na direita */
+            width: 100%;                 /* Garante que ocupe toda a largura */
+            font-size: 0.9em;            /* Fonte menor original */
+            color: #888;                 /* Cinza discreto original */
+            margin-bottom: 20px;         /* Espaço original antes da barra */
+        }
+        /* --- NAVEGAÇÃO ENTRE TAREFAS --- */
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
+        .nav-btn {
+            background: transparent;
+            border: 0px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%; /* Botão Redondo */
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .nav-btn:hover:not(:disabled) {
+            background-color: var(--surface-hover);
+            border-color: var(--accent-color);
+        }
+        
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: transparent;
+            color: var(--text-secondary);
+        }
+        .progress-bar { width: 100%; height: 6px; background-color: #333; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: var(--accent-color); width: 0%; transition: width 0.3s ease; }
+        .main-sentence { font-size: 1.3em; font-weight: bold; margin: 10px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+        .prompt-text { color: var(--text-secondary); margin-bottom: 10px; }
+        
+        /* Match Styles */
+        .match-container { display: flex; justify-content: space-between; gap: 10px; }
+        .match-column { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .match-item { background: var(--surface-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.9em; user-select: none; }
+        .match-item.selected { background-color: #3700b3; border-color: var(--accent-color); color: white; }
+        .match-item.matched {
+            background-color: transparent;
+            border-color: var(--success-color);
+            color: var(--success-color);
+            opacity: 0.5; /* Fica visível, mas "apagado" */
+            cursor: default;
+            pointer-events: none;
+        }
+        .match-item.error { background-color: var(--error-color); color: white; animation: shake 0.4s; }
+
+        /* Multiple Choice */
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .option-btn { background: var(--surface-color); color: var(--text-primary); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; cursor: pointer; text-align: left; }
+        .option-btn:hover { border-color: var(--accent-color); }
+        .option-btn.correct { background-color: var(--success-color); color: black; border-color: var(--success-color); }
+        .option-btn.wrong { background-color: var(--error-color); border-color: var(--error-color); }
+
+        /* Speech */
+        .mic-btn { width: 70px; height: 70px; border-radius: 50%; background: var(--surface-color); border: 2px solid var(--accent-color); color: var(--accent-color); font-size: 1.8rem; margin: 0 auto; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .mic-btn.listening { background: var(--error-color); border-color: var(--error-color); color: white; animation: pulse 1.5s infinite; }
+        
+        /* Jumble */
+        /* Estabiliza a área onde as palavras caem */
+        .jumble-area { 
+            border: 1px dashed var(--border-color); 
+            
+            /* AUMENTADO: Garante espaço para 2 ou 3 linhas sem crescer */
+            min-height: 120px; 
+            
+            padding: 15px; 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+            justify-content: center; 
+            align-content: flex-start; /* Palavras começam do topo */
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            background-color: rgba(255,255,255,0.02); /* Leve fundo para marcar a área */
+            transition: border-color 0.3s;
+        }
+
+        /* Estabiliza o banco de palavras para não sumir */
+        /* Estabiliza o banco de palavras e centraliza o conteúdo */
+        .word-bank { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+            justify-content: center; 
+            margin-bottom: 15px;
+            
+            /* Mantém a altura mínima para evitar pulos */
+            min-height: 60px; 
+            
+            /* --- A CORREÇÃO MÁGICA --- */
+            /* Isso garante que, se tiver só 1 linha, ela fica no meio. */
+            /* Se tiver 2, elas se acomodam juntas no centro. */
+            align-content: center; 
+            align-items: center;
+        }
+        .word-tag { background: var(--surface-color); border: 1px solid var(--accent-color); padding: 6px 12px; border-radius: 15px; cursor: pointer; user-select: none; }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .check-btn { background: var(--accent-color); color: black; border: none; padding: 10px 30px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-5px); } 50% { transform: translateX(5px); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(207, 102, 121, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
+
+      /* --- ESTADO DE ÁUDIO TOCANDO --- */
+      body.audio-playing .btn-train,
+      body.audio-playing .nav-btn,
+      body.audio-playing .option-btn,
+      body.audio-playing .word-tag,
+      body.audio-playing .match-item,
+      body.audio-playing .check-btn {
+          opacity: 0.5;
+          pointer-events: none; /* Bloqueia cliques */
+          cursor: wait;
+      }
+      
+      /* Indicador visual de áudio */
+      #replay-audio-btn {
+          margin-left: 10px;
+          cursor: pointer;
+          color: var(--accent-color);
+          font-size: 1.1em;
+          padding: 5px;
+          transition: transform 0.2s;
+      }
+      #replay-audio-btn:hover {
+          transform: scale(1.2);
+          color: #fff;
+      }
+      body.audio-playing #replay-audio-btn {
+          animation: pulseAudio 1s infinite;
+          color: var(--success-color);
+      }
+      
+      @keyframes pulseAudio {
+          0% { opacity: 1; }
+          50% { opacity: 0.5; }
+          100% { opacity: 1; }
+      }
+      /* --- ESTADO DE VIDEO --- */
+      .video-responsive-container {
+          position: relative;
+          padding-bottom: 56.25%; /* Proporção 16:9 */
+          height: 0;
+          background: #000;
+      }
+      .video-responsive-container iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+      }
+      /* Camada invisível que fica por cima do vídeo */
+      .video-blocker {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 10; /* Fica acima do iframe do YouTube */
+          background: transparent; /* Invisível */
+          cursor: default; /* Remove o cursor de "mãozinha" */
+      }
+      .loop-active {
+          background-color: var(--accent-color) !important;
+          color: #000 !important;
+      }
+      .loop-inactive {
+          background-color: #333 !important;
+          color: #888 !important;
+          border: 1px solid #555;
+      }
+      /* Animação de batida manual */
+      @keyframes my-heartbeat {
+          0% { transform: scale(1); }
+          15% { transform: scale(1.25); } /* Cresce */
+          30% { transform: scale(1); }    /* Volta */
+          45% { transform: scale(1.15); } /* Cresce um pouco menos */
+          60% { transform: scale(1); }    /* Volta */
+          100% { transform: scale(1); }   /* Pausa */
+      }
+      
+      .icon-pulsing {
+          display: inline-block; /* Necessário para transformar */
+          animation: my-heartbeat 1.5s infinite ease-in-out;
+      }
+      /* --- LOGIN STYLES --- */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh; /* Centraliza verticalmente */
+            text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .input-group {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        .login-input {
+            width: 100%;
+            padding: 12px 12px 12px 45px; /* Espaço para o ícone */
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .login-input:focus {
+            border-color: var(--accent-color);
+        }
+
+      /* Palavra desabilitada (Acumulativo) */
+      .disabled-word {
+          opacity: 0.4 !important;
+          pointer-events: none !important; /* O clique não funciona */
+          background-color: #2a2a2a !important; /* Fica escuro */
+          color: #666 !important; /* Texto apagado */
+          border-color: #444 !important;
+          transform: scale(0.95);
+          transition: all 0.2s;
+      }
+      
+      /* Animação de erro (Tremida) */
+      @keyframes shake-horizontal {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-5px); }
+          40%, 80% { transform: translateX(5px); }
+      }
+      .shake-anim {
+          animation: shake-horizontal 0.4s ease-in-out;
+      }
+          /* --- PATH --- */
+
+    /* --- Área de Cards --- */
+    .card-label {
+      padding: 0 8px 0 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--accent-color);
+      background-color: #333;
+      cursor: pointer;
+    }
+
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-title" onclick="navigateTo('home')">
+            <span class="material-symbols-outlined">
+            owl
+            </span> 
+            PhraseCraft v85
+        </div>
+        <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
+            <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
+        </div>
+    </header>
+
+    <div class="app-body">
+        
+        <aside class="app-sidebar">
+            <a class="sidebar-item active" onclick="navigateTo('home')">
+                <i class="fa-solid fa-house"></i> Home
+            </a>
+            <a class="sidebar-item" onclick="navigateTo('you')">
+                <span class="material-symbols-outlined">
+                  psychology
+                </span>
+                You
+            </a>
+            <a class="sidebar-item" onclick="navigateTo('duels')">
+                <span class="material-symbols-outlined">swords</span> Duels
+            </a>
+            <a class="sidebar-item" onclick="navigateTo('path')">
+                <i class="fa-solid fa-map-location-dot"></i> Path
+            </a>
+            <div style="margin-top: auto; padding: 20px; font-size: 0.8rem; color: #555;">
+                PhraseCraft v1.0
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+            <section id="view-home" class="view-section active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Sua Trilha</h2>
+                    <a href="#" onclick="reloadWithFeedback(event)" class="refresh-link"
+                       style="color: #2f6fb2;">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span class="refresh-text">Confira novas versões!</span>
+                    </a>
+                </div>
+                <div id="lessons-list"></div>
+            </section>
+
+            <section id="view-duels" class="view-section">
+                <div style="text-align: center; padding: 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 10px;">swords</span>
+                    <h2 style="margin-bottom: 10px;">Arena de Duelos</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Desafie amigos ou enfrente a IA para ganhar XP extra.</p>
+                    
+                    <div id="duels" style="display: flex; flex-direction: column; gap: 15px;">
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-path" class="view-section">
+            
+                <div class="lesson-card">
+
+                    <div class="card-label">
+                      <span class="material-symbols-outlined">
+                        bookmark_stacks
+                        </span>
+                      <span>Estágios</span>
+                    </div>
+
+                	<div class="lesson-info">
+                      <h2 class="lesson-title" id="stage-title">
+                      Choose your stage
+                      </h2>
+                	</div>
+                    
+                </div>
+            
+                <div class="phase-controls" id="stage-cards-container" style="
+            margin: 0 0 0 0;"></div>
+                
+                <h2 class="" style="color: #b9b9b9; text-align: center; margin: 25px;">
+                    <i class="lesson-title fa-solid fa-arrow-down"></i> 
+                </h2>
+            
+                <div class="lesson-card">
+
+                    <div class="card-label">
+                      <span class="material-symbols-outlined">
+                      move_up
+                      </span>
+                      <span>Tópicos</span>
+                    </div>
+
+                	<div class="lesson-info">
+                      <h2 class="lesson-title" id="topic-title">
+                      Choose your topic
+                      </h2>
+                	</div>
+                    
+                </div>
+                
+                <div class="phase-controls" id="topic-cards-container"></div>
+
+                <div style="display: flex; justify-content: center; margin-top: ;">
+                
+                    <button class="btn-train" style="
+            margin: 20px 0 0 0;">
+                    
+                        <span class="btn-train material-symbols-outlined icon-pulsing" style="cursor: pointer; font-size: 1.6rem;">
+                        rocket_launch
+                        </span>
+                        
+                    </button>
+                    
+                </div>
+            </section>
+
+            <section id="view-preview" class="view-section">
+                <div class="preview-header">
+                    <img id="preview-thumb" src="" alt="Thumbnail" style="width: 100%; height: 250px; background-color: #000; object-fit: contain; border-radius: 12px; margin-bottom: 15px; display: block;">
+                    <h2 id="preview-title" style="display: block; color: var(--accent-color); margin-bottom: 20px;"></h2>
+                    <div id="phase-controls" class="phase-controls"></div>
+                </div>
+
+                <ul id="preview-sentences" class="preview-list">
+                    </ul>
+
+                <div class="train-btn-container">
+    
+                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPratice()">
+                        <i class="fa-solid fa-video"></i>
+                    </button>
+                
+                    <button class="btn-train" onclick="startTrainingMode()" title="Exercícios Mentais">
+                        <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.6rem;"></i> 
+                    </button>
+                
+                    <button class="btn-train" style="color: ;" title="Pronúncia" onclick="startSpeakingPractice()">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                
+                </div>
+            </section>
+
+            <section id="view-you" class="view-section">
+                <div style="background: var(--surface-color); padding: 30px 20px; text-align: center; border-bottom: 1px solid var(--border-color);">
+                    <div id="profile-avatar" style="width: 80px; height: 80px; background: var(--accent-color); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin: 0 auto 15px auto; border: 3px solid #fff;">
+                        ??
+                    </div>
+                    
+                    <h2 id="profile-name" style="margin-bottom: 5px;">Carregando...</h2>
+                    <p id="profile-email" style="color: var(--text-secondary); font-size: 0.9rem;">...</p>
+                </div>
+
+                <div style="display: flex; justify-content: space-around; padding: 20px; border-bottom: 1px solid var(--border-color);">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-color);">0</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Lições</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-color);">0</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">XP Total</div>
+                    </div>
+                </div>
+
+                <div style="padding: 20px; text-align: center;">
+                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 15px;" onclick="navigateTo('settings')">
+                        <i class="fa-solid fa-gear"></i> Configurações
+                    </button>
+
+                    <button class="option-btn" style="width: 50%; text-align: center; margin-bottom: 10px; color: var(--error-color); border-color: var(--error-color);" onclick="handleLogout()">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
+                    </button>
+                </div>
+            </section>
+          
+            <section id="view-login" class="view-section">
+                <div class="login-container">
+                    <i class="fa-solid fa-cube" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 20px;"></i>
+                    <h2 style="margin-bottom: 10px;">Bem-vindo de volta</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Faça login para salvar seu progresso.</p>
+
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="input-group">
+                            <i class="fa-solid fa-envelope"></i>
+                            <input type="email" id="login-email" placeholder="Email" class="login-input" required>
+                        </div>
+
+                        <div class="input-group">
+                            <i class="fa-solid fa-lock"></i>
+                            <input type="password" id="login-password" placeholder="Senha" class="login-input" required>
+                        </div>
+
+                        <button type="submit" class="btn-train" style="width: 100%; justify-content: center; margin-top: 10px;">
+                            Entrar
+                        </button>
+                    </form>
+
+                    <div style="margin-top: 20px; font-size: 0.9rem; color: var(--text-secondary);">
+                        Ainda não tem conta? <span style="color: var(--accent-color); cursor: pointer;">Cadastre-se</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-settings" class="view-section">
+                <div style="text-align: center; padding: 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 10px;">
+                    	tools_power_drill
+                    </span>
+                    
+                    <h2 style="margin-bottom: 10px;">Configurações</h2>
+                    
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Defina o seu modo de aprender.</p>
+                    
+                    <div id="duels" style="display: flex; flex-direction: column; gap: 15px;">
+                    </div>
+                </div>
+            
+                    <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <label style="display: block; margin-bottom: 10px; color: var(--text-secondary);">Qualidade de Vídeo (Padrão)</label>
+                        
+                        <select id="pref-quality" onchange="saveQualityPreference()" style="
+                            width: 100%; 
+                            padding: 12px; 
+                            background: #121212; 
+                            color: white; 
+                            border: 1px solid var(--border-color); 
+                            border-radius: 6px;
+                            font-size: 1rem;
+                        ">
+                            <option value="default">Automático (Recomendado)</option>
+                            <option value="small">Baixa (240p) - Economia de Dados</option>
+                            <option value="medium">Média (360p)</option>
+                            <option value="large">Alta (480p)</option>
+                            <option value="hd720">HD (720p)</option>
+                            <option value="hd1080">Full HD (1080p)</option>
+                        </select>
+                        
+                        <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">
+                            <i class="fa-solid fa-circle-info"></i> Nota: O YouTube pode ignorar essa configuração dependendo da velocidade da sua conexão.
+                        </p>
+                    </div>
+            </section>
+          
+            <section id="view-training" class="view-section">
+                <div class="quiz-container">
+                    
+                    <div class="nav-controls">
+                        <button id="nav-prev" class="nav-btn" onclick="prevTask()">❰</button>
+                        <div class="progress-bar" style="flex: 1; margin: 0 10px;"><div class="progress-fill" id="progress-fill"></div></div>
+                        <button id="nav-next" class="nav-btn" onclick="manualNextTask()">❱</button>
+                    </div>
+                  
+                    <div class="stats">
+                        <span id="progress-text">Carregando...</span>
+                        <span>Score: <span id="score">0</span></span>
+                    </div>
+            
+                    <div class="question-box">
+                        <div class="prompt-text" id="prompt-text">...</div>
+                        <div class="main-sentence" id="question-display">...</div>
+                    </div>
+            
+                    <div id="match-area-wrapper" class="hidden">
+                        <div class="match-container">
+                            <div class="match-column" id="col-left"></div>
+                            <div class="match-column" id="col-right"></div>
+                        </div>
+                    </div>
+            
+                    <div id="multiple-choice-area" class="options-grid hidden"></div>
+            
+                    <div id="speech-area-wrapper" class="hidden">
+                        <button id="mic-btn" class="mic-btn" onclick="toggleSpeech()">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                        <p style="font-size: 0.9em;">Toque para falar</p>
+                        <div id="speech-result" class="speech-feedback">...</div>
+                    </div>
+
+                    <div id="video-area-wrapper" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+    
+                        <p id="video-feedback" style="text-align: center; color: var(--success-color); font-weight: bold; margin: 0 0 20px 0; min-height: 20px;"></p>
+                      
+                        <div class="video-responsive-container" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 15px; flex-shrink: 0;">
+                            <div id="yt-player"></div>
+                              <div class="video-blocker"></div>
+                        </div>
+                    
+                        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
+                            <button class="check-btn" onclick="replayVideoSegment()" title="Tocar trecho uma vez">
+                                <i class="fa-solid fa-play"></i> Tocar
+                            </button>
+                            
+                            <button id="btn-video-loop" class="check-btn loop-active" onclick="toggleVideoLoop()" title="Ativar/Desativar Repetição">
+                                <i class="fa-solid fa-rotate"></i> <span>Loop: ON</span>
+                            </button>
+                        </div>
+                    
+                        <div style="flex: 1; display: flex; flex-direction: column; justify-content: start;">
+                            <div class="jumble-area" id="video-answer-zone" style="min-height: 60px; border-color: #444; margin-bottom: 20px;"></div>
+                            
+                            <div class="word-bank" id="video-word-bank"></div>
+                        </div>
+                    </div>
+            
+                    <div id="jumble-area-wrapper" class="hidden">
+                        <div class="jumble-area" id="answer-zone"></div>
+                        <div class="word-bank" id="word-bank"></div>
+                        <button class="check-btn" onclick="checkJumble()">Verificar</button>
+                        <button class="check-btn" onclick="resetJumble()" style="background-color: #444; color: white; margin-left: 10px;">Limpar</button>
+                    </div>
+                </div>
+
+                <div id="final-screen" class="hidden" style="text-align: center; padding-top: 40px;">
+                    <i class="fa-solid fa-trophy" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                    <h2 style="color: var(--success-color); margin: 20px 0;">Lição Concluída!</h2>
+                    <p style="font-size: 1.3em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
+                    <button class="check-btn" onclick="openPreview(currentLesson.id)">Frases > </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <footer class="app-footer">
+        <div class="footer-item active" onclick="navigateTo('home')">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </div>
+        <div class="footer-item" onclick="navigateTo('you')">
+            <span class="material-symbols-outlined">psychology</span>
+            <span>You</span>
+        </div>
+        <div class="footer-item" onclick="navigateTo('duels')">
+            <span class="material-symbols-outlined">swords</span>
+            <span>Duels</span>
+        </div>
+        <div class="footer-item" onclick="navigateTo('path')">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span>Path</span>
+        </div>
+    </footer>
+
+<script>
+const projectData = [
+  {
+    title: 'Blocos Fundamentais',
+    topics: [
+      { title: 'Pronomes Pessoais e To Be', content: 'Pronomes pessoais (sujeito) e o auxiliar To Be (ser/estar).' },
+      { title: 'Artigos e Determinantes', content: 'Uso de A, An, The e Zero Article.' },
+      { title: 'Quantifiers', content: 'Some, Any, Much, Many, Few, Little, A lot of.' }
+    ]
+  },
+  {
+    title: 'Pronomes Detalhados',
+    topics: [
+      { title: 'Pronomes Possessivos', content: 'Possessive pronouns e possessive adjectives.' },
+      { title: 'Pronomes Reflexivos', content: 'Uso dos reflexive pronouns.' },
+      { title: 'Pronomes Demonstrativos', content: 'This, That, These, Those.' },
+      { title: 'Pronomes Indefinidos', content: 'Indefinite pronouns, incluindo Something, Anything, etc.' },
+      { title: 'Pronomes Interrogativos', content: 'Who, What, Which, Whose, Whom.' },
+      { title: 'Pronomes Recíprocos', content: 'Each other e one another.' },
+      { title: 'Pronomes Relativos', content: 'Who, Which, That, Where, When.' }
+    ]
+  },
+  {
+    title: 'Auxiliares e Estruturas de Tempo',
+    topics: [
+      { title: 'Pronomes Objeto e To Be', content: 'Pronomes pessoais (objeto) e revisão do To Be.' },
+      { title: 'Dummy Subjects', content: 'Uso de It e There como sujeito.' },
+      { title: 'Do / Does', content: 'Formação do Simple Present.' },
+      { title: 'Did', content: 'Formação do Simple Past.' },
+      { title: 'Will', content: 'Formação do futuro simples.' },
+      { title: 'Have / Has / Had', content: 'Tempos verbais perfeitos.' },
+      { title: 'Verbos Irregulares', content: 'Tabela de verbos irregulares e particípios.' }
+    ]
+  },
+  {
+    title: 'Modais e Obrigações',
+    topics: [
+      { title: 'Modal Verbs', content: 'Can, Could, May, Might, Must, Should, Shall, Would.' },
+      { title: 'Must vs Have To', content: 'Diferença entre obrigação e proibição.' },
+      { title: 'Used To e Ought To', content: 'Hábitos passados e dever formal.' }
+    ]
+  },
+  {
+    title: 'Formas Verbais Não Finitas',
+    topics: [
+      { title: 'Gerúndio', content: 'Uso do gerund (V-ing).' },
+      { title: 'Infinitivo', content: 'Infinitive (To + verb).' },
+      { title: 'Bare Infinitive', content: 'Infinitivo sem o uso do "to".' },
+      { title: 'Gerúndio vs Infinitivo', content: 'Verbos que admitem ambas as formas.' }
+    ]
+  },
+  {
+    title: 'Verbos Multifuncionais',
+    topics: [
+      { title: 'Verbos Get e Take', content: 'Principais usos e significados.' },
+      { title: 'Phrasal Verbs', content: 'Introdução ao conceito de phrasal verbs.' }
+    ]
+  },
+  {
+    title: 'Advérbios e Partículas Essenciais',
+    topics: [
+      { title: 'Advérbios de Tempo', content: 'Yet, Still, Already.' },
+      { title: 'Advérbios de Frequência', content: 'Always, Never, Usually, Often.' },
+      { title: 'Advérbios de Grau e Certeza', content: 'Very, Too, So, Perhaps, Certainly.' },
+      { title: 'Partículas e Interjeições', content: 'Please, Sorry, Well, Kind of.' }
+    ]
+  },
+  {
+    title: 'Preposições e Conectores',
+    topics: [
+      { title: 'Preposições Chave', content: 'Preposições de tempo, lugar e relação.' },
+      { title: 'Conectores de Contraste', content: 'But, However, Although.' },
+      { title: 'Conectores de Causa', content: 'Because, Since, Why.' },
+      { title: 'Conectores de Adição', content: 'And, Also, Moreover, As well as.' },
+      { title: 'Conectores Condicionais', content: 'If, Unless, Without, Provided that.' },
+      { title: 'Conectores de Tempo', content: 'When, Before, After, Then.' },
+      { title: 'Conectores de Comparação', content: 'Than, As... As, Like.' }
+    ]
+  },
+  {
+    title: 'Tempos Verbais Avançados',
+    topics: [
+      { title: 'Continuous Tenses', content: 'Present Continuous e Past Continuous.' },
+      { title: 'Present Perfect vs Past Simple', content: 'Diferenças e usos.' },
+      { title: 'Future Forms', content: 'Going to e present continuous para futuro.' },
+      { title: 'Perfect Continuous', content: 'Tempos verbais perfect continuous.' },
+      { title: 'Conditionals', content: 'First, Second e Third Conditional.' }
+    ]
+  },
+  {
+    title: 'Estruturas Especiais',
+    topics: [
+      { title: 'Reported Speech', content: 'Discurso direto e indireto.' },
+      { title: 'Passive Voice', content: 'Formação e uso da voz passiva.' }
+    ]
+  }
+];
+    // --- 1. BASE DE DADOS (LIÇÕES) ---
+    const lessonsDB = [
+    {
+        id: 1,
+        title: "Nature & Sunset - test",
+        thumb: "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=200&auto=format&fit=crop",
+        // Mantive o vídeo como placeholder para o player não quebrar, 
+        // mas o áudio não vai bater com o texto novo (é apenas para teste técnico)
+        video: "https://www.youtube.com/watch?v=NMJvFi3xY08",
+        
+        "srt-en": `1
+          00:00:01,000 --> 00:00:04,000
+          The sun is setting behind the mountains
+
+          2
+          00:00:04,500 --> 00:00:07,500
+          The sky turned a beautiful orange
+
+          3
+          00:00:08,000 --> 00:00:11,000
+          Birds are flying back to their nests
+
+          4
+          00:00:11,500 --> 00:00:14,500
+          A cool breeze blows gently
+
+          5
+          00:00:15,000 --> 00:00:18,000
+          It is the perfect end to a long day
+
+          6
+          00:00:18,500 --> 00:00:21,500
+          Stars slowly appear in the dark
+
+          7
+          00:00:22,000 --> 00:00:25,000
+          The air is calm and peaceful around
+
+          8
+          00:00:25,500 --> 00:00:28,500
+          People are walking along the beach
+
+          9
+          00:00:29,000 --> 00:00:32,000
+          The waves make a soft sound on the shore
+
+          10
+          00:00:32,500 --> 00:00:35,500
+          Night covered the land like a blanket`,
+
+        "srt-pt": `1
+          00:00:01,000 --> 00:00:04,000
+          O sol está se pondo atrás das montanhas
+
+          2
+          00:00:04,500 --> 00:00:07,500
+          O céu ficou de um lindo laranja
+
+          3
+          00:00:08,000 --> 00:00:11,000
+          Pássaros estão voando de volta para seus ninhos
+
+          4
+          00:00:11,500 --> 00:00:14,500
+          Uma brisa fresca sopra suavemente
+
+          5
+          00:00:15,000 --> 00:00:18,000
+          É o final perfeito para um longo dia
+
+          6
+          00:00:18,500 --> 00:00:21,500
+          Estrelas aparecem lentamente no escuro
+
+          7
+          00:00:22,000 --> 00:00:25,000
+          O ar está calmo e tranquilo ao redor
+
+          8
+          00:00:25,500 --> 00:00:28,500
+          Pessoas estão caminhando pela praia
+
+          9
+          00:00:29,000 --> 00:00:32,000
+          As ondas fazem um som suave na costa
+
+          10
+          00:00:32,500 --> 00:00:35,500
+          A noite cobriu a terra como um cobertor`,
+
+        // Seus dados originais de vocabulário
+        "data": [
+            { "vocab": 1, "list": [{ "en": "Sun", "pt": "Sol" }, { "en": "Setting", "pt": "Se pondo" }, { "en": "Behind", "pt": "Atrás" }, { "en": "Mountains", "pt": "Montanhas" }] },
+            { "vocab": 2, "list": [{ "en": "Sky", "pt": "Céu" }, { "en": "Turned", "pt": "Ficou" }, { "en": "Beautiful", "pt": "Lindo" }, { "en": "Orange", "pt": "Laranja" }] },
+            { "vocab": 3, "list": [{ "en": "Birds", "pt": "Pássaros" }, { "en": "Flying", "pt": "Voando" }, { "en": "Back", "pt": "De volta" }, { "en": "Nests", "pt": "Ninhos" }] },
+            { "vocab": 4, "list": [{ "en": "Cool", "pt": "Fresca" }, { "en": "Breeze", "pt": "Brisa" }, { "en": "Blow", "pt": "Soprar" }, { "en": "Gently", "pt": "Suavemente" }] },
+            { "vocab": 5, "list": [{ "en": "Perfect", "pt": "Perfeito" }, { "en": "End", "pt": "Final" }, { "en": "Long", "pt": "Longo" }, { "en": "Day", "pt": "Dia" }] },
+            { "vocab": 6, "list": [{ "en": "Stars", "pt": "Estrelas" }, { "en": "Slowly", "pt": "Lentamente" }, { "en": "Appear", "pt": "Aparecer" }, { "en": "Dark", "pt": "Escuro" }] },
+            { "vocab": 7, "list": [{ "en": "Air", "pt": "Ar" }, { "en": "Calm", "pt": "Calmo" }, { "en": "Peaceful", "pt": "Tranquilo" }, { "en": "Around", "pt": "Ao redor" }] },
+            { "vocab": 8, "list": [{ "en": "People", "pt": "Pessoas" }, { "en": "Walking", "pt": "Caminhando" }, { "en": "Along", "pt": "Pela" }, { "en": "Beach", "pt": "Praia" }] },
+            { "vocab": 9, "list": [{ "en": "Waves", "pt": "Ondas" }, { "en": "Soft", "pt": "Suave" }, { "en": "Sound", "pt": "Som" }, { "en": "Shore", "pt": "Costa" }] },
+            { "vocab": 10, "list": [{ "en": "Night", "pt": "Noite" }, { "en": "Covered", "pt": "Cobriu" }, { "en": "Land", "pt": "Terra" }, { "en": "Blanket", "pt": "Cobertor" }] }
+        ],
+
+        // Estatísticas atualizadas para refletir o conteúdo
+        stats: { 
+            cards: 10,    
+            phrases: 10   
+        }
+    },
+    {
+        id: 2,
+        title: "Miley Cyrus - Midnight Sky",
+        thumb: "https://f005.backblazeb2.com/file/PhraseCraftStorage/Miley_Cyrus_-_Midnight_Sky.jpg",
+        video: "https://youtu.be/aS1no1myeTM?list=RDaS1no1myeTM",
+        
+        // Agora usamos propriedades de URL
+        "srt-en-url": "https://nyc.cloud.appwrite.io/v1/storage/buckets/68ed7f190017280cf294/files/693b6b4400097575b9f1/view?project=68ebe8640000ca7c860b",
+        "srt-pt-url": "https://nyc.cloud.appwrite.io/v1/storage/buckets/68ed7f190017280cf294/files/693b6b4d002b6f04471e/view?project=68ebe8640000ca7c860b",
+        "pairs-url": "https://nyc.cloud.appwrite.io/v1/storage/buckets/68ed7f190017280cf294/files/693b6b32002677fee60b/view?project=68ebe8640000ca7c860b",
+        
+        // --- Estatísticas Manuais para carregamento instantâneo ---
+        stats: { 
+            cards: 4,    // Total de pares de palavras no JSON
+            phrases: 18   // Total de blocos na SRT
+        }
+
+        /*
+        1º soliciar a ai para traduzir a srt
+        2º solicitar para criar os pares
+        1. Formato Sugerido do Arquivo .json
+        Para garantir que a tarefa de Pares de 
+        Palavras (Match) apareça para todas as frases, 
+        você precisa assegurar que cada índice de 
+        frase no seu arquivo SRT tenha uma entrada 
+        correspondente no seu arquivo JSON de vocabulário (vocab).
+        Agrupar de 1 a 3 palavras por entrada.
+        Palavras curtas (até 3 letras) não ficam sozinhas, 
+        sempre juntas com outra palavra.
+        [
+          {
+            "vocab": 1,
+            "list": [
+              Exemplo: Born to run
+              { "en": "Born to", "pt": "Nasci para" },
+              { "en": "run", "pt": "Correr" }
+            ]
+          },
+          {
+            "vocab": 2,
+        */
+        
+        // NOTA: Se você mantiver "srt-en" com texto direto, o código abaixo 
+        // vai dar prioridade a ele. Se quiser usar link, apague a chave "srt-en" antiga 
+        // ou use a nova lógica que vou passar.
+        },
+    ];
+  
+    // --- SISTEMA DE NAVEGAÇÃO (APP STATE) ---
+    let navigationStack = []; // Pilha para rastrear histórico de telas
+    let currentView = null;
+    let currentTaskMode = null; // training | speaking | video | null
+    const MENU_VIEWS = ['home', 'you', 'duels', 'path'];
+
+    // 0 = primeira página (1-5)
+    let currentPhase = 0;
+    
+    // Constante para dividir de 5 em 5
+    const itemsPerPhase = 5;
+  
+    // --- VARIÁVEIS DE CONTROLE DE PALAVRAS ---
+    let expectedWordIndex = 0; // Controla qual é a próxima palavra correta
+    let currentTargetSentence = []; // Guarda a frase correta fatiada em array
+    
+    // Helper para limpar texto (remover pontuação e minúsculas para comparação)
+    const normalizeWord = (str) => str.toLowerCase().replace(/[.,?!":;]/g, '').trim();
+
+    let currentLesson = null;
+    let quizQueue = [];
+    let currentIndex = 0;
+    let maxIndexReached = 0; 
+    let score = 0;
+    let currentTask = null;
+    let matchState = { selectedId: null, selectedSide: null, selectedElement: null, matchesFound: 0 };
+  
+    // --- VARIÁVEIS DE FALA ---
+    let recognition = null;
+    let isListening = false;
+    let speechStage = 1; // 1 = Reconhecer Texto, 2 = Gravar Áudio
+    let tempRecognizedText = ""; // Guarda o texto da etapa 1 para usar na etapa 2
+    let trainingMode = 'full'; // 'full' ou 'speaking'
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let speakingResults = []; // Nova variável para guardar o histórico da fala
+  
+    let globalRecognition = null;   // Objeto do STT
+    let isRecognizingText = false;  // Controle da Etapa 1
+    
+    let globalMediaRecorder = null; // Objeto do Gravador de Áudio
+    let globalAudioChunks = [];     // Chunks de áudio
+    let isRecordingAudio = false;   // Controle da Etapa 2
+  
+    // Variável global para impedir que o Garbage Collector "coma" o áudio no celular
+    window.currentUtterance = null;
+    
+
+    // --- VARIÁVEIS GLOBAIS DO YOUTUBE ---
+    let ytPlayer = null;
+    let videoTimer = null;
+    let videoLoopEnabled = true; // Loop começa ativado por padrão
+    let isVideoTaskComplete = false; // Controle para parar o loop quando acertar
+    
+    // Carrega a API do YouTube assincronamente
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // --- CONFIGURAÇÃO APPWRITE ---
+  
+    // 1. Defina as constantes PRIMEIRO
+    const PROJECT_ID = '68ebe8640000ca7c860b';
+    const DATABASE_ID = '68ed87df000874c3e85a';
+    const COLLECTION_ID = '693ad57f00239c68398e';
+
+    // 2. Inicialize o cliente UMA ÚNICA VEZ com o Endpoint correto
+    const client = new Appwrite.Client()
+        .setEndpoint('https://nyc.cloud.appwrite.io/v1') // Endpoint NYC correto
+        .setProject(PROJECT_ID);
+
+    // 3. Inicialize o Database
+    const databases = new Appwrite.Databases(client);
+
+    // Variável global que vai segurar TUDO (Server + Local)
+    let allLessons = [];
+  
+    // 4. Inicialize o Account (Autenticação)
+    const account = new Appwrite.Account(client);
+  
+    // --- Elementos DOM PATH ---
+    const stageTitleEl = document.getElementById('stage-title');
+    const topicTitleEl = document.getElementById('topic-title');
+    const stageCardsContainer = document.getElementById('stage-cards-container');
+    const topicCardsContainer = document.getElementById('topic-cards-container');
+    let activeStageId = null;
+    let structuredData = []; // Aqui será armazenada a estrutura de dados com os IDs gerados
+  
+    // --- 2. GESTÃO DE UI E NAVEGAÇÃO ---
+    const ui = {
+        views: document.querySelectorAll('.view-section'),
+        footerItems: document.querySelectorAll('.footer-item'),
+        sidebarItems: document.querySelectorAll('.sidebar-item'),
+        trainingExit: document.getElementById('training-exit'),
+        
+        // Views
+        listContainer: document.getElementById('lessons-list'),
+        previewTitle: document.getElementById('preview-title'),
+        previewThumb: document.getElementById('preview-thumb'),
+        previewSentences: document.getElementById('preview-sentences'),
+        
+        // Quiz Elements
+        quizContainer: document.querySelector('.quiz-container'),
+        finalScreen: document.getElementById('final-screen'),
+        progressText: document.getElementById('progress-text'),
+        progressFill: document.getElementById('progress-fill'),
+        scoreDisplay: document.getElementById('score'),
+        prompt: document.getElementById('prompt-text'),
+        display: document.getElementById('question-display'),
+        
+        matchWrapper: document.getElementById('match-area-wrapper'),
+        colLeft: document.getElementById('col-left'),
+        colRight: document.getElementById('col-right'),
+        
+        mcArea: document.getElementById('multiple-choice-area'),
+        
+        speechWrapper: document.getElementById('speech-area-wrapper'),
+        speechResult: document.getElementById('speech-result'),
+        micBtn: document.getElementById('mic-btn'),
+        
+        jumbleWrapper: document.getElementById('jumble-area-wrapper'),
+        answerZone: document.getElementById('answer-zone'),
+        wordBank: document.getElementById('word-bank'),
+        finalScore: document.getElementById('final-score'),
+          
+        // Video:
+        videoWrapper: document.getElementById('video-area-wrapper'),
+        videoContextText: document.getElementById('video-context-text')
+    };
+
+// Feedback visual do page reload
+function reloadWithFeedback(event) {
+    event.preventDefault();
+    
+    // Feedback visual
+    const link = event.currentTarget;
+    link.style.color = '#00ff00';
+    link.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...';
+    
+    // Aguarda 300ms e recarrega
+    setTimeout(() => {
+        location.reload();
+    }, 300);
+}     
+    
+// --- PATH ---
+// --- Função de Geração Dinâmica de IDs ---
+function generateDynamicIds(data) {
+    const structured = [];
+    
+    // Itera sobre os Estágios (Stage Index + 1 = Stage ID)
+    data.forEach((stage, stageIndex) => {
+        const stageId = stageIndex + 1;
+        
+        const topicsWithIds = stage.topics.map((topic, topicIndex) => ({
+            stageId: stageId,
+            id: parseFloat(`${stageId}.${topicIndex + 1}`), // Gera ID como 1.1, 1.2, 2.1, etc.
+            title: topic.title,
+            content: topic.content 
+        }));
+        
+        structured.push({
+            id: stageId,
+            title: stage.title,
+            topics: topicsWithIds
+        });
+    });
+    
+    return structured;
+}
+
+// --- Funções de Renderização e Click (Ajustadas para usar structuredData) ---
+
+// Função: renderStageCards
+function renderStageCards () {
+    stageCardsContainer.innerHTML = '';
+
+    // CORREÇÃO DE LÓGICA: Renderiza Estágios do Path
+    structuredData.forEach(stage => {
+        const btn = document.createElement('button');
+        btn.className = `phase-btn`;
+        btn.id = `stage-${stage.id}`;
+        btn.innerText = stage.id; // <--- AGORA EXIBE SOMENTE O ID (1, 2, 3...)
+        
+        btn.onclick = () => {
+            handleStageClick(stage.id, stage.title);
+        };
+        
+        stageCardsContainer.appendChild(btn);
+    });
+  
+    // 3. SELEÇÃO INICIAL: Seleciona o primeiro estágio, que automaticamente seleciona o primeiro tópico
+    if (structuredData.length > 0) {
+        handleStageClick(structuredData[0].id, structuredData[0].title);
+    }
+}
+  
+// Função: renderTopicCards
+function renderTopicCards (stageId) {
+    topicCardsContainer.innerHTML = '';
+    
+    // CORREÇÃO DE LÓGICA: Renderiza Tópicos do Path
+    if (!stageId) {
+        topicCardsContainer.innerHTML = '<span class="placeholder-text">Click on a Stage to view the Topics.</span>';
+        topicTitleEl.textContent = 'Choose your topic';
+        return;
+    }
+
+    const stage = structuredData.find(s => s.id === stageId);
+    if (!stage || stage.topics.length === 0) {
+        topicCardsContainer.innerHTML = '<span class="placeholder-text">No Topics found for this Stage.</span>';
+        topicTitleEl.textContent = 'No Topics found';
+        return;
+    }
+
+    stage.topics.forEach(topic => {
+        const btn = document.createElement('button');
+        btn.className = `phase-btn`;
+        btn.id = `topic-${topic.id}`;
+        btn.innerText = topic.id; // <--- AGORA EXIBE SOMENTE O ID (1.1, 1.2, 2.1...)
+        
+        btn.onclick = () => {
+            handleTopicClick(topic.id, topic.title, topic.content);
+        };
+        
+        topicCardsContainer.appendChild(btn);
+    });
+}
+
+// Função: handleStageClick
+function handleStageClick(stageId, stageTitle) {
+    stageTitleEl.style.whiteSpace = 'pre-line';
+    stageTitleEl.textContent = `Estágio ${stageId}\n${stageTitle}`;
+    activeStageId = stageId;
+
+    // 🔥 Limpa o destaque de TODOS os botões de Estágio e Tópico no Path
+    document.querySelectorAll('#stage-cards-container .phase-btn, #topic-cards-container .phase-btn').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Ativa o cartão de Estágio pelo ID
+    const activeStageCard = document.getElementById(`stage-${stageId}`);
+
+    if (activeStageCard) {
+        activeStageCard.classList.add('active');
+    }
+
+    renderTopicCards(stageId);
+    
+    // Seleção Automática do Primeiro Tópico
+    const currentStage = structuredData.find(s => s.id === stageId);
+    if (currentStage && currentStage.topics.length > 0) {
+        const firstTopic = currentStage.topics[0];
+        handleTopicClick(firstTopic.id, firstTopic.title, firstTopic.content);
+    } else {
+        topicTitleEl.textContent = 'Nenhum Tópico Encontrado';
+    }
+}
+
+// Função: handleTopicClick
+function handleTopicClick(topicId, topicTitle, topicContent) {
+    topicTitleEl.style.whiteSpace = 'pre-line';
+    topicTitleEl.textContent = `Tópico ${topicId}\n${topicTitle}`;
+      
+    // ⚠️ Limpa apenas os TÓPICOS para manter o Estágio ativo
+    document.querySelectorAll('#topic-cards-container .phase-btn').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Ativa o tópico pelo ID
+    const activeTopicCard = document.getElementById(`topic-${topicId}`);
+    
+    if (activeTopicCard) {
+        activeTopicCard.classList.add('active');
+    }
+}
+  
+    // Verifica status (Mockado para FALSE como pedido)
+    // --- AUTH FUNCTIONS (REAL APPWRITE) ---
+
+    // 1. Verifica se há sessão ativa no servidor
+    async function checkAuthStatus() {
+        try {
+            // Tenta pegar os dados do usuário atual
+            const user = await account.get();
+            return user; // Retorna o objeto usuário se der certo
+        } catch (error) {
+            // Se der erro (401), não está logado
+            return null;
+        }
+    }
+
+    // 2. Realiza o Login
+    async function handleLogin(event) {
+        event.preventDefault(); // Evita reload da página
+        
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const btn = event.target.querySelector('button');
+        const originalText = btn.innerHTML;
+
+        // Feedback visual
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
+        btn.disabled = true;
+
+        try {
+            // Cria a sessão (Login)
+            await account.createEmailPasswordSession(email, password);
+            
+            console.log("✅ Login realizado!");
+            
+            // Redireciona para o perfil
+            navigateTo('you');
+
+        } catch (error) {
+            console.error("Erro no login:", error);
+            alert("Falha ao entrar: " + error.message);
+        } finally {
+            // Restaura o botão
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // 3. Realiza o Logout
+    async function handleLogout() {
+        if(!confirm("Deseja realmente sair?")) return;
+
+        try {
+            await account.deleteSession('current'); // Deleta sessão atual
+            console.log("👋 Logout realizado");
+            navigateTo('login'); // Manda de volta pro login
+        } catch (error) {
+            console.error("Erro ao sair:", error);
+        }
+    }
+
+    // 4. Carrega os dados na tela "You"
+    function loadUserProfile(user) {
+        if (!user) return;
+
+        document.getElementById('profile-name').innerText = user.name;
+        document.getElementById('profile-email').innerText = user.email;
+
+        // Gera iniciais para o avatar (Ex: "Joao Silva" -> "JS")
+        const initials = user.name
+            .split(' ')
+            .map(n => n[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase();
+        
+        document.getElementById('profile-avatar').innerText = initials;
+    }
+
+    // --- 1. BUSCA BLINDADA NO SERVIDOR ---
+    async function fetchServerLessons() {
+        console.log('🔍 Iniciando busca no Appwrite...');
+        
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTION_ID,
+                [Appwrite.Query.orderDesc('$createdAt')]
+            );
+            
+            console.log('✅ Dados brutos recebidos:', response.documents.length);
+            
+            // --- AQUI ESTÁ A MÁGICA QUE FALTAVA ---
+            // Cria uma cópia do $id para id em cada lição
+            return response.documents.map(doc => ({
+                ...doc,       
+                id: doc.$id   
+            }));
+            
+        } catch (error) {
+            console.error("❌ ERRO COMPLETO:", error);
+            return []; 
+        }
+    }
+
+    // --- 2. INICIALIZAÇÃO HÍBRIDA (SERVER + LOCAL) ---
+    async function initApp() {
+         // 1. Mostra Loading
+        ui.listContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 50vh; color: #888;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 20px;"></i>
+                <p>Buscando lições...</p>
+            </div>
+        `;
+        
+        // 2. Busca Server
+        const serverData = await fetchServerLessons() || [];
+        
+        // 3. Mescla com Local
+        const serverIds = new Set(serverData.map(l => l.id));
+        const localUnique = lessonsDB.filter(l => !serverIds.has(l.id));
+    
+        allLessons = [...serverData, ...localUnique];
+    
+        // 4. Renderiza
+        renderLessonList(allLessons);
+
+        // --- NOVO: CHECA O LINK DEPOIS DE CARREGAR TUDO ---
+        checkDeepLink();
+    }
+
+    // Agora a função aceita uma lista como parâmetro
+    // --- 3. ATUALIZAÇÃO DA RENDERIZAÇÃO (CORRIGIDA PARA LER DO SERVIDOR) ---
+    function renderLessonList(lessonsToRender) {
+        ui.listContainer.innerHTML = '';
+        
+        if (!lessonsToRender || lessonsToRender.length === 0) {
+            ui.listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#888">Nenhuma lição disponível.</p>';
+            return;
+        }
+
+        lessonsToRender.forEach(lesson => {
+            const card = document.createElement('div');
+            card.className = 'lesson-card';
+            card.onclick = () => openPreview(lesson.id);
+
+            // --- LÓGICA DE SUBTÍTULO OTIMIZADA ---
+            let subtitleText = "";
+
+            // 1. Prioridade: Dados diretos do Appwrite (na raiz do objeto)
+            // Usamos != null para garantir que pegue mesmo se for 0, mas ignore undefined
+            if (lesson.cards != null && lesson.phrases != null) {
+                subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
+            }
+            // 2. Fallback: Dados manuais locais (objeto stats antigo)
+            else if (lesson.stats) {
+                subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
+            } 
+            // 3. Fallback: Cálculo se os dados brutos já estiverem carregados
+            else if (Array.isArray(lesson.data)) {
+                const totalPhrases = lesson.data.length;
+                const totalCards = lesson.data.reduce((acc, item) => acc + (item.vocab ? item.vocab.length : 0), 0);
+                subtitleText = `${totalCards} cards | ${totalPhrases} frases`;
+            } 
+            // 4. Último caso: Deixa vazio ou coloca um placeholder discreto
+            else {
+                subtitleText = "..."; 
+            }
+
+            // Renderiza o card
+            card.innerHTML = `
+                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
+                <div class="lesson-info">
+                    <div class="lesson-title">${lesson.title}</div>
+                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--accent-color);">
+                        <i class="fa-solid fa-layer-group"></i> ${subtitleText}
+                    </div>
+                </div>
+            `;
+            ui.listContainer.appendChild(card);
+        });
+    }
+
+    // --- FUNÇÃO DE LIMPEZA GERAL ---
+    function clean() {
+        console.log('🧹 [Clean] Limpando recursos...');
+        
+        // 1. Cancela qualquer síntese de voz ativa
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            console.log('🔇 [Clean] Sintetizador cancelado');
+        }
+        
+        // 2. Para reconhecimento de voz se estiver ativo
+        if (isListening && recognition) {
+            try {
+                recognition.stop();
+                isListening = false;
+                console.log('🎤 [Clean] Reconhecimento parado');
+            } catch(e) {
+                console.warn('⚠️ Recognition já estava parado');
+            }
+        }
+        
+        // 3. Para o player do YouTube
+        stopVideoPlayback();
+        
+        // 4. Remove classe de bloqueio de UI
+        document.body.classList.remove('audio-playing');
+        
+        console.log('✅ [Clean] Limpeza concluída');
+    }
+
+    // Função auxiliar para criar um "Checkpoint" no histórico do celular
+    function setTaskHistoryMode(mode) {
+        // Empurra um estado novo. Se o usuário der "Back", cai no popstate event
+        history.pushState({ view: 'training', mode: mode }, '', '#training');
+    }
+    // Adicionado parâmetro 'addToHistory' com padrão true
+    // Stack é a ÚNICA fonte de verdade
+    // history.state NÃO é usado
+    // fromBack controla se empilha ou não
+    // --- CORREÇÃO DA NAVEGAÇÃO ---
+    function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
+        // --- LÓGICA DO STACK INTERNO (Sua lógica original corrigida) ---
+        if (MENU_VIEWS.includes(view)) {
+            navigationStack = [view]; 
+            resetStack = true;
+        } else if (!fromBack && currentView !== view) {
+            navigationStack.push(view);
+        }
+    
+        currentView = view;
+        if (view !== 'training') currentTaskMode = null;
+    
+        console.log(`📍 [Nav] Indo para: ${view} | Stack:`, navigationStack);
+    
+        // --- ATUALIZAÇÃO VISUAL ---
+        ui.views.forEach(v => v.classList.remove('active'));
+        const targetView = document.getElementById(`view-${view}`);
+        if (targetView) targetView.classList.add('active');
+    
+        // (Atualiza Footers e Sidebars aqui...)
+        ui.footerItems.forEach(item => item.classList.remove('active'));
+        const activeFooter = Array.from(ui.footerItems).find(i => 
+            i.innerText.toLowerCase().includes(view) || 
+            (view === 'home' && i.innerText.includes('Home'))
+        );
+        if (activeFooter) activeFooter.classList.add('active');
+    
+        // --- 🔥 MAGIA DO MOBILE: SINCRONIA COM O NAVEGADOR ---
+        if (!fromBack) {
+            // Se for RESET (clicou no menu), substituímos o histórico para não criar fila gigante
+            if (resetStack) {
+                history.replaceState({ view, lessonId }, '', `#${view}`);
+            } 
+            // Se for navegação normal, adicionamos um novo estado
+            else {
+                const hash = lessonId ? `#lesson-${lessonId}` : `#${view}`;
+                history.pushState({ view, lessonId }, '', hash);
+            }
+        }
+    }
+  
+    function goBack() {
+      // 1. Prioridade: Se estiver em MODO TAREFA, apenas encerra a tarefa
+      if (currentTaskMode) {
+          console.log('🔙 [Back] Encerrando modo tarefa:', currentTaskMode);
+          clean(); // Para vídeos e áudios
+          
+          // Volta visualmente para o Preview
+          // Como não empilhamos 'training', o stack atual ainda deve ser algo como ['home', 'preview']
+          // Então basta recarregar a view que está no topo do stack
+          const lastView = navigationStack[navigationStack.length - 1];
+          
+          // Se por acaso o stack estiver vazio ou errado, fallback para preview ou home
+          if (lastView) {
+              navigateTo(lastView, { fromBack: true });
+          } else {
+               navigateTo('home');
+          }
+          
+          currentTaskMode = null; // Limpa o modo
+          toggleCloseExit('hide'); // Esconde o X
+          setLayoutMode('full'); // Volta layout normal
+          return; // Pára por aqui, não faz pop no stack
+      }
+  
+      // 2. Navegação Padrão (Histórico)
+      if (navigationStack.length > 1) {
+          navigationStack.pop(); // Remove tela atual
+          const previousView = navigationStack[navigationStack.length - 1];
+          
+          console.log('🔙 [Back] Voltando para:', previousView, '| Stack:', navigationStack);
+          
+          // fromBack=true impede que navigateTo empilhe novamente
+          navigateTo(previousView, { fromBack: true });
+      } else {
+          console.log('🏠 [Nav] Na raiz - Stack já está no mínimo:', navigationStack);
+          // Opcional: Confirmar saída do app ou não fazer nada
+      }
+  }
+
+  // --- CONTROLE CENTRALIZADO DO BOTÃO X ---
+  function toggleCloseExit(action) {
+    const exitBtn = ui.trainingExit;
+    if (!exitBtn) return;
+    
+    if (action === 'show') {
+        exitBtn.classList.remove('hidden');
+    } 
+    else if (action === 'hide') {
+        exitBtn.classList.add('hidden');
+    }
+    else if (action === 'goback') {
+        goBack();
+    }
+}
+
+// --- GERENCIAMENTO CENTRALIZADO DE LAYOUT (CORRIGIDO) ---
+function setLayoutMode(mode) {
+        console.log('Layout Mudando para modo', mode);
+        
+        const modes = {
+            full: { hideHeader: false, hideFooter: false, hideSidebar: false, contentPadding: '20px' },
+            preview: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
+            training: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
+            immersive: { hideHeader: true, hideFooter: true, hideSidebar: true, contentPadding: '0px' }
+        };
+        
+        const config = modes[mode] || modes.full;
+        
+        // 1. Header/App Body (sem mudanças)
+        const header = document.querySelector('.app-header');
+        const appBody = document.querySelector('.app-body');
+        if (config.hideHeader) {
+            header.style.display = 'none';
+            appBody.style.marginTop = '0';
+        } else {
+            header.style.display = 'flex';
+            appBody.style.marginTop = 'var(--header-height)';
+        }
+        
+        // 2. Footer
+        const footer = document.querySelector('.app-footer');
+        if (config.hideFooter) {
+            footer.style.display = 'none';
+        } else {
+            footer.style.display = 'flex';
+        }
+        
+        // 3. Sidebar
+        const sidebar = document.querySelector('.app-sidebar');
+        if (config.hideSidebar) {
+            sidebar.style.display = 'none';
+        } else {
+            sidebar.style.display = ''; // Reset CSS
+        }
+        
+        // 4. Main Content - CORREÇÃO VITAL
+        const mainContent = document.querySelector('.main-content');
+        mainContent.style.padding = config.contentPadding;
+        
+        // CRÍTICO: Remove manipulação arbitrária de padding-bottom
+        mainContent.style.paddingBottom = ''; // Reset
+        
+        // SCROLL RECOVERY - FORÇA RECUPERAÇÃO DO SCROLL
+        if (mode === 'full' || mode === 'preview') {
+            setTimeout(() => {
+                mainContent.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+                window.scrollTo(0, 0);
+            }, 100);
+        }
+        
+        console.log('Layout Modo', mode, 'aplicado. Padding:', config.contentPadding);
+    }
+  
+    // PREVENÇÃO GERAL DE VIEWPORT SHIFT
+    function fixViewportShift() {
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            // Força altura dinâmica baseada no conteúdo
+            mainContent.style.height = 'auto';
+            mainContent.style.minHeight = 'calc(100vh - var(--header-height))';
+            
+            // Reset scroll se travado
+            if (mainContent.scrollHeight > mainContent.clientHeight) {
+                mainContent.scrollTop = 0;
+            }
+        }
+    }
+    
+    // Chama após mudanças de layout
+    document.addEventListener('resize', fixViewportShift);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(fixViewportShift, 300);
+    });
+
+  
+    // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
+    // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
+    async function openPreview(lessonId, addToHistory = true) {
+        console.log("🚀 [openPreview] Chamado com ID:", lessonId);
+    
+        // 1. 🔥 LIMPEZA INICIAL
+        clean();
+        setLayoutMode('full');
+    
+        // 2. BUSCA A LIÇÃO
+        let rawLesson = allLessons.find(l => l.id == lessonId);
+    
+        if (!rawLesson) {
+            console.error("❌ Lição não encontrada para o ID:", lessonId);
+            ui.previewTitle.innerText = "Lição não encontrada";
+            return;
+        }
+    
+        // --- LÓGICA DE FASE ---
+        const isSameLesson = currentLesson && currentLesson.id == rawLesson.id;
+    
+        if (!isSameLesson) {
+            currentPhase = 0;
+        }
+    
+        console.log("✅ Lição carregada:", rawLesson.title);
+    
+        // 3. NAVEGAÇÃO (centralizada)
+        navigateTo('preview', {
+            addToStack: addToHistory,
+            lessonId: rawLesson.id
+        });
+    
+        toggleCloseExit('hide');
+    
+        // 4. UI inicial
+        ui.previewTitle.innerText = "Carregando...";
+        ui.previewThumb.src = rawLesson.thumb;
+        ui.previewThumb.style.objectFit = "contain";
+        ui.previewThumb.style.backgroundColor = "#000";
+    
+        if (!isSameLesson) {
+            ui.previewSentences.innerHTML = `
+                <li class="preview-item" style="text-align:center; padding: 20px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...
+                </li>
+            `;
+        }
+    
+        ui.views.forEach(v => v.classList.remove('active'));
+        document.getElementById('view-preview').classList.add('active');
+    
+        ui.footerItems.forEach(i => i.classList.remove('active'));
+        document.querySelector('.footer-item:nth-child(1)').classList.add('active');
+    
+        // 5. CARREGAMENTO / CACHE DA LIÇÃO
+        let lessonDataCompiled;
+    
+        if (isSameLesson && currentLesson.data && currentLesson.data.length > 0) {
+            lessonDataCompiled = currentLesson.data;
+        } else {
+            const loadedData = await fetchLessonData(rawLesson);
+    
+            if (!loadedData) {
+                ui.previewTitle.innerText = "Erro ao carregar";
+                ui.previewSentences.innerHTML = `
+                    <li class="preview-item" style="color:var(--error-color)">
+                        Falha no download.
+                    </li>
+                `;
+                return;
+            }
+    
+            lessonDataCompiled = compileLessonData(
+                loadedData.srtEn,
+                loadedData.srtPt,
+                loadedData.vocabData,
+                rawLesson.video
+            );
+        }
+    
+        // 6. ATUALIZA ESTADO GLOBAL
+        currentLesson = {
+            ...rawLesson,
+            data: lessonDataCompiled
+        };
+    
+        ui.previewTitle.innerText = currentLesson.title;
+    
+        // 7. RENDER FINAL (fase preservada ou resetada)
+        renderPhaseButtons();
+        renderPreviewSentences();
+    }
+  
+    // --- Gerencia o download dos dados ---
+    async function fetchLessonData(lesson) {
+        // 1. Prepara as promessas de download
+        let srtEnPromise = lesson['srt-en']; // Tenta pegar texto direto primeiro
+        let srtPtPromise = lesson['srt-pt'];
+        let vocabPromise = lesson['data'];
+    
+        // Se não tem texto direto, verifica se tem URL e baixa
+        if (!srtEnPromise && lesson['srt-en-url']) {
+            srtEnPromise = fetch(lesson['srt-en-url']).then(res => res.text());
+        }
+        
+        if (!srtPtPromise && lesson['srt-pt-url']) {
+            srtPtPromise = fetch(lesson['srt-pt-url']).then(res => res.text());
+        }
+    
+        if (!vocabPromise && lesson['pairs-url']) {
+            vocabPromise = fetch(lesson['pairs-url']).then(res => res.json());
+        }
+    
+        // 2. Aguarda tudo baixar ao mesmo tempo (Paralelo)
+        try {
+            // Se já era texto/objeto, o Promise.resolve resolve na hora. 
+            // Se era fetch, ele espera baixar.
+            const [srtEn, srtPt, vocabData] = await Promise.all([
+                Promise.resolve(srtEnPromise),
+                Promise.resolve(srtPtPromise),
+                Promise.resolve(vocabPromise)
+            ]);
+    
+            return { srtEn, srtPt, vocabData };
+    
+        } catch (error) {
+            console.error("Erro ao carregar lição:", error);
+            alert("Erro ao carregar conteúdo da lição. Verifique sua conexão.");
+            return null;
+        }
+    }
+
+    // --- LÓGICA DE DISTRIBUIÇÃO INTELIGENTE ---
+    // Retorna um array com o tamanho de cada fase. Ex: para 6 itens retorna [3, 3]
+    function calculatePhaseStructure(totalItems) {
+        const standardSize = 5;
+        let structure = [];
+        
+        // Se tiver menos que 5 itens, é uma fase só
+        if (totalItems <= standardSize) {
+            return [totalItems];
+        }
+
+        const remainder = totalItems % standardSize;
+        const totalStandardPhases = Math.floor(totalItems / standardSize);
+
+        // CASO 1: Resto 1 (Ex: 6, 11, 16...)
+        // Pega o último grupo de 5 + 1 (total 6) e divide em 3 + 3
+        if (remainder === 1) {
+            // Adiciona fases de 5 normais até a penúltima
+            for (let i = 0; i < totalStandardPhases - 1; i++) {
+                structure.push(standardSize);
+            }
+            // As duas últimas fases viram 3 e 3
+            structure.push(3);
+            structure.push(3);
+        }
+        // CASO 2: Resto 2 (Ex: 7, 12, 17...)
+        // Pega o último grupo de 5 + 2 (total 7) e divide em 4 + 3
+        else if (remainder === 2) {
+            // Adiciona fases de 5 normais até a penúltima
+            for (let i = 0; i < totalStandardPhases - 1; i++) {
+                structure.push(standardSize);
+            }
+            // As duas últimas fases viram 4 e 3
+            structure.push(4);
+            structure.push(3);
+        }
+        // CASO PADRÃO: Resto 0, 3 ou 4 (Ex: 5, 8, 9, 10...)
+        // Mantém o padrão (5, 5, ..., resto)
+        else {
+            for (let i = 0; i < totalStandardPhases; i++) {
+                structure.push(standardSize);
+            }
+            if (remainder > 0) {
+                structure.push(remainder);
+            }
+        }
+        
+        return structure;
+    }
+
+    // Função auxiliar para pegar o start e end de uma fase específica
+    function getPhaseIndices(phaseIndex, totalItems) {
+        const structure = calculatePhaseStructure(totalItems);
+        
+        // Proteção contra índice inválido
+        if (phaseIndex >= structure.length) phaseIndex = 0;
+
+        let start = 0;
+        // Soma os tamanhos das fases anteriores para achar o start
+        for (let i = 0; i < phaseIndex; i++) {
+            start += structure[i];
+        }
+        
+        const end = start + structure[phaseIndex];
+        return { start, end, totalPhases: structure.length };
+    }
+  
+    // Gera os botões de paginação
+    function renderPhaseButtons() {
+        const container = document.getElementById('phase-controls');
+        container.innerHTML = '';
+        
+        // AQUI MUDOU: Usa a lógica inteligente para contar fases
+        const structure = calculatePhaseStructure(currentLesson.data.length);
+        const totalPhases = structure.length;
+    
+        for (let i = 0; i < totalPhases; i++) {
+            const btn = document.createElement('button');
+            btn.className = `phase-btn ${i === currentPhase ? 'active' : ''}`;
+            btn.innerText = i + 1; 
+            
+            btn.onclick = () => {
+                currentPhase = i;
+                renderPhaseButtons(); 
+                renderPreviewSentences(); 
+            };
+            
+            container.appendChild(btn);
+        }
+    }
+    
+    // Renderiza apenas as 5 frases da fase atual
+    // Renderiza apenas as frases da fase atual (com tamanho dinâmico)
+    function renderPreviewSentences() {
+        ui.previewSentences.innerHTML = '';
+        
+        // AQUI MUDOU: Pega os índices calculados
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(start, end); 
+    
+        if (phaseData.length === 0) {
+            ui.previewSentences.innerHTML = '<li class="preview-item">Sem frases.</li>';
+            return;
+        }
+    
+        phaseData.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = 'preview-item';
+            // Usa (start + index + 1) para manter a numeração correta globalmente
+            li.innerText = `${start + index + 1}. ${item.en}`; 
+            ui.previewSentences.appendChild(li);
+        });
+    }
+    // --- PARSER DE SRT ---
+  
+    // Converte "00:00:02,500" para segundos (float)
+    function timeToSeconds(timeString) {
+        const parts = timeString.split(':');
+        const seconds = parts[2].replace(',', '.');
+        return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60) + parseFloat(seconds);
+    }
+    
+    function parseSRT(srtContent) {
+        if (!srtContent) return [];
+        const normalizedContent = srtContent.replace(/\r\n/g, '\n');
+        const blocks = normalizedContent.trim().split(/\n\s*\n/);
+        
+        return blocks.map(block => {
+            const lines = block.split('\n');
+            if (lines.length < 3) return null;
+    
+            // Linha 1: "00:00:00,000 --> 00:00:02,000"
+            const times = lines[1].split(' --> ');
+            const start = timeToSeconds(times[0]);
+            const end = timeToSeconds(times[1]);
+    
+            // Linha 2+: Texto
+            const text = lines.slice(2).join(' ').replace(/<[^>]*>/g, '').trim();
+            
+            return { text, start, end };
+        }).filter(item => item !== null);
+    }
+    
+    // Agora ela não lê "lesson['srt-en']" direto, ela recebe os textos como argumentos
+    function compileLessonData(srtEnContent, srtPtContent, vocabList, videoUrl) {
+        // Se o vocabList já vier formatado como array final (lição antiga compilada), retorna ele
+        if (Array.isArray(vocabList) && vocabList.length > 0 && vocabList[0].en && vocabList[0].id) {
+            return vocabList;
+        }
+    
+        const enBlocks = parseSRT(srtEnContent);
+        const ptBlocks = parseSRT(srtPtContent);
+        const vocabData = vocabList || [];
+    
+        return enBlocks.map((block, index) => {
+            const ptBlock = ptBlocks[index] || { text: "" };
+            const vocabObj = vocabData.find(v => v.vocab === (index + 1));
+    
+            return {
+                id: index + 1,
+                en: block.text,      
+                pt: ptBlock.text,    
+                start: block.start,  
+                end: block.end,      
+                videoUrl: videoUrl, 
+                vocab: vocabObj ? vocabObj.list : []
+            };
+        });
+    }
+  
+// --- VALIDAÇÃO DE DADOS PARA TREINO ---
+function validateTrainingData() {
+    if (!currentLesson || currentLesson.data.length === 0) {
+        alert("Nenhuma lição selecionada.");
+        return false;
+    }
+
+    // Pega os dados da fase atual
+    const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+    const phaseData = currentLesson.data.slice(start, end);
+    
+    // Verifica se existe tradução PT e pares de vocabulário
+    let hasPtTranslation = false;
+    let hasVocabPairs = false;
+    
+    for (let sentence of phaseData) {
+        // Verifica se tem dados de vídeo para a segunda tarefa
+        if (!sentence.videoUrl || sentence.start === undefined || sentence.end === undefined) {
+            hasVideoData = false;
+        }
+      
+        // Verifica se tem tradução PT (não vazia)
+        if (sentence.pt && sentence.pt.trim().length > 0) {
+            hasPtTranslation = true;
+        }
+        
+        // Verifica se tem pares de vocabulário
+        if (sentence.vocab && sentence.vocab.length > 0) {
+            hasVocabPairs = true;
+        }
+        
+        // Se já encontrou ambos, pode parar de verificar
+        if (hasPtTranslation && hasVocabPairs) break;
+    }
+  
+    // Se faltar algum dado essencial
+    let hasVideoData = true;
+  
+    if (!hasPtTranslation || !hasVocabPairs) {
+        console.log("⚠️ [Validação] Dados incompletos para treino:");
+        console.log(`   - Tradução PT: ${hasPtTranslation ? '✅' : '❌'}`);
+        console.log(`   - Pares de Vocabulário: ${hasVocabPairs ? '✅' : '❌'}`);
+        console.log(`   - Dados de Vídeo: ${hasVideoData ? '✅' : '❌'}`);
+        
+        const confirmed = confirm(
+            "⚠️ O modo treino não está disponível para esta lição.\n\n" +
+            "Motivo: Faltam traduções em português ou pares de vocabulário.\n\n" +
+            "Deseja solicitar a criação desses dados?"
+        );
+        
+        if (confirmed) {
+            // Monta a URL com informações da lição
+            const requestUrl = `https://forms.gle/SEU_FORM_ID_AQUI?entry.123456=${encodeURIComponent(currentLesson.title)}&entry.789012=${currentLesson.id}`;
+            
+            // Abre em nova aba
+            window.open(requestUrl, '_blank');
+            
+            // Mensagem de feedback
+            setTimeout(() => {
+                alert("✅ Obrigado! Você será redirecionado para o formulário de solicitação.");
+            }, 300);
+        }
+        
+        return false;
+    }
+    
+    // ✅ Tudo OK, pode prosseguir
+    console.log("✅ [Validação] Dados completos. Iniciando treino...");
+    return true;
+}
+
+    // --- HELPER DE ÁUDIO CORRIGIDO PARA MOBILE ---
+    function speakText(text, lang = 'en-US', onComplete = null) {
+        if (!text) {
+            if (onComplete) onComplete();
+            return;
+        }
+    
+        // 1. Cancela fila anterior para evitar sobreposição
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+    
+        // 2. Cria o objeto e SALVA NA GERAL (O Segredo!)
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.currentUtterance = utterance; // <--- ISSO CORRIGE O TRAVAMENTO NO ANDROID/iOS
+    
+        utterance.lang = lang;
+        utterance.rate = 0.9; // Velocidade didática
+    
+        // EVENTO: Começou a falar -> Bloqueia tela
+        utterance.onstart = () => {
+            document.body.classList.add('audio-playing');
+        };
+    
+        // Função de limpeza comum para sucesso ou erro
+        const handleEnd = () => {
+            document.body.classList.remove('audio-playing');
+            window.currentUtterance = null; // Agora sim podemos liberar a memória
+            if (onComplete) onComplete();
+        };
+    
+        // EVENTO: Terminou de falar
+        utterance.onend = handleEnd;
+    
+        // EVENTO: Erro (Importante no mobile caso o sintetizador falhe)
+        utterance.onerror = (e) => {
+            console.error("Erro no TTS:", e);
+            handleEnd(); // Destrava a tela mesmo com erro
+        };
+    
+        // Pequeno delay para garantir que o navegador processou a criação do objeto
+        setTimeout(() => {
+            window.speechSynthesis.speak(utterance);
+        }, 10);
+    }
+  
+    // --- 3. LÓGICA DO JOGO (ATUALIZADA: LOOP POR FRASE) ---
+    // --- 3. LÓGICA DO JOGO (CORRIGIDA: MODO VIDEO TAREFA 2 EM INGLÊS) ---
+    function initQuizLogic(data) {
+        quizQueue = [];
+        currentIndex = 0;
+        maxIndexReached = 0;
+        score = 0;
+        ui.scoreDisplay.innerText = "0";
+    
+        console.log(`
+        🎯 ==========================================
+           INICIANDO GERAÇÃO DE TAREFAS
+        🎯 ==========================================
+           Modo: ${trainingMode}
+           Total de Frases: ${data.length}
+        ------------------------------------------
+        `);
+    
+        data.forEach((sentence, index) => {
+            console.log(`\n📝 [Frase ${index + 1}/${data.length}] ID: ${sentence.id}`);
+            console.log(`   Texto EN: "${sentence.en}"`);
+            console.log(`   Texto PT: "${sentence.pt}"`);
+    
+            // ============================================================
+            // MODO VIDEO
+            // ============================================================
+            if (trainingMode === 'video') {
+                console.log(`   🎬 [Video Mode] Gerando tarefas...`);
+                
+                // TAREFA 1: Jumble PT→EN (Frase em PT, monta em EN)
+                quizQueue.push({ 
+                    type: 'jumble_pt_to_en', 
+                    display: sentence.pt,
+                    audioStart: sentence.en,
+                    audioLang: 'en-US',
+                    correct: sentence.en,
+                    wordAudio: true,
+                    finalAudio: sentence.en,
+                    _debug_sentenceId: sentence.id,
+                    _debug_taskNumber: quizQueue.length + 1
+                });
+                console.log(`   ✅ Tarefa ${quizQueue.length}: jumble_pt_to_en`);
+                
+                // TAREFA 2 (CORRIGIDA): Video Listening (Ouvir Vídeo -> Montar EN)
+                // Alterado de 'video_translate' para 'video_lesson' para validar em Inglês
+                quizQueue.push({ 
+                    type: 'video_lesson', // <--- MUDANÇA: Usa lógica de Inglês
+                    videoUrl: sentence.videoUrl,
+                    start: sentence.start,
+                    end: sentence.end,
+                    
+                    // Configuração para Inglês
+                    question: sentence.en, // Validação feita pelo campo 'question' no setupVideo/checkVideo
+                    correct: sentence.en,  
+                    
+                    prompt: "Organize o que ouvir (Inglês):",
+                    _debug_sentenceId: sentence.id,
+                    _debug_taskNumber: quizQueue.length + 1
+                });
+                console.log(`   ✅ Tarefa ${quizQueue.length}: video_lesson (EN)`);
+                console.log(`   📦 Total acumulado: ${quizQueue.length} tarefas`);
+                return; 
+            }
+            
+            // ============================================================
+            // MODO APENAS FALA
+            // ============================================================
+            if (trainingMode === 'speaking') {
+                console.log(`   🎤 [Speaking Mode] Gerando tarefa...`);
+                quizQueue.push({ 
+                    type: 'speaking', 
+                    question: sentence.en, 
+                    correct: sentence.en,
+                    _debug_sentenceId: sentence.id,
+                    _debug_taskNumber: quizQueue.length + 1
+                });
+                console.log(`   ✅ Tarefa ${quizQueue.length}: speaking`);
+                return;
+            }
+    
+            // ============================================================
+            // MODO TREINO / COMPLETO (Aba Exercícios Mentais)
+            // ============================================================
+            console.log(`   📚 [Full Mode] Gerando tarefas...`);
+            
+            // TAREFA 1: Match (Pares)
+            if(sentence.vocab && sentence.vocab.length > 0) {
+                quizQueue.push({ 
+                    type: 'match', 
+                    vocab: sentence.vocab,
+                    audioText: sentence.en,
+                    _debug_sentenceId: sentence.id,
+                    _debug_taskNumber: quizQueue.length + 1
+                });
+                console.log(`   ✅ Tarefa ${quizQueue.length}: match`);
+            }
+            
+            // TAREFA 2: Video Translate (Ouvir Vídeo -> Montar PT)
+            // Mantido 'video_translate' para validar em Português
+            quizQueue.push({ 
+                type: 'video_translate', 
+                
+                // Dados para o Player (toca áudio EN do vídeo)
+                start: sentence.start,
+                end: sentence.end,
+                videoUrl: sentence.videoUrl,
+                
+                // Dados para validação (A resposta certa é PORTUGUÊS)
+                correct: sentence.pt,     
+                
+                question: sentence.en, // Referência
+                _debug_sentenceId: sentence.id,
+                _debug_taskNumber: quizQueue.length + 1
+            });
+            console.log(`   ✅ Tarefa ${quizQueue.length}: video_translate (PT)`);
+        });
+    
+        console.log(`
+        🎯 ==========================================
+           FILA DE TAREFAS FINALIZADA
+        🎯 ==========================================
+           Total de Tarefas Geradas: ${quizQueue.length}
+        ------------------------------------------
+        `);
+        
+        loadTask();
+    }
+
+    function getRandomDistractor(dataset, currentId, lang) {
+        const others = dataset.filter(s => s.id !== currentId);
+        if(others.length === 0) return "Alternative text placeholder";
+        return others[Math.floor(Math.random() * others.length)][lang];
+    }
+
+    // --- FUNÇÕES DE NAVEGAÇÃO MANUAL ---
+    function updateNavButtons() {
+        const btnPrev = document.getElementById('nav-prev');
+        const btnNext = document.getElementById('nav-next');
+        
+        // Esquerda: Habilitado se não for a primeira tarefa (índice 0)
+        btnPrev.disabled = currentIndex === 0;
+    
+        // Direita: Habilitado APENAS se estivermos atrás do ponto máximo alcançado
+        btnNext.disabled = currentIndex >= maxIndexReached;
+    }
+    
+    function prevTask() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            loadTask();
+        }
+    }
+    
+    function manualNextTask() {
+        // Só avança manualmente se já tivermos desbloqueado essa tarefa antes
+        if (currentIndex < maxIndexReached) {
+            currentIndex++;
+            loadTask();
+        }
+    }
+
+    function loadTask() {
+        if (currentIndex >= quizQueue.length) {
+            finishQuiz();
+            return;
+        }
+      
+        // --- RESET DA LÓGICA INCREMENTAL ---
+        expectedWordIndex = 0; 
+        currentTargetSentence = [];
+    
+        updateNavButtons(); 
+        currentTask = quizQueue[currentIndex];
+        
+        // 🔥 LOG DE DEBUG
+        console.log(`
+        ⏭️  CARREGANDO TAREFA ${currentIndex + 1}/${quizQueue.length}
+        ------------------------------------------
+        Tipo: ${currentTask.type}
+        Frase ID: ${currentTask._debug_sentenceId || 'N/A'}
+        Display/Question: "${(currentTask.display || currentTask.question || '...').substring(0, 60)}"
+        ${currentTask.type === 'video_lesson' ? `Video: ${currentTask.start}s → ${currentTask.end}s` : ''}
+        ------------------------------------------
+        `);
+        
+        ui.progressText.innerText = `Tarefa ${currentIndex + 1}/${quizQueue.length}`;
+        ui.progressFill.style.width = `${((currentIndex) / quizQueue.length) * 100}%`;
+    
+        // --- CORREÇÃO AQUI ---
+        const questionBox = document.querySelector('.question-box');
+    
+        // Esconde tudo inicialmente
+        ui.matchWrapper.classList.add('hidden');
+        ui.mcArea.classList.add('hidden');
+        ui.speechWrapper.classList.add('hidden');
+        ui.jumbleWrapper.classList.add('hidden');
+        ui.videoWrapper.classList.add('hidden');
+        
+        // Reseta conteudos
+        ui.mcArea.innerHTML = '';
+        ui.answerZone.innerHTML = '';
+        ui.wordBank.innerHTML = '';
+        ui.speechResult.innerText = '...';
+        
+        // Router
+        if (currentTask.type === 'video_lesson' || currentTask.type === 'video_translate') {
+            // Se for vídeo (aula ou tradução), ESCONDE a caixa de pergunta texto
+            questionBox.classList.add('hidden');
+            setupVideo(); // <--- Reusa a função de setup do vídeo
+        } 
+        else {
+            // Se for qualquer outro (Jumble, Match, Speech), MOSTRA a caixa
+            questionBox.classList.remove('hidden');
+            
+            if (currentTask.type === 'match') setupMatch();
+            else if (currentTask.type === 'speaking') setupSpeaking();
+            else if (currentTask.type.startsWith('jumble')) setupJumble(); 
+            else setupMultipleChoice();
+        }
+    }
+
+    // --- LOGICA ESPECIFICA DAS TAREFAS ---
+
+    // 1. Match
+    function setupMatch() {
+        ui.matchWrapper.classList.remove('hidden');
+        
+        ui.display.innerHTML = `
+            Conecte os pares da frase
+            <i class="fa-solid fa-volume-high" id="replay-match-btn" 
+               title="Ouvir frase completa" 
+               style="margin-left:10px; cursor:pointer; color:var(--accent-color); font-size: 0.8em;">
+            </i>
+        `;
+        ui.prompt.innerText = "Vocabulário na ordem correta";
+    
+        document.getElementById('replay-match-btn').onclick = (e) => {
+            e.stopPropagation();
+            speakText(currentTask.audioText, 'en-US');
+        };
+    
+        ui.colLeft.innerHTML = '';
+        ui.colRight.innerHTML = '';
+        
+        matchState = { 
+            selectedId: null, 
+            selectedSide: null, 
+            selectedElement: null, 
+            matchesFound: 0,
+            expectedIndex: 0 
+        };
+    
+        let pairs = currentTask.vocab; 
+        let left = pairs.map((p, i) => ({ id: i, text: p.en, side: 'left' })).sort(() => Math.random() - 0.5);
+        let right = pairs.map((p, i) => ({ id: i, text: p.pt, side: 'right' })).sort(() => Math.random() - 0.5);
+    
+        left.forEach(item => createMatchItem(item, ui.colLeft));
+        right.forEach(item => createMatchItem(item, ui.colRight));
+        
+        // 🔥 NOVO: Define o estado inicial (Bloqueia direita, libera esquerda)
+        updateMatchBoardState();
+    
+        setTimeout(() => {
+            if (currentTask.audioText) {
+                speakText(currentTask.audioText, 'en-US');
+            }
+        }, 500);
+    }
+
+    function createMatchItem(item, parent) {
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.innerText = item.text;
+        
+        div.onclick = () => {
+            // 🔥 CORREÇÃO: Removemos o speakText daqui.
+            // Agora quem controla a fala é o handleMatchClick, 
+            // garantindo que fale apenas 1 vez e só se o clique for válido.
+            handleMatchClick(div, item.id, item.side);
+        };
+        
+        parent.appendChild(div);
+    }
+
+    function handleMatchClick(el, id, side) {
+        // 1. Bloqueio nativo (disabled-word já bloqueia o click via CSS pointer-events, 
+        // mas por segurança mantemos a verificação lógica)
+        if (el.classList.contains('disabled-word') || el.classList.contains('matched')) return;
+    
+        // Deselecionar (clicou no mesmo)
+        if (matchState.selectedElement === el) {
+            el.classList.remove('selected');
+            matchState.selectedElement = null;
+            matchState.selectedId = null;
+            matchState.selectedSide = null;
+            
+            updateMatchBoardState(); // 🔥 Volta a liberar a esquerda
+            return;
+        }
+    
+        // --- SELEÇÃO DO INGLÊS (Lado Esquerdo) ---
+        if (!matchState.selectedElement) {
+            
+            // Validação de Ordem (Se clicar na palavra errada da sequência)
+            if (id !== matchState.expectedIndex) {
+                triggerShake(el);
+                return;
+            }
+    
+            // Seleciona
+            matchState.selectedElement = el;
+            matchState.selectedId = id;
+            matchState.selectedSide = side;
+            el.classList.add('selected');
+            
+            speakText(el.innerText, 'en-US');
+            
+            updateMatchBoardState(); // 🔥 Bloqueia esquerda, Libera direita
+            return;
+        }
+    
+        // --- TENTATIVA DE MATCH (Lado Direito) ---
+        // (Neste ponto, só o lado direito está clicável, então não preciso checar 'side')
+    
+        if (matchState.selectedId === id) { 
+            // ACERTOU
+            el.classList.add('matched');
+            matchState.selectedElement.classList.remove('selected');
+            matchState.selectedElement.classList.add('matched'); // Esconde/Desabilita o da esquerda
+            
+            matchState.matchesFound++;
+            matchState.expectedIndex++;
+            
+            // Reseta seleção
+            matchState.selectedElement = null;
+            matchState.selectedId = null;
+            
+            updateMatchBoardState(); // 🔥 Volta a liberar a esquerda para a próxima palavra
+    
+            if (matchState.matchesFound === currentTask.vocab.length) {
+                score++; ui.scoreDisplay.innerText = score;
+                speakText(currentTask.audioText, 'en-US', () => {
+                    setTimeout(nextTask, 500);
+                });
+            }
+        } else { 
+            // ERROU
+            el.classList.add('error');
+            matchState.selectedElement.classList.add('error');
+            
+            let tempLeft = matchState.selectedElement;
+            let tempRight = el;
+            
+            setTimeout(() => {
+                tempLeft.classList.remove('error', 'selected');
+                tempRight.classList.remove('error');
+                
+                // Reseta seleção para forçar começar de novo
+                matchState.selectedElement = null;
+                matchState.selectedId = null;
+                
+                updateMatchBoardState(); // 🔥 Volta a liberar a esquerda
+            }, 500);
+        }
+    }
+    
+    // Helper para balançar o botão (Feedback visual de erro de ordem)
+    function triggerShake(el) {
+        el.classList.add('error');
+        setTimeout(() => el.classList.remove('error'), 400);
+    }
+
+    // Função auxiliar para controlar quem fica habilitado/desabilitado
+    function updateMatchBoardState() {
+        const leftItems = ui.colLeft.querySelectorAll('.match-item');
+        const rightItems = ui.colRight.querySelectorAll('.match-item');
+    
+        // ESTADO 1: Nada selecionado -> HORA DE ESCOLHER INGLÊS (Esquerda)
+        if (!matchState.selectedElement) {
+            
+            // Esquerda: Habilita (remove disabled) de quem ainda não deu match
+            leftItems.forEach(el => {
+                if (!el.classList.contains('matched')) {
+                    el.classList.remove('disabled-word');
+                }
+            });
+    
+            // Direita: Desabilita TUDO (add disabled)
+            rightItems.forEach(el => el.classList.add('disabled-word'));
+        } 
+        
+        // ESTADO 2: Inglês Selecionado -> HORA DE ESCOLHER PORTUGUÊS (Direita)
+        else {
+            
+            // Esquerda: Desabilita todos para focar na direita...
+            leftItems.forEach(el => el.classList.add('disabled-word'));
+            
+            // ...EXCETO o item que acabamos de selecionar (para ele ficar brilhando)
+            matchState.selectedElement.classList.remove('disabled-word');
+    
+            // Direita: Habilita quem ainda não deu match
+            rightItems.forEach(el => {
+                if (!el.classList.contains('matched')) {
+                    el.classList.remove('disabled-word');
+                }
+            });
+        }
+    }
+    // 2. Multiple Choice
+    function setupMultipleChoice() {
+        ui.mcArea.classList.remove('hidden');
+        ui.display.innerText = currentTask.question;
+        ui.prompt.innerText = currentTask.type === 'pt_to_en' ? "Traduza para Inglês" : "Traduza para Português";
+
+        const options = [
+            { text: currentTask.correct, isCorrect: true },
+            { text: currentTask.distractor, isCorrect: false }
+        ].sort(() => Math.random() - 0.5);
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt.text;
+            btn.onclick = () => {
+                const all = ui.mcArea.querySelectorAll('button');
+                all.forEach(b => b.disabled = true);
+                if (opt.isCorrect) {
+                    btn.classList.add('correct');
+                    score++; ui.scoreDisplay.innerText = score;
+                } else {
+                    btn.classList.add('wrong');
+                    all.forEach(b => { if(b.innerText === currentTask.correct) b.classList.add('correct'); });
+                }
+                setTimeout(nextTask, 1500);
+            };
+            ui.mcArea.appendChild(btn);
+        });
+    }
+
+    // 3. Speech
+  
+    // como o microfone do android para navegador não grava e reconhece ao mesmo tempo
+    // o user tera que falar a mesma frase 2x
+    // --- SETUP DA TAREFA DE FALA ---
+
+  // --- FUNÇÕES DE CONTROLE MANUAL ---
+
+  // ETAPA 1: STT (Texto)
+  function startManualSTT() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { alert("Navegador sem suporte a voz."); return; }
+    
+        globalRecognition = new SR();
+        globalRecognition.lang = "en-US";
+        // globalRecognition.continuous = true; // REMOVIDO
+        globalRecognition.interimResults = true;
+    
+        // Reinicia o texto
+        tempRecognizedText = "";
+    
+        globalRecognition.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = ''; 
+    
+            for (let i = 0; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + " ";
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            tempRecognizedText = finalTranscript;
+            console.log("👂 Ouvindo:", tempRecognizedText + interimTranscript);
+        };
+    
+        // 🔥 NOVO: Detecta quando parou automaticamente
+        globalRecognition.onend = () => {
+            console.log('🎤 [STT] Parou automaticamente');
+            isRecognizingText = false;
+            
+            // Atualiza a UI automaticamente
+            const iconEl = document.getElementById('visual-mic-icon');
+            const statusEl = document.getElementById('status-text');
+            const btnEl = document.getElementById('speech-action-btn');
+            
+            if (!iconEl || !statusEl || !btnEl) return; // Proteção
+            
+            // Validação: Se não capturou nada
+            if (!tempRecognizedText || tempRecognizedText.trim() === "") {
+                iconEl.style.color = "var(--error-color)";
+                iconEl.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                
+                statusEl.innerHTML = `
+                    <span style="color: var(--error-color);">Sem áudio: tente novamente.</span>
+                `;
+                
+                speechStage = 1; // Volta para etapa 1
+                btnEl.innerHTML = 'Gravar';
+                btnEl.style.backgroundColor = "var(--accent-color)";
+                btnEl.style.color = "#000";
+                return;
+            }
+            
+            // Sucesso: Avança para Etapa 2
+            speechStage = 2;
+            
+            iconEl.style.color = "var(--success-color)";
+            iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+            
+            statusEl.innerHTML = `
+                <span style="color: var(--success-color);">Texto identificado!</span>
+            `;
+            
+            btnEl.disabled = true;
+            btnEl.style.opacity = 0.5;
+            btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+            
+            // Delay para pedir gravação de áudio
+            setTimeout(() => {
+                iconEl.style.color = "#fff";
+                iconEl.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                
+                statusEl.innerHTML = `Grave mais uma vez.`;
+                
+                btnEl.disabled = false;
+                btnEl.style.opacity = 1;
+                btnEl.style.backgroundColor = "var(--accent-color)";
+                btnEl.style.color = "#000";
+                btnEl.innerHTML = '<i class="fa-solid fa-circle"></i> Gravar Áudio';
+            }, 1200);
+        };
+    
+        globalRecognition.onerror = (event) => {
+            console.error("Erro STT:", event.error);
+            isRecognizingText = false; // 🔥 Importante: reseta o estado
+        };
+    
+        globalRecognition.start();
+    }
+  
+    function stopManualSTT() {
+      return new Promise((resolve) => {
+          if (!globalRecognition) {
+              resolve();
+              return;
+          }
+  
+          // Garante que vai capturar o resultado final antes de resolver
+          globalRecognition.onend = () => {
+              console.log('🎤 [STT] Parou. Texto capturado:', tempRecognizedText);
+              resolve();
+          };
+  
+          globalRecognition.stop();
+      });
+  }
+  
+  // ETAPA 2: GRAVAÇÃO (Áudio)
+  async function startManualAudio() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      globalMediaRecorder = new MediaRecorder(stream);
+      globalAudioChunks = [];
+  
+      globalMediaRecorder.ondataavailable = e => globalAudioChunks.push(e.data);
+      globalMediaRecorder.start();
+  }
+  
+  async function stopManualAudio() {
+      return new Promise((resolve) => {
+          if (!globalMediaRecorder) return resolve(null);
+  
+          globalMediaRecorder.onstop = async () => {
+              const blob = new Blob(globalAudioChunks, { type: "audio/wav" });
+              globalMediaRecorder.stream.getTracks().forEach(t => t.stop());
+              
+              // 🔥 ANÁLISE DE VOLUME DO ÁUDIO GRAVADO
+              const audioContext = new AudioContext();
+              const arrayBuffer = await blob.arrayBuffer();
+              const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+              
+              // Pega os dados do canal (mono ou primeiro canal)
+              const channelData = audioBuffer.getChannelData(0);
+              
+              // Calcula o volume médio
+              let sum = 0;
+              for (let i = 0; i < channelData.length; i++) {
+                  sum += Math.abs(channelData[i]);
+              }
+              const avgVolume = sum / channelData.length;
+              
+              console.log('🎙️ [Audio] Volume médio:', avgVolume);
+              
+              // Se o volume for muito baixo (silêncio), retorna null
+              if (avgVolume < 0.01) { // Threshold de silêncio
+                  console.log('⚠️ [Audio] Detectado silêncio');
+                  resolve(null);
+              } else {
+                  resolve(blob);
+              }
+          };
+  
+          globalMediaRecorder.stop();
+      });
+  }
+    // Configura a tela de fala com o novo layout
+    // --- 3. SPEECH (LAYOUT APERTADO) ---
+
+    function setupSpeaking() {
+        console.log('🎤 [Speaking] Setup iniciado (Layout Compacto)');
+        
+        ui.speechWrapper.classList.remove('hidden');
+        ui.prompt.innerText = "Grave sua pronúncia:";
+        
+        // Reseta estado
+        speechStage = 1; 
+        tempRecognizedText = "";
+        isRecognizingText = false;
+        isRecordingAudio = false;
+
+        ui.display.innerHTML = `
+            ${currentTask.question} 
+            <i class="fa-solid fa-volume-high" id="replay-speaking-btn" title="Ouvir referência" style="margin-left:10px; cursor:pointer; color:var(--accent-color); font-size: 0.8em;"></i>
+        `;
+        
+        document.getElementById('replay-speaking-btn').onclick = (e) => {
+            e.stopPropagation();
+            speakText(currentTask.question, 'en-US');
+        };
+
+        // --- CONSTRUÇÃO DO LAYOUT (CSS AJUSTADO) ---
+        ui.speechWrapper.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0;"> <div id="visual-mic-icon" style="
+                    font-size: 3rem; 
+                    color: var(--text-secondary); 
+                    margin: 30px 0 10px 0; 
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: auto; width: 80px;
+                ">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                </div>
+
+                <div id="status-text" style="
+                    text-align: center; 
+                    color: var(--text-secondary); 
+                    font-size: 1.1rem; 
+                    min-height: 30px; 
+                    margin-bottom: 10px;
+                    display: flex; flex-direction: column; justify-content: center;
+                ">
+                    Preparando áudio...
+                </div>
+
+                <button id="speech-action-btn" onclick="toggleSpeech()" style="
+                    background-color: var(--accent-color);
+                    color: #000;
+                    border: none;
+                    padding: 12px 40px;
+                    font-size: 1.1rem;
+                    border-radius: 50px; 
+                    font-weight: bold;
+                    cursor: wait; 
+                    opacity: 0.5;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                    transition: transform 0.2s, opacity 0.2s;
+                    display: flex; align-items: center; gap: 10px;
+                    margin-top: 40px;
+                ">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Aguarde...
+                </button>
+
+                <div id="speech-final-result" style="width: 100%; margin-top: 10px;"></div>
+            </div>
+        `;
+
+        // Lógica de Tocar Áudio Modelo Primeiro (Igual ao anterior)
+        const iconEl = document.getElementById('visual-mic-icon');
+        const statusEl = document.getElementById('status-text');
+        const btnEl = document.getElementById('speech-action-btn');
+
+        iconEl.style.color = "var(--accent-color)";
+        iconEl.innerHTML = '<i class="fa-solid fa-ear-listen fa-beat"></i>';
+        statusEl.innerHTML = '<span style="color: var(--accent-color);">Ouça a frase modelo...</span>';
+
+        setTimeout(() => {
+            speakText(currentTask.question, 'en-US', () => {
+                iconEl.style.color = "var(--text-primary)"; 
+                iconEl.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>'; 
+                
+                statusEl.innerHTML = 'Repita a frase.';
+                
+                btnEl.style.opacity = "1";
+                btnEl.style.cursor = "pointer";
+                btnEl.innerHTML = 'Gravar'; 
+            });
+        }, 500);
+    }
+    
+    // --- CONTROLE DE GRAVAÇÃO AVANÇADO (LÓGICA NOVA) ---
+
+    // 1. Promessa de Reconhecimento de Texto
+    function recognizeSpeechPromise() {
+        return new Promise((resolve, reject) => {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return reject("Reconhecimento não suportado.");
+
+            const rec = new SR();
+            rec.lang = "en-US"; // Importante: mantemos inglês para a lição
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            rec.onstart = () => {
+                ui.micBtn.classList.add('listening');
+                // ============================================================
+                // 1️⃣ VISUAL: ESCUTANDO (Reconhecimento de Texto)
+                // ============================================================
+                ui.speechResult.innerHTML = `
+                    <div style="
+                        display: table;        /* Comporta-se como bloco, mas ajusta ao conteúdo */
+                        margin: 20px auto;     /* 'auto' nas laterais centraliza o elemento table */
+                        width: fit-content;    /* Garante compatibilidade moderna */
+                        padding: 10px 15px;
+                    
+                        font-size: 1.6rem; 
+                        font-weight: bold; 
+                        color: #fff; 
+                        text-align: center; 
+                        border: 2px dashed #555;
+                        border-radius: 12px;
+                        background: rgba(255,255,255,0.05);
+                    ">
+                        <i class="fa-solid fa-ear-listen fa-beat" style="--fa-animation-duration: 1s;"></i> 
+                        Escutando...
+                    </div>
+                `;
+            };
+
+            rec.onresult = e => resolve(e.results[0][0].transcript);
+            
+            rec.onerror = err => {
+                ui.micBtn.classList.remove('listening');
+                reject(err);
+            };
+            
+            rec.onend = () => {
+                // Não removemos a classe 'listening' aqui ainda, pois vamos gravar áudio em seguida
+            };
+
+            rec.start();
+        });
+    }
+
+    // 2. Promessa de Gravação até o Silêncio
+    async function recordUntilSilencePromise() {
+        // Configurações de sensibilidade
+        const silenceDelay = 1000; // Tempo de silêncio para parar (ms)
+        const threshold = 15;      // Sensibilidade (aumente se parar muito cedo)
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+        
+        const audioCtx = new AudioContext();
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        
+        const dataArray = new Uint8Array(analyser.fftSize);
+        source.connect(analyser);
+
+        let silenceStart = Date.now();
+        let speakingDetected = false;
+        let rafID = null;
+
+        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.start();
+
+        return new Promise(resolve => {
+            function checkSilence() {
+                analyser.getByteTimeDomainData(dataArray);
+
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    const v = (dataArray[i] - 128) / 128;
+                    sum += v * v;
+                }
+                const volume = Math.sqrt(sum / dataArray.length) * 1000;
+                const now = Date.now();
+
+                // Se volume alto, reseta o timer de silêncio
+                if (volume > threshold) {
+                    speakingDetected = true;
+                    silenceStart = now;
+                    ui.micBtn.style.transform = "scale(1.1)"; // Efeito visual de som
+                    ui.micBtn.style.borderColor = "#fff";
+                } else {
+                    ui.micBtn.style.transform = "scale(1)";
+                    ui.micBtn.style.borderColor = "var(--error-color)";
+                }
+
+                // Lógica de Parada: Detectou fala antes E passou o tempo de silêncio
+                if (speakingDetected && (now - silenceStart > silenceDelay)) {
+                    recorder.stop();
+                    stream.getTracks().forEach(t => t.stop());
+                    cancelAnimationFrame(rafID);
+                    
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: "audio/wav" });
+                        resolve(blob);
+                    };
+                    return;
+                }
+                
+                rafID = requestAnimationFrame(checkSilence);
+            }
+            checkSilence();
+        });
+    }
+
+    // 3. Função Principal (Orquestrador)
+    // --- ORQUESTRADOR PRINCIPAL ---
+    async function toggleSpeech() {
+        const iconEl = document.getElementById('visual-mic-icon');
+        const statusEl = document.getElementById('status-text');
+        const btnEl = document.getElementById('speech-action-btn');
+
+        try {
+            // ============================================================
+            // ETAPA 1: RECONHECIMENTO DE TEXTO (STT)
+            // ============================================================
+            if (speechStage === 1) {
+                
+                if (!isRecognizingText) {
+                    // --- INICIAR (Estado: Ouvindo) ---
+                    console.log("🎤 Iniciando STT...");
+                    startManualSTT();
+                    isRecognizingText = true;
+
+                    // UI: Ouvindo
+                    iconEl.style.color = "var(--accent-color)";
+                    iconEl.innerHTML = '<i class="fa-solid fa-wave-square fa-beat"></i>'; // Onda sonora
+                    
+                    // --- ALTERAÇÃO AQUI: Removida a segunda linha ---
+                    statusEl.innerHTML = `
+                        <span style="color: var(--accent-color); font-weight: bold;">Ouvindo você...</span>
+                    `;
+
+                    btnEl.innerHTML = '<i class="fa-solid fa-stop"></i> Parar';
+                    btnEl.style.backgroundColor = "#333"; // Botão escuro para parar
+                    btnEl.style.color = "#fff";
+
+                } else {
+                    // --- PARAR MANUALMENTE (se o usuário clicar antes do auto-stop) ---
+                    console.log("⏹️ Parando STT manualmente...");
+                    if (globalRecognition) {
+                        globalRecognition.stop(); // Dispara o onend automaticamente
+                    }
+                    // Não precisa fazer mais nada aqui, o onend cuida do resto
+                    return;
+                }
+            }
+            
+            // ============================================================
+            // ETAPA 2: GRAVAÇÃO DE ÁUDIO (BLOB)
+            // ============================================================
+            else if (speechStage === 2) {
+                
+                if (!isRecordingAudio) {
+                    // --- INICIAR GRAVAÇÃO ---
+                    console.log("🎙️ Iniciando Gravação Blob...");
+                    await startManualAudio();
+                    isRecordingAudio = true;
+
+                    // UI: Gravando (Vermelho)
+                    iconEl.style.color = "var(--error-color)";
+                    iconEl.innerHTML = '<i class="fa-solid fa-record-vinyl fa-spin" style="--fa-animation-duration: 2s;"></i>';
+                    
+                    statusEl.innerHTML = `
+                        <span style="color: var(--error-color); font-weight: bold;">Gravando...</span>
+                    `;
+
+                    btnEl.innerHTML = '<i class="fa-solid fa-square"></i> Finalizar';
+                    btnEl.style.backgroundColor = "var(--error-color)";
+                    btnEl.style.color = "#fff";
+
+                } else {
+                    // --- 1. FEEDBACK IMEDIATO (Antes de processar) ---
+                    // Trava o botão e muda o texto para o usuário saber que o clique funcionou
+                    btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Finalizando...';
+                    btnEl.disabled = true;  // <--- TRAVOU AQUI
+                    btnEl.style.opacity = "0.7";
+                
+                    // --- 2. AGUARDA O PROCESSAMENTO ---
+                    console.log("⏹️ Finalizando Blob...");
+                    const audioBlob = await stopManualAudio(); 
+                    isRecordingAudio = false;
+                    
+                    // --- 3. VALIDAÇÃO (Onde ocorre o destravamento se der erro) ---
+                    if (!audioBlob) { 
+                        // ⚠️ DEU ERRO (SILÊNCIO DETECTADO)
+                
+                        // >>> AQUI ESTÁ A CORREÇÃO <<<
+                        // Destrava o botão para ele clicar de novo
+                        btnEl.disabled = false; 
+                        btnEl.style.opacity = "1"; 
+                        
+                        // Configura o visual de erro
+                        iconEl.style.color = "var(--error-color)";
+                        iconEl.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                        
+                        statusEl.innerHTML = `
+                            <span style="color: var(--error-color);">Nenhum áudio detectado.</span><br>
+                            Fale mais alto e grave novamente.
+                        `;
+                    
+                        // Restaura a cor e texto para "Gravar Novamente"
+                        btnEl.innerHTML = 'Gravar Novamente';
+                        btnEl.style.backgroundColor = "var(--accent-color)";
+                        btnEl.style.color = "#000";
+                        
+                        return; // Sai da função aqui, permitindo que ele clique de novo
+                    }
+                
+                    // --- 4. SUCESSO ---
+                    btnEl.innerHTML = 'Salvando...';
+                
+                    const textoFinal = tempRecognizedText.trim() || "(sem áudio)";
+                    processSpeechResult(textoFinal); 
+                
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    createAudioPlayer(audioUrl);
+                    
+                    // Remove os elementos da gravação pois já deu certo
+                    btnEl.style.display = 'none';
+                    iconEl.style.display = 'none';
+                    statusEl.style.display = 'none';
+                }
+            }
+
+        } catch (err) {
+            console.error("Erro Speech:", err);
+            statusEl.innerText = "Erro ao acessar microfone.";
+            btnEl.innerHTML = "Tentar Novamente";
+            isRecognizingText = false;
+            isRecordingAudio = false;
+        }
+    }
+        
+    // --- CRIA PLAYER E BOTÃO CONTINUAR (INLINE) ---
+    function createAudioPlayer(url) {
+        const resultContainer = document.getElementById('speech-final-result');
+
+        // Cria container para player e botão
+        const playerDiv = document.createElement('div');
+        playerDiv.style.animation = 'fadeIn 0.5s';
+        
+        playerDiv.innerHTML = `
+            <audio controls autoplay src="${url}" style="
+                display: block;
+                width: 300px; 
+                height: 40px; 
+                margin: 0 auto 20px auto; 
+                border-radius: 20px;">
+            </audio>
+            
+            <button onclick="nextTask()" class="check-btn" style="
+                display: block;
+                width: 200px; 
+                margin: 50px auto 20px auto;
+                background-color: var(--accent-color); 
+                color: var(--bg-color);
+            ">
+                Continuar <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        `;
+      
+        resultContainer.appendChild(playerDiv);
+        
+        // Scroll para ver o resultado
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    // --- PROCESSAMENTO DO RESULTADO (NOTA) ---
+    function processSpeechResult(text) {
+        const resultContainer = document.getElementById('speech-final-result');
+        const statusEl = document.getElementById('status-text');
+        
+        // Limpa o texto de status superior para não duplicar informação
+        statusEl.innerHTML = '';
+        statusEl.style.minHeight = '0'; // Remove altura reservada
+
+        // Calcula Nota
+        const similarity = avaliarPronuncia(currentTask.correct, text);
+        
+        let color = "";
+        let emoji = "";
+        let msg = "";
+
+        if (similarity >= 90) {
+            color = "var(--success-color)";
+            emoji = "🤩";
+            msg = "Excelente!";
+            score++; ui.scoreDisplay.innerText = score;
+        } else if (similarity >= 75) {
+            color = "#dbff28"; // Amarelo/Laranja
+            emoji = "😉";
+            msg = "Por pouco!";
+        } else if (similarity >= 50) {
+            color = "#ffca28"; // Amarelo/Laranja
+            emoji = "🙂";
+            msg = "Bom esforço!";
+        } else {
+            color = "var(--error-color)";
+            emoji = "🤔";
+            msg = "Vamos tentar de novo?";
+        }
+
+        // Renderiza Resultado
+        resultContainer.innerHTML = `
+            <div style="animation: fadeInUp 0.5s ease; margin: 20px 0 0 0;">
+                <div style="font-size: 1.2rem; font-weight: bold; color: ${color}; line-height: 1;">
+                    ${similarity.toFixed(0)}%
+                </div>
+                
+                <div style="color: ${color}; font-size: 1.2rem; margin: 5px 0 15px 0; font-weight: bold;">
+                    ${emoji} ${msg}
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05);
+                            display: flex;
+                            padding: 10px; 
+                            width: 100%;
+                            border-radius: 8px; 
+                            font-size: 1.3rem; 
+                            text-align: center; 
+                            margin: 0 auto 20px; /* centraliza horizontalmente e mantém margin-bottom */
+                            display: table;">
+                    <div style="color: #888; font-size: 0.8em; margin-bottom: 2px;">Você disse:</div>
+                    <div style="color: #fff; font-style: italic;">"${text}"</div>
+                </div>
+
+            </div>
+        `;
+
+        // Salva histórico
+        if (trainingMode === 'speaking') {
+            speakingResults.push({ phrase: currentTask.question, score: similarity, userText: text });
+        }
+    }
+  
+
+    // --- 4. Jumble (ORGANIZAR FRASE - COM VALIDAÇÃO INCREMENTAL) ---
+    // --- (COM REABILITAÇÃO APÓS ACERTO) ---
+    function setupJumble() {
+        ui.jumbleWrapper.classList.remove('hidden');
+        
+        // Prepara frase alvo
+        currentTargetSentence = currentTask.correct.split(' ').map(w => normalizeWord(w));
+        
+        ui.display.innerHTML = `
+            ${currentTask.display} 
+            <i class="fa-solid fa-volume-high" id="replay-audio-btn" title="Ouvir novamente"></i>
+        `;
+        
+        ui.prompt.innerText = currentTask.type === 'jumble_en_to_pt' 
+            ? "Traduza para Português:" 
+            : "Ouça e monte em Inglês:";
+        
+        const replayBtn = document.getElementById('replay-audio-btn');
+        replayBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            window.speechSynthesis.cancel();
+            speakText(currentTask.audioStart, currentTask.audioLang); 
+        };
+        
+        if (currentTask.audioStart) {
+            setTimeout(() => {
+                window.speechSynthesis.cancel();
+                speakText(currentTask.audioStart, currentTask.audioLang);
+            }, 300);
+        }
+    
+        let cleanCorrect = currentTask.correct.replace(/[.?!]/g, ''); 
+        let words = cleanCorrect.split(' ').sort(() => Math.random() - 0.5);
+    
+        words.forEach(word => {
+            const span = document.createElement('span');
+            span.className = 'word-tag disabled-word'; // 🔥 Começa desabilitada
+            span.innerText = word;
+            
+            span.onclick = function() { 
+                // 🔥 PROTEÇÃO 1: Bloqueia se estiver desabilitada
+                if (this.classList.contains('disabled-word')) {
+                    console.log('⚠️ [Jumble] Palavra bloqueada:', word);
+                    return;
+                }
+                
+                const clickedClean = normalizeWord(word);
+                const expectedClean = currentTargetSentence[expectedWordIndex];
+            
+                if (clickedClean === expectedClean) {
+                    // ✅ ACERTOU A PALAVRA CORRETA
+                    console.log(`✅ [Jumble] Acertou palavra ${expectedWordIndex + 1}: "${word}"`);
+                    
+                    ui.answerZone.appendChild(this);
+                    expectedWordIndex++;
+                    
+                    // 🔥 REABILITA TODAS AS PALAVRAS ERRADAS ANTERIORES
+                    const disabledWords = ui.wordBank.querySelectorAll('.disabled-word');
+                    disabledWords.forEach(w => {
+                        console.log(`🔓 [Jumble] Reabilitando palavra: "${w.innerText}"`);
+                        w.classList.remove('disabled-word');
+                    });
+                    
+                    // Fala a palavra (se configurado)
+                    if (currentTask.wordAudio) {
+                        window.speechSynthesis.cancel();
+                        speakText(word, 'en-US', () => {
+                            // Verifica se completou a frase DEPOIS do áudio
+                            if (expectedWordIndex === currentTargetSentence.length) {
+                                checkJumbleSuccess();
+                            }
+                        });
+                    } else {
+                        // Se não tiver wordAudio, verifica direto
+                        if (expectedWordIndex === currentTargetSentence.length) {
+                            checkJumbleSuccess();
+                        }
+                    }
+                } else {
+                    // ❌ ERROU - DESABILITA ESTA PALAVRA ATÉ ACERTAR A PRÓXIMA
+                    console.log(`❌ [Jumble] Errou! Clicou "${word}" mas esperava "${currentTargetSentence[expectedWordIndex]}"`);
+                    
+                    // 🔥 DESABILITA A PALAVRA ERRADA
+                    this.classList.add('disabled-word');
+                    console.log(`🔒 [Jumble] Palavra "${word}" desabilitada até acertar a correta`);
+                    
+                    // Animação visual de erro (tremida lateral)
+                    this.animate([
+                        { transform: 'translateX(0)' }, 
+                        { transform: 'translateX(-5px)' }, 
+                        { transform: 'translateX(5px)' }, 
+                        { transform: 'translateX(0)' }
+                    ], { duration: 300 });
+    
+                    // Feedback visual (cor) temporário
+                    const originalBorderColor = this.style.borderColor;
+                    const originalColor = this.style.color;
+                    this.style.borderColor = 'var(--error-color)';
+                    this.style.color = 'var(--error-color)';
+                    
+                    setTimeout(() => {
+                        this.style.borderColor = originalBorderColor;
+                        this.style.color = originalColor;
+                    }, 400);
+    
+                    // Feedback tátil (vibrar no celular)
+                    if (navigator.vibrate) navigator.vibrate(50);
+                }
+            }; // Fim do onclick
+            
+            ui.wordBank.appendChild(span);
+        });
+    
+        // Toca o áudio e libera as palavras quando terminar
+        if (currentTask.audioStart) {
+            console.log('🔊 [Jumble] Tocando áudio e bloqueando palavras:', currentTask.audioStart);
+            
+            ui.answerZone.style.borderColor = 'var(--accent-color)';
+            ui.answerZone.innerHTML = '<span style="color: var(--accent-color); animation: pulse 1s infinite;"><i class="fa-solid fa-volume-high"></i> Ouça atentamente...</span>';
+            
+            speakText(currentTask.audioStart, currentTask.audioLang, () => {
+                console.log('✅ [Jumble] Áudio terminado. Liberando palavras.');
+                
+                ui.answerZone.innerHTML = '';
+                ui.answerZone.style.borderColor = '#444';
+                
+                // 🔥 LIBERA TODAS AS PALAVRAS
+                const allWords = ui.wordBank.querySelectorAll('.word-tag');
+                allWords.forEach(w => w.classList.remove('disabled-word'));
+            });
+        } else {
+            console.log('⚠️ [Jumble] Sem áudio definido. Liberando palavras.');
+            const allWords = ui.wordBank.querySelectorAll('.word-tag');
+            allWords.forEach(w => w.classList.remove('disabled-word'));
+        }
+        
+        const checkBtns = ui.jumbleWrapper.querySelectorAll('.check-btn');
+        checkBtns.forEach(btn => btn.style.display = 'none');
+    }
+  
+    // Função auxiliar para finalizar Jumble com sucesso
+    function checkJumbleSuccess() {
+        ui.answerZone.style.borderColor = "var(--success-color)";
+        score++; 
+        ui.scoreDisplay.innerText = score;
+
+        if (currentTask.finalAudio) {
+            speakText(currentTask.finalAudio, 'en-US', () => {
+                setTimeout(nextTask, 500);
+            });
+        } else {
+            setTimeout(nextTask, 1000);
+        }
+    }
+    
+    function checkJumble() {
+        const userWords = Array.from(ui.answerZone.children).map(t => t.innerText).join(' ');
+        
+        // Normalização básica
+        const normalize = (str) => str.toLowerCase().replace(/[.?!,]/g, '').trim();
+        
+        if (normalize(userWords) === normalize(currentTask.correct)) {
+            // ACERTOU
+            ui.answerZone.style.borderColor = "var(--success-color)";
+            score++; 
+            ui.scoreDisplay.innerText = score;
+    
+            // Feedback visual imediato, depois áudio
+            if (currentTask.finalAudio) {
+                // speakText recebe 'nextTask' como callback (onComplete)
+                // Isso garante que só avança quando o áudio terminar
+                speakText(currentTask.finalAudio, 'en-US', () => {
+                    setTimeout(nextTask, 500); // Pequeno respiro após o áudio
+                });
+            } else {
+                setTimeout(nextTask, 1000);
+            }
+    
+        } else {
+            // ERROU
+            ui.answerZone.style.borderColor = "var(--error-color)";
+            ui.answerZone.animate([
+                { transform: 'translateX(0)' }, 
+                { transform: 'translateX(-5px)' }, 
+                { transform: 'translateX(5px)' }, 
+                { transform: 'translateX(0)' }
+            ], { duration: 400 });
+        }
+    }
+    
+    function resetJumble() { Array.from(ui.answerZone.children).forEach(tag => ui.wordBank.appendChild(tag)); }
+
+    // Helpers
+    function finishQuiz() {
+        ui.quizContainer.classList.add('hidden');
+        ui.finalScreen.classList.remove('hidden');
+        
+        // --- RELATÓRIO DE SPEAKING ---
+        if (trainingMode === 'speaking') {
+            // Calcula Média
+            const totalScore = speakingResults.reduce((acc, curr) => acc + curr.score, 0);
+            const average = speakingResults.length > 0 ? (totalScore / speakingResults.length).toFixed(0) : 0;
+
+            // Monta HTML da lista
+            let reportHTML = `
+                <h2 style="font-size: 1.5rem; color:var(--accent-color); margin-bottom:10px;">Resultado da Pronúncia</h2>
+                <div style="font-size: 1.5rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
+                    ${average}%
+                </div>
+                <div style="text-align:left; max-height: 300px; overflow-y:auto; background:var(--surface-color); padding:10px; border-radius:8px; margin-bottom:20px;">
+            `;
+
+            speakingResults.forEach((res, idx) => {
+                const color = res.score >= 70 ? 'var(--success-color)' : 'var(--error-color)';
+                reportHTML += `
+                    <div style="border-bottom:1px solid #333; padding: 10px 0;">
+                        <div style="font-size:0.9em; color:#888;">Frase ${idx + 1}</div>
+                        <div style="color: white; margin-bottom:5px;">${res.phrase}</div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.9em;">
+                            <span style="color:${color}; font-weight:bold;">Nota: ${res.score.toFixed(0)}%</span>
+                            <span style="font-style:italic; color:#666;">"${res.userText}"</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            reportHTML += `</div>`;
+            
+            // Injeta no final screen (substituindo o padrão de Acertos)
+            // Mantemos o título "Lição Concluída" que já está no HTML estático, mudamos o miolo
+            const scoreArea = document.getElementById('final-score').parentElement; // O <p>Acertos...</p>
+            scoreArea.innerHTML = reportHTML;
+
+        } else {
+            // --- RELATÓRIO PADRÃO (TREINO COMPLETO, VÍDEO, ETC) ---
+            
+            // Pegamos o tamanho real da fila de tarefas atual
+            const totalTasks = quizQueue.length;
+
+            // Atualizamos o HTML usando essa variável dinâmica
+            const scoreElement = document.getElementById('final-score');
+            
+            // Se o elemento existir, atualizamos o pai dele
+            if (scoreElement) {
+                scoreElement.parentElement.innerHTML = `Acertos: <span id="final-score">${score}</span>/${totalTasks}`;
+            }
+        }
+
+        setLayoutMode('full');
+    }
+    
+    function nextTask() {
+        // Se o usuário está completando a tarefa mais avançada atual, desbloqueia a próxima
+        if (currentIndex === maxIndexReached) {
+            maxIndexReached++;
+        }
+        
+        currentIndex++;
+        loadTask();
+    }
+
+    function avaliarPronuncia(esperado, capturado) {
+        const cleanExp = esperado.toLowerCase().replace(/[.,!?;:]/g, "").split(" ");
+        const cleanCap = capturado.toLowerCase().replace(/[.,!?;:]/g, "").split(" ");
+        let total = 0;
+        for(let i=0; i<cleanExp.length; i++) {
+            if(cleanCap[i] && cleanExp[i] === cleanCap[i]) total += 100;
+            else if (cleanCap[i]) total += 50; 
+        }
+        return total / cleanExp.length;
+    }
+
+    // --- FUNÇÕES DE INÍCIO DA PRÁTICA ---
+    // Modo Speak
+    function startSpeakingPractice() {
+        console.log('🚀 startSpeakingPractice iniciado');
+        if (!currentLesson || currentLesson.data.length === 0) return;
+        
+        speakingResults = []; 
+        trainingMode = 'speaking';
+        currentTaskMode = 'speaking'; // Define o modo
+    
+        // Ajustes visuais
+        setLayoutMode('training');
+        toggleCloseExit('show'); // Mostra o X
+      
+        // 🔥 Cria o checkpoint para o botão voltar do celular
+        setTaskHistoryMode('speaking');
+    
+        // ❌ REMOVA ESTAS LINHAS:
+        // history.pushState({ view: 'training' }, '', '#training');
+        // navigationStack.push('training'); 
+    
+        // Ativa a view visualmente, mas sem mexer no stack de navegação
+        ui.views.forEach(v => v.classList.remove('active'));
+        document.getElementById('view-training').classList.add('active');
+        
+        ui.quizContainer.classList.remove('hidden');
+        ui.finalScreen.classList.add('hidden');
+    
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(start, end);
+        initQuizLogic(phaseData); 
+    }
+    // Modo Video
+    function startVideoPratice() {
+        console.log('🎥 startVideoPratice iniciado');
+        if (!currentLesson || currentLesson.data.length === 0) return;
+    
+        trainingMode = 'video';
+        currentTaskMode = 'video'; // Define o modo
+    
+        setLayoutMode('training');
+        toggleCloseExit('show');
+      
+        // 🔥 Cria o checkpoint para o botão voltar do celular
+        setTaskHistoryMode('speaking');
+    
+        // ❌ REMOVA ESTAS LINHAS:
+        // history.pushState({ view: 'training' }, '', '#training');
+        // navigationStack.push('training');
+    
+        ui.views.forEach(v => v.classList.remove('active'));
+        document.getElementById('view-training').classList.add('active');
+        ui.quizContainer.classList.remove('hidden');
+        ui.finalScreen.classList.add('hidden');
+    
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(start, end);
+        initQuizLogic(phaseData); 
+    }
+    // Modo Treino
+    function startTrainingMode() {
+        if (!validateTrainingData()) return;
+    
+        currentTaskMode = 'training'; // Define o modo
+        trainingMode = 'full';
+    
+        console.log('[Task] training iniciado');
+    
+        setLayoutMode('training');
+        toggleCloseExit('show');
+      
+        // 🔥 Cria o checkpoint para o botão voltar do celular
+        setTaskHistoryMode('speaking');
+    
+        // ❌ SE HOUVER, REMOVA: navigationStack.push('training');
+        
+        // Apenas troca a tela visualmente
+        ui.views.forEach(v => v.classList.remove('active'));
+        document.getElementById('view-training').classList.add('active');
+        
+        // Inicia lógica (se necessário chamar initQuizLogic aqui também)
+        const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(start, end);
+        initQuizLogic(phaseData);
+    }
+
+    // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
+   // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
+    function setupVideo() {
+        ui.videoWrapper.classList.remove('hidden');
+        isVideoTaskComplete = false;
+        
+        // --- 1. DECISÃO DE MODO (O IF MÁGICO) ---
+        let targetText = "";
+        let promptHTML = "";
+        let synthLang = ""; // Variável para controlar o idioma da fala
+
+        if (currentTask.type === 'video_translate') {
+            // MODO TREINO (Tarefa 2): Alvo é Português
+            targetText = currentTask.correct; 
+            promptHTML = `<span style="color:#aaa; font-size:0.9em;">Traduza o que ouvir para <b>Português</b>:</span>`;
+            
+            // 🔥 MUDANÇA: null para NÃO ler as palavras em PT
+            synthLang = null; 
+        } else {
+            // MODO VÍDEO (Padrão): Alvo é Inglês
+            targetText = currentTask.question || currentTask.en || ""; 
+            promptHTML = `<span style="color:#aaa; font-size:0.9em;">Organize o que ouvir em <b>Inglês</b>:</span>`;
+            
+            // Mantém leitura em EN para ajudar na pronúncia
+            synthLang = 'en-US'; 
+        }
+
+        // Atualiza o texto de instrução na tela
+        document.getElementById('video-feedback').innerHTML = promptHTML;
+
+        // Prepara a frase alvo para validação (remove pontuação, normaliza)
+        currentTargetSentence = targetText
+            .replace(/\r?\n|\r/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .map(w => normalizeWord(w));
+
+        // Limpa a área visual
+        document.getElementById('video-answer-zone').innerHTML = '';
+        document.getElementById('video-word-bank').innerHTML = '';
+        document.getElementById('video-answer-zone').style.borderColor = '#444';
+
+        // --- 2. SETUP DO PLAYER (Idêntico ao anterior) ---
+        const videoId = getYoutubeId(currentTask.videoUrl);
+        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+
+        if (!ytPlayer) {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '100%', width: '100%', videoId: videoId,
+                playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1, 'fs': 0, 'rel': 0, 'iv_load_policy': 3, 'modestbranding': 1, 'vq': userQuality },
+                events: { 
+                    'onReady': (event) => {
+                        event.target.setPlaybackQuality(userQuality);
+                        window.speechSynthesis.cancel();
+                        playSegment(currentTask.start, currentTask.end); 
+                    }
+                }
+            });
+        } else {
+            window.speechSynthesis.cancel();
+            ytPlayer.loadVideoById({
+                'videoId': videoId,
+                'startSeconds': currentTask.start,
+                'suggestedQuality': userQuality
+            });
+            setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
+        }
+
+        // --- 3. GERA PALAVRAS EMBARALHADAS ---
+        let words = targetText
+            .replace(/\r?\n|\r/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .filter(w => w.length > 0)
+            .sort(() => Math.random() - 0.5);
+
+        const bank = document.getElementById('video-word-bank');
+        const zone = document.getElementById('video-answer-zone');
+
+        words.forEach(word => {
+            const span = document.createElement('span');
+            span.className = 'word-tag disabled-word';
+            span.innerText = word;
+            
+            span.onclick = function() { 
+                if (this.classList.contains('disabled-word')) return;
+                if (document.body.classList.contains('audio-playing')) return;
+                
+                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
+                if (synthLang) {
+                    speakText(word, synthLang); 
+                }
+            
+                const clickedClean = normalizeWord(word);
+                const expectedClean = currentTargetSentence[expectedWordIndex];
+            
+                if (clickedClean === expectedClean) {
+                    // ACERTOU
+                    zone.appendChild(this);
+                    expectedWordIndex++;
+            
+                    // Reabilita palavras erradas (UX Preventiva reset)
+                    const disabledWords = bank.querySelectorAll('.disabled-word');
+                    disabledWords.forEach(w => w.classList.remove('disabled-word'));
+            
+                    if (expectedWordIndex === currentTargetSentence.length) {
+                        finishVideoTaskSuccess();
+                    }
+                } else {
+                    // ERROU
+                    this.classList.add('disabled-word');
+                    this.animate([
+                        { transform: 'translateX(0)' }, 
+                        { transform: 'translateX(-5px)' }, 
+                        { transform: 'translateX(5px)' }, 
+                        { transform: 'translateX(0)' }
+                    ], { duration: 300 });
+                }
+            };
+            bank.appendChild(span);
+        });
+
+        // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR ---
+        let videoStarted = false;
+        const checkVideoInterval = setInterval(() => {
+            if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
+                if (!videoStarted) {
+                    videoStarted = true;
+                    clearInterval(checkVideoInterval);
+                    // Libera as palavras quando o trecho terminar de tocar a primeira vez
+                    setTimeout(() => {
+                        const allWords = bank.querySelectorAll('.word-tag');
+                        allWords.forEach(w => w.classList.remove('disabled-word'));
+                    }, (currentTask.end - currentTask.start) * 1000);
+                }
+            }
+        }, 100);
+        
+        // Timeout de segurança
+        setTimeout(() => {
+            if (!videoStarted) {
+                clearInterval(checkVideoInterval);
+                const allWords = bank.querySelectorAll('.word-tag');
+                allWords.forEach(w => w.classList.remove('disabled-word'));
+            }
+        }, 10000);
+    }
+
+    // Função auxiliar para sucesso no Vídeo
+    function finishVideoTaskSuccess() {
+        const zone = document.getElementById('video-answer-zone');
+        zone.style.borderColor = "var(--success-color)";
+        document.getElementById('video-feedback').innerHTML = `<p>Muito Bom!</p><p>Ouça só mais uma vez!</p>`;
+        score++;
+        ui.scoreDisplay.innerText = score;
+        isVideoTaskComplete = true; 
+
+        // Toca o trecho do vídeo e avança
+        setTimeout(() => {
+            if(ytPlayer && ytPlayer.seekTo) {
+                ytPlayer.seekTo(currentTask.start);
+                ytPlayer.playVideo();
+                let finalCheck = setInterval(() => {
+                    if(ytPlayer.getCurrentTime() >= currentTask.end) {
+                        ytPlayer.pauseVideo();
+                        clearInterval(finalCheck);
+                        setTimeout(nextTask, 1000); 
+                    }
+                }, 100);
+            } else {
+                setTimeout(nextTask, 1500);
+            }
+        }, 500);
+    }
+  
+    // Função chamada automaticamente pela API quando pronta
+    function onYouTubeIframeAPIReady() {
+        console.log("YouTube API Ready");
+        // O player será criado apenas quando entrarmos na lição
+    }
+    
+    // Extrai ID do vídeo (ex: v=Ao4ApRzPA3c -> Ao4ApRzPA3c)
+    // Extrai ID do vídeo (agora aceita Shorts!)
+    function getYoutubeId(url) {
+        // Adicionei "|shorts\/" dentro do grupo de captura
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    }
+  
+    // Controla o segmento
+    function playSegment(start, end) {
+        if (!ytPlayer || !ytPlayer.seekTo) return;
+    
+        // Se a tarefa já foi concluída, não faz loop, toca só uma vez
+        if (isVideoTaskComplete) {
+            ytPlayer.seekTo(start);
+            ytPlayer.playVideo();
+            return; 
+        }
+    
+        ytPlayer.seekTo(start);
+        ytPlayer.playVideo();
+    
+        if (videoTimer) clearInterval(videoTimer);
+    
+        videoTimer = setInterval(() => {
+            if (!ytPlayer.getCurrentTime) return;
+            
+            const current = ytPlayer.getCurrentTime();
+            
+            // Chegou ao fim do trecho?
+            if (current >= end) {
+                if (videoLoopEnabled && !isVideoTaskComplete) {
+                    // Se Loop ON e não acabou: Volta pro início
+                    ytPlayer.seekTo(start);
+                } else {
+                    // Se Loop OFF ou acabou: Pausa
+                    ytPlayer.pauseVideo();
+                    clearInterval(videoTimer);
+                }
+            }
+        }, 100);
+    }
+    
+    function replayVideoSegment() {
+        if (currentTask && currentTask.start !== undefined) {
+            playSegment(currentTask.start, currentTask.end);
+        }
+    }
+
+    function stopVideoPlayback() {
+        // 1. Pausa o YouTube
+        if (ytPlayer && ytPlayer.pauseVideo && typeof ytPlayer.pauseVideo === 'function') {
+            try {
+                ytPlayer.pauseVideo();
+            } catch (e) {
+                console.warn("Player ainda não estava pronto para pausar");
+            }
+        }
+    
+        // 2. Limpa o intervalo de verificação de tempo (loop)
+        if (videoTimer) {
+            clearInterval(videoTimer);
+            videoTimer = null;
+        }
+    }
+    
+    function toggleVideoLoop() {
+        videoLoopEnabled = !videoLoopEnabled;
+        const btn = document.getElementById('btn-video-loop');
+        
+        if (videoLoopEnabled) {
+            btn.className = 'check-btn loop-active';
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Loop: ON</span>';
+            // Se ativou e o vídeo estava parado (mas a tarefa não acabou), toca
+            if (!isVideoTaskComplete) replayVideoSegment();
+        } else {
+            btn.className = 'check-btn loop-inactive';
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Loop: OFF</span>';
+        }
+    }
+  
+    function checkVideoAnswer() {
+        const bank = document.getElementById('video-word-bank');
+        const zone = document.getElementById('video-answer-zone');
+    
+        // 1. Só valida se o banco estiver vazio
+        if (bank.children.length > 0) {
+            zone.style.borderColor = '#444'; 
+            return; 
+        }
+    
+        // 2. Monta a frase do usuário
+        const userWords = Array.from(zone.children).map(t => t.innerText).join(' ');
+        
+        // Normalização
+        const normalize = (str) => str
+            .toLowerCase()
+            .replace(/\r?\n|\r/g, ' ') 
+            .replace(/[.,?!":;]/g, '') 
+            .replace(/\s+/g, ' ') 
+            .trim();
+    
+        // --- MUDANÇA AQUI: Define qual é a correta baseada no tipo ---
+        let targetText = "";
+        if (currentTask.type === 'video_translate') {
+            targetText = currentTask.correct; // Compara com PT
+        } else {
+            targetText = currentTask.question; // Compara com EN
+        }
+    
+        const correct = normalize(targetText); 
+        const attempt = normalize(userWords);            
+    
+        // 3. Comparação
+        if (attempt === correct) {
+            // --- ACERTOU ---
+            zone.style.borderColor = "var(--success-color)";
+            document.getElementById('video-feedback').innerHTML = `
+                <p style="color:var(--success-color)">Correto!</p>
+            `;
+            score++;
+            ui.scoreDisplay.innerText = score;
+    
+            isVideoTaskComplete = true; 
+    
+            // Toca o trecho final
+            setTimeout(() => {
+                if(ytPlayer && ytPlayer.seekTo) {
+                    ytPlayer.seekTo(currentTask.start);
+                    ytPlayer.playVideo();
+                    
+                    let finalCheck = setInterval(() => {
+                        if(ytPlayer.getCurrentTime() >= currentTask.end) {
+                            ytPlayer.pauseVideo();
+                            clearInterval(finalCheck);
+                            setTimeout(nextTask, 1000); 
+                        }
+                    }, 100);
+                } else {
+                    setTimeout(nextTask, 1500);
+                }
+            }, 500);
+    
+        } else {
+            // --- ERROU ---
+            zone.style.borderColor = "var(--error-color)";
+            zone.animate([
+                { transform: 'translateX(0)' }, 
+                { transform: 'translateX(-5px)' }, 
+                { transform: 'translateX(5px)' }, 
+                { transform: 'translateX(0)' }
+            ], { duration: 400 });
+        }
+    }
+
+    // --- NAVEGAÇÃO MOBILE (CORRIGIDA PARA RESPEITAR LINKS) ---
+    function initMobileNavigation() {
+        // Define estado inicial se não houver
+        if (!history.state) {
+            history.replaceState({ view: 'home' }, '', '#home');
+        }
+    
+        // 🔥 OUVINTE DO BOTÃO VOLTAR DO CELULAR
+        window.addEventListener('popstate', (event) => {
+            const state = event.state;
+            console.log("📱 [Mobile Back] Estado:", state);
+    
+            // CASO 1: Estava em uma Tarefa (Training/Video)
+            // Se o usuário apertou voltar, o navegador removeu o estado 'training'
+            // Agora precisamos limpar a UI visualmente.
+            if (currentTaskMode) {
+                console.log("🔙 Fechando tarefa via botão físico");
+                currentTaskMode = null;
+                clean(); // Para vídeos/áudios
+                toggleCloseExit('hide');
+                setLayoutMode('full');
+                
+                // O histórico já foi removido pelo navegador (pop), 
+                // então só precisamos restaurar a view que ficou no topo.
+                // Geralmente voltamos para o que está no 'state' atual do evento.
+                if (state && state.view) {
+                    navigateTo(state.view, { fromBack: true, lessonId: state.lessonId });
+                } else {
+                    navigateTo('home', { fromBack: true });
+                }
+                return;
+            }
+    
+            // CASO 2: Navegação Normal (Entre telas)
+            if (state && state.view) {
+                // Se for preview, garante que temos o ID
+                if (state.view === 'preview' && state.lessonId) {
+                    // Importante: Passamos fromBack: true para não empilhar de novo
+                    // Mas precisamos reabrir a lição (openPreview chama navigateTo internamente, cuidado)
+                    // O ideal aqui é chamar navigateTo direto para trocar a view visualmente
+                    // e recarregar os dados se necessário.
+                    
+                    // Opção segura: Reutilizar a lógica de openPreview mas sem pushState
+                    openPreview(state.lessonId, false); // false = não add to history
+                } else {
+                    navigateTo(state.view, { fromBack: true });
+                }
+            } else {
+                // Fallback
+                navigateTo('home', { fromBack: true });
+            }
+        });
+    }
+
+    // --- DEEP LINKING (ABRIR LINK DIRETO) ---
+    function checkDeepLink() {
+        const hash = window.location.hash; 
+        console.log("🔍 [DeepLink] Hash inicial:", hash);
+
+        if (hash && hash.startsWith('#lesson-')) {
+            const idString = hash.replace('#lesson-', '');
+            console.log("🔍 [DeepLink] Tentando abrir ID:", idString);
+            
+            // Passa direto o idString (openPreview com '==' vai resolver se é numero ou texto)
+            openPreview(idString, false); 
+        } 
+        else if (hash === '#you') {
+            navigateTo('you', false);
+        }
+        else if (hash === '#login') {
+            navigateTo('login', false);
+        }
+    }
+
+    // --- PREFERÊNCIAS DE USUÁRIO ---
+
+    // 1. Carrega a preferência salva ao iniciar o app
+    function loadUserPreferences() {
+        const savedQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+        const select = document.getElementById('pref-quality');
+        if(select) select.value = savedQuality;
+        return savedQuality;
+    }
+    
+    // 2. Salva quando o usuário muda o select
+    function saveQualityPreference() {
+        const select = document.getElementById('pref-quality');
+        localStorage.setItem('phrasecraft_quality', select.value);
+        console.log("💾 Qualidade padrão salva:", select.value);
+        
+        // Feedback visual rápido (opcional)
+        const originalBorder = select.style.borderColor;
+        select.style.borderColor = "var(--success-color)";
+        setTimeout(() => select.style.borderColor = originalBorder, 500);
+    }
+    
+
+    // --- 5. INICIALIZA O APP ---
+    // Chame isso no final do script em vez de chamar renderLessonList() direto
+    // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
+    window.addEventListener('load', async () => {
+      const hash = location.hash;
+      if (!hash.startsWith('#lesson-')) return;
+  
+      while (!window.allLessons || allLessons.length === 0) {
+          await new Promise(r => setTimeout(r, 50));
+      }
+  
+      const id = hash.replace('#lesson-', '');
+  
+      navigateTo('home', { resetStack: true });
+      openPreview(id, true);
+  });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initMobileNavigation();
+        loadUserPreferences();
+        initApp();
+      
+        // 1. Gera a estrutura de dados completa com IDs
+        structuredData = generateDynamicIds(projectData);
+    
+        // 2. Renderiza os Estágios
+        renderStageCards();      
+    });
+    </script>
+</body>
+</html>
