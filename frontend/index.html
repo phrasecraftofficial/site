@@ -126,7 +126,7 @@ novo modo speak
             scroll-behavior: smooth;
             scroll-padding-top: var(--header-height);
             -webkit-overflow-scrolling: touch;
-            padding-bottom: calc(var(--footer-height) + 30px);
+            padding-bottom: calc(var(--footer-height) + 20px);
             padding-top: calc(var(--footer-height) - 45px);
         }
         /* MOBILE FOOTER */
@@ -209,7 +209,7 @@ novo modo speak
 
         /* PREVIEW DA LIÇÃO */
         .preview-header { margin-bottom: 20px; text-align: center; }
-        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 110px; }
+        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 50px; }
         .preview-item {
             padding: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -925,10 +925,10 @@ novo modo speak
                 </div>
 
                 <div id="final-screen" class="hidden" style="text-align: center; padding-top: 40px;">
-                    <i class="fa-solid fa-trophy" style="font-size: 2.8rem; color: var(--success-color);"></i>
-                    <h1 style="color: var(--success-color); margin: 20px 0;">Lição Concluída!</h1>
+                    <i class="fa-solid fa-trophy" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                    <h2 style="color: var(--success-color); margin: 20px 0;">Lição Concluída!</h2>
                     <p style="font-size: 1.3em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
-                    <button class="check-btn" onclick="openPreview(currentLesson.id)">Voltar para a Lição</button>
+                    <button class="check-btn" onclick="openPreview(currentLesson.id)">Frases > </button>
                 </div>
             </section>
 
@@ -3425,8 +3425,8 @@ function validateTrainingData() {
 
             // Monta HTML da lista
             let reportHTML = `
-                <h2 style="color:var(--accent-color); margin-bottom:10px;">Resultado da Pronúncia</h2>
-                <div style="font-size: 1.2rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; color:var(--accent-color); margin-bottom:10px;">Resultado da Pronúncia</h2>
+                <div style="font-size: 1.5rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
                     ${average}%
                 </div>
                 <div style="text-align:left; max-height: 300px; overflow-y:auto; background:var(--surface-color); padding:10px; border-radius:8px; margin-bottom:20px;">
