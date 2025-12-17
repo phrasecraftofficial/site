@@ -32,14 +32,30 @@ novo modo speak
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        /* SUBSTITUA ESTE TRECHO COMPLETO */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
-            height: 100vh;
+            min-height: 100vh; /* MUDANÇA: min-height ao invés de height */
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* App-like feel */
+            overflow-x: hidden; /* MUDANÇA: só horizontal */
+            /* REMOVE: overflow: hidden e height: 100vh */
+        }
+                
+        /* ADICIONE no início do <style>, após as variáveis CSS */
+        html {
+            box-sizing: border-box; /* Inclui padding no cálculo da largura */
+            max-width: 100%;
+            margin: 0 auto; /* Centraliza horizontalmente */
+            overflow-x: hidden; /* Evita barra horizontal */
+        }
+        
+        /* Centraliza o conteúdo principal horizontalmente */
+        body {
+            max-width: 1200px; /* Largura máxima desejada */
+            margin: 0 auto; /* Centraliza perfeitamente */
         }
 
         /* --- LAYOUT SHELL --- */
@@ -102,15 +118,17 @@ novo modo speak
         .sidebar-item i { margin-right: 20px; width: 20px; text-align: center; font-size: 1.1rem; }
 
         /* MAIN CONTENT AREA */
+        /* Scroll suave e recuperação */
         .main-content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden; /* Evita scroll horizontal */
-            padding: 20px;
-            padding-bottom: 100px; /* Space for mobile footer */
-            height: 100%; /* Garante altura para o scroll funcionar */
+            margin: 0 auto; /* Centraliza perfeitamente */
+            padding: 0 10px; /* Padding interno adicional */
+            overscroll-behavior: contain;
+            scroll-behavior: smooth;
+            scroll-padding-top: var(--header-height);
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: calc(var(--footer-height) + 30px);
+            padding-top: calc(var(--footer-height) - 45px);
         }
-
         /* MOBILE FOOTER */
         .app-footer {
             height: var(--footer-height);
@@ -1760,77 +1778,84 @@ function toggleTrainingExit(action) {
 
 // --- GERENCIAMENTO CENTRALIZADO DE LAYOUT (CORRIGIDO) ---
 function setLayoutMode(mode) {
-    console.log(`🎨 [Layout] Mudando para modo: ${mode}`);
-    
-    const modes = {
-        'full': {
-            hideHeader: false,
-            hideFooter: false,
-            hideSidebar: false,
-            contentPadding: '20px'
-        },
-        'preview': {
-            hideHeader: false,
-            hideFooter: true,
-            hideSidebar: true,
-            contentPadding: '20px'
-        },
-        'training': {
-            hideHeader: false,
-            hideFooter: true,
-            hideSidebar: true,
-            contentPadding: '20px' // AQUI: Garante padding uniforme no treino
-        },
-        'immersive': {
-            hideHeader: true,
-            hideFooter: true,
-            hideSidebar: true,
-            contentPadding: '0'
+        console.log('Layout Mudando para modo', mode);
+        
+        const modes = {
+            full: { hideHeader: false, hideFooter: false, hideSidebar: false, contentPadding: '20px' },
+            preview: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
+            training: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
+            immersive: { hideHeader: true, hideFooter: true, hideSidebar: true, contentPadding: '0px' }
+        };
+        
+        const config = modes[mode] || modes.full;
+        
+        // 1. Header/App Body (sem mudanças)
+        const header = document.querySelector('.app-header');
+        const appBody = document.querySelector('.app-body');
+        if (config.hideHeader) {
+            header.style.display = 'none';
+            appBody.style.marginTop = '0';
+        } else {
+            header.style.display = 'flex';
+            appBody.style.marginTop = 'var(--header-height)';
         }
-    };
-
-    const config = modes[mode] || modes['full'];
-    
-    // 1. Header & App Body Margin
-    const header = document.querySelector('.app-header');
-    const appBody = document.querySelector('.app-body');
-    
-    if (config.hideHeader) {
-        header.style.display = 'none';
-        appBody.style.marginTop = '0'; 
-    } else {
-        header.style.display = 'flex';
-        appBody.style.marginTop = '60px'; // Garante que o corpo comece DEPOIS do header
+        
+        // 2. Footer
+        const footer = document.querySelector('.app-footer');
+        if (config.hideFooter) {
+            footer.style.display = 'none';
+        } else {
+            footer.style.display = 'flex';
+        }
+        
+        // 3. Sidebar
+        const sidebar = document.querySelector('.app-sidebar');
+        if (config.hideSidebar) {
+            sidebar.style.display = 'none';
+        } else {
+            sidebar.style.display = ''; // Reset CSS
+        }
+        
+        // 4. Main Content - CORREÇÃO VITAL
+        const mainContent = document.querySelector('.main-content');
+        mainContent.style.padding = config.contentPadding;
+        
+        // CRÍTICO: Remove manipulação arbitrária de padding-bottom
+        mainContent.style.paddingBottom = ''; // Reset
+        
+        // SCROLL RECOVERY - FORÇA RECUPERAÇÃO DO SCROLL
+        if (mode === 'full' || mode === 'preview') {
+            setTimeout(() => {
+                mainContent.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+                window.scrollTo(0, 0);
+            }, 100);
+        }
+        
+        console.log('Layout Modo', mode, 'aplicado. Padding:', config.contentPadding);
     }
-
-    // 2. Footer
-    const footer = document.querySelector('.app-footer');
-    if (config.hideFooter) {
-        footer.style.display = 'none';
-    } else {
-        footer.style.display = 'flex';
+  
+    // PREVENÇÃO GLOBAL DE VIEWPORT SHIFT
+    function fixViewportShift() {
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            // Força altura dinâmica baseada no conteúdo
+            mainContent.style.height = 'auto';
+            mainContent.style.minHeight = 'calc(100vh - var(--header-height))';
+            
+            // Reset scroll se travado
+            if (mainContent.scrollHeight > mainContent.clientHeight) {
+                mainContent.scrollTop = 0;
+            }
+        }
     }
+    
+    // Chama após mudanças de layout
+    document.addEventListener('resize', fixViewportShift);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(fixViewportShift, 300);
+    });
 
-    // 3. Sidebar
-    const sidebar = document.querySelector('.app-sidebar');
-    if (config.hideSidebar) {
-        sidebar.style.display = 'none';
-    } else {
-        sidebar.style.display = ''; // Reseta para o padrão do CSS (flex ou none via media query)
-    }
-
-    // 4. Main Content Padding (A CORREÇÃO ESTÁ AQUI)
-    const mainContent = document.querySelector('.main-content');
-    
-    // Aplica o padding geral definido na config (ex: '20px')
-    // Isso garante que o topo tenha espaço e não cole no header
-    mainContent.style.padding = config.contentPadding; 
-    
-    // Ajusta o bottom especificamente se tiver footer ou não (sobrescreve o padding geral embaixo)
-    mainContent.style.paddingBottom = config.hideFooter ? '20px' : '80px';
-    
-    console.log(`✅ [Layout] Modo "${mode}" aplicado. Padding: ${config.contentPadding}`);
-}
   
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
