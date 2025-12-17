@@ -55,17 +55,54 @@ lembre de usar as variaveis existentes e limpar elas
         }
                 
         /* ADICIONE no início do <style>, após as variáveis CSS */
+        /* --- CORREÇÃO DE LAYOUT PULANDO --- */
         html {
-            box-sizing: border-box; /* Inclui padding no cálculo da largura */
-            max-width: 100%;
-            margin: 0 auto; /* Centraliza horizontalmente */
-            overflow-x: hidden; /* Evita barra horizontal */
+            height: 100%;
+            overflow: hidden; /* Impede que o navegador role a página inteira */
         }
-        
-        /* Centraliza o conteúdo principal horizontalmente */
+
         body {
-            max-width: 1200px; /* Largura máxima desejada */
-            margin: 0 auto; /* Centraliza perfeitamente */
+            font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            
+            /* O TRUQUE: 100dvh ignora a barra de endereço do celular */
+            height: 100dvh; 
+            width: 100%;
+            
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Trava o corpo */
+            position: fixed; /* Garante que não se mova no iOS */
+        }
+
+        /* A área de conteúdo agora tem rolagem interna independente */
+        .main-content {
+            flex: 1;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 10px;
+            
+            overflow-y: auto; /* A rolagem acontece AQUI dentro */
+            overflow-x: hidden;
+            
+            /* Ajustes de espaçamento para cabeçalho e rodapé */
+            padding-bottom: calc(var(--footer-height) + 40px);
+            padding-top: 10px; 
+            
+            /* Scroll suave */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Ajuste do container principal */
+        .app-body {
+            display: flex;
+            flex: 1;
+            height: 100%; /* Ocupa todo o espaço disponível abaixo do header */
+            overflow: hidden; /* Impede vazamento */
+            position: relative;
         }
 
         /* --- LAYOUT SHELL --- */
@@ -97,14 +134,6 @@ lembre de usar as variaveis existentes e limpar elas
             opacity: 0.8;
         }
 
-        /* CONTAINER PRINCIPAL */
-        .app-body {
-            display: flex;
-            flex: 1;
-            margin-top: var(--header-height);
-            overflow: hidden;
-        }
-
         /* SIDEBAR (Desktop) */
         .app-sidebar {
             width: var(--sidebar-width);
@@ -127,18 +156,6 @@ lembre de usar as variaveis existentes e limpar elas
         .sidebar-item:hover, .sidebar-item.active { background-color: var(--surface-hover); }
         .sidebar-item i { margin-right: 20px; width: 20px; text-align: center; font-size: 1.1rem; }
 
-        /* MAIN CONTENT AREA */
-        /* Scroll suave e recuperação */
-        .main-content {
-            margin: 0 auto; /* Centraliza perfeitamente */
-            padding: 0 10px; /* Padding interno adicional */
-            overscroll-behavior: contain;
-            scroll-behavior: smooth;
-            scroll-padding-top: var(--header-height);
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: calc(var(--footer-height) + 20px);
-            padding-top: calc(var(--footer-height) - 45px);
-        }
         /* MOBILE FOOTER */
         .app-footer {
             height: var(--footer-height);
@@ -447,8 +464,43 @@ lembre de usar as variaveis existentes e limpar elas
         .mic-btn.listening { background: var(--error-color); border-color: var(--error-color); color: white; animation: pulse 1.5s infinite; }
         
         /* Jumble */
-        .jumble-area { border: 1px dashed var(--border-color); min-height: 50px; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; border-radius: 8px; margin-bottom: 15px; }
-        .word-bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 15px;}
+        /* Estabiliza a área onde as palavras caem */
+        .jumble-area { 
+            border: 1px dashed var(--border-color); 
+            
+            /* AUMENTADO: Garante espaço para 2 ou 3 linhas sem crescer */
+            min-height: 120px; 
+            
+            padding: 15px; 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+            justify-content: center; 
+            align-content: flex-start; /* Palavras começam do topo */
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            background-color: rgba(255,255,255,0.02); /* Leve fundo para marcar a área */
+            transition: border-color 0.3s;
+        }
+
+        /* Estabiliza o banco de palavras para não sumir */
+        /* Estabiliza o banco de palavras e centraliza o conteúdo */
+        .word-bank { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+            justify-content: center; 
+            margin-bottom: 15px;
+            
+            /* Mantém a altura mínima para evitar pulos */
+            min-height: 60px; 
+            
+            /* --- A CORREÇÃO MÁGICA --- */
+            /* Isso garante que, se tiver só 1 linha, ela fica no meio. */
+            /* Se tiver 2, elas se acomodam juntas no centro. */
+            align-content: center; 
+            align-items: center;
+        }
         .word-tag { background: var(--surface-color); border: 1px solid var(--accent-color); padding: 6px 12px; border-radius: 15px; cursor: pointer; user-select: none; }
 
         /* Utilities */
@@ -902,6 +954,8 @@ lembre de usar as variaveis existentes e limpar elas
 
                     <div id="video-area-wrapper" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
     
+                        <p id="video-feedback" style="text-align: center; color: var(--success-color); font-weight: bold; margin: 0 0 20px 0; min-height: 20px;"></p>
+                      
                         <div class="video-responsive-container" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 15px; flex-shrink: 0;">
                             <div id="yt-player"></div>
                               <div class="video-blocker"></div>
@@ -922,8 +976,6 @@ lembre de usar as variaveis existentes e limpar elas
                             
                             <div class="word-bank" id="video-word-bank"></div>
                         </div>
-                    
-                        <p id="video-feedback" style="text-align: center; color: var(--success-color); font-weight: bold; min-height: 20px;"></p>
                     </div>
             
                     <div id="jumble-area-wrapper" class="hidden">
