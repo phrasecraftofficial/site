@@ -1,32 +1,13 @@
-<!-- 80
-Resumo do Fluxo Mobile Perfeito
-Entrar no App: Define #home no histórico.
-
-Clicar em Preview: MapsTo dá pushState('#lesson-1').
-
-Histórico: [Home, Preview]
-
-Clicar em Treinar: startTraining dá pushState('#training').
-
-Histórico: [Home, Preview, Training]
-
-Apertar "Voltar" (Físico):
-
-O navegador remove o último item. Histórico: [Home, Preview].
-
-Dispara popstate.
-
-Nosso listener detecta que currentTaskMode estava ativo, limpa a tela de treino e mostra o Preview (baseado no estado atual).
-
-Clicar no "X" (UI):
-
-A função chama history.back().
-
-O navegador remove o item.
-
-Dispara popstate (mesmo comportamento do passo 4).
-
-Agora seu app se comporta como um nativo: o botão voltar fecha modais (tarefas) antes de fechar telas, e fecha telas antes de sair do app.
+<!-- 81
+Resumo da mudança:
+Coloquei um btnEl.innerHTML = 'Finalizando...' 
+antes do await stopManualAudio().
+Trava Inicial: btnEl.disabled = true 
+logo na primeira linha do else.
+Destrava no Erro: Dentro do if (!audioBlob), 
+coloquei btnEl.disabled = false e btnEl.style.opacity = "1".
+Isso garante o ciclo: Clicou -> 
+Travou/Carregando -> Erro -> Destravou/Tentar Novamente.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -640,7 +621,7 @@ Agora seu app se comporta como um nativo: o botão voltar fecha modais (tarefas)
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v80
+            PhraseCraft v81
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -3083,13 +3064,27 @@ function validateTrainingData() {
                     btnEl.style.color = "#fff";
 
                 } else {
-                    // --- FINALIZAR TUDO ---
+                    // --- 1. FEEDBACK IMEDIATO (Antes de processar) ---
+                    // Trava o botão e muda o texto para o usuário saber que o clique funcionou
+                    btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Finalizando...';
+                    btnEl.disabled = true;  // <--- TRAVOU AQUI
+                    btnEl.style.opacity = "0.7";
+                
+                    // --- 2. AGUARDA O PROCESSAMENTO ---
                     console.log("⏹️ Finalizando Blob...");
-                    const audioBlob = await stopManualAudio();
+                    const audioBlob = await stopManualAudio(); 
                     isRecordingAudio = false;
                     
-                    // 🔥 VALIDAÇÃO DA ETAPA 2 (ÁUDIO)
-                    if (!audioBlob) { // null = silêncio detectado
+                    // --- 3. VALIDAÇÃO (Onde ocorre o destravamento se der erro) ---
+                    if (!audioBlob) { 
+                        // ⚠️ DEU ERRO (SILÊNCIO DETECTADO)
+                
+                        // >>> AQUI ESTÁ A CORREÇÃO <<<
+                        // Destrava o botão para ele clicar de novo
+                        btnEl.disabled = false; 
+                        btnEl.style.opacity = "1"; 
+                        
+                        // Configura o visual de erro
                         iconEl.style.color = "var(--error-color)";
                         iconEl.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
                         
@@ -3098,33 +3093,27 @@ function validateTrainingData() {
                             Fale mais alto e grave novamente.
                         `;
                     
-                        // Reseta botão para gravar de novo (Mantém Etapa 2)
+                        // Restaura a cor e texto para "Gravar Novamente"
                         btnEl.innerHTML = 'Gravar Novamente';
                         btnEl.style.backgroundColor = "var(--accent-color)";
                         btnEl.style.color = "#000";
-                        return; // ⛔ PARA AQUI
+                        
+                        return; // Sai da função aqui, permitindo que ele clique de novo
                     }
-
-                    // UI: Processando
+                
+                    // --- 4. SUCESSO ---
                     btnEl.innerHTML = 'Salvando...';
-                    btnEl.disabled = true;
-
-                    // 1. Processa Texto e Nota
+                
                     const textoFinal = tempRecognizedText.trim() || "(sem áudio)";
                     processSpeechResult(textoFinal); 
-
-                    // 2. Cria Player
+                
                     const audioUrl = URL.createObjectURL(audioBlob);
                     createAudioPlayer(audioUrl);
                     
-                    // 3. Remove o botão principal (pois o fluxo acabou)
-                    btnEl.style.display = 'none';
-                    
-                    // Oculta o ícone
+                    // Remove os elementos da gravação pois já deu certo
                     btnEl.style.display = 'none';
                     iconEl.style.display = 'none';
                     statusEl.style.display = 'none';
-
                 }
             }
 
