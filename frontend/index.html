@@ -338,7 +338,13 @@ novo modo speak
         }
         /* --- ESTILOS DO JOGO (QUIZ) --- */
         /* Mantendo os estilos internos do jogo que você aprovou */
-        .quiz-container { text-align: center; padding: 10px; }
+        .quiz-container { 
+            text-align: center; 
+            padding: 10px;
+            overflow-y: auto;        /* 🔥 PERMITE SCROLL VERTICAL */
+            max-height: 100%;        /* 🔥 LIMITA À ALTURA DISPONÍVEL */
+            -webkit-overflow-scrolling: touch; /* 🔥 SCROLL SUAVE NO iOS */
+        }
         .stats {
             display: flex;               /* Para alinhar lado a lado */
             justify-content: space-between; /* Um na esquerda, outro na direita */
