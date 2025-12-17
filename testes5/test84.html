@@ -3728,8 +3728,8 @@ function validateTrainingData() {
         initQuizLogic(phaseData);
     }
 
-    // --- VIDEO (COM REABILITAÇÃO APÓS ACERTO) ---
     // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
+   // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
     function setupVideo() {
         ui.videoWrapper.classList.remove('hidden');
         isVideoTaskComplete = false;
@@ -3737,18 +3737,22 @@ function validateTrainingData() {
         // --- 1. DECISÃO DE MODO (O IF MÁGICO) ---
         let targetText = "";
         let promptHTML = "";
-        let synthLang = "";
+        let synthLang = ""; // Variável para controlar o idioma da fala
 
         if (currentTask.type === 'video_translate') {
             // MODO TREINO (Tarefa 2): Alvo é Português
             targetText = currentTask.correct; 
             promptHTML = `<span style="color:#aaa; font-size:0.9em;">Traduza o que ouvir para <b>Português</b>:</span>`;
-            synthLang = 'pt-BR'; // Sintetizador deve falar PT ao clicar na palavra
+            
+            // 🔥 MUDANÇA: null para NÃO ler as palavras em PT
+            synthLang = null; 
         } else {
             // MODO VÍDEO (Padrão): Alvo é Inglês
             targetText = currentTask.question || currentTask.en || ""; 
             promptHTML = `<span style="color:#aaa; font-size:0.9em;">Organize o que ouvir em <b>Inglês</b>:</span>`;
-            synthLang = 'en-US'; // Sintetizador fala EN
+            
+            // Mantém leitura em EN para ajudar na pronúncia
+            synthLang = 'en-US'; 
         }
 
         // Atualiza o texto de instrução na tela
@@ -3792,7 +3796,7 @@ function validateTrainingData() {
             setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
         }
 
-        // --- 3. GERA PALAVRAS EMBARALHADAS (Baseado no targetText definido no IF acima) ---
+        // --- 3. GERA PALAVRAS EMBARALHADAS ---
         let words = targetText
             .replace(/\r?\n|\r/g, ' ')
             .trim()
@@ -3812,8 +3816,10 @@ function validateTrainingData() {
                 if (this.classList.contains('disabled-word')) return;
                 if (document.body.classList.contains('audio-playing')) return;
                 
-                // Fala a palavra no idioma correto (PT ou EN)
-                speakText(word, synthLang); 
+                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
+                if (synthLang) {
+                    speakText(word, synthLang); 
+                }
             
                 const clickedClean = normalizeWord(word);
                 const expectedClean = currentTargetSentence[expectedWordIndex];
@@ -3844,7 +3850,7 @@ function validateTrainingData() {
             bank.appendChild(span);
         });
 
-        // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR (Igual ao anterior) ---
+        // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR ---
         let videoStarted = false;
         const checkVideoInterval = setInterval(() => {
             if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
@@ -3860,7 +3866,7 @@ function validateTrainingData() {
             }
         }, 100);
         
-        // Timeout de segurança para liberar caso o vídeo falhe/demore
+        // Timeout de segurança
         setTimeout(() => {
             if (!videoStarted) {
                 clearInterval(checkVideoInterval);
