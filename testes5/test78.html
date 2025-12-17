@@ -107,7 +107,7 @@ novo modo speak
             overflow-y: auto;
             overflow-x: hidden; /* Evita scroll horizontal */
             padding: 20px;
-            padding-bottom: 80px; /* Space for mobile footer */
+            padding-bottom: 100px; /* Space for mobile footer */
             height: 100%; /* Garante altura para o scroll funcionar */
         }
 
@@ -2588,57 +2588,101 @@ function validateTrainingData() {
     // o user tera que falar a mesma frase 2x
     // --- SETUP DA TAREFA DE FALA ---
 
-  // --- FUNÇÕES MANUAIS ---
   // --- FUNÇÕES DE CONTROLE MANUAL ---
 
   // ETAPA 1: STT (Texto)
   function startManualSTT() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) { alert("Navegador sem suporte a voz."); return; }
-  
-      globalRecognition = new SR();
-      globalRecognition.lang = "en-US";
-      globalRecognition.continuous = true; // IMPEDE que pare no silêncio
-      globalRecognition.interimResults = true; // Mostra resultados enquanto fala
-  
-      // Reinicia o texto
-      tempRecognizedText = "";
-  
-      // ... dentro de startManualSTT ...
-
-      globalRecognition.onresult = (event) => {
-          // --- CORREÇÃO MOBILE (ANTI-ECO) ---
-          // No Android, não devemos usar += com base no resultIndex, pois ele duplica.
-          // A solução é reconstruir as variáveis tempRecognizedText e interimTranscript
-          // do zero a cada evento, iterando sobre todo o array event.results.
-
-          let interimTranscript = '';
-          let finalTranscript = ''; 
-
-          // Começamos o loop do 0 (zero), ignorando o event.resultIndex
-          for (let i = 0; i < event.results.length; ++i) {
-              if (event.results[i].isFinal) {
-                  // Se já é final, adiciona ao texto consolidado
-                  finalTranscript += event.results[i][0].transcript + " ";
-              } else {
-                  // Se ainda é provisório, guarda no interim
-                  interimTranscript += event.results[i][0].transcript;
-              }
-          }
-          
-          // Atualiza a variável global APENAS com o texto final limpo reconstruído
-          tempRecognizedText = finalTranscript;
-          
-          // Log para debug (pode remover depois)
-          console.log("👂 Ouvindo:", tempRecognizedText + interimTranscript);
-      };
-  
-      globalRecognition.onerror = (event) => {
-          console.error("Erro STT:", event.error);
-      };
-  
-      globalRecognition.start();
-  }
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { alert("Navegador sem suporte a voz."); return; }
+    
+        globalRecognition = new SR();
+        globalRecognition.lang = "en-US";
+        // globalRecognition.continuous = true; // REMOVIDO
+        globalRecognition.interimResults = true;
+    
+        // Reinicia o texto
+        tempRecognizedText = "";
+    
+        globalRecognition.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = ''; 
+    
+            for (let i = 0; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + " ";
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            tempRecognizedText = finalTranscript;
+            console.log("👂 Ouvindo:", tempRecognizedText + interimTranscript);
+        };
+    
+        // 🔥 NOVO: Detecta quando parou automaticamente
+        globalRecognition.onend = () => {
+            console.log('🎤 [STT] Parou automaticamente');
+            isRecognizingText = false;
+            
+            // Atualiza a UI automaticamente
+            const iconEl = document.getElementById('visual-mic-icon');
+            const statusEl = document.getElementById('status-text');
+            const btnEl = document.getElementById('speech-action-btn');
+            
+            if (!iconEl || !statusEl || !btnEl) return; // Proteção
+            
+            // Validação: Se não capturou nada
+            if (!tempRecognizedText || tempRecognizedText.trim() === "") {
+                iconEl.style.color = "var(--error-color)";
+                iconEl.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                
+                statusEl.innerHTML = `
+                    <span style="color: var(--error-color);">Sem áudio: tente novamente.</span>
+                `;
+                
+                speechStage = 1; // Volta para etapa 1
+                btnEl.innerHTML = 'Gravar';
+                btnEl.style.backgroundColor = "var(--accent-color)";
+                btnEl.style.color = "#000";
+                return;
+            }
+            
+            // Sucesso: Avança para Etapa 2
+            speechStage = 2;
+            
+            iconEl.style.color = "var(--success-color)";
+            iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+            
+            statusEl.innerHTML = `
+                <span style="color: var(--success-color);">Texto identificado!</span>
+            `;
+            
+            btnEl.disabled = true;
+            btnEl.style.opacity = 0.5;
+            btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+            
+            // Delay para pedir gravação de áudio
+            setTimeout(() => {
+                iconEl.style.color = "#fff";
+                iconEl.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                
+                statusEl.innerHTML = `Grave mais uma vez.`;
+                
+                btnEl.disabled = false;
+                btnEl.style.opacity = 1;
+                btnEl.style.backgroundColor = "var(--accent-color)";
+                btnEl.style.color = "#000";
+                btnEl.innerHTML = '<i class="fa-solid fa-circle"></i> Gravar Áudio';
+            }, 1200);
+        };
+    
+        globalRecognition.onerror = (event) => {
+            console.error("Erro STT:", event.error);
+            isRecognizingText = false; // 🔥 Importante: reseta o estado
+        };
+    
+        globalRecognition.start();
+    }
   
     function stopManualSTT() {
       return new Promise((resolve) => {
@@ -2734,7 +2778,7 @@ function validateTrainingData() {
             <div style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0;"> <div id="visual-mic-icon" style="
                     font-size: 3rem; 
                     color: var(--text-secondary); 
-                    margin: 5px 0 5px 0; 
+                    margin: 30px 0 10px 0; 
                     transition: all 0.3s ease;
                     display: flex;
                     align-items: center;
@@ -2768,6 +2812,7 @@ function validateTrainingData() {
                     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
                     transition: transform 0.2s, opacity 0.2s;
                     display: flex; align-items: center; gap: 10px;
+                    margin-top: 40px;
                 ">
                     <i class="fa-solid fa-spinner fa-spin"></i> Aguarde...
                 </button>
@@ -2953,60 +2998,13 @@ function validateTrainingData() {
                     btnEl.style.color = "#fff";
 
                 } else {
-                    // --- PARAR (Estado: Transição) ---
-                    console.log("⏹️ Parando STT...");
-                    await stopManualSTT();
-                    
-                    // 🔥 VALIDAÇÃO DA ETAPA 1 (TEXTO)
-                    // Se não capturou nada ou é string vazia
-                    if (!tempRecognizedText || tempRecognizedText.trim() === "") {
-                        iconEl.style.color = "var(--error-color)";
-                        iconEl.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
-                        
-                        statusEl.innerHTML = `
-                            <span style="color: var(--error-color);">Sem áudio: tente novamente.</span>
-                        `;
-                        
-                        // Reseta para permitir nova tentativa (MANTÉM ETAPA 1)
-                        isRecognizingText = false;  // ✅ Garante que está false
-                        speechStage = 1;            // 🔥 ADICIONE ESTA LINHA - Volta para etapa 1
-                        btnEl.innerHTML = 'Gravar';
-                        btnEl.style.backgroundColor = "var(--accent-color)";
-                        btnEl.style.color = "#000";
-                        return; // ⛔ PARA AQUI
+                    // --- PARAR MANUALMENTE (se o usuário clicar antes do auto-stop) ---
+                    console.log("⏹️ Parando STT manualmente...");
+                    if (globalRecognition) {
+                        globalRecognition.stop(); // Dispara o onend automaticamente
                     }
-                  
-                    isRecognizingText = false;
-                    speechStage = 2; // Avança para gravação de áudio real
-
-                    // UI: Sucesso Temporário / Instrução
-                    iconEl.style.color = "var(--success-color)";
-                    iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
-                    
-                    // Aqui mantive duas linhas pois é uma instrução de transição, 
-                    // mas se quiser remover a segunda aqui também, basta apagar o <br> e o texto seguinte.
-                    statusEl.innerHTML = `
-                        <span style="color: var(--success-color);">Texto identificado!</span>
-                    `;
-
-                    // Desabilita botão brevemente para transição
-                    btnEl.disabled = true;
-                    btnEl.style.opacity = 0.5;
-                    btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
-
-                    // Delay automático para pedir gravação de áudio
-                    setTimeout(() => {
-                        iconEl.style.color = "#fff";
-                        iconEl.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-                        
-                        statusEl.innerHTML = `Grave mais uma vez.`;
-                        
-                        btnEl.disabled = false;
-                        btnEl.style.opacity = 1;
-                        btnEl.style.backgroundColor = "var(--accent-color)"; // Volta a cor de ação
-                        btnEl.style.color = "#000";
-                        btnEl.innerHTML = '<i class="fa-solid fa-circle"></i> Gravar Áudio';
-                    }, 1200);
+                    // Não precisa fazer mais nada aqui, o onend cuida do resto
+                    return;
                 }
             }
             
