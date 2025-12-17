@@ -1,17 +1,32 @@
-<!-- 79
-Resumo das Mudanças
-MapsTo: Agora verifica MENU_VIEWS. 
-Se você clicar em Home, Duels, You ou Path, 
-ele zera o array para ['home'], ['duels'], etc. 
-Isso resolve o crescimento infinito lateral.
+<!-- 80
+Resumo do Fluxo Mobile Perfeito
+Entrar no App: Define #home no histórico.
 
-start...: Removemos o push. Agora entrar no 
-treino é apenas uma mudança visual de estado ("Overlay"), 
-não uma navegação de página.
+Clicar em Preview: MapsTo dá pushState('#lesson-1').
 
-goBack: Agora verifica primeiro se existe um currentTaskMode. 
-Se sim, ele apenas "fecha" o treino e restaura a view que 
-estava por baixo (Preview), mantendo o stack intacto.
+Histórico: [Home, Preview]
+
+Clicar em Treinar: startTraining dá pushState('#training').
+
+Histórico: [Home, Preview, Training]
+
+Apertar "Voltar" (Físico):
+
+O navegador remove o último item. Histórico: [Home, Preview].
+
+Dispara popstate.
+
+Nosso listener detecta que currentTaskMode estava ativo, limpa a tela de treino e mostra o Preview (baseado no estado atual).
+
+Clicar no "X" (UI):
+
+A função chama history.back().
+
+O navegador remove o item.
+
+Dispara popstate (mesmo comportamento do passo 4).
+
+Agora seu app se comporta como um nativo: o botão voltar fecha modais (tarefas) antes de fechar telas, e fecha telas antes de sair do app.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -625,7 +640,7 @@ estava por baixo (Preview), mantendo o stack intacto.
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v79
+            PhraseCraft v80
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1706,53 +1721,55 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         
         console.log('✅ [Clean] Limpeza concluída');
     }
-  
+
+    // Função auxiliar para criar um "Checkpoint" no histórico do celular
+    function setTaskHistoryMode(mode) {
+        // Empurra um estado novo. Se o usuário der "Back", cai no popstate event
+        history.pushState({ view: 'training', mode: mode }, '', '#training');
+    }
     // Adicionado parâmetro 'addToHistory' com padrão true
     // Stack é a ÚNICA fonte de verdade
     // history.state NÃO é usado
     // fromBack controla se empilha ou não
     // --- CORREÇÃO DA NAVEGAÇÃO ---
     function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
-        
-        // 1. Se for uma das telas principais (Abas), SEMPRE reseta o stack
+        // --- LÓGICA DO STACK INTERNO (Sua lógica original corrigida) ---
         if (MENU_VIEWS.includes(view)) {
-            navigationStack = [view]; // O stack vira apenas ['home'] ou ['you'], etc.
-            resetStack = true; // Força o comportamento de reset visual se necessário
-        } 
-        // 2. Navegação normal (Drill down, ex: Home -> Preview)
-        else if (!fromBack && currentView !== view) {
-            // Só empilha se NÃO for um reset
+            navigationStack = [view]; 
+            resetStack = true;
+        } else if (!fromBack && currentView !== view) {
             navigationStack.push(view);
         }
     
         currentView = view;
-        // NÃO limpamos o currentTaskMode aqui se estivermos entrando em training
-        // Mas se estiver saindo para uma view normal, limpamos:
-        if (view !== 'training') {
-            currentTaskMode = null; 
-        }
+        if (view !== 'training') currentTaskMode = null;
     
         console.log(`📍 [Nav] Indo para: ${view} | Stack:`, navigationStack);
     
-        // Lógica de UI (Ativa a section correta)
+        // --- ATUALIZAÇÃO VISUAL ---
         ui.views.forEach(v => v.classList.remove('active'));
         const targetView = document.getElementById(`view-${view}`);
         if (targetView) targetView.classList.add('active');
     
-        // Atualiza Footer (Menu inferior)
+        // (Atualiza Footers e Sidebars aqui...)
         ui.footerItems.forEach(item => item.classList.remove('active'));
-        // Lógica simples para ativar o ícone do footer baseado no nome da view
         const activeFooter = Array.from(ui.footerItems).find(i => 
             i.innerText.toLowerCase().includes(view) || 
             (view === 'home' && i.innerText.includes('Home'))
         );
         if (activeFooter) activeFooter.classList.add('active');
-        
-        // Atualiza Sidebar (Desktop)
-        ui.sidebarItems.forEach(item => item.classList.remove('active'));
-        if (MENU_VIEWS.includes(view)) {
-             // Lógica simplificada para sidebar
-             // (Você pode refinar isso pelo index ou ID se preferir)
+    
+        // --- 🔥 MAGIA DO MOBILE: SINCRONIA COM O NAVEGADOR ---
+        if (!fromBack) {
+            // Se for RESET (clicou no menu), substituímos o histórico para não criar fila gigante
+            if (resetStack) {
+                history.replaceState({ view, lessonId }, '', `#${view}`);
+            } 
+            // Se for navegação normal, adicionamos um novo estado
+            else {
+                const hash = lessonId ? `#lesson-${lessonId}` : `#${view}`;
+                history.pushState({ view, lessonId }, '', hash);
+            }
         }
     }
   
@@ -3508,6 +3525,9 @@ function validateTrainingData() {
         // Ajustes visuais
         setLayoutMode('training');
         toggleCloseExit('show'); // Mostra o X
+      
+        // 🔥 Cria o checkpoint para o botão voltar do celular
+        setTaskHistoryMode('speaking');
     
         // ❌ REMOVA ESTAS LINHAS:
         // history.pushState({ view: 'training' }, '', '#training');
@@ -3534,6 +3554,9 @@ function validateTrainingData() {
     
         setLayoutMode('training');
         toggleCloseExit('show');
+      
+        // 🔥 Cria o checkpoint para o botão voltar do celular
+        setTaskHistoryMode('speaking');
     
         // ❌ REMOVA ESTAS LINHAS:
         // history.pushState({ view: 'training' }, '', '#training');
@@ -3559,6 +3582,9 @@ function validateTrainingData() {
     
         setLayoutMode('training');
         toggleCloseExit('show');
+      
+        // 🔥 Cria o checkpoint para o botão voltar do celular
+        setTaskHistoryMode('speaking');
     
         // ❌ SE HOUVER, REMOVA: navigationStack.push('training');
         
@@ -3942,37 +3968,54 @@ function validateTrainingData() {
 
     // --- NAVEGAÇÃO MOBILE (CORRIGIDA PARA RESPEITAR LINKS) ---
     function initMobileNavigation() {
-        
-        // 1. Configura o estado inicial APENAS se não houver hash na URL
+        // Define estado inicial se não houver
         if (!history.state) {
-            // Se a URL estiver vazia ou for apenas a raiz, aí sim definimos Home
-            if (!window.location.hash || window.location.hash === '#') {
-                history.replaceState({ view: 'home' }, '', '#home');
-            } else {
-                // Se JÁ TIVER um hash (ex: #lesson-xyz), não fazemos nada aqui.
-                // Deixamos o checkDeepLink ler o hash original depois.
-                console.log("🚀 [MobileNav] Hash inicial detectado (não sobrescrevendo):", window.location.hash);
-            }
+            history.replaceState({ view: 'home' }, '', '#home');
         }
-
-        // 2. Escuta o evento de "Voltar" do navegador/celular
+    
+        // 🔥 OUVINTE DO BOTÃO VOLTAR DO CELULAR
         window.addEventListener('popstate', (event) => {
             const state = event.state;
-            console.log("⬅️ [PopState] Voltando para:", state);
-
-            if (state) {
-                if (state.view === 'preview' && state.lessonId) {
-                    openPreview(state.lessonId, false); 
-                } 
-                else if (state.view === 'training') {
-                     navigateTo(state.view, false);
+            console.log("📱 [Mobile Back] Estado:", state);
+    
+            // CASO 1: Estava em uma Tarefa (Training/Video)
+            // Se o usuário apertou voltar, o navegador removeu o estado 'training'
+            // Agora precisamos limpar a UI visualmente.
+            if (currentTaskMode) {
+                console.log("🔙 Fechando tarefa via botão físico");
+                currentTaskMode = null;
+                clean(); // Para vídeos/áudios
+                toggleCloseExit('hide');
+                setLayoutMode('full');
+                
+                // O histórico já foi removido pelo navegador (pop), 
+                // então só precisamos restaurar a view que ficou no topo.
+                // Geralmente voltamos para o que está no 'state' atual do evento.
+                if (state && state.view) {
+                    navigateTo(state.view, { fromBack: true, lessonId: state.lessonId });
+                } else {
+                    navigateTo('home', { fromBack: true });
                 }
-                else {
-                    navigateTo(state.view, false); 
+                return;
+            }
+    
+            // CASO 2: Navegação Normal (Entre telas)
+            if (state && state.view) {
+                // Se for preview, garante que temos o ID
+                if (state.view === 'preview' && state.lessonId) {
+                    // Importante: Passamos fromBack: true para não empilhar de novo
+                    // Mas precisamos reabrir a lição (openPreview chama navigateTo internamente, cuidado)
+                    // O ideal aqui é chamar navigateTo direto para trocar a view visualmente
+                    // e recarregar os dados se necessário.
+                    
+                    // Opção segura: Reutilizar a lógica de openPreview mas sem pushState
+                    openPreview(state.lessonId, false); // false = não add to history
+                } else {
+                    navigateTo(state.view, { fromBack: true });
                 }
             } else {
-                // Fallback de segurança
-                navigateTo('home', false);
+                // Fallback
+                navigateTo('home', { fromBack: true });
             }
         });
     }
