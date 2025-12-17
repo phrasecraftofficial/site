@@ -1,5 +1,5 @@
-<!-- 77
-stages & topic added
+<!-- 78
+novo modo speak
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -382,7 +382,7 @@ stages & topic added
         }
         .progress-bar { width: 100%; height: 6px; background-color: #333; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
         .progress-fill { height: 100%; background-color: var(--accent-color); width: 0%; transition: width 0.3s ease; }
-        .main-sentence { font-size: 1.3em; font-weight: bold; margin: 20px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+        .main-sentence { font-size: 1.3em; font-weight: bold; margin: 10px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; }
         .prompt-text { color: var(--text-secondary); margin-bottom: 10px; }
         
         /* Match Styles */
@@ -408,7 +408,7 @@ stages & topic added
         .option-btn.wrong { background-color: var(--error-color); border-color: var(--error-color); }
 
         /* Speech */
-        .mic-btn { width: 70px; height: 70px; border-radius: 50%; background: var(--surface-color); border: 2px solid var(--accent-color); color: var(--accent-color); font-size: 1.8rem; margin: 20px auto; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .mic-btn { width: 70px; height: 70px; border-radius: 50%; background: var(--surface-color); border: 2px solid var(--accent-color); color: var(--accent-color); font-size: 1.8rem; margin: 0 auto; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .mic-btn.listening { background: var(--error-color); border-color: var(--error-color); color: white; animation: pulse 1.5s infinite; }
         
         /* Jumble */
@@ -588,7 +588,7 @@ stages & topic added
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v77
+            PhraseCraft v78
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleTrainingExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1216,6 +1216,13 @@ const projectData = [
     let mediaRecorder = null;
     let audioChunks = [];
     let speakingResults = []; // Nova variável para guardar o histórico da fala
+  
+    let globalRecognition = null;   // Objeto do STT
+    let isRecognizingText = false;  // Controle da Etapa 1
+    
+    let globalMediaRecorder = null; // Objeto do Gravador de Áudio
+    let globalAudioChunks = [];     // Chunks de áudio
+    let isRecordingAudio = false;   // Controle da Etapa 2
 
     // --- VARIÁVEIS GLOBAIS DO YOUTUBE ---
     let ytPlayer = null;
@@ -2575,88 +2582,207 @@ function validateTrainingData() {
     }
 
     // 3. Speech
+  
     // como o microfone do android para navegador não grava e reconhece ao mesmo tempo
     // o user tera que falar a mesma frase 2x
     // --- SETUP DA TAREFA DE FALA ---
+
+  // --- FUNÇÕES MANUAIS ---
+  // --- FUNÇÕES DE CONTROLE MANUAL ---
+
+  // ETAPA 1: STT (Texto)
+  function startManualSTT() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert("Navegador sem suporte a voz."); return; }
+  
+      globalRecognition = new SR();
+      globalRecognition.lang = "en-US";
+      globalRecognition.continuous = true; // IMPEDE que pare no silêncio
+      globalRecognition.interimResults = true; // Mostra resultados enquanto fala
+  
+      // Reinicia o texto
+      tempRecognizedText = "";
+  
+      globalRecognition.onresult = (event) => {
+          // Pega o último resultado (interino ou final) e atualiza a variável
+          let interimTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                  tempRecognizedText += event.results[i][0].transcript + " ";
+              } else {
+                  interimTranscript += event.results[i][0].transcript;
+              }
+          }
+          
+          // Opcional: Mostrar feedback visual do que está sendo entendido em tempo real
+          // ui.speechResult.innerText = tempRecognizedText + interimTranscript;
+          console.log("Ouvindo:", tempRecognizedText + interimTranscript);
+      };
+  
+      globalRecognition.onerror = (event) => {
+          console.error("Erro STT:", event.error);
+      };
+  
+      globalRecognition.start();
+  }
+  
+    function stopManualSTT() {
+      return new Promise((resolve) => {
+          if (!globalRecognition) {
+              resolve();
+              return;
+          }
+  
+          // Garante que vai capturar o resultado final antes de resolver
+          globalRecognition.onend = () => {
+              console.log('🎤 [STT] Parou. Texto capturado:', tempRecognizedText);
+              resolve();
+          };
+  
+          globalRecognition.stop();
+      });
+  }
+  
+  // ETAPA 2: GRAVAÇÃO (Áudio)
+  async function startManualAudio() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      globalMediaRecorder = new MediaRecorder(stream);
+      globalAudioChunks = [];
+  
+      globalMediaRecorder.ondataavailable = e => globalAudioChunks.push(e.data);
+      globalMediaRecorder.start();
+  }
+  
+  async function stopManualAudio() {
+      return new Promise((resolve) => {
+          if (!globalMediaRecorder) return resolve(null);
+  
+          globalMediaRecorder.onstop = async () => {
+              const blob = new Blob(globalAudioChunks, { type: "audio/wav" });
+              globalMediaRecorder.stream.getTracks().forEach(t => t.stop());
+              
+              // 🔥 ANÁLISE DE VOLUME DO ÁUDIO GRAVADO
+              const audioContext = new AudioContext();
+              const arrayBuffer = await blob.arrayBuffer();
+              const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+              
+              // Pega os dados do canal (mono ou primeiro canal)
+              const channelData = audioBuffer.getChannelData(0);
+              
+              // Calcula o volume médio
+              let sum = 0;
+              for (let i = 0; i < channelData.length; i++) {
+                  sum += Math.abs(channelData[i]);
+              }
+              const avgVolume = sum / channelData.length;
+              
+              console.log('🎙️ [Audio] Volume médio:', avgVolume);
+              
+              // Se o volume for muito baixo (silêncio), retorna null
+              if (avgVolume < 0.01) { // Threshold de silêncio
+                  console.log('⚠️ [Audio] Detectado silêncio');
+                  resolve(null);
+              } else {
+                  resolve(blob);
+              }
+          };
+  
+          globalMediaRecorder.stop();
+      });
+  }
+    // Configura a tela de fala com o novo layout
+    // --- 3. SPEECH (LAYOUT APERTADO) ---
+
     function setupSpeaking() {
-        console.log('🎤 [Speaking] Setup iniciado');
+        console.log('🎤 [Speaking] Setup iniciado (Layout Compacto)');
         
         ui.speechWrapper.classList.remove('hidden');
         ui.prompt.innerText = "Grave sua pronúncia:";
         
-        // Reseta para a primeira etapa
-        speechStage = 1;
+        // Reseta estado
+        speechStage = 1; 
         tempRecognizedText = "";
-        
-        // ADICIONADO: Ícone de alto-falante ao lado da frase
+        isRecognizingText = false;
+        isRecordingAudio = false;
+
         ui.display.innerHTML = `
             ${currentTask.question} 
             <i class="fa-solid fa-volume-high" id="replay-speaking-btn" title="Ouvir referência" style="margin-left:10px; cursor:pointer; color:var(--accent-color); font-size: 0.8em;"></i>
         `;
-    
-        // Configura clique do ícone
+        
         document.getElementById('replay-speaking-btn').onclick = (e) => {
             e.stopPropagation();
-            console.log('🔊 [Speaking] Replay manual solicitado');
             speakText(currentTask.question, 'en-US');
         };
-        
-        // Limpa player anterior
-        const oldPlayer = document.getElementById('user-audio-player');
-        if(oldPlayer) oldPlayer.remove();
-        
-        const oldContinue = document.getElementById('btn-continue-speaking');
-        if(oldContinue) oldContinue.remove();
-    
-        ui.micBtn.classList.remove('hidden'); 
-        ui.micBtn.classList.remove('listening');
-        
-        // 🔥 NOVIDADE: Desabilita o microfone durante o áudio
-        ui.micBtn.disabled = true;
-        ui.micBtn.style.opacity = '0.5';
-        ui.micBtn.style.cursor = 'wait';
-        
-        // Mensagem enquanto toca
-        ui.speechResult.innerHTML = `
-            <div style="
-                font-size: 1.2rem; 
-                color: var(--accent-color); 
-                text-align: center; 
-                padding: 15px;
-                animation: fadeIn 0.5s;
-            ">
-                <i class="fa-solid fa-volume-high fa-beat"></i> 
-                Ouça a frase modelo...
+
+        // --- CONSTRUÇÃO DO LAYOUT (CSS AJUSTADO) ---
+        ui.speechWrapper.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0;"> <div id="visual-mic-icon" style="
+                    font-size: 3rem; 
+                    color: var(--text-secondary); 
+                    margin: 5px 0 5px 0; 
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: auto; width: 80px;
+                ">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                </div>
+
+                <div id="status-text" style="
+                    text-align: center; 
+                    color: var(--text-secondary); 
+                    font-size: 1.1rem; 
+                    min-height: 30px; 
+                    margin-bottom: 10px;
+                    display: flex; flex-direction: column; justify-content: center;
+                ">
+                    Preparando áudio...
+                </div>
+
+                <button id="speech-action-btn" onclick="toggleSpeech()" style="
+                    background-color: var(--accent-color);
+                    color: #000;
+                    border: none;
+                    padding: 12px 40px;
+                    font-size: 1.1rem;
+                    border-radius: 50px; 
+                    font-weight: bold;
+                    cursor: wait; 
+                    opacity: 0.5;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                    transition: transform 0.2s, opacity 0.2s;
+                    display: flex; align-items: center; gap: 10px;
+                ">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Aguarde...
+                </button>
+
+                <div id="speech-final-result" style="width: 100%; margin-top: 10px;"></div>
             </div>
-        `; 
-        
-        // 🔥 TOCA O ÁUDIO AUTOMATICAMENTE e libera o microfone quando terminar
-        console.log('🔊 [Speaking] Iniciando áudio automático:', currentTask.question);
+        `;
+
+        // Lógica de Tocar Áudio Modelo Primeiro (Igual ao anterior)
+        const iconEl = document.getElementById('visual-mic-icon');
+        const statusEl = document.getElementById('status-text');
+        const btnEl = document.getElementById('speech-action-btn');
+
+        iconEl.style.color = "var(--accent-color)";
+        iconEl.innerHTML = '<i class="fa-solid fa-ear-listen fa-beat"></i>';
+        statusEl.innerHTML = '<span style="color: var(--accent-color);">Ouça a frase modelo...</span>';
+
         setTimeout(() => {
             speakText(currentTask.question, 'en-US', () => {
-                console.log('✅ [Speaking] Áudio terminado. Liberando microfone.');
+                iconEl.style.color = "var(--text-primary)"; 
+                iconEl.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>'; 
                 
-                // Libera o microfone
-                ui.micBtn.disabled = false;
-                ui.micBtn.style.opacity = '1';
-                ui.micBtn.style.cursor = 'pointer';
+                statusEl.innerHTML = 'Repita a frase.';
                 
-                // Atualiza a mensagem para convidar a falar
-                ui.speechResult.innerHTML = `
-                    <div style="
-                        font-size: 1.2rem; 
-                        font-weight: bold;
-                        color: var(--success-color); 
-                        text-align: center; 
-                        padding: 15px;
-                        animation: fadeIn 0.5s;
-                    ">
-                        <i class="fa-solid fa-microphone"></i> 
-                        Agora é sua vez! Toque para gravar.
-                    </div>
-                `;
+                btnEl.style.opacity = "1";
+                btnEl.style.cursor = "pointer";
+                btnEl.innerHTML = 'Gravar'; 
             });
-        }, 300); // Pequeno delay para garantir que a UI carregou
+        }, 500);
     }
     
     // --- CONTROLE DE GRAVAÇÃO AVANÇADO (LÓGICA NOVA) ---
@@ -2781,188 +2907,262 @@ function validateTrainingData() {
     }
 
     // 3. Função Principal (Orquestrador)
+    // --- ORQUESTRADOR PRINCIPAL ---
     async function toggleSpeech() {
-        if (isListening) return; 
-        isListening = true;
-
-        // Limpa UI anterior se necessário
-        const oldPlayer = document.getElementById('user-audio-player');
-        if(oldPlayer) oldPlayer.remove();
+        const iconEl = document.getElementById('visual-mic-icon');
+        const statusEl = document.getElementById('status-text');
+        const btnEl = document.getElementById('speech-action-btn');
 
         try {
             // ============================================================
-            // ETAPA 1: RECONHECIMENTO DE TEXTO (Para Nota)
+            // ETAPA 1: RECONHECIMENTO DE TEXTO (STT)
             // ============================================================
             if (speechStage === 1) {
-                console.log("🎤 Etapa 1: Reconhecimento de texto...");
                 
-                // Espera o reconhecimento
-                tempRecognizedText = await recognizeSpeechPromise();
-                
-                // Sucesso na Etapa 1 -> Prepara para Etapa 2
-                speechStage = 2;
-                
-                // Visual "Pronto para gravar"
-                ui.speechResult.innerHTML = `
-                    <div style="
-                    /* --- AJUSTE DE CENTRALIZAÇÃO --- */
-                    display: table;        /* Comporta-se como bloco, mas ajusta ao conteúdo */
-                    margin: 20px auto;     /* 'auto' nas laterais centraliza o elemento table */
-                    width: fit-content;    /* Garante compatibilidade moderna */
-            
-                    font-size: 1.3rem; 
-                    font-weight: bold; 
-                    color: var(--accent-color); 
-                    text-align: center; 
+                if (!isRecognizingText) {
+                    // --- INICIAR (Estado: Ouvindo) ---
+                    console.log("🎤 Iniciando STT...");
+                    startManualSTT();
+                    isRecognizingText = true;
+
+                    // UI: Ouvindo
+                    iconEl.style.color = "var(--accent-color)";
+                    iconEl.innerHTML = '<i class="fa-solid fa-wave-square fa-beat"></i>'; // Onda sonora
                     
-                    padding: 10px 15px;
-                    border: 2px solid var(--accent-color);
-                    border-radius: 12px;
-                    background: rgba(187, 134, 252, 0.1);
-                    box-shadow: 0 0 15px rgba(187, 134, 252, 0.2);
-                    animation: pulse 1.5s infinite;
-                ">
-                    <i class="fa-solid fa-microphone"></i> 
-                    Grave mais uma vez...
-                </div>
-                `;
-                
-                // Tira o pulso do botão para indicar que parou de escutar e espera o clique
-                ui.micBtn.classList.remove('listening');
-            } 
-            
-            // ============================================================
-            // ETAPA 2: GRAVAÇÃO DE ÁUDIO (Para Replay)
-            // ============================================================
-            else if (speechStage === 2) {
-                console.log("🎙️ Etapa 2: Gravação de áudio...");
-                
-                // Visual "Gravando"
-                ui.speechResult.innerHTML = `
-                    <div style="
-                    display: table;        /* Comporta-se como bloco, mas ajusta ao conteúdo */
-                    margin: 20px auto;     /* 'auto' nas laterais centraliza o elemento table */
-                    width: fit-content;    /* Garante compatibilidade moderna */
-                    padding: 10px 15px;
-                    border-radius: 12px;
-                    color: var(--error-color); font-weight: bold; animation: pulse 1s infinite;">
-                        <i class="fa-solid fa-circle"></i> Gravando áudio...
-                    </div>
-                `;
+                    // --- ALTERAÇÃO AQUI: Removida a segunda linha ---
+                    statusEl.innerHTML = `
+                        <span style="color: var(--accent-color); font-weight: bold;">Ouvindo você...</span>
+                    `;
 
-                // Grava o áudio
-                const audioBlob = await recordUntilSilencePromise();
+                    btnEl.innerHTML = '<i class="fa-solid fa-stop"></i> Parar';
+                    btnEl.style.backgroundColor = "#333"; // Botão escuro para parar
+                    btnEl.style.color = "#fff";
 
-                // --- FINALIZAÇÃO ---
-                
-                // 1. Mostra a Nota (usa o texto guardado na Etapa 1)
-                processSpeechResult(tempRecognizedText); 
+                } else {
+                    // --- PARAR (Estado: Transição) ---
+                    console.log("⏹️ Parando STT...");
+                    await stopManualSTT();
+                    
+                    // 🔥 VALIDAÇÃO DA ETAPA 1 (TEXTO)
+                    // Se não capturou nada ou é string vazia
+                    if (!tempRecognizedText || tempRecognizedText.trim() === "") {
+                        iconEl.style.color = "var(--error-color)";
+                        iconEl.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                        
+                        statusEl.innerHTML = `
+                            <span style="color: var(--error-color);">Sem áudio: tente novamente.</span>
+                        `;
+                        
+                        // Reseta para permitir nova tentativa (MANTÉM ETAPA 1)
+                        isRecognizingText = false;  // ✅ Garante que está false
+                        speechStage = 1;            // 🔥 ADICIONE ESTA LINHA - Volta para etapa 1
+                        btnEl.innerHTML = 'Gravar';
+                        btnEl.style.backgroundColor = "var(--accent-color)";
+                        btnEl.style.color = "#000";
+                        return; // ⛔ PARA AQUI
+                    }
+                  
+                    isRecognizingText = false;
+                    speechStage = 2; // Avança para gravação de áudio real
 
-                // 2. Cria Player e Botão Continuar
-                const audioUrl = URL.createObjectURL(audioBlob);
-                createAudioPlayer(audioUrl);
+                    // UI: Sucesso Temporário / Instrução
+                    iconEl.style.color = "var(--success-color)";
+                    iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    
+                    // Aqui mantive duas linhas pois é uma instrução de transição, 
+                    // mas se quiser remover a segunda aqui também, basta apagar o <br> e o texto seguinte.
+                    statusEl.innerHTML = `
+                        <span style="color: var(--success-color);">Texto identificado!</span>
+                    `;
 
-                // 3. Reseta para a próxima vez (embora vá mudar de tela logo)
-                ui.micBtn.classList.remove('listening');
-                ui.micBtn.style.transform = "scale(1)";
-                speechStage = 1; // Reseta estado
+                    // Desabilita botão brevemente para transição
+                    btnEl.disabled = true;
+                    btnEl.style.opacity = 0.5;
+                    btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+
+                    // Delay automático para pedir gravação de áudio
+                    setTimeout(() => {
+                        iconEl.style.color = "#fff";
+                        iconEl.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                        
+                        statusEl.innerHTML = `Grave mais uma vez.`;
+                        
+                        btnEl.disabled = false;
+                        btnEl.style.opacity = 1;
+                        btnEl.style.backgroundColor = "var(--accent-color)"; // Volta a cor de ação
+                        btnEl.style.color = "#000";
+                        btnEl.innerHTML = '<i class="fa-solid fa-circle"></i> Gravar Áudio';
+                    }, 1200);
+                }
             }
             
+            // ============================================================
+            // ETAPA 2: GRAVAÇÃO DE ÁUDIO (BLOB)
+            // ============================================================
+            else if (speechStage === 2) {
+                
+                if (!isRecordingAudio) {
+                    // --- INICIAR GRAVAÇÃO ---
+                    console.log("🎙️ Iniciando Gravação Blob...");
+                    await startManualAudio();
+                    isRecordingAudio = true;
+
+                    // UI: Gravando (Vermelho)
+                    iconEl.style.color = "var(--error-color)";
+                    iconEl.innerHTML = '<i class="fa-solid fa-record-vinyl fa-spin" style="--fa-animation-duration: 2s;"></i>';
+                    
+                    statusEl.innerHTML = `
+                        <span style="color: var(--error-color); font-weight: bold;">Gravando...</span>
+                    `;
+
+                    btnEl.innerHTML = '<i class="fa-solid fa-square"></i> Finalizar';
+                    btnEl.style.backgroundColor = "var(--error-color)";
+                    btnEl.style.color = "#fff";
+
+                } else {
+                    // --- FINALIZAR TUDO ---
+                    console.log("⏹️ Finalizando Blob...");
+                    const audioBlob = await stopManualAudio();
+                    isRecordingAudio = false;
+                    
+                    // 🔥 VALIDAÇÃO DA ETAPA 2 (ÁUDIO)
+                    if (!audioBlob) { // null = silêncio detectado
+                        iconEl.style.color = "var(--error-color)";
+                        iconEl.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                        
+                        statusEl.innerHTML = `
+                            <span style="color: var(--error-color);">Nenhum áudio detectado.</span><br>
+                            Fale mais alto e grave novamente.
+                        `;
+                    
+                        // Reseta botão para gravar de novo (Mantém Etapa 2)
+                        btnEl.innerHTML = 'Gravar Novamente';
+                        btnEl.style.backgroundColor = "var(--accent-color)";
+                        btnEl.style.color = "#000";
+                        return; // ⛔ PARA AQUI
+                    }
+
+                    // UI: Processando
+                    btnEl.innerHTML = 'Salvando...';
+                    btnEl.disabled = true;
+
+                    // 1. Processa Texto e Nota
+                    const textoFinal = tempRecognizedText.trim() || "(sem áudio)";
+                    processSpeechResult(textoFinal); 
+
+                    // 2. Cria Player
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    createAudioPlayer(audioUrl);
+                    
+                    // 3. Remove o botão principal (pois o fluxo acabou)
+                    btnEl.style.display = 'none';
+                    
+                    // Oculta o ícone
+                    btnEl.style.display = 'none';
+                    iconEl.style.display = 'none';
+                    statusEl.style.display = 'none';
+
+                }
+            }
+
         } catch (err) {
-            console.error(err);
-            ui.speechResult.innerHTML = `<span style="color:var(--error-color)">Não entendi. Tente novamente.</span>`;
-            ui.micBtn.classList.remove('listening');
-            // Se der erro, mantém no estágio atual para tentar de novo
-        } finally {
-            isListening = false;
+            console.error("Erro Speech:", err);
+            statusEl.innerText = "Erro ao acessar microfone.";
+            btnEl.innerHTML = "Tentar Novamente";
+            isRecognizingText = false;
+            isRecordingAudio = false;
         }
     }
-    
-   // --- CRIA PLAYER E BOTÃO CONTINUAR ---
+        
+    // --- CRIA PLAYER E BOTÃO CONTINUAR (INLINE) ---
     function createAudioPlayer(url) {
-        console.log('🎵 Criando Player e Botão Continuar...');
+        const resultContainer = document.getElementById('speech-final-result');
+
+        // Cria container para player e botão
+        const playerDiv = document.createElement('div');
+        playerDiv.style.animation = 'fadeIn 0.5s';
         
-        // 1. Remove botão antigo se houver
-        const oldBtn = document.getElementById('btn-continue-speaking');
-        if (oldBtn) oldBtn.remove();
-    
-        // 2. Cria o container do Player
-        const playerContainer = document.createElement('div');
-        playerContainer.id = 'user-audio-player';
-        playerContainer.style.marginTop = '20px';
-        playerContainer.style.animation = 'fadeIn 0.5s';
-        playerContainer.innerHTML = `
-            <audio controls src="${url}" style="width: 100%; max-width: 300px;" autoplay></audio>
+        playerDiv.innerHTML = `
+            <audio controls autoplay src="${url}" style="width: 50%; height: 40px; margin-bottom: 20px; border-radius: 20px;"></audio>
+            
+            <button onclick="nextTask()" class="check-btn" style="
+                width: 50%; 
+                background-color: var(--accent-color); 
+                color: var(--bg-color);
+            ">
+                Continuar <i class="fa-solid fa-chevron-right"></i>
+            </button>
         `;
-        ui.speechWrapper.appendChild(playerContainer);
-    
-        // 3. AGORA SIM: Cria o botão Continuar
-        const btnContinue = document.createElement('button');
-        btnContinue.id = 'btn-continue-speaking';
-        btnContinue.className = 'check-btn'; 
-        btnContinue.style.marginTop = '15px';
-        btnContinue.style.width = '100%'; // Fica bonito no mobile
-        btnContinue.style.maxWidth = '300px';
-        btnContinue.style.animation = 'fadeIn 0.5s'; 
-        btnContinue.innerHTML = "Continuar <i class='fa-solid fa-chevron-right'></i>";
+
+        resultContainer.appendChild(playerDiv);
         
-        btnContinue.onclick = () => {
-            nextTask();
-        };
-        
-        ui.speechWrapper.appendChild(btnContinue);
-        
-        // Rola a tela para baixo para garantir que o usuário veja o botão
-        btnContinue.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        // Scroll para ver o resultado
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
+    // --- PROCESSAMENTO DO RESULTADO (NOTA) ---
     function processSpeechResult(text) {
-        // Calcula a nota
+        const resultContainer = document.getElementById('speech-final-result');
+        const statusEl = document.getElementById('status-text');
+        
+        // Limpa o texto de status superior para não duplicar informação
+        statusEl.innerHTML = '';
+        statusEl.style.minHeight = '0'; // Remove altura reservada
+
+        // Calcula Nota
         const similarity = avaliarPronuncia(currentTask.correct, text);
         
-        let feedbackHTML = "";
         let color = "";
         let emoji = "";
-    
-        if (similarity >= 70) {
+        let msg = "";
+
+        if (similarity >= 90) {
             color = "var(--success-color)";
-            emoji = "✅";
-            feedbackHTML = `
-                <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0; animation: fadeIn 0.5s;">
-                    ${similarity.toFixed(0)}%
-                </div>
-                <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
-                    ${emoji} Ótima pronúncia!
-                </div>
-                <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
-                    Entendi: "${text}"
-                </div>
-            `;
+            emoji = "🤩";
+            msg = "Excelente!";
             score++; ui.scoreDisplay.innerText = score;
+        } else if (similarity >= 75) {
+            color = "#dbff28"; // Amarelo/Laranja
+            emoji = "😉";
+            msg = "Por pouco!";
+        } else if (similarity >= 50) {
+            color = "#ffca28"; // Amarelo/Laranja
+            emoji = "🙂";
+            msg = "Bom esforço!";
         } else {
-            // Lógica para nota média ou baixa...
-            color = similarity >= 50 ? "orange" : "var(--error-color)";
-            emoji = similarity >= 50 ? "⚠️" : "❌";
-            const msg = similarity >= 50 ? "Quase lá!" : "Precisa melhorar";
-            
-            feedbackHTML = `
-                <div style="font-size: 2.5rem; font-weight: bold; color: ${color}; margin: 10px 0; animation: fadeIn 0.5s;">
+            color = "var(--error-color)";
+            emoji = "🤔";
+            msg = "Vamos tentar de novo?";
+        }
+
+        // Renderiza Resultado
+        resultContainer.innerHTML = `
+            <div style="animation: fadeInUp 0.5s ease;">
+                <div style="font-size: 1.2rem; font-weight: bold; color: ${color}; line-height: 1;">
                     ${similarity.toFixed(0)}%
                 </div>
-                <div style="color: ${color}; font-size: 1.1rem; margin-bottom: 10px;">
+                
+                <div style="color: ${color}; font-size: 1.2rem; margin: 5px 0 15px 0; font-weight: bold;">
                     ${emoji} ${msg}
                 </div>
-                <div style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
-                    Entendi: "${text}"
+
+                <div style="background: rgba(255,255,255,0.05);
+                            display: flex;
+                            padding: 10px; 
+                            width: 50%;
+                            border-radius: 8px; 
+                            font-size: 1.3rem; 
+                            text-align: center; 
+                            margin: 0 auto 20px; /* centraliza horizontalmente e mantém margin-bottom */
+                            display: table;">
+                    <div style="color: #888; font-size: 0.8em; margin-bottom: 2px;">Você disse:</div>
+                    <div style="color: #fff; font-style: italic;">"${text}"</div>
                 </div>
-            `;
-        }
-    
-        // Atualiza a DIV de resultado
-        ui.speechResult.style.color = color;
-        ui.speechResult.innerHTML = feedbackHTML;
-    
-        // Salva no histórico
+
+            </div>
+        `;
+
+        // Salva histórico
         if (trainingMode === 'speaking') {
             speakingResults.push({ phrase: currentTask.question, score: similarity, userText: text });
         }
@@ -3175,7 +3375,7 @@ function validateTrainingData() {
             // Monta HTML da lista
             let reportHTML = `
                 <h2 style="color:var(--accent-color); margin-bottom:10px;">Resultado da Pronúncia</h2>
-                <div style="font-size: 3rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
+                <div style="font-size: 1.5rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
                     ${average}%
                 </div>
                 <div style="text-align:left; max-height: 300px; overflow-y:auto; background:var(--surface-color); padding:10px; border-radius:8px; margin-bottom:20px;">
