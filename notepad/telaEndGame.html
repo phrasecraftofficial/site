@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Lição Concluída</title>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --success-color: #4caf50;
+            --accent-color: #81c784;
+            --button-hover: #388e3c;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Container simulando a tela do app */
+        #final-screen {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .check-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .check-btn:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        #final-score {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        /* Animação simples para o troféu */
+        .fa-trophy {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="final-screen">
+        <button class="check-btn" onclick="alert('Indo para frases...')">
+            Frases 
+            <span class="material-symbols-outlined">trending_flat</span> 
+        </button>
+
+        <br>
+
+        <i class="fa-solid fa-trophy" style="font-size: 3.5rem; color: var(--success-color);"></i>
+        
+        <h2 style="color: var(--success-color); margin: 20px 0; font-size: 2rem;">Lição Concluída!</h2>
+        
+        <p style="font-size: 1.3em; margin: 20px 0; color: #bbb;">
+            Acertos: <span id="final-score">22</span>/25
+        </p>
+    </div>
+
+</body>
+</html>
