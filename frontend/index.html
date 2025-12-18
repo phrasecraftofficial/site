@@ -1,5 +1,6 @@
-<!-- 86
-viewport ajustado
+<!-- 87
+RESOLVIDO:
+O setLayoutMode tem que saber quando o app esta no desktop ou no mobile, pois quando troco de tela no desktop ele aplica o layout do mobile.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -640,7 +641,7 @@ viewport ajustado
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v86
+            PhraseCraft v87
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -952,10 +953,13 @@ viewport ajustado
                 </div>
 
                 <div id="final-screen" class="hidden" style="text-align: center; padding-top: 40px;">
+                    <button class="check-btn" onclick="openPreview(currentLesson.id)">
+                        Frases <span class="material-symbols-outlined">
+                        trending_flat
+                        </span> </button>
                     <i class="fa-solid fa-trophy" style="font-size: 2.5rem; color: var(--success-color);"></i>
                     <h2 style="color: var(--success-color); margin: 20px 0;">Lição Concluída!</h2>
                     <p style="font-size: 1.3em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
-                    <button class="check-btn" onclick="openPreview(currentLesson.id)">Frases > </button>
                 </div>
             </section>
 
@@ -1753,10 +1757,15 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     // fromBack controla se empilha ou não
     // --- CORREÇÃO DA NAVEGAÇÃO ---
     function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
-        // --- LÓGICA DO STACK INTERNO (Sua lógica original corrigida) ---
+        // --- Lógica de stack mantida como já está ---
+        // Dentro do navigateTo, onde você trata MENU_VIEWS:
         if (MENU_VIEWS.includes(view)) {
-            navigationStack = [view]; 
-            resetStack = true;
+            const sidebar = document.querySelector('.app-sidebar');
+            const footer = document.querySelector('.app-footer');
+            
+            // Limpa TUDO que o JS injetou para deixar o CSS mandar
+            if(sidebar) sidebar.style.display = '';
+            if(footer) footer.style.display = '';
         } else if (!fromBack && currentView !== view) {
             navigationStack.push(view);
         }
@@ -1766,71 +1775,79 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     
         console.log(`📍 [Nav] Indo para: ${view} | Stack:`, navigationStack);
     
-        // --- ATUALIZAÇÃO VISUAL ---
+        // --- ATUALIZAÇÃO VISUAL BÁSICA ---
         ui.views.forEach(v => v.classList.remove('active'));
         const targetView = document.getElementById(`view-${view}`);
         if (targetView) targetView.classList.add('active');
     
-        // (Atualiza Footers e Sidebars aqui...)
         ui.footerItems.forEach(item => item.classList.remove('active'));
-        const activeFooter = Array.from(ui.footerItems).find(i => 
-            i.innerText.toLowerCase().includes(view) || 
+        const activeFooter = Array.from(ui.footerItems).find(i =>
+            i.innerText.toLowerCase().includes(view) ||
             (view === 'home' && i.innerText.includes('Home'))
         );
         if (activeFooter) activeFooter.classList.add('active');
     
-        // --- 🔥 MAGIA DO MOBILE: SINCRONIA COM O NAVEGADOR ---
+        // --- LAYOUT: Só configuramos explicitamente para views especiais ---
+        if (view === 'preview') {
+            setLayoutMode('full');
+        } else if (view === 'training' && !currentTaskMode) {
+            setLayoutMode('training');
+        } else if (MENU_VIEWS.includes(view)) {
+            // Para home/you/duels/path, RESETA tudo para o CSS nativo controlar
+            const header = document.querySelector('.app-header');
+            const footer = document.querySelector('.app-footer');
+            const sidebar = document.querySelector('.app-sidebar');
+            
+            // Garante header visível
+            header.style.display = 'flex';
+            document.querySelector('.app-body').style.marginTop = 'var(--header-height)';
+            
+            // CRÍTICO: Remove inline styles do footer e sidebar
+            // para que as media queries do CSS voltem a funcionar
+            footer.style.display = '';
+            sidebar.style.display = '';
+        }
+            
+        // --- Histórico do navegador ---
         if (!fromBack) {
-            // Se for RESET (clicou no menu), substituímos o histórico para não criar fila gigante
             if (resetStack) {
                 history.replaceState({ view, lessonId }, '', `#${view}`);
-            } 
-            // Se for navegação normal, adicionamos um novo estado
-            else {
+            } else {
                 const hash = lessonId ? `#lesson-${lessonId}` : `#${view}`;
                 history.pushState({ view, lessonId }, '', hash);
             }
         }
     }
-  
+    
     function goBack() {
-      // 1. Prioridade: Se estiver em MODO TAREFA, apenas encerra a tarefa
-      if (currentTaskMode) {
-          console.log('🔙 [Back] Encerrando modo tarefa:', currentTaskMode);
-          clean(); // Para vídeos e áudios
-          
-          // Volta visualmente para o Preview
-          // Como não empilhamos 'training', o stack atual ainda deve ser algo como ['home', 'preview']
-          // Então basta recarregar a view que está no topo do stack
-          const lastView = navigationStack[navigationStack.length - 1];
-          
-          // Se por acaso o stack estiver vazio ou errado, fallback para preview ou home
-          if (lastView) {
-              navigateTo(lastView, { fromBack: true });
-          } else {
-               navigateTo('home');
-          }
-          
-          currentTaskMode = null; // Limpa o modo
-          toggleCloseExit('hide'); // Esconde o X
-          setLayoutMode('full'); // Volta layout normal
-          return; // Pára por aqui, não faz pop no stack
-      }
-  
-      // 2. Navegação Padrão (Histórico)
-      if (navigationStack.length > 1) {
-          navigationStack.pop(); // Remove tela atual
-          const previousView = navigationStack[navigationStack.length - 1];
-          
-          console.log('🔙 [Back] Voltando para:', previousView, '| Stack:', navigationStack);
-          
-          // fromBack=true impede que navigateTo empilhe novamente
-          navigateTo(previousView, { fromBack: true });
-      } else {
-          console.log('🏠 [Nav] Na raiz - Stack já está no mínimo:', navigationStack);
-          // Opcional: Confirmar saída do app ou não fazer nada
-      }
-  }
+        // 1. Se estiver em MODO TAREFA, apenas encerra a tarefa
+        if (currentTaskMode) {
+            console.log('🔙 [Back] Encerrando modo tarefa:', currentTaskMode);
+            clean(); // Para vídeos e áudios
+    
+            currentTaskMode = null;
+            toggleCloseExit('hide');
+    
+            // Volta para a view anterior na pilha
+            const lastView = navigationStack[navigationStack.length - 1];
+            if (lastView) {
+                navigateTo(lastView, { fromBack: true });
+            } else {
+                navigateTo('home', { fromBack: true });
+            }
+            return;
+        }
+    
+        // 2. Navegação padrão
+        if (navigationStack.length > 1) {
+            navigationStack.pop();
+            const previousView = navigationStack[navigationStack.length - 1];
+            console.log('🔙 [Back] Voltando para:', previousView, '| Stack:', navigationStack);
+            navigateTo(previousView, { fromBack: true });
+        } else {
+            console.log('🏠 [Nav] Na raiz - Stack já está no mínimo:', navigationStack);
+        }
+    }
 
   // --- CONTROLE CENTRALIZADO DO BOTÃO X ---
   function toggleCloseExit(action) {
@@ -1850,62 +1867,53 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
 
 // --- GERENCIAMENTO CENTRALIZADO DE LAYOUT (CORRIGIDO) ---
 function setLayoutMode(mode) {
-        console.log('Layout Mudando para modo', mode);
-        
-        const modes = {
-            full: { hideHeader: false, hideFooter: false, hideSidebar: false, contentPadding: '20px' },
-            preview: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
-            training: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
-            immersive: { hideHeader: true, hideFooter: true, hideSidebar: true, contentPadding: '0px' }
-        };
-        
-        const config = modes[mode] || modes.full;
-        
-        // 1. Header/App Body (sem mudanças)
-        const header = document.querySelector('.app-header');
-        const appBody = document.querySelector('.app-body');
-        if (config.hideHeader) {
-            header.style.display = 'none';
-            appBody.style.marginTop = '0';
-        } else {
-            header.style.display = 'flex';
-            appBody.style.marginTop = 'var(--header-height)';
-        }
-        
-        // 2. Footer
-        const footer = document.querySelector('.app-footer');
-        if (config.hideFooter) {
-            footer.style.display = 'none';
-        } else {
-            footer.style.display = 'flex';
-        }
-        
-        // 3. Sidebar
-        const sidebar = document.querySelector('.app-sidebar');
-        if (config.hideSidebar) {
-            sidebar.style.display = 'none';
-        } else {
-            sidebar.style.display = ''; // Reset CSS
-        }
-        
-        // 4. Main Content - CORREÇÃO VITAL
-        const mainContent = document.querySelector('.main-content');
-        mainContent.style.padding = config.contentPadding;
-        
-        // CRÍTICO: Remove manipulação arbitrária de padding-bottom
-        mainContent.style.paddingBottom = ''; // Reset
-        
-        // SCROLL RECOVERY - FORÇA RECUPERAÇÃO DO SCROLL
-        if (mode === 'full' || mode === 'preview') {
-            setTimeout(() => {
-                mainContent.scrollTop = 0;
-                document.documentElement.scrollTop = 0;
-                window.scrollTo(0, 0);
-            }, 100);
-        }
-        
-        console.log('Layout Modo', mode, 'aplicado. Padding:', config.contentPadding);
+    const isMobile = window.innerWidth <= 768; // Detecta se é mobile
+    console.log(`Layout Mudando para modo ${mode} | Mobile: ${isMobile}`);
+    
+    const modes = {
+        full: { hideHeader: false, hideFooter: false, hideSidebar: false, contentPadding: '20px' },
+        preview: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
+        training: { hideHeader: false, hideFooter: true, hideSidebar: true, contentPadding: '20px' },
+        immersive: { hideHeader: true, hideFooter: true, hideSidebar: true, contentPadding: '0px' }
+    };
+    
+    const config = modes[mode] || modes.full;
+    
+    const header = document.querySelector('.app-header');
+    const footer = document.querySelector('.app-footer');
+    const sidebar = document.querySelector('.app-sidebar');
+    const appBody = document.querySelector('.app-body');
+    const mainContent = document.querySelector('.main-content');
+
+    // 1. Header
+    header.style.display = config.hideHeader ? 'none' : 'flex';
+    appBody.style.marginTop = config.hideHeader ? '0' : 'var(--header-height)';
+    
+    // 2. Footer (Mobile) vs Sidebar (Desktop)
+    if (isMobile) {
+        // No Mobile: Controlamos o Footer. A Sidebar geralmente já está oculta via CSS.
+        footer.style.display = config.hideFooter ? 'none' : 'flex';
+        if (sidebar) sidebar.style.display = 'none'; 
+    } else {
+        // No Desktop: O Footer normalmente não existe ou é fixo. Controlamos a Sidebar.
+        // Se o modo pedir para esconder (ex: training), escondemos a sidebar.
+        // Caso contrário, usamos '' para deixar o CSS original (display: flex/block) assumir.
+        sidebar.style.display = config.hideSidebar ? 'none' : ''; 
+        footer.style.display = 'none'; // Desktop raramente usa footer de abas
     }
+    
+    // 3. Main Content
+    mainContent.style.padding = config.contentPadding;
+    mainContent.style.paddingBottom = ''; // Reset
+    
+    // Scroll Recovery
+    if (mode === 'full' || mode === 'preview') {
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+            mainContent.scrollTop = 0;
+        }, 100);
+    }
+}
   
     // PREVENÇÃO GERAL DE VIEWPORT SHIFT
     function fixViewportShift() {
@@ -3602,56 +3610,80 @@ function validateTrainingData() {
         
         // --- RELATÓRIO DE SPEAKING ---
         if (trainingMode === 'speaking') {
-            // Calcula Média
+            // Calcula média
             const totalScore = speakingResults.reduce((acc, curr) => acc + curr.score, 0);
-            const average = speakingResults.length > 0 ? (totalScore / speakingResults.length).toFixed(0) : 0;
-
+            const average = speakingResults.length > 0
+                ? (totalScore / speakingResults.length).toFixed(0)
+                : 0;
+    
             // Monta HTML da lista
             let reportHTML = `
-                <h2 style="font-size: 1.5rem; color:var(--accent-color); margin-bottom:10px;">Resultado da Pronúncia</h2>
-                <div style="font-size: 1.5rem; font-weight:bold; color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'}; margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; color:var(--accent-color); margin-bottom:10px;">
+                    Resultado da Pronúncia
+                </h2>
+                <div style="
+                    font-size: 1.5rem;
+                    font-weight:bold;
+                    color:${average >= 70 ? 'var(--success-color)' : 'var(--error-color)'};
+                    margin-bottom: 20px;">
                     ${average}%
                 </div>
-                <div style="text-align:left; max-height: 300px; overflow-y:auto; background:var(--surface-color); padding:10px; border-radius:8px; margin-bottom:20px;">
+                <div style="
+                    text-align:left;
+                    max-height: 300px;
+                    overflow-y:auto;
+                    background:var(--surface-color);
+                    padding:10px;
+                    border-radius:8px;
+                    margin-bottom:20px;">
             `;
-
+    
             speakingResults.forEach((res, idx) => {
                 const color = res.score >= 70 ? 'var(--success-color)' : 'var(--error-color)';
                 reportHTML += `
                     <div style="border-bottom:1px solid #333; padding: 10px 0;">
                         <div style="font-size:0.9em; color:#888;">Frase ${idx + 1}</div>
                         <div style="color: white; margin-bottom:5px;">${res.phrase}</div>
-                        <div style="display:flex; justify-content:space-between; font-size:0.9em;">
-                            <span style="color:${color}; font-weight:bold;">Nota: ${res.score.toFixed(0)}%</span>
-                            <span style="font-style:italic; color:#666;">"${res.userText}"</span>
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            font-size:0.9em;">
+                            <span style="color:${color}; font-weight:bold;">
+                                Nota: ${res.score.toFixed(0)}%
+                            </span>
+                            <span style="font-style:italic; color:#666;">
+                                "${res.userText}"
+                            </span>
                         </div>
                     </div>
                 `;
             });
-
+    
             reportHTML += `</div>`;
             
             // Injeta no final screen (substituindo o padrão de Acertos)
-            // Mantemos o título "Lição Concluída" que já está no HTML estático, mudamos o miolo
-            const scoreArea = document.getElementById('final-score').parentElement; // O <p>Acertos...</p>
+            const scoreArea = document.getElementById('final-score').parentElement;
             scoreArea.innerHTML = reportHTML;
-
+    
         } else {
             // --- RELATÓRIO PADRÃO (TREINO COMPLETO, VÍDEO, ETC) ---
             
             // Pegamos o tamanho real da fila de tarefas atual
             const totalTasks = quizQueue.length;
-
-            // Atualizamos o HTML usando essa variável dinâmica
+    
             const scoreElement = document.getElementById('final-score');
             
-            // Se o elemento existir, atualizamos o pai dele
             if (scoreElement) {
-                scoreElement.parentElement.innerHTML = `Acertos: <span id="final-score">${score}</span>/${totalTasks}`;
+                scoreElement.parentElement.innerHTML =
+                    `Acertos: <span id="final-score">${score}</span>/${totalTasks}`;
             }
         }
-
-        setLayoutMode('full');
+    
+        // IMPORTANTE:
+        // Não chamamos mais setLayoutMode('full') aqui.
+        // A saída do modo de tarefa deve ser feita por goBack() ou
+        // pela navegação que você definiu (navigateTo + layout por view),
+        // para que preview/home apliquem o layout correto.
     }
     
     function nextTask() {
@@ -3738,31 +3770,23 @@ function validateTrainingData() {
     function startTrainingMode() {
         if (!validateTrainingData()) return;
     
-        currentTaskMode = 'training'; // Define o modo
-        trainingMode = 'full';
+        currentTaskMode = 'training';
     
         console.log('[Task] training iniciado');
     
-        setLayoutMode('training');
+        setLayoutMode('training');  // aqui é correto
         toggleCloseExit('show');
-      
-        // 🔥 Cria o checkpoint para o botão voltar do celular
-        setTaskHistoryMode('speaking');
+        setTaskHistoryMode('training');
     
-        // ❌ SE HOUVER, REMOVA: navigationStack.push('training');
-        
-        // Apenas troca a tela visualmente
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
-        
-        // Inicia lógica (se necessário chamar initQuizLogic aqui também)
+    
         const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
         const phaseData = currentLesson.data.slice(start, end);
         initQuizLogic(phaseData);
     }
 
     // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
-   // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
     function setupVideo() {
         ui.videoWrapper.classList.remove('hidden');
         isVideoTaskComplete = false;
@@ -4109,20 +4133,13 @@ function validateTrainingData() {
         window.addEventListener('popstate', (event) => {
             const state = event.state;
             console.log("📱 [Mobile Back] Estado:", state);
-    
-            // CASO 1: Estava em uma Tarefa (Training/Video)
-            // Se o usuário apertou voltar, o navegador removeu o estado 'training'
-            // Agora precisamos limpar a UI visualmente.
+        
             if (currentTaskMode) {
                 console.log("🔙 Fechando tarefa via botão físico");
                 currentTaskMode = null;
-                clean(); // Para vídeos/áudios
+                clean();
                 toggleCloseExit('hide');
-                setLayoutMode('full');
-                
-                // O histórico já foi removido pelo navegador (pop), 
-                // então só precisamos restaurar a view que ficou no topo.
-                // Geralmente voltamos para o que está no 'state' atual do evento.
+        
                 if (state && state.view) {
                     navigateTo(state.view, { fromBack: true, lessonId: state.lessonId });
                 } else {
@@ -4130,23 +4147,14 @@ function validateTrainingData() {
                 }
                 return;
             }
-    
-            // CASO 2: Navegação Normal (Entre telas)
+        
             if (state && state.view) {
-                // Se for preview, garante que temos o ID
                 if (state.view === 'preview' && state.lessonId) {
-                    // Importante: Passamos fromBack: true para não empilhar de novo
-                    // Mas precisamos reabrir a lição (openPreview chama navigateTo internamente, cuidado)
-                    // O ideal aqui é chamar navigateTo direto para trocar a view visualmente
-                    // e recarregar os dados se necessário.
-                    
-                    // Opção segura: Reutilizar a lógica de openPreview mas sem pushState
-                    openPreview(state.lessonId, false); // false = não add to history
+                    openPreview(state.lessonId, false); // openPreview já chama navigateTo('preview')
                 } else {
                     navigateTo(state.view, { fromBack: true });
                 }
             } else {
-                // Fallback
                 navigateTo('home', { fromBack: true });
             }
         });
