@@ -953,10 +953,13 @@ O setLayoutMode tem que saber quando o app esta no desktop ou no mobile, pois qu
                 </div>
 
                 <div id="final-screen" class="hidden" style="text-align: center; padding-top: 40px;">
+                    <button class="check-btn" onclick="openPreview(currentLesson.id)">
+                        Frases <span class="material-symbols-outlined">
+                        trending_flat
+                        </span> </button>
                     <i class="fa-solid fa-trophy" style="font-size: 2.5rem; color: var(--success-color);"></i>
                     <h2 style="color: var(--success-color); margin: 20px 0;">Lição Concluída!</h2>
                     <p style="font-size: 1.3em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
-                    <button class="check-btn" onclick="openPreview(currentLesson.id)">Frases > </button>
                 </div>
             </section>
 
