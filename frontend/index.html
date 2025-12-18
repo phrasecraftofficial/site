@@ -1,8 +1,5 @@
-<!-- 85
-Resumo Visual da Correção
-Antes: O navegador rolava o "papel de parede" (body) inteiro. O header e footer eram adesivos colados no vidro da frente.
-
-Depois: O "papel de parede" (body) é fixo. O header e footer são molduras sólidas. Apenas o "papel do meio" (.main-content) se move dentro da moldura.
+<!-- 86
+viewport ajustado
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -31,69 +28,50 @@ Depois: O "papel de parede" (body) é fixo. O header e footer são molduras sól
             --header-height: 60px;
             --footer-height: 60px; /* Mobile footer */
             --sidebar-width: 240px; /* Desktop sidebar */
+
+            /* variáveis de viewport estático */
+            --app-vh: 100svh;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* SUBSTITUA ESTE TRECHO COMPLETO */
-        body {
-            font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            min-height: 100vh; /* MUDANÇA: min-height ao invés de height */
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden; /* MUDANÇA: só horizontal */
-            /* REMOVE: overflow: hidden e height: 100vh */
-        }
-                
-        /* ADICIONE no início do <style>, após as variáveis CSS */
-        /* --- CORREÇÃO DE LAYOUT PULANDO --- */
-        /* No seu CSS */
-        html, body {
-            height: 100%;       /* Garante altura total */
-            margin: 0;
-            padding: 0;
-            overflow: hidden;   /* 🔥 O SEGREDO: Remove o scroll da janela inteira */
-        }
-        
-        body {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* A área de conteúdo agora tem rolagem interna independente */
-        .main-content {
-            flex: 1; /* Ocupa todo o espaço disponível na largura */
-            
-            /* 🔥 AQUI NASCE A BARRA DE ROLAGEM CORRETA */
-            overflow-y: auto; 
-            overflow-x: hidden;
-        
-            /* Ajuste fino para o conteúdo não colar nas bordas */
-            padding: 20px 10px;
-        
-            /* Garante que o scroll vá até o final, mas deixe espaço para o footer não tapar o texto */
-            padding-bottom: calc(var(--footer-height) + 50px); 
-            
-            /* Propriedades de UX para scroll suave */
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* Ajuste do container principal */
-        .app-body {
-            /* Ocupa toda a altura menos o header */
-            height: calc(100vh - var(--header-height)); 
-            
-            /* Empurra para baixo para não ficar atrás do header fixo */
-            margin-top: var(--header-height); 
-            
-            /* Prepara para conter o scroll interno */
-            display: flex;
-            overflow: hidden; 
-        }
-      
+    /* SUBSTITUA ESTE TRECHO COMPLETO */
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;              /* apenas de fallback */
+        overflow: hidden;          /* sem scroll na janela */
+    }
+    
+    body {
+        font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        min-height: var(--app-vh); /* em vez de 100vh */
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+    }
+    
+    /* Container principal abaixo do header */
+    .app-body {
+        height: calc(var(--app-vh) - var(--header-height)); /* em vez de 100vh */
+        margin-top: var(--header-height);
+        display: flex;
+        overflow: hidden;
+    }
+    
+    /* Área scrollável interna */
+    .main-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px 10px;
+        padding-bottom: calc(var(--footer-height) + 10px);
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+          
         /* --- LAYOUT SHELL --- */
         /* HEADER */
         .app-header {
@@ -224,7 +202,7 @@ Depois: O "papel de parede" (body) é fixo. O header e footer são molduras sól
 
         /* PREVIEW DA LIÇÃO */
         .preview-header { margin-bottom: 20px; text-align: center; }
-        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 80px; }
+        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 60px; }
         .preview-item {
             padding: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -662,7 +640,7 @@ Depois: O "papel de parede" (body) é fixo. O header e footer são molduras sól
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v85
+            PhraseCraft v86
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1002,7 +980,23 @@ Depois: O "papel de parede" (body) é fixo. O header e footer são molduras sól
             <span>Path</span>
         </div>
     </footer>
+<script>
+  // Fixa a altura da aplicação em 100svh para evitar "pulo" ao esconder/mostrar a URL bar
+  function lockViewportHeight() {
+      const isSupported = CSS && CSS.supports && CSS.supports('height: 100svh');
+      const appVh = isSupported ? '100svh' : '100vh';
+      document.documentElement.style.setProperty('--app-vh', appVh);
+      document.body.style.height = appVh;
+      document.body.style.minHeight = appVh;
+      document.body.style.overflowX = 'hidden';
+  }
 
+  lockViewportHeight();
+
+  window.addEventListener('orientationchange', () => {
+      setTimeout(lockViewportHeight, 300);
+  });
+</script>
 <script>
 const projectData = [
   {
