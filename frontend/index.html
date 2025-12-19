@@ -952,15 +952,33 @@ O setLayoutMode tem que saber quando o app esta no desktop ou no mobile, pois qu
                     </div>
                 </div>
 
-                <div id="final-screen" class="hidden" style="text-align: center; padding-top: 40px;">
-                    <button class="check-btn" onclick="openPreview(currentLesson.id)">
-                        Frases <span class="material-symbols-outlined">
+                <div id="final-screen" class="hidden" style="
+                    display: flex;              /* Ativa o Flexbox */
+                    flex-direction: column;     /* Empilha os itens verticalmente */
+                    align-items: center;        /* Centraliza tudo horizontalmente */
+                    padding-top: 40px;
+                ">
+                    <button class="check-btn" onclick="openPreview(currentLesson.id)" style="
+                        display: inline-flex;   /* Permite alinhar itens dentro do botão */
+                        align-items: center;    /* Alinha verticalmente Texto e Seta */
+                        justify-content: center; 
+                        gap: 8px;               /* Espaço entre a palavra e a seta */
+                        margin-bottom: 25px;    /* Empurra o troféu para baixo */
+                    ">
+                        Frases 
+                        <span class="material-symbols-outlined">
                         trending_flat
-                        </span> </button>
-                    <i class="fa-solid fa-trophy" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                        </span> 
+                    </button>
+
+                    <i class="fa-solid fa-trophy" style="font-size: 3rem; color: var(--success-color);"></i>
+                    
                     <h2 style="color: var(--success-color); margin: 20px 0;">Lição Concluída!</h2>
+                    
                     <p style="font-size: 1.3em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
                 </div>
+
+
             </section>
 
         </main>
