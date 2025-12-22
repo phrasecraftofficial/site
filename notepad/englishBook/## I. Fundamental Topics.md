@@ -5,7 +5,7 @@
 
 [2. Articles and Determiners (A, An, The, Zero Article)](#Articles-and-Determiners-A,-An,-The,-Zero-Article)  
 
-[2. Articles and Determiners (A, An, The, Zero Article)](#Articles-A)  
+[2. Articles and Determiners (A, An, The, Zero Article)](#1-Articles-A)  
 
 
 
@@ -43,5 +43,5 @@ Are they prepared for the race?
 They are not afraid.  
 
 ### 2. Articles and Determiners (A, An, The, Zero Article)
-### Articles,(A
+### 1. Articles: A
 ### 3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
