@@ -1,3 +1,4 @@
+
 <a id="menu"></a> 
 
 ## Fundamental Topics
@@ -16,21 +17,19 @@
 ### Personal Pronouns and Verb To Be
 
 The verb "to be" changes depending on the subject
+
+AM  
 - I = am  
 (I'm)
 
-- You / We / They = are  
-(You're / We're / They're)
-
-- He / She / It = is  
-(He's / She's / It's)
-
-AM  
 I am happy in the morning.  
 Am I ready for school?  
 I am not late.  
 
 ARE  
+- You / We / They = are  
+(You're / We're / They're)
+
 You are my best friend.  
 We are classmates at the park.  
 They are strong runners.  
@@ -44,6 +43,9 @@ Are we early for the match?
 Are they prepared for the race?  
 
 IS  
+- He / She / It = is  
+(He's / She's / It's)
+
 He is a good player. 
 She is very smart.  
 It is a sunny day.  
@@ -60,6 +62,7 @@ Is it too hot outside?
 <a id="articles-and-determiners"></a> 
 ### Articles and Determiners: A, An, The, Zero Article
 
+<br>
 1. Indefinite Articles (A / An)
 Used for non-specific, singular countable items.
 
@@ -69,6 +72,7 @@ Used for non-specific, singular countable items.
 
 "Is there a bank near here?"
 
+<br>
 2. Definite Article (The)
 Used when the specific identity of the noun is known to the reader/listener.
 
@@ -78,32 +82,39 @@ Used when the specific identity of the noun is known to the reader/listener.
 
 "Look at the moon; it’s so bright tonight!"
 
+<br>
 3. Zero Article (No Article)
 Used for general concepts, plurals in general, and specific proper nouns.
 
-"Creativity is essential for artists." (Abstract concept).
+- "Creativity is essential for artists." (Abstract concept).
 
-"Children usually like playing outside." (Plural nouns in general).
+- "Children usually like playing outside." (Plural nouns in general).
 
-"I’m going to visit Tokyo next summer." (City name).
+- "I’m going to visit Tokyo next summer." (City name).
 
+<br>
 4. Examples of the Exceptions
-Articles often change based on specific categories like geography or daily routines.
+Articles often change based on specific categories like geography or daily routines.  
 
-Geographic Exceptions
-"We are going to hike in the Alps." (Use The for mountain ranges).
+<br>
+Geographic Exceptions  
 
-"She lives in the United Kingdom." (Use The for countries with "Kingdom," "Republic," or "States").
+- "We are going to hike in the Alps." (Use The for mountain ranges).
 
-"Mount Everest is the tallest peak." (No article for individual mountains).
+- "She lives in the United Kingdom." (Use The for countries with "Kingdom," "Republic," or "States").
 
+- "Mount Everest is the tallest peak." (No article for individual mountains).
+
+<br>
 Routine Places (Purpose vs. Location)
-"He is in prison." (No article: he is a prisoner).
 
-"She went to the prison to visit him." (Use The: she is just visiting the building).
+- "He is in prison." (No article: he is a prisoner).
 
-"I go to school every morning." (No article: as a student).
+- "She went to the prison to visit him." (Use The: she is just visiting the building).
 
+- "I go to school every morning." (No article: as a student).
+
+<br>
 Sounds vs. Letters
 "It was an honorable gesture." (Silent 'H', so we use 'An').
 
@@ -111,9 +122,9 @@ Sounds vs. Letters
 
 "It will take an hour." (Silent 'H').
 
-[Menu](#menu)
+[Menu](#menu)  
 <a id="quantifiers"></a> 
-### Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
+### Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)  
 
 1. QUANTIFIERS FOR COUNTABLE NOUNS ONLY
 These are used with things you can count (dogs, apples, people).
