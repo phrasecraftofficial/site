@@ -1,20 +1,21 @@
 
-## I. Fundamental Topics
+## Fundamental Topics
 
-[1. Personal Pronouns (Subject) and the Auxiliary Verb To Be](#1-personal-pronouns-subject-and-the-auxiliary-verb-to-be)  
+### <ins>[Personal Pronouns and Verb To Be](#personal-pronouns-and-verb-to-be)</ins>  
 
-[2. Articles and Determiners: A, An, The, Zero Article](#Articles-and-Determiners-A-An-The-Zero-Article)  
-### 2. Articles and Determiners: A, An, The, Zero Article
-[### Articles and Determiners](#articles-and-determiners)
+### <ins>[Articles and Determiners: A, An, The, Zero Article](#articles-and-determiners)</ins>
 
-
-[2. Articles and Determiners (A, An, The, Zero Article)](#1-Articles----A)  
+### <ins>[Quantifiers: Some, Any, Much, Many, Few, Little, A lot of](#quantifiers)</ins>
 
 
 
 
-## I. Fundamental Topics
-### 1. Personal Pronouns (Subject) and the Auxiliary Verb To Be
+
+
+## Fundamental Topics
+
+<a id="personal-pronouns-and-verb-to-be"></a> 
+### Personal Pronouns and Verb To Be
 ### Story: A Day at the Park
 
 I am happy in the morning.  
@@ -49,5 +50,5 @@ They are not afraid.
 ### Articles and Determiners: A, An, The, Zero Article
 
 
-### 1. Articles: () A
-### 3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
+<a id="quantifiers"></a> 
+### Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
