@@ -5,6 +5,7 @@
 
 [2. Articles and Determiners: A, An, The, Zero Article](#Articles-and-Determiners-A-An-The-Zero-Article)  
 ### 2. Articles and Determiners: A, An, The, Zero Article
+[Jump to custom location](#articles-and-aeterminers)
 
 
 [2. Articles and Determiners (A, An, The, Zero Article)](#1-Articles----A)  
@@ -44,6 +45,9 @@ They are strong runners.
 Are they prepared for the race?  
 They are not afraid.  
 
+<a id="articles-and-determiners"></a> 
 ### Articles and Determiners: A, An, The, Zero Article
+
+
 ### 1. Articles: () A
 ### 3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
