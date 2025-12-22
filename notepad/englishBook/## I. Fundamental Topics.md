@@ -45,5 +45,5 @@ Are they prepared for the race?
 They are not afraid.  
 
 ### Articles and Determiners: A, An, The, Zero Article
-### 1. Articles: A
+### 1. Articles: () A
 ### 3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
