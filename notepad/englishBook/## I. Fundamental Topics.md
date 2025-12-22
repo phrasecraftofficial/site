@@ -3,7 +3,7 @@
 
 [1. Personal Pronouns (Subject) and the Auxiliary Verb To Be](#1-personal-pronouns-subject-and-the-auxiliary-verb-to-be)  
 
-[2. Articles and Determiners (A, An, The, Zero Article)](#Articles-and-Determiners-A-An-The-Zero-Article)  
+[2. Articles and Determiners (A, An, The, Zero Article)](#Articles-and-Determiners-A,-An,-The,-Zero-Article)  
 
 
 
