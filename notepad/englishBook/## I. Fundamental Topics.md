@@ -5,7 +5,7 @@
 
 [2. Articles and Determiners: A, An, The, Zero Article](#Articles-and-Determiners-A-An-The-Zero-Article)  
 ### 2. Articles and Determiners: A, An, The, Zero Article
-[Jump to custom location](#articles-and-determiners)
+[### Articles and Determiners](#articles-and-determiners)
 
 
 [2. Articles and Determiners (A, An, The, Zero Article)](#1-Articles----A)  
