@@ -3,7 +3,7 @@
 
 [1. Personal Pronouns (Subject) and the Auxiliary Verb To Be](#1-personal-pronouns-subject-and-the-auxiliary-verb-to-be)  
 
-[2. Articles and Determiners (A, An, The, Zero Article)](#Articles)  
+[2. Articles and Determiners (A, An, The, Zero Article)](#articles-and-determiners-a-an-the-zero-article)  
 
 
 
@@ -41,6 +41,6 @@ They are strong runners.
 Are they prepared for the race?  
 They are not afraid.  
 
-### Articles,
+### 2. Articles and Determiners (A, An, The, Zero Article)
 
 ### 3. Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
