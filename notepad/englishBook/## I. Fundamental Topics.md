@@ -1,3 +1,4 @@
+<a id="menu"></a> 
 
 ## Fundamental Topics
 
@@ -8,12 +9,9 @@
 ### <ins>[Quantifiers: Some, Any, Much, Many, Few, Little, A lot of](#quantifiers)</ins>
 
 
-
-
-
-
 ## Fundamental Topics
 
+[Menu](#menu)
 <a id="personal-pronouns-and-verb-to-be"></a> 
 ### Personal Pronouns and Verb To Be
 ### Story: A Day at the Park
@@ -46,9 +44,10 @@ They are strong runners.
 Are they prepared for the race?  
 They are not afraid.  
 
+[Menu](#menu)
 <a id="articles-and-determiners"></a> 
 ### Articles and Determiners: A, An, The, Zero Article
 
-
+[Menu](#menu)
 <a id="quantifiers"></a> 
 ### Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)
