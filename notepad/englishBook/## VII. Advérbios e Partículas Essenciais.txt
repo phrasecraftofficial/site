@@ -3,6 +3,7 @@
 28. Advérbios de Frequência (Always, Never, Usually, Often)
 29. Advérbios de Grau e Certeza (Very, Too, So, Perhaps, Certainly)
 30. Partículas e Interjeições Funcionais (Please, Sorry, Well, Kind of)
+31. Direcoes e Localizacao (Giving Directions)
 
 ============================================================
 VII. ADVÉRBIOS E PARTÍCULAS ESSENCIAIS
@@ -60,4 +61,27 @@ Palavras que ajudam na coesão social e no preenchimento de pausas.
   "Sorry" é para se desculpar APÓS um erro.
 - PLEASE: Usado para polidez em pedidos.
 
+============================================================
+
+44. DIREÇÕES E LOCALIZAÇÃO (GIVING DIRECTIONS)
+------------------------------------------------------------
+Para dar direções, usamos o IMPERATIVO (verbos diretos) e preposições.
+
+VERBOS DE MOVIMENTO:
+- Go straight: Vá direto / siga em frente.
+- Turn left / Turn right: Vire à esquerda / direita.
+- Go past: Passe por (um lugar).
+- Cross: Atravesse.
+
+PREPOSIÇÕES DE LOCALIZAÇÃO:
+- Next to: Ao lado de.
+- Opposite / Across from: Do lado oposto a / em frente a.
+- Between: Entre dois lugares.
+- On the corner: Na esquina.
+- Behind: Atrás.
+- In front of: Na frente de (posição física).
+
+Exemplo de diálogo:
+"Go straight for two blocks, turn left at the pharmacy, and the 
+bank will be opposite the park."
 ============================================================
