@@ -6,3 +6,68 @@
 35. Conectores Condicionais (If, Unless, Without, Provided that)
 36. Conectores de Tempo e Sequência (When, Before, After, Then)
 37. Conectores de Comparação (Than, As... As, Like)
+
+============================================================
+VIII. ELEMENTOS DE CONEXÃO (PREPOSIÇÕES E CONECTORES)
+============================================================
+
+31. PREPOSIÇÕES CHAVE (AT, IN, ON)
+------------------------------------------------------------
+Para dominar o uso de In, On e At, que costuma ser o maior desafio, visualize a regra do "Geral (IN) para o Específico (AT)":
+
+- LUGAR:
+  IN: Espaços fechados, cidades, países (In a room, In Brazil).
+  ON: Superfícies, ruas, eletrônicos (On the table, On Main St).
+  AT: Pontos específicos, endereços, locais de serviço (At the door, At school).
+
+- TEMPO:
+  IN: Períodos longos (In 2025, In summer, In the morning).
+  ON: Dias e datas específicas (On Monday, On Christmas Day).
+  AT: Horas exatas e momentos curtos (At 9 PM, At night).
+
+32. CONTRASTE E CONCESSÃO
+------------------------------------------------------------
+- BUT: Mas (conecta frases curtas).
+- HOWEVER: No entanto (mais formal, inicia novas frases).
+- ALTHOUGH / EVEN THOUGH: Embora / Apesar de que.
+  Ex: Although it was cold, we went out. (Embora estivesse frio...)
+
+33. CAUSA E RAZÃO
+------------------------------------------------------------
+- BECAUSE: Porque (explica o motivo).
+- SINCE: Visto que / Já que (também usado para tempo).
+- DUE TO: Devido a (seguido de substantivo).
+  Ex: Due to the rain, the game was canceled.
+
+34. ADIÇÃO
+------------------------------------------------------------
+- AND: E.
+- ALSO / AS WELL: Também.
+- MOREOVER / IN ADDITION: Além disso (usados para escrita formal).
+- AS WELL AS: Bem como.
+
+35. CONDICIONAIS
+------------------------------------------------------------
+- IF: Se (condição básica).
+- UNLESS: A menos que (equivalente a "if not").
+  Ex: Unless you study, you will fail.
+- PROVIDED THAT: Contanto que / Desde que.
+- WITHOUT: Sem.
+
+36. TEMPO E SEQUÊNCIA
+------------------------------------------------------------
+- WHEN: Quando.
+- BEFORE / AFTER: Antes / Depois.
+- THEN: Então / Depois disso.
+- UNTIL: Até.
+- WHILE: Enquanto (ações simultâneas).
+
+37. COMPARAÇÃO
+------------------------------------------------------------
+- THAN: Do que (usado em comparativos).
+  Ex: Bigger THAN. (Maior do que).
+- AS... AS: Tão... quanto (igualdade).
+  Ex: As fast AS. (Tão rápido quanto).
+- LIKE: Como (similaridade).
+  Ex: She sings like an angel.
+============================================================
