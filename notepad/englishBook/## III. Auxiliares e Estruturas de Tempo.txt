@@ -6,3 +6,90 @@
 15. Will (Future)
 16. Have / Has / Had (Tempos Perfeitos)
 17. Tabela de Verbos Irregulares / Particípios
+Aqui está a continuação do seu guia focado em auxiliares e estruturas temporais, formatado para arquivo `.txt` (sem tabelas internas, apenas texto organizado).
+
+```text
+============================================================
+III. AUXILIARES E ESTRUTURAS DE TEMPO
+============================================================
+
+11. PRONOMES OBJETO E VERBO TO BE
+------------------------------------------------------------
+PRONOMES OBJETO: Recebem a ação (geralmente após o verbo).
+Me, You, Him, Her, It, Us, You, Them.
+Ex: She loves HIM. (Ela o ama.)
+
+VERBO TO BE (SER/ESTAR):
+- Presente: I am, You/We/They are, He/She/It is.
+- Passado: I/He/She/It was, You/We/They were.
+
+12. DUMMY SUBJECTS (IT E THERE)
+------------------------------------------------------------
+São sujeitos "vazios" usados quando a frase não tem um agente real.
+
+- IT: Usado para tempo, clima, horas e fatos gerais.
+  Ex: It is raining. (Está chovendo.) / It is 5 o'clock.
+
+- THERE (TO BE): Usado para indicar existência (Haver/Existir).
+  Ex: There is a book here. (Há um livro aqui.)
+  Ex: There were many people. (Havia muitas pessoas.)
+
+13. DO / DOES (SIMPLE PRESENT)
+------------------------------------------------------------
+Auxiliares para perguntas e negativas no presente.
+- DOES: He, She, It.
+- DO: I, You, We, They.
+
+Ex: Does she speak English? (Ela fala inglês?)
+Ex: I do not (don't) like pizza. (Eu não gosto de pizza.)
+
+14. DID (SIMPLE PAST)
+------------------------------------------------------------
+Auxiliar para perguntas e negativas no passado (para todos os pronomes).
+Quando usar DID, o verbo principal volta para o infinitivo.
+
+Ex: Did you go to the party? (Você foi à festa?)
+Ex: They did not (didn't) arrive. (Eles não chegaram.)
+
+15. WILL (FUTURE)
+------------------------------------------------------------
+Auxiliar usado para indicar futuro, decisões rápidas ou previsões.
+
+Ex: I will call you tomorrow. (Eu te ligarei amanhã.)
+Ex: Will it snow? (Vai nevar?)
+
+16. HAVE / HAS / HAD (TEMPOS PERFEITOS)
+------------------------------------------------------------
+Usados como auxiliares para formar o Present Perfect e Past Perfect.
+Sempre acompanhados do verbo no Particípio Passado (3ª coluna).
+
+- HAVE/HAS (Present Perfect): Ação que começou no passado e continua
+  ou tem importância no presente.
+  Ex: I have lived here for years. (Eu moro/tenho morado aqui há anos.)
+
+- HAD (Past Perfect): Ação que aconteceu antes de outra ação no passado.
+  Ex: I had already eaten when he arrived. (Eu já tinha comido quando ele chegou.)
+
+17. VERBOS IRREGULARES / PARTICÍPIOS
+------------------------------------------------------------
+Verbos que não terminam em "-ed" no passado. Devem ser memorizados em 3 formas:
+(Infinitivo - Passado Simples - Particípio Passado)
+
+Exemplos essenciais:
+- Go - Went - Gone
+- Eat - Ate - Eaten
+- See - Saw - Seen
+- Do - Did - Done
+- Be - Was/Were - Been
+- Have - Had - Had
+
+*Nota: O Particípio Passado (3ª forma) é o que você usa com HAVE/HAS/HAD.
+============================================================
+
+```
+
+### Dica Visual para os Tempos Verbais
+
+Para entender a diferença entre o **Simple Past** (ontem, acabado) e o **Present Perfect** (experiência, sem data específica), imagine uma linha do tempo onde o Present Perfect conecta o passado ao agora.
+
+Deseja que eu crie um exemplo prático de diálogo usando todos esses auxiliares (Do, Did, Will e Have) para você ver como eles se misturam na conversa?
