@@ -4,3 +4,53 @@
 40. Future Forms além de “will” (going to, present continuous for future)
 41. Perfect Continuous Tenses
 42. Frases condicionais completas (First, Second, Third Conditional)
+
+============================================================
+IX. TEMPOS VERBAIS AVANÇADOS
+============================================================
+
+38. PRESENT CONTINUOUS / PAST CONTINUOUS
+------------------------------------------------------------
+Focam na duração ou no progresso da ação (Verbo To Be + V-ing).
+
+- Present Continuous: Ações acontecendo agora ou planos futuros.
+  Ex: I am working right now.
+- Past Continuous: Ações que estavam em progresso no passado, 
+  geralmente interrompidas por outra ação (Simple Past).
+  Ex: I was sleeping when the phone rang.
+
+39. PRESENT PERFECT vs. PAST SIMPLE
+------------------------------------------------------------
+- Past Simple: Foco no QUANDO. Ação concluída em tempo definido.
+  Ex: I went to Paris in 2010. (Tempo fechado).
+- Present Perfect: Foco na EXPERIÊNCIA ou RESULTADO. Tempo indefinido.
+  Ex: I have been to Paris. (Não importa quando, eu conheço).
+
+40. FORMAS DE FUTURO (ALÉM DO WILL)
+------------------------------------------------------------
+- GOING TO: Intenções planejadas ou evidências claras.
+  Ex: Look at those clouds! It is going to rain.
+- PRESENT CONTINUOUS FOR FUTURE: Compromissos confirmados (agendados).
+  Ex: I am meeting the doctor at 4 PM.
+
+41. PERFECT CONTINUOUS TENSES
+------------------------------------------------------------
+Enfatizam a continuidade de uma ação até um determinado ponto.
+
+- Present Perfect Continuous: Ação que começou no passado e ainda 
+  está ocorrendo ou acabou de parar com efeito visível.
+  Ex: I have been waiting for two hours! (Ainda estou esperando).
+- Past Perfect Continuous: Ação contínua que ocorria antes de outro 
+  ponto no passado.
+  Ex: She had been crying before she saw him.
+
+42. FRASES CONDICIONAIS (CONDITIONALS)
+------------------------------------------------------------
+- ZERO (Fatos): If you heat ice, it melts. (Presente + Presente)
+- FIRST (Realidade/Provável): If it rains, I will stay home. 
+  (Presente + Will)
+- SECOND (Imaginário/Improvável): If I won the lottery, I would buy a boat. 
+  (Passado + Would)
+- THIRD (Arrependimento/Passado Impossível): If I had studied, I would 
+  have passed. (Past Perfect + Would Have + Particípio)
+============================================================
