@@ -2,3 +2,57 @@
 18. Modal Verbs (Can, Could, May, Might, Must, Should, Shall, Would)
 19. Must vs. Have To (Obrigação e Proibição)
 20. Used To e Ought To (Hábitos Passados e Dever Formal)
+
+============================================================
+IV. MODAIS E OBRIGAÇÕES
+============================================================
+
+18. MODAL VERBS (VERBOS MODAIS)
+------------------------------------------------------------
+Características: Não mudam para "He/She/It", não usam "to" após 
+(exceto Ought to) e não precisam de auxiliares como Do/Does.
+
+- CAN: Habilidade ou permissão informal (Pode/Consegue).
+  Ex: I can swim.
+- COULD: Habilidade no passado ou pedido formal (Podia/Poderia).
+  Ex: Could you help me?
+- MAY: Permissão formal ou possibilidade alta (Pode/Poderá).
+  Ex: May I come in?
+- MIGHT: Possibilidade remota ou incerta (Poderia/Talvez).
+  Ex: It might rain later.
+- MUST: Obrigação forte ou dedução (Deve).
+  Ex: You must stop at the red light.
+- SHOULD: Conselho ou recomendação (Deveria).
+  Ex: You should eat more vegetables.
+- SHALL: Sugestão ou futuro formal (Usado com I e We).
+  Ex: Shall we dance?
+- WOULD: Condicional ou pedidos educados (Iria/Gostaria).
+  Ex: I would like a coffee.
+
+19. MUST vs. HAVE TO (OBRIGAÇÃO E PROIBIÇÃO)
+------------------------------------------------------------
+A diferença está na origem da obrigação e na forma negativa.
+
+- MUST (Obrigação Interna/Pessoal): Você decide que é necessário.
+  Ex: I must study harder.
+- HAVE TO (Obrigação Externa/Regras): Uma lei ou outra pessoa impõe.
+  Ex: I have to wear a uniform at work.
+
+NA NEGATIVA (Diferença Crítica):
+- MUST NOT (Mustn't): PROIBIÇÃO. É proibido fazer.
+  Ex: You mustn't smoke here.
+- DON'T HAVE TO: AUSÊNCIA DE OBRIGAÇÃO. Você faz se quiser.
+  Ex: You don't have to go, but you can.
+
+20. USED TO E OUGHT TO
+------------------------------------------------------------
+- USED TO (Costumava): Refere-se a hábitos ou estados no passado
+  que não acontecem mais no presente.
+  Ex: I used to smoke, but I quit. (Eu costumava fumar...)
+  *Para pergunta: Did you use to...?
+
+- OUGHT TO (Deveria): Tem o mesmo significado de "Should", mas é
+  mais formal e menos comum no dia a dia. Sempre usa "to".
+  Ex: You ought to respect your elders. (Você deveria respeitar...)
+
+============================================================
