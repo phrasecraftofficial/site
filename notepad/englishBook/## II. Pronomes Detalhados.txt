@@ -6,3 +6,115 @@
 8. Interrogativos (Interrogative Pronouns)
 9. Recíprocos (Reciprocal Pronouns)
 10. Pronomes Relativos (Relative Pronouns)
+
+
+Aqui está o conteúdo detalhado sobre os pronomes solicitados, formatado em um bloco de texto para que você possa copiar e salvar facilmente como um arquivo .txt.
+
+```text
+============================================================
+II. PRONOMES DETALHADOS - GUIA DE REFERÊNCIA
+============================================================
+
+4. POSSESSIVOS (ADJECTIVES VS. PRONOUNS)
+----------------------------------------
+DICA PRÁTICA PARA NÃO ERRAR:
+
+Se você vai dizer o NOME do objeto logo depois, use a coluna do "MY":
+- My phone... / Our team... / Their ideas...
+
+Se você NÃO vai dizer o nome do objeto logo depois, use a coluna do "MINE":
+- It's mine. / The win was ours. / The choice is theirs.
+
+*Nota Especial: "HIS" e "ITS" são iguais em ambas as colunas, o que
+facilita a vida. "HER" vira "HERS" e "THEIR" vira "THEIRS".
+============================================================
+
+Diferença crucial: Possessive Adjectives sempre acompanham um substantivo.
+Possessive Pronouns substituem o substantivo para evitar repetição.
+
+- My / Mine (Meu/Minha)
+- Your / Yours (Seu/Sua)
+- His / His (Dele)
+- Her / Hers (Dela)
+- Its / Its (Dele/Dela - coisas/animais)
+- Our / Ours (Nosso)
+- Their / Theirs (Deles/Delas)
+
+Exemplo:
+Adjective: This is *my* car. (Este é meu carro.)
+Pronoun: This car is *mine*. (Este carro é meu.)
+
+5. REFLEXIVOS (REFLEXIVE PRONOUNS)
+----------------------------------
+Usados quando o sujeito e o objeto da ação são a mesma pessoa, ou para ênfase.
+
+- Myself (eu mesmo)
+- Yourself (você mesmo)
+- Himself (ele mesmo)
+- Herself (ela mesma)
+- Itself (ele/ela mesmo - neutro)
+- Ourselves (nós mesmos)
+- Yourselves (vocês mesmos)
+- Themselves (eles mesmos)
+
+Exemplo: I cut *myself* while cooking. (Eu me cortei enquanto cozinhava.)
+
+6. DEMONSTRATIVOS (DEMONSTRATIVE PRONOUNS)
+------------------------------------------
+Indicam a posição de algo em relação ao falante (perto ou longe, singular ou plural).
+
+- This: Este/Esta/Isto (perto, singular)
+- That: Aquele/Aquela/Isso (longe, singular)
+- These: Estes/Estas (perto, plural)
+- Those: Aqueles/Aquelas (longe, plural)
+
+Exemplo: *These* shoes are better than *those*. (Estes sapatos são melhores que aqueles.)
+
+7. INDEFINIDOS (INDEFINITE PRONOUNS)
+------------------------------------
+Referem-se a pessoas ou coisas de forma não específica.
+
+- Some: Something (algo), Someone/Somebody (alguém), Somewhere (algum lugar).
+- Any: Anything, Anyone, Anywhere (usados em perguntas ou negativas).
+- No: Nothing (nada), No one/Nobody (ninguém), Nowhere (lugar nenhum).
+- Every: Everything (tudo), Everyone (todos), Everywhere (todo lugar).
+
+Exemplo: *Something* is wrong here. (Algo está errado aqui.)
+
+8. INTERROGATIVOS (INTERROGATIVE PRONOUNS)
+------------------------------------------
+Usados para formular perguntas.
+
+- Who: Quem (sujeito)
+- Whom: Quem (objeto)
+- Whose: De quem (posse)
+- Which: Qual/Quais (escolha entre opções limitadas)
+- What: O que/Qual (geral)
+
+Exemplo: *Whose* bag is this? (De quem é esta bolsa?)
+
+9. RECÍPROCOS (RECIPROCAL PRONOUNS)
+-----------------------------------
+Usados quando duas ou mais pessoas realizam uma ação mútua.
+
+- Each other: Um ao outro (geralmente para duas pessoas).
+- One another: Uns aos outros (geralmente para três ou mais pessoas).
+
+Exemplo: They love *each other*. (Eles se amam/amam um ao outro.)
+
+10. PRONOMES RELATIVOS (RELATIVE PRONOUNS)
+------------------------------------------
+Introduzem uma oração que descreve um substantivo mencionado anteriormente.
+
+- Who: Refere-se a pessoas (sujeito).
+- Whom: Refere-se a pessoas (objeto).
+- Which: Refere-se a coisas ou animais.
+- That: Refere-se a pessoas, coisas ou animais (mais informal/geral).
+- Whose: Indica posse (cujo/cuja).
+
+Exemplo: The man *who* called you is my boss. (O homem que te ligou é meu chefe.)
+============================================================
+
+```
+
+Gostaria que eu elaborasse exercícios de fixação para algum desses tópicos específicos?
