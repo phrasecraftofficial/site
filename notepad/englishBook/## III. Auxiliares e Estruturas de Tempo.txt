@@ -1,95 +1,206 @@
-## III. Auxiliares e Estruturas de Tempo
-11. Pronomes Pessoais (Objeto) e Auxiliar To Be (Ser/Estar)
-12. Dummy Subjects (It e There)
-13. Do / Does (Simple Present)
-14. Did (Simple Past)
-15. Will (Future)
-16. Have / Has / Had (Tempos Perfeitos)
-17. Tabela de Verbos Irregulares / Particípios
-Aqui está a continuação do seu guia focado em auxiliares e estruturas temporais, formatado para arquivo `.txt` (sem tabelas internas, apenas texto organizado).
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stages and Topics</title>
+</head>
+<body style="background-color: #0a192f; color: #e6f1ff; font-family: sans-serif; margin: 0; padding: 20px; line-height: 1.6;">
 
-```text
-============================================================
-III. AUXILIARES E ESTRUTURAS DE TEMPO
-============================================================
+    <div id="content-root" style="max-width: 900px; margin: 0 auto; background-color: #112240; padding: 40px; border-radius: 8px; border-left: 8px solid #722f37;">
+        </div>
 
-11. PRONOMES OBJETO E VERBO TO BE
-------------------------------------------------------------
-PRONOMES OBJETO: Recebem a ação (geralmente após o verbo).
-Me, You, Him, Her, It, Us, You, Them.
-Ex: She loves HIM. (Ela o ama.)
+    <script>
+        const data = {
+  "stage_title": "Auxiliares e Estruturas de Tempo",
+  "topics": [
+    {
+      "topic_title": "Pronomes Objeto e Verbo To Be",
+      "content": [
+        { "type": "subtitle", "value": "Pronomes Objeto" },
+        { "type": "text", "value": "Eles recebem a ação e geralmente aparecem após o verbo." },
+        { "type": "list", "value": [
+          "Me (me/mim)",
+          "You (te/você)",
+          "Him (o/ele)",
+          "Her (a/ela)",
+          "It (o/a - neutro)",
+          "Us (nos/nós)",
+          "Them (os/as/eles/elas)"
+        ]},
+        { "type": "example", "value": { "en": "She loves HIM.", "pt": "Ela o ama." } },
+        { "type": "subtitle", "value": "Verbo To Be (Ser/Estar)" },
+        { "type": "text", "value": "Presente:" },
+        { "type": "list", "value": ["I am", "You/We/They are", "He/She/It is"] },
+        { "type": "text", "value": "Passado:" },
+        { "type": "list", "value": ["I/He/She/It was", "You/We/They were"] }
+      ],
+      "tasks": [
+        {
+          "id": "t11_1",
+          "tipo": "quiz",
+          "pergunta": "Qual o passado de 'They are'?",
+          "opcoes": [
+            { "texto": "They was", "correta": false },
+            { "texto": "They were", "correta": true }
+          ],
+          "explicacao": "Para You, We e They, usamos 'were' no passado."
+        }
+      ]
+    },
+    {
+      "topic_title": "Sujeitos Vazios (It e There)",
+      "content": [
+        { "type": "subtitle", "value": "Dummy Subjects" },
+        { "type": "text", "value": "São usados quando a frase não tem um agente real." },
+        { "type": "list", "value": [
+          "IT: Usado para tempo, clima, horas e fatos. (Ex: It is raining - Está chovendo)",
+          "THERE BE: Usado para indicar existência (Haver/Existir)."
+        ]},
+        { "type": "example", "value": { "en": "There is a book here.", "pt": "Há um livro aqui." } },
+        { "type": "example", "value": { "en": "There were many people.", "pt": "Havia muitas pessoas." } }
+      ],
+      "tasks": [
+        {
+          "id": "t12_1",
+          "tipo": "fill_the_blank",
+          "pergunta": "_______ is 5 o'clock.",
+          "opcoes": ["There", "It", "Is"],
+          "resposta_correta": "It"
+        }
+      ]
+    },
+    {
+      "topic_title": "Auxiliares (Do, Does, Did, Will)",
+      "content": [
+        { "type": "subtitle", "value": "Presente: Do e Does" },
+        { "type": "text", "value": "Usados para perguntas e negativas no presente." },
+        { "type": "list", "value": ["DO: I, You, We, They", "DOES: He, She, It"] },
+        { "type": "example", "value": { "en": "Does she speak English?", "pt": "Ela fala inglês?" } },
+        { "type": "subtitle", "value": "Passado: Did" },
+        { "type": "text", "value": "Usado para todos os pronomes. O verbo volta ao normal." },
+        { "type": "example", "value": { "en": "Did you go to the party?", "pt": "Você foi à festa?" } },
+        { "type": "subtitle", "value": "Futuro: Will" },
+        { "type": "text", "value": "Usado para previsões e decisões rápidas." },
+        { "type": "example", "value": { "en": "I will call you tomorrow.", "pt": "Eu te ligarei amanhã." } }
+      ],
+      "tasks": [
+        {
+          "id": "t13_1",
+          "tipo": "quiz",
+          "pergunta": "Qual auxiliar usamos para 'He' no presente?",
+          "opcoes": [
+            { "texto": "Do", "correta": false },
+            { "texto": "Does", "correta": true }
+          ]
+        }
+      ]
+    },
+    {
+      "topic_title": "Tempos Perfeitos e Irregulares",
+      "content": [
+        { "type": "subtitle", "value": "Have, Has e Had" },
+        { "type": "text", "value": "Formam o Present Perfect e Past Perfect. Usam a 3ª coluna dos verbos." },
+        { "type": "list", "value": [
+          "HAVE/HAS: Ação que começou no passado e continua agora.",
+          "HAD: Ação que aconteceu antes de outra no passado."
+        ]},
+        { "type": "example", "value": { "en": "I have lived here for years.", "pt": "Eu moro/tenho morado aqui há anos." } },
+        { "type": "subtitle", "value": "Verbos Irregulares (As 3 formas)" },
+        { "type": "text", "value": "Lembre-se: Infinitivo - Passado - Particípio" },
+        { "type": "list", "value": [
+          "Go - Went - Gone",
+          "Eat - Ate - Eaten",
+          "See - Saw - Seen",
+          "Do - Did - Done"
+        ]},
+        { "type": "tip", "title": "Linha do Tempo", "text": "O Present Perfect conecta o passado ao agora. O Simple Past morreu no passado." }
+      ],
+      "tasks": [
+        {
+          "id": "t16_1",
+          "tipo": "connect_pairs",
+          "titulo": "Conecte os verbos (Particípio)",
+          "pares": [
+            { "chave": "Go", "valor": "Gone" },
+            { "chave": "Eat", "valor": "Eaten" },
+            { "chave": "See", "valor": "Seen" },
+            { "chave": "Be", "valor": "Been" }
+          ]
+        }
+      ]
+    }
+  ]
+}
 
-VERBO TO BE (SER/ESTAR):
-- Presente: I am, You/We/They are, He/She/It is.
-- Passado: I/He/She/It was, You/We/They were.
+        function renderPage() {
+            const root = document.getElementById('content-root');
+            let html = `<h1 style="color: #64ffda; border-bottom: 2px solid #722f37; padding-bottom: 10px;">${data.stage_title}</h1>`;
 
-12. DUMMY SUBJECTS (IT E THERE)
-------------------------------------------------------------
-São sujeitos "vazios" usados quando a frase não tem um agente real.
+            data.topics.forEach((topic, index) => {
+                html += `<section style="margin-bottom: 40px;">
+                    <h2 style="color: #f1d3d6; background-color: #1d3354; padding: 10px; border-radius: 4px;">${index + 1}. ${topic.topic_title}</h2>`;
 
-- IT: Usado para tempo, clima, horas e fatos gerais.
-  Ex: It is raining. (Está chovendo.) / It is 5 o'clock.
+                topic.content.forEach(item => {
+                    if (item.type === "subtitle") {
+                        html += `<h3 style="color: #ccd6f6; margin-top: 25px;">${item.value}</h3>`;
+                    } else if (item.type === "text") {
+                        html += `<p>${item.value}</p>`;
+                    } else if (item.type === "list") {
+                        html += `<ul>${item.value.map(li => `<li>${li}</li>`).join('')}</ul>`;
+                    } else if (item.type === "table") {
+                        html += `<table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #0a192f;">
+                            <thead><tr style="border-bottom: 2px solid #722f37; text-align: left;">
+                                ${item.headers.map(h => `<th style="padding: 12px;">${h}</th>`).join('')}
+                            </tr></thead>
+                            <tbody>
+                                ${item.rows.map(row => `<tr style="border-bottom: 1px solid #1d3354;">
+                                    ${row.map(cell => `<td style="padding: 10px;">${cell}</td>`).join('')}
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>`;
+                    } else if (item.type === "example") {
+                        html += `<p style="font-style: italic; background-color: #0a192f; padding: 10px; border-left: 4px solid #64ffda; margin-bottom: 10px;">
+                            <strong>EN:</strong> ${item.value.en} | <strong>PT:</strong> ${item.value.pt}
+                        </p>`;
+                    } else if (item.type === "tip") {
+                        html += `<div style="background-color: #722f3733; border: 1px solid #722f37; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                            <strong style="color: #f1d3d6;">💡 ${item.title}:</strong> ${item.text}
+                        </div>`;
+                    }
+                });
 
-- THERE (TO BE): Usado para indicar existência (Haver/Existir).
-  Ex: There is a book here. (Há um livro aqui.)
-  Ex: There were many people. (Havia muitas pessoas.)
+                // Renderização de Tasks (Quiz, Fill, Connect)
+                topic.tasks.forEach(task => {
+                    html += `<div style="margin-top: 20px; padding: 15px; border: 1px dashed #64ffda; border-radius: 4px;">`;
+                    if (task.tipo === "quiz") {
+                        html += `<p><strong>Questão:</strong> ${task.pergunta}</p>`;
+                        task.opcoes.forEach(opt => {
+                            html += `<label style="display: block; margin-bottom: 5px;">
+                                <input type="radio" name="${task.id}"> ${opt.texto} ${opt.correta ? '<span style="color: #64ffda; font-size: 0.8em; margin-left: 10px;">(Correta)</span>' : ''}
+                            </label>`;
+                        });
+                        html += `<p style="font-size: 0.9em; color: #8892b0; margin-top: 10px;"><em>Explicação: ${task.explicacao}</em></p>`;
+                    } else if (task.tipo === "fill_the_blank") {
+                        html += `<p><strong>Preencha a lacuna:</strong> ${task.pergunta}</p>`;
+                        html += `<p style="color: #64ffda;">Resposta correta: ${task.resposta_correta}</p>`;
+                    } else if (task.tipo === "connect_pairs") {
+                        html += `<p><strong>${task.titulo}:</strong></p><ul style="list-style: none; padding: 0;">`;
+                        task.pares.forEach(p => {
+                            html += `<li>🔗 ${p.chave} &rarr; ${p.valor}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                });
 
-13. DO / DOES (SIMPLE PRESENT)
-------------------------------------------------------------
-Auxiliares para perguntas e negativas no presente.
-- DOES: He, She, It.
-- DO: I, You, We, They.
+                html += `</section>`;
+            });
 
-Ex: Does she speak English? (Ela fala inglês?)
-Ex: I do not (don't) like pizza. (Eu não gosto de pizza.)
+            root.innerHTML = html;
+        }
 
-14. DID (SIMPLE PAST)
-------------------------------------------------------------
-Auxiliar para perguntas e negativas no passado (para todos os pronomes).
-Quando usar DID, o verbo principal volta para o infinitivo.
-
-Ex: Did you go to the party? (Você foi à festa?)
-Ex: They did not (didn't) arrive. (Eles não chegaram.)
-
-15. WILL (FUTURE)
-------------------------------------------------------------
-Auxiliar usado para indicar futuro, decisões rápidas ou previsões.
-
-Ex: I will call you tomorrow. (Eu te ligarei amanhã.)
-Ex: Will it snow? (Vai nevar?)
-
-16. HAVE / HAS / HAD (TEMPOS PERFEITOS)
-------------------------------------------------------------
-Usados como auxiliares para formar o Present Perfect e Past Perfect.
-Sempre acompanhados do verbo no Particípio Passado (3ª coluna).
-
-- HAVE/HAS (Present Perfect): Ação que começou no passado e continua
-  ou tem importância no presente.
-  Ex: I have lived here for years. (Eu moro/tenho morado aqui há anos.)
-
-- HAD (Past Perfect): Ação que aconteceu antes de outra ação no passado.
-  Ex: I had already eaten when he arrived. (Eu já tinha comido quando ele chegou.)
-
-17. VERBOS IRREGULARES / PARTICÍPIOS
-------------------------------------------------------------
-Verbos que não terminam em "-ed" no passado. Devem ser memorizados em 3 formas:
-(Infinitivo - Passado Simples - Particípio Passado)
-
-Exemplos essenciais:
-- Go - Went - Gone
-- Eat - Ate - Eaten
-- See - Saw - Seen
-- Do - Did - Done
-- Be - Was/Were - Been
-- Have - Had - Had
-
-*Nota: O Particípio Passado (3ª forma) é o que você usa com HAVE/HAS/HAD.
-============================================================
-
-```
-
-### Dica Visual para os Tempos Verbais
-
-Para entender a diferença entre o **Simple Past** (ontem, acabado) e o **Present Perfect** (experiência, sem data específica), imagine uma linha do tempo onde o Present Perfect conecta o passado ao agora.
-
-Deseja que eu crie um exemplo prático de diálogo usando todos esses auxiliares (Do, Did, Will e Have) para você ver como eles se misturam na conversa?
+        window.onload = renderPage;
+    </script>
+</body>
+</html>
