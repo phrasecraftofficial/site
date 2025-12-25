@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stages and Topics</title>
+</head>
+<body style="background-color: #0a192f; color: #e6f1ff; font-family: sans-serif; margin: 0; padding: 20px; line-height: 1.6;">
+
+    <div id="content-root" style="max-width: 900px; margin: 0 auto; background-color: #112240; padding: 40px; border-radius: 8px; border-left: 8px solid #722f37;">
+        </div>
+
+    <script>
+        const data = {
+  "stage_title": "Consolidação: Simple Past e Subjuntivo",
+  "topics": [
+    {
+      "topic_title": "Verbos Regulares e Estruturas do Passado",
+      "content": [
+        { "type": "subtitle", "value": "Ações Concluídas" },
+        { "type": "text", "value": "O Passado Simples foca em ações que começaram e TERMINARAM no passado." },
+        { "type": "subtitle", "value": "Regra Geral (Verbos Regulares)" },
+        { "type": "text", "value": "Adiciona-se '-ed' ao final do verbo para todas as pessoas, seguindo estas variações:" },
+        { "type": "list", "value": [
+          "Work -> Worked (Regra geral)",
+          "Live -> Lived (Terminado em 'e', apenas 'd')",
+          "Study -> Studied (Consoante + Y: troca por 'ied')",
+          "Play -> Played (Vogal + Y: mantém o 'y' e põe 'ed')"
+        ]},
+        { "type": "subtitle", "value": "Estruturas de Frase" },
+        { "type": "list", "value": [
+          "AFIRMATIVA: Sujeito + Verbo no Passado (ed ou irregular). Ex: I worked yesterday.",
+          "NEGATIVA: Sujeito + DID NOT (didn't) + Verbo na forma BASE. Ex: I didn't work.",
+          "INTERROGATIVA: DID + Sujeito + Verbo na forma BASE. Ex: Did you work?"
+        ]},
+        { "type": "tip", "title": "Atenção", "text": "Quando usamos o auxiliar DID, o verbo principal volta para o infinitivo (forma base) porque o passado já está marcado no auxiliar." }
+      ],
+      "tasks": [
+        {
+          "id": "t_past_1",
+          "tipo": "quiz",
+          "pergunta": "Qual a forma negativa correta de 'She studied'?",
+          "opcoes": [
+            { "texto": "She didn't studied", "correta": false },
+            { "texto": "She didn't study", "correta": true }
+          ],
+          "explicacao": "Na negativa, usamos o auxiliar 'didn't' e o verbo volta à sua forma base (study)."
+        },
+        {
+          "id": "t_past_2",
+          "tipo": "fill_the_blank",
+          "pergunta": "Did you _______ (watch) the movie last night?",
+          "opcoes": ["watch", "watched", "watching"],
+          "resposta_correta": "watch"
+        }
+      ]
+    },
+    {
+      "topic_title": "Pronúncia do -ED",
+      "content": [
+        { "type": "subtitle", "value": "Os 3 Sons do -ED" },
+        { "type": "text", "value": "O '-ed' final não tem sempre o mesmo som. Ele se adapta ao final do verbo:" },
+        { "type": "list", "value": [
+          "/t/: Após sons surdos (Ex: Helped, Watched, Fixed).",
+          "/d/: Após sons sonoros (Ex: Played, Cleaned, Loved).",
+          "/id/: Apenas após sons de T ou D (Ex: Wanted, Needed)."
+        ]},
+        { "type": "tip", "title": "Erro Comum", "text": "Não pronuncie o 'e' como se fosse uma sílaba forte (como em português). Na maioria das vezes, o 'e' é mudo. 'Worked' soa quase como 'workt'." }
+      ],
+      "tasks": [
+        {
+          "id": "t_pron_1",
+          "tipo": "quiz",
+          "pergunta": "Em qual destas palavras o '-ed' tem som de '/id/' (uma sílaba extra)?",
+          "opcoes": [
+            { "texto": "Visited", "correta": true },
+            { "texto": "Cooked", "correta": false },
+            { "texto": "Called", "correta": false }
+          ],
+          "explicacao": "Somente palavras terminadas em T ou D (como Visit) ganham a pronúncia /id/."
+        }
+      ]
+    },
+    {
+      "topic_title": "O Subjuntivo: If I Were",
+      "content": [
+        { "type": "subtitle", "value": "Situações Hipotéticas" },
+        { "type": "text", "value": "Usamos 'WERE' para todas as pessoas em situações irreais ou imaginárias (Subjuntivo)." },
+        { "type": "list", "value": [
+          "Estrutura: If + Sujeito + WERE + Complemento, Sujeito + WOULD + Verbo.",
+          "Uso: Conselhos ou hipóteses impossíveis no presente."
+        ]},
+        { "type": "example", "value": { "en": "If I WERE you, I would go.", "pt": "Se eu fosse você, eu iria." } },
+        { "type": "example", "value": { "en": "If she WERE here, she would help us.", "pt": "Se ela estivesse aqui, ela nos ajudaria." } },
+        { "type": "tip", "title": "Contexto", "text": "Embora o 'If I was' seja comum na fala informal, 'If I were' é a forma exigida em contextos acadêmicos, profissionais e exames como TOEFL e IELTS." }
+      ],
+      "tasks": [
+        {
+          "id": "t_subj_1",
+          "tipo": "quiz",
+          "pergunta": "Complete a frase formal: 'If he _______ rich, he would buy a boat.'",
+          "opcoes": [
+            { "texto": "was", "correta": false },
+            { "texto": "were", "correta": true }
+          ],
+          "explicacao": "No subjuntivo (situação hipotética), o padrão gramatical correto é 'were' para todas as pessoas."
+        }
+      ]
+    }
+  ]
+}
+
+        function renderPage() {
+            const root = document.getElementById('content-root');
+            let html = `<h1 style="color: #64ffda; border-bottom: 2px solid #722f37; padding-bottom: 10px;">${data.stage_title}</h1>`;
+
+            data.topics.forEach((topic, index) => {
+                html += `<section style="margin-bottom: 40px;">
+                    <h2 style="color: #f1d3d6; background-color: #1d3354; padding: 10px; border-radius: 4px;">${index + 1}. ${topic.topic_title}</h2>`;
+
+                topic.content.forEach(item => {
+                    if (item.type === "subtitle") {
+                        html += `<h3 style="color: #ccd6f6; margin-top: 25px;">${item.value}</h3>`;
+                    } else if (item.type === "text") {
+                        html += `<p>${item.value}</p>`;
+                    } else if (item.type === "list") {
+                        html += `<ul>${item.value.map(li => `<li>${li}</li>`).join('')}</ul>`;
+                    } else if (item.type === "table") {
+                        html += `<table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #0a192f;">
+                            <thead><tr style="border-bottom: 2px solid #722f37; text-align: left;">
+                                ${item.headers.map(h => `<th style="padding: 12px;">${h}</th>`).join('')}
+                            </tr></thead>
+                            <tbody>
+                                ${item.rows.map(row => `<tr style="border-bottom: 1px solid #1d3354;">
+                                    ${row.map(cell => `<td style="padding: 10px;">${cell}</td>`).join('')}
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>`;
+                    } else if (item.type === "example") {
+                        html += `<p style="font-style: italic; background-color: #0a192f; padding: 10px; border-left: 4px solid #64ffda; margin-bottom: 10px;">
+                            <strong>EN:</strong> ${item.value.en} | <strong>PT:</strong> ${item.value.pt}
+                        </p>`;
+                    } else if (item.type === "tip") {
+                        html += `<div style="background-color: #722f3733; border: 1px solid #722f37; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                            <strong style="color: #f1d3d6;">💡 ${item.title}:</strong> ${item.text}
+                        </div>`;
+                    }
+                });
+
+                // Renderização de Tasks (Quiz, Fill, Connect)
+                topic.tasks.forEach(task => {
+                    html += `<div style="margin-top: 20px; padding: 15px; border: 1px dashed #64ffda; border-radius: 4px;">`;
+                    if (task.tipo === "quiz") {
+                        html += `<p><strong>Questão:</strong> ${task.pergunta}</p>`;
+                        task.opcoes.forEach(opt => {
+                            html += `<label style="display: block; margin-bottom: 5px;">
+                                <input type="radio" name="${task.id}"> ${opt.texto} ${opt.correta ? '<span style="color: #64ffda; font-size: 0.8em; margin-left: 10px;">(Correta)</span>' : ''}
+                            </label>`;
+                        });
+                        html += `<p style="font-size: 0.9em; color: #8892b0; margin-top: 10px;"><em>Explicação: ${task.explicacao}</em></p>`;
+                    } else if (task.tipo === "fill_the_blank") {
+                        html += `<p><strong>Preencha a lacuna:</strong> ${task.pergunta}</p>`;
+                        html += `<p style="color: #64ffda;">Resposta correta: ${task.resposta_correta}</p>`;
+                    } else if (task.tipo === "connect_pairs") {
+                        html += `<p><strong>${task.titulo}:</strong></p><ul style="list-style: none; padding: 0;">`;
+                        task.pares.forEach(p => {
+                            html += `<li>🔗 ${p.chave} &rarr; ${p.valor}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                });
+
+                html += `</section>`;
+            });
+
+            root.innerHTML = html;
+        }
+
+        window.onload = renderPage;
+    </script>
+</body>
+</html>
