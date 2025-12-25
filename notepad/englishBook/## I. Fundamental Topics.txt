@@ -1,19 +1,17 @@
 
-<a id="menu"></a> 
-
-## Fundamental Topics
-
-### <ins>[Personal Pronouns and Verb To Be](#personal-pronouns-and-verb-to-be)</ins>  
-
-### <ins>[Articles and Determiners: A, An, The, Zero Article](#articles-and-determiners)</ins>
-
-### <ins>[Quantifiers: Some, Any, Much, Many, Few, Little, A lot of](#quantifiers)</ins>
 
 
 ## Fundamental Topics
 
-[Menu](#menu)
-<a id="personal-pronouns-and-verb-to-be"></a> 
+### Personal Pronouns and Verb To Be](#personal-pronouns-and-verb-to-be)
+
+### Articles and Determiners: A, An, The, Zero Article](#articles-and-determiners)
+
+### Quantifiers: Some, Any, Much, Many, Few, Little, A lot of](#quantifiers)
+
+
+## Fundamental Topics
+
 ### Personal Pronouns and Verb To Be
 
 The verb "to be" changes depending on the subject
@@ -58,11 +56,8 @@ Is he the captain of the team?
 Is she the leader of the group?  
 Is it too hot outside?  
 
-[Menu](#menu)
-<a id="articles-and-determiners"></a> 
 ### Articles and Determiners: A, An, The, Zero Article
 
-<br>
 1. Indefinite Articles (A / An)
 Used for non-specific, singular countable items.
 
@@ -72,7 +67,6 @@ Used for non-specific, singular countable items.
 
 "Is there a bank near here?"
 
-<br>
 2. Definite Article (The)
 Used when the specific identity of the noun is known to the reader/listener.
 
@@ -82,7 +76,6 @@ Used when the specific identity of the noun is known to the reader/listener.
 
 "Look at the moon; it’s so bright tonight!"
 
-<br>
 3. Zero Article (No Article)
 Used for general concepts, plurals in general, and specific proper nouns.
 
@@ -92,11 +85,9 @@ Used for general concepts, plurals in general, and specific proper nouns.
 
 - "I’m going to visit Tokyo next summer." (City name).
 
-<br>
 4. Examples of the Exceptions
 Articles often change based on specific categories like geography or daily routines.  
 
-<br>
 Geographic Exceptions  
 
 - "We are going to hike in the Alps." (Use The for mountain ranges).
@@ -105,7 +96,6 @@ Geographic Exceptions
 
 - "Mount Everest is the tallest peak." (No article for individual mountains).
 
-<br>
 Routine Places (Purpose vs. Location)
 
 - "He is in prison." (No article: he is a prisoner).
@@ -114,7 +104,6 @@ Routine Places (Purpose vs. Location)
 
 - "I go to school every morning." (No article: as a student).
 
-<br>
 Sounds vs. Letters
 "It was an honorable gesture." (Silent 'H', so we use 'An').
 
@@ -122,8 +111,6 @@ Sounds vs. Letters
 
 "It will take an hour." (Silent 'H').
 
-[Menu](#menu)  
-<a id="quantifiers"></a> 
 ### Quantifiers (Some, Any, Much, Many, Few, Little, A lot of)  
 
 1. QUANTIFIERS FOR COUNTABLE NOUNS ONLY
