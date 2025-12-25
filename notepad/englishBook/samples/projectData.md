@@ -1,4 +1,4 @@
-Essa é uma excelente iniciativa. Padronizar o `content` como um array de objetos é o segredo para conseguir renderizar diferentes componentes (títulos, textos, alertas, tabelas) de forma dinâmica no seu front-end.
+Padronizar o `content` como um array de objetos é o segredo para conseguir renderizar diferentes componentes (títulos, textos, alertas, tabelas) de forma dinâmica no seu front-end.
 
 Para o campo `content`, sugiro uma estrutura de **"Blocos de Conteúdo"**, onde cada objeto tem um `type` e um `value`. Isso permite que você adicione elementos visuais como tabelas de conjugação ou listas de exemplos sem quebrar o código.
 
