@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stages and Topics</title>
+</head>
+<body style="background-color: #0a192f; color: #e6f1ff; font-family: sans-serif; margin: 0; padding: 20px; line-height: 1.6;">
+
+    <div id="content-root" style="max-width: 900px; margin: 0 auto; background-color: #112240; padding: 40px; border-radius: 8px; border-left: 8px solid #722f37;">
+        </div>
+
+    <script>
+        const data = {
+  "stage_title": "Pronomes Detalhados - Guia de Referência",
+  "topics": [
+    {
+      "topic_title": "Possessivos (Adjectives vs. Pronouns)",
+      "content": [
+        { "type": "subtitle", "value": "Como diferenciar My de Mine" },
+        { "type": "text", "value": "A regra é simples: se você disser o NOME do objeto logo após, use a primeira coluna (Adjectives). Se não for dizer o nome, use a segunda (Pronouns)." },
+        {
+          "type": "table",
+          "headers": ["Tradução", "Acompanha Nome (Adjective)", "Substitui Nome (Pronoun)"],
+          "rows": [
+            ["Meu/Minha", "My", "Mine"],
+            ["Seu/Sua", "Your", "Yours"],
+            ["Dele", "His", "His"],
+            ["Dela", "Her", "Hers"],
+            ["Nosso", "Our", "Ours"],
+            ["Deles/Delas", "Their", "Theirs"]
+          ]
+        },
+        { "type": "tip", "title": "Dica de Ouro", "text": "Note que 'His' e 'Its' não mudam. Para a maioria dos outros, basta adicionar um 'S' no final da segunda coluna." },
+        { "type": "example", "value": { "en": "This is my car. This car is mine.", "pt": "Este é meu carro. Este carro é meu." } }
+      ],
+      "tasks": [
+        {
+          "id": "t4_1",
+          "tipo": "fill_the_blank",
+          "pergunta": "I lost my pen. Can I use _______?",
+          "opcoes": ["your", "yours", "you"],
+          "resposta_correta": "yours"
+        }
+      ]
+    },
+    {
+      "topic_title": "Reflexivos e Demonstrativos",
+      "content": [
+        { "type": "subtitle", "value": "Pronomes Reflexivos" },
+        { "type": "text", "value": "Usados quando a pessoa que faz a ação é a mesma que a recebe, ou para dar ênfase (eu mesmo)." },
+        { "type": "list", "value": ["Myself, Yourself, Himself, Herself, Itself, Ourselves, Yourselves, Themselves"] },
+        { "type": "example", "value": { "en": "I cut myself while cooking.", "pt": "Eu me cortei enquanto cozinhava." } },
+        { "type": "subtitle", "value": "Pronomes Demonstrativos" },
+        { "type": "text", "value": "Indicam a posição (perto/longe) e a quantidade (singular/plural)." },
+        {
+          "type": "table",
+          "headers": ["Posição", "Singular", "Plural"],
+          "rows": [
+            ["Perto", "This (Este/Isto)", "These (Estes)"],
+            ["Longe", "That (Aquele/Isso)", "Those (Aqueles)"]
+          ]
+        }
+      ],
+      "tasks": [
+        {
+          "id": "t5_1",
+          "tipo": "quiz",
+          "pergunta": "Como dizemos 'Aquelas' (longe/plural) em inglês?",
+          "opcoes": [
+            { "texto": "This", "correta": false },
+            { "texto": "These", "correta": false },
+            { "texto": "Those", "correta": true }
+          ],
+          "explicacao": "Those é usado para plural de objetos que estão distantes."
+        }
+      ]
+    },
+    {
+      "topic_title": "Indefinidos e Interrogativos",
+      "content": [
+        { "type": "subtitle", "value": "Indefinidos (Some, Any, No, Every)" },
+        { "type": "text", "value": "Referem-se a coisas ou pessoas de forma genérica." },
+        { "type": "list", "value": [
+          "Some: Algo (Something), Alguém (Someone/Somebody)",
+          "Any: Qualquer coisa/alguém (usado em perguntas e negativas)",
+          "No: Nada (Nothing), Ninguém (No one/Nobody)",
+          "Every: Tudo (Everything), Todos (Everyone)"
+        ]},
+        { "type": "subtitle", "value": "Interrogativos (Wh- Questions)" },
+        { "type": "list", "value": [
+          "Who: Quem",
+          "Whose: De quem (Posse)",
+          "Which: Qual (Escolha limitada)",
+          "What: O que / Qual (Geral)"
+        ]},
+        { "type": "example", "value": { "en": "Whose bag is this?", "pt": "De quem é esta bolsa?" } }
+      ],
+      "tasks": [
+        {
+          "id": "t7_1",
+          "tipo": "connect_pairs",
+          "titulo": "Combine as perguntas",
+          "pares": [
+            { "chave": "Who", "valor": "Quem" },
+            { "chave": "Whose", "valor": "De quem" },
+            { "chave": "What", "valor": "O que" },
+            { "chave": "Which", "valor": "Qual (escolha)" }
+          ]
+        }
+      ]
+    },
+    {
+      "topic_title": "Recíprocos e Relativos",
+      "content": [
+        { "type": "subtitle", "value": "Recíprocos: Ação Mútua" },
+        { "type": "text", "value": "Usados quando duas ou mais pessoas interagem entre si." },
+        { "type": "list", "value": [
+          "Each other: Um ao outro (comum para 2 pessoas).",
+          "One another: Uns aos outros (comum para 3+ pessoas)."
+        ]},
+        { "type": "example", "value": { "en": "They love each other.", "pt": "Eles se amam (um ao outro)." } },
+        { "type": "subtitle", "value": "Relativos: Conectando Frases" },
+        { "type": "text", "value": "Servem para descrever alguém ou algo mencionado anteriormente sem repetir o nome." },
+        { "type": "list", "value": [
+          "Who: Pessoas (sujeito)",
+          "Which: Coisas ou animais",
+          "That: Geral (pessoas ou coisas)",
+          "Whose: Cujo / Cuja (posse)"
+        ]},
+        { "type": "example", "value": { "en": "The man who called you is my boss.", "pt": "O homem que te ligou é meu chefe." } }
+      ],
+      "tasks": [
+        {
+          "id": "t10_1",
+          "tipo": "fill_the_blank",
+          "pergunta": "The car _______ I bought is blue.",
+          "opcoes": ["who", "which", "whom"],
+          "resposta_correta": "which"
+        }
+      ]
+    }
+  ]
+}
+
+        function renderPage() {
+            const root = document.getElementById('content-root');
+            let html = `<h1 style="color: #64ffda; border-bottom: 2px solid #722f37; padding-bottom: 10px;">${data.stage_title}</h1>`;
+
+            data.topics.forEach((topic, index) => {
+                html += `<section style="margin-bottom: 40px;">
+                    <h2 style="color: #f1d3d6; background-color: #1d3354; padding: 10px; border-radius: 4px;">${index + 1}. ${topic.topic_title}</h2>`;
+
+                topic.content.forEach(item => {
+                    if (item.type === "subtitle") {
+                        html += `<h3 style="color: #ccd6f6; margin-top: 25px;">${item.value}</h3>`;
+                    } else if (item.type === "text") {
+                        html += `<p>${item.value}</p>`;
+                    } else if (item.type === "list") {
+                        html += `<ul>${item.value.map(li => `<li>${li}</li>`).join('')}</ul>`;
+                    } else if (item.type === "table") {
+                        html += `<table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #0a192f;">
+                            <thead><tr style="border-bottom: 2px solid #722f37; text-align: left;">
+                                ${item.headers.map(h => `<th style="padding: 12px;">${h}</th>`).join('')}
+                            </tr></thead>
+                            <tbody>
+                                ${item.rows.map(row => `<tr style="border-bottom: 1px solid #1d3354;">
+                                    ${row.map(cell => `<td style="padding: 10px;">${cell}</td>`).join('')}
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>`;
+                    } else if (item.type === "example") {
+                        html += `<p style="font-style: italic; background-color: #0a192f; padding: 10px; border-left: 4px solid #64ffda; margin-bottom: 10px;">
+                            <strong>EN:</strong> ${item.value.en} | <strong>PT:</strong> ${item.value.pt}
+                        </p>`;
+                    } else if (item.type === "tip") {
+                        html += `<div style="background-color: #722f3733; border: 1px solid #722f37; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                            <strong style="color: #f1d3d6;">💡 ${item.title}:</strong> ${item.text}
+                        </div>`;
+                    }
+                });
+
+                // Renderização de Tasks (Quiz, Fill, Connect)
+                topic.tasks.forEach(task => {
+                    html += `<div style="margin-top: 20px; padding: 15px; border: 1px dashed #64ffda; border-radius: 4px;">`;
+                    if (task.tipo === "quiz") {
+                        html += `<p><strong>Questão:</strong> ${task.pergunta}</p>`;
+                        task.opcoes.forEach(opt => {
+                            html += `<label style="display: block; margin-bottom: 5px;">
+                                <input type="radio" name="${task.id}"> ${opt.texto} ${opt.correta ? '<span style="color: #64ffda; font-size: 0.8em; margin-left: 10px;">(Correta)</span>' : ''}
+                            </label>`;
+                        });
+                        html += `<p style="font-size: 0.9em; color: #8892b0; margin-top: 10px;"><em>Explicação: ${task.explicacao}</em></p>`;
+                    } else if (task.tipo === "fill_the_blank") {
+                        html += `<p><strong>Preencha a lacuna:</strong> ${task.pergunta}</p>`;
+                        html += `<p style="color: #64ffda;">Resposta correta: ${task.resposta_correta}</p>`;
+                    } else if (task.tipo === "connect_pairs") {
+                        html += `<p><strong>${task.titulo}:</strong></p><ul style="list-style: none; padding: 0;">`;
+                        task.pares.forEach(p => {
+                            html += `<li>🔗 ${p.chave} &rarr; ${p.valor}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                });
+
+                html += `</section>`;
+            });
+
+            root.innerHTML = html;
+        }
+
+        window.onload = renderPage;
+    </script>
+</body>
+</html>
