@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage Sidebar Selector</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --panel-bg: #111;
+            --accent-color: #00e5ff;
+            --box-size: 45px;
+            --gap: 8px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            margin: 0;
+            color: white;
+            font-family: 'Inter', system-ui, sans-serif;
+            /* Altura para permitir o scroll do seletor */
+            height: 400vh; 
+        }
+
+        /* Menu Lateral Fixo */
+        .side-menu {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--panel-bg);
+            padding: 15px 10px;
+            border-radius: 12px;
+            border: 1px solid #222;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        }
+
+        .menu-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #555;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+
+        .stages-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+        }
+
+        .stage-box {
+            width: var(--box-size);
+            height: var(--box-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #444;
+            transition: color 0.3s;
+            z-index: 2;
+        }
+
+        .stage-box.active {
+            color: var(--accent-color);
+        }
+
+        /* A Moldura Quadrada Móvel */
+        .selector-square {
+            position: absolute;
+            width: var(--box-size);
+            height: var(--box-size);
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            border-radius: 8px;
+            left: 0;
+            top: 0;
+            z-index: ;
+            transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: none;
+        }
+
+        /* Conteúdo fictício para a página ter scroll */        
+        #main-content {
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .content-placeholder {
+            margin-left: 70px; /* Dá espaço para o menu lateral */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh; /* Mantém o conteúdo centralizado na tela */
+            position: fixed; /* O conteúdo fica fixo enquanto o fundo rola */
+            width: calc(100% - 150px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="side-menu">
+        <div class="menu-title">Stages</div>
+        <div class="stages-container" id="stagesWrapper">
+            <div id="square" class="selector-square"></div>
+            </div>
+    </div>
+
+    <div class="content-placeholder">
+        <div id="main-content">
+            <h1 id="stage-title">Stage 1</h1>
+            <p id="stage-desc">Selecione um nível na barra lateral.</p>
+        </div>
+    </div>
+
+    <script>
+        const totalStages = 12;
+        const stagesArray = Array.from({ length: totalStages }, (_, i) => i + 1);
+        const wrapper = document.getElementById('stagesWrapper');
+        const square = document.getElementById('square');
+        const boxFullSize = 45 + 8; // Tamanho do quadrado + gap
+        
+        // Objeto com os conteúdos de cada estágio
+        const conteudosStages = {
+            1: { titulo: "Introdução", texto: "Bem-vindo ao primeiro estágio do sistema." },
+            2: { titulo: "Configuração", texto: "Aqui configuramos o seu ambiente de trabalho." },
+            3: { titulo: "Primeiros Passos", texto: "Entendendo as ferramentas básicas disponíveis." },
+            4: { titulo: "Conexão", texto: "Estabelecendo comunicação com o servidor principal." },
+            5: { titulo: "Segurança", texto: "Aplicando protocolos de criptografia e proteção." },
+            6: { titulo: "Banco de Dados", texto: "Estruturando as tabelas e relacionamentos." },
+            7: { titulo: "Interface UI", texto: "Criando componentes visuais modernos e responsivos." },
+            8: { titulo: "Experiência UX", texto: "Otimizando a jornada do usuário final." },
+            9: { titulo: "Testes", texto: "Garantindo que cada linha de código funcione." },
+            10: { titulo: "Performance", texto: "Refinando a velocidade de carregamento." },
+            11: { titulo: "Deploy", texto: "Subindo a aplicação para o ambiente de produção." },
+            12: { titulo: "Finalizado", texto: "Parabéns! Você completou todos os estágios." }
+        };
+
+        // 1. Criar os quadrados numerados
+        stagesArray.forEach((num) => {
+            const div = document.createElement('div');
+            div.className = 'stage-box';
+            div.innerText = num;
+            wrapper.appendChild(div);
+        });
+
+        const boxes = document.querySelectorAll('.stage-box');
+
+        // 2. Função de busca (seu requisito original de loop for)
+        function verificarMatch(valorAtual, alvo) {
+            for (let i = 0; i < stagesArray.length; i++) {
+                if (stagesArray[i] === valorAtual && stagesArray[i] === alvo) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 3. Lógica do Scroll
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = Math.min(Math.max(scrollTop / docHeight, 0), 1);
+
+            // Calcular índice atual
+            const indexAtivo = Math.round(scrollPercent * (totalStages - 1));
+            // Lógica para mudar o conteúdo principal
+            const stageAtual = indexAtivo + 1; // +1 porque o array é 0-11 e o objeto 1-12
+            const dados = conteudosStages[stageAtual];
+
+            if (dados) {
+                document.getElementById('stage-title').innerText = `Stage ${stageAtual}: ${dados.titulo}`;
+                document.getElementById('stage-desc').innerText = dados.texto;
+            }
+
+            // Mover o quadrado usando transform para melhor performance
+            const moveY = indexAtivo * boxFullSize;
+            square.style.transform = `translateY(${moveY}px)`;
+
+            // Atualizar classes ativas e lógica do loop
+            boxes.forEach((box, idx) => {
+                const isMatch = (idx === indexAtivo);
+                box.classList.toggle('active', isMatch);
+
+                // Exemplo de uso da função solicitada:
+                if (isMatch && verificarMatch(idx + 1, 7)) {
+                    console.log("Foco no Stage 7 detectado via loop for!");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
