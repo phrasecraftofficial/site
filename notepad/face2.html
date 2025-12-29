@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Video Loop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4267B2;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4267B2;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            background: #4267B2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #365899;
+        }
+
+        button.active {
+            background: #42b72a;
+        }
+
+        button.active:hover {
+            background: #36a420;
+        }
+
+        #video-container {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .status.active {
+            background: #1e4620;
+        }
+
+        .info {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Facebook Video Loop Controller</h1>
+
+        <div class="input-group">
+            <label for="videoUrl">URL do Vídeo do Facebook:</label>
+            <input 
+                type="text" 
+                id="videoUrl" 
+                placeholder="Cole aqui o link do vídeo do Facebook"
+            >
+        </div>
+
+        <div class="input-group">
+            <label for="loopSeconds">Segundos para retroceder no loop:</label>
+            <input 
+                type="number" 
+                id="loopSeconds" 
+                placeholder="Ex: 3"
+                value="3"
+                min="1"
+            >
+        </div>
+
+        <div class="button-group">
+            <button id="loadBtn">Carregar Vídeo</button>
+            <button id="toggleLoopBtn">Ativar Loop</button>
+        </div>
+
+        <div class="status" id="status">
+            Loop desativado
+        </div>
+
+        <div id="video-container">
+            <p>Carregue um vídeo para começar</p>
+        </div>
+
+        <div class="info">
+            💡 O loop funcionará retrocedendo o número de segundos especificado quando o vídeo estiver reproduzindo
+        </div>
+    </div>
+
+    <script>
+        let player = null;
+        let loopActive = false;
+        let loopInterval = null;
+        let loopSeconds = 3;
+
+        // Inicializa o SDK do Facebook
+        window.fbAsyncInit = function() {
+            FB.init({
+                xfbml: true,
+                version: 'v18.0'
+            });
+        };
+
+        // Carrega o SDK do Facebook
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "https://connect.facebook.net/pt_BR/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+        // Elementos DOM
+        const videoUrlInput = document.getElementById('videoUrl');
+        const loopSecondsInput = document.getElementById('loopSeconds');
+        const loadBtn = document.getElementById('loadBtn');
+        const toggleLoopBtn = document.getElementById('toggleLoopBtn');
+        const videoContainer = document.getElementById('video-container');
+        const statusDiv = document.getElementById('status');
+
+        // Função para carregar o vídeo
+        function loadVideo() {
+            const url = videoUrlInput.value.trim();
+            
+            if (!url) {
+                alert('Por favor, insira um URL válido');
+                return;
+            }
+
+            videoContainer.innerHTML = `
+                <div class="fb-video" 
+                     data-href="${url}" 
+                     data-width="750" 
+                     data-allowfullscreen="true"
+                     data-autoplay="false">
+                </div>
+            `;
+
+            FB.XFBML.parse(videoContainer, function() {
+                console.log('Vídeo carregado');
+            });
+
+            stopLoop();
+        }
+
+        // Função para obter o tempo atual do vídeo
+        function getCurrentTime() {
+            const iframe = videoContainer.querySelector('iframe');
+            if (!iframe) return 0;
+            
+            // Nota: A API do Facebook tem limitações para controle via JS
+            // Esta é uma implementação simplificada
+            return 0;
+        }
+
+        // Função para verificar se pode retroceder com segurança
+        function canSafelySeek(currentTime, seekSeconds) {
+            return currentTime >= seekSeconds;
+        }
+
+        // Função para retroceder o vídeo
+        function seekBackward(seconds) {
+            const currentTime = getCurrentTime();
+            
+            if (canSafelySeek(currentTime, seconds)) {
+                const newTime = Math.max(0, currentTime - seconds);
+                console.log(`Retrocedendo de ${currentTime}s para ${newTime}s`);
+                // Implementação específica dependeria da API completa do Facebook
+            } else {
+                // Se o tempo de retrocesso é maior que o tempo atual,
+                // avança para evitar travamento
+                console.log('Tempo insuficiente para retroceder, mantendo posição atual');
+            }
+        }
+
+        // Função para monitorar e executar o loop
+        function monitorLoop() {
+            if (!loopActive) return;
+
+            loopSeconds = parseInt(loopSecondsInput.value) || 3;
+            
+            // Simula o monitoramento (em implementação real, usaria eventos da API)
+            seekBackward(loopSeconds);
+        }
+
+        // Função para iniciar o loop
+        function startLoop() {
+            if (loopActive) return;
+            
+            loopActive = true;
+            loopSeconds = parseInt(loopSecondsInput.value) || 3;
+            
+            toggleLoopBtn.textContent = 'Desativar Loop';
+            toggleLoopBtn.classList.add('active');
+            statusDiv.textContent = `Loop ativo - retrocedendo ${loopSeconds}s`;
+            statusDiv.classList.add('active');
+
+            // Monitora a cada 100ms
+            loopInterval = setInterval(() => {
+                if (loopActive) {
+                    // Adiciona um pequeno delay antes de retroceder
+                    setTimeout(() => {
+                        monitorLoop();
+                    }, 100);
+                }
+            }, 1000);
+        }
+
+        // Função para parar o loop
+        function stopLoop() {
+            loopActive = false;
+            
+            if (loopInterval) {
+                clearInterval(loopInterval);
+                loopInterval = null;
+            }
+
+            toggleLoopBtn.textContent = 'Ativar Loop';
+            toggleLoopBtn.classList.remove('active');
+            statusDiv.textContent = 'Loop desativado';
+            statusDiv.classList.remove('active');
+        }
+
+        // Função para alternar o loop
+        function toggleLoop() {
+            if (loopActive) {
+                stopLoop();
+            } else {
+                startLoop();
+            }
+        }
+
+        // Event listeners
+        loadBtn.addEventListener('click', loadVideo);
+        toggleLoopBtn.addEventListener('click', toggleLoop);
+
+        // Permite carregar com Enter
+        videoUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadVideo();
+            }
+        });
+    </script>
+</body>
+</html>
