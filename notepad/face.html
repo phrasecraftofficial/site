@@ -118,7 +118,7 @@ label {
     text-transform: uppercase;
 }
 
-input[type="number"] {
+input, input[type="number"] {
     width: 100%;
     background: #000000;
     border: 1px solid #333333;
@@ -128,6 +128,7 @@ input[type="number"] {
     font-size: 16px;
     font-weight: 500;
     transition: all 0.2s ease;
+    margin-bottom: 12px;
 }
 
 input[type="number"]:hover {
@@ -155,6 +156,7 @@ button {
     letter-spacing: 0.1em;
     text-transform: uppercase;
     box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+    margin-bottom: 12px;
 }
 
 button:hover {
@@ -399,13 +401,22 @@ input:focus-visible {
 <body>
 
     <h2>Listening Pratice by Facebook Video</h2>
-    <div id="status" class="status">Carregando player...</div>
+    
+    <div class="controls">
+        <label for="video-url-input">Video Url:</label>
+        <input type="text" id="video-url-input" placeholder="Cole o link do vídeo do Facebook aqui..." 
+               value="https://www.facebook.com/watch/?v=712864497879562">
 
-    <div class="video-container">
+        <button onclick="carregarNovoVideo()" class="secondary" style="margin-top: 10px;">Carregar Vídeo</button>
+        
+    	<div id="status" class="status">Carregando player...</div>
+    </div>
+
+    <div class="video-container" id="video-wrapper">
         <div 
             class="fb-video" 
             id="meu-player-fb"
-            data-href="https://www.facebook.com/watch/?v=712864497879562" 
+            data-href="" 
             data-width="300" 
             data-allowfullscreen="true">
         </div>
@@ -427,7 +438,6 @@ input:focus-visible {
 
         <button id="btn-principal" onclick="dispararFluxo()">Retroceder e Repetir</button>
 		
-        <div id="status"></div>
     </div>
 
 <div id="fb-root"></div>
@@ -455,16 +465,51 @@ input:focus-visible {
               player = msg.instance;
               document.getElementById('status').innerText = "Player pronto!";
 
-              // CHAMADA AQUI:
-              const duracaoTotal = player.getDuration();
-              const segundos = parseInt(document.getElementById('segundos-input').value);
+              // Aguarda um segundo para o player obter os metadados (duração)
+              setTimeout(() => {
+                  const duracaoTotal = player.getDuration();
+                  const segundos = parseInt(document.getElementById('segundos-input').value);
 
-              // Inicializa os blocos e a barra visual
-              blocos = dividirVideoEmBlocos(duracaoTotal, segundos);
-              criarTimeline(duracaoTotal, segundos);
+                  // Recalcula blocos e redesenha a timeline para o novo vídeo
+                  blocos = dividirVideoEmBlocos(duracaoTotal, segundos);
+                  if (typeof criarTimeline === "function") {
+                      criarTimeline(duracaoTotal, segundos);
+                  }
+              }, 1000);
           }
       });
     };
+    
+function carregarNovoVideo() {
+    const url = document.getElementById('video-url-input').value;
+    if (!url) {
+        alert("Por favor, cole uma URL válida do Facebook.");
+        return;
+    }
+
+    // 1. Para qualquer fluxo rodando
+    pararFluxo();
+    document.getElementById('status').innerText = "Carregando novo vídeo...";
+
+    // 2. Limpa o container atual e insere o novo código XFBML
+    const wrapper = document.getElementById('video-wrapper');
+    wrapper.innerHTML = `
+        <div class="fb-video" 
+             id="meu-player-fb" 
+             data-href="${url}" 
+             data-width="300" 
+             data-allowfullscreen="true">
+        </div>
+    `;
+
+    // 3. Comando fundamental: Pede para a SDK do Facebook processar a nova div
+    if (window.FB) {
+        FB.XFBML.parse(wrapper, function() {
+            console.log("Novo vídeo processado pela SDK.");
+            // O evento 'xfbml.ready' será disparado automaticamente após isso
+        });
+    }
+}
 
 // Função que divide o vídeo em blocos
 function dividirVideoEmBlocos(duracao, segundosPorBloco) {
