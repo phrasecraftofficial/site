@@ -385,31 +385,39 @@ input:focus-visible {
         <div id="status"></div>
     </div>
 
-    <div id="fb-root"></div>
+<div id="fb-root"></div>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 
     <script>
-let player;
-let blocos = [];
-let blocoAtual = 0;
-let repeticoesRestantes = 0;
-let monitorIntervalo;
-let fluxoAtivo = false;
+    let player;
+    let blocos = [];
+    let blocoAtual = 0;
+    let repeticoesRestantes = 0;
+    let monitorIntervalo;
+    let fluxoAtivo = false;
 
-window.fbAsyncInit = function() {
-    FB.init({
-        appId      : '',
-        xfbml      : true,
-        version    : 'v18.0'
-    });
+    // Configuração inicial da SDK
+    window.fbAsyncInit = function() {
+        FB.init({
+            appId      : '', // Pode deixar vazio para uso básico
+            xfbml      : true,
+            version    : 'v18.0'
+        });
 
-    FB.Event.subscribe('xfbml.ready', function(msg) {
-        if (msg.type === 'video' && msg.id === 'meu-player-fb') {
-            player = msg.instance;
-            document.getElementById('status').innerText = "Player pronto!";
-        }
-    });
-};
+        // Captura o evento de quando o player está pronto
+        FB.Event.subscribe('xfbml.ready', function(msg) {
+            if (msg.type === 'video' && msg.id === 'meu-player-fb') {
+                player = msg.instance;
+                document.getElementById('status').innerText = "Player pronto!";
+                
+                player.subscribe('pause', function() {
+                    if (fluxoAtivo) {
+                        pararFluxo();
+                    }
+                });
+            }
+        });
+    };
 
 // Função que divide o vídeo em blocos
 function dividirVideoEmBlocos(duracao, segundosPorBloco) {
@@ -530,14 +538,19 @@ function monitorarBloco(bloco, totalRepeticoes) {
         
         // Verifica se o vídeo travou (não está avançando)
         if (Math.abs(tempoAgora - ultimaPosicao) < 0.01) {
-            contadorTravado++;
-            if (contadorTravado > 10) {
-                console.warn("Vídeo travado, forçando próximo bloco");
+            // Só incrementa se o fluxo ainda estiver ativo (evita falsos positivos)
+            if (fluxoAtivo) {
+                contadorTravado++;
+            }
+            
+            if (contadorTravado > 20) { // Aumentei um pouco a tolerância para 2 segundos
+                console.warn("Vídeo travado ou buffer longo, forçando próximo bloco");
                 clearInterval(monitorIntervalo);
                 avancarParaProximoEstado(totalRepeticoes);
                 return;
             }
-        } else {
+        }
+        else {
             contadorTravado = 0;
         }
         ultimaPosicao = tempoAgora;
