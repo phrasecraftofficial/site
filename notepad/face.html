@@ -511,7 +511,9 @@ function dispararFluxo() {
     console.log("Vídeo dividido em " + blocos.length + " blocos:", blocos);
     document.getElementById('status').innerText = 
         `Vídeo dividido em ${blocos.length} blocos de ${segundos}s`;
-    
+
+	gerarTimelineVisual(blocos);
+	
     // Reseta variáveis de controle
     blocoAtual = 0;
     repeticoesRestantes = totalRepeticoes;
