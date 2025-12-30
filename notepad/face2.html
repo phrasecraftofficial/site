@@ -2,315 +2,607 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facebook Video Loop</title>
+    <title>Controle de Vídeo Facebook</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        body {
-            background: #1a1a1a;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            min-height: 100vh;
-        }
+body {
+    background: linear-gradient(180deg, #121212 0%, #000000 100%);
+    color: #ffffff;
+    font-family: 'Circular', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+}
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #4267B2;
-        }
+h2 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    text-align: center;
+    letter-spacing: -0.04em;
+}
 
-        .input-group {
-            margin-bottom: 20px;
-        }
+.status {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 24px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #b3b3b3;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
+.video-container {
+    background: #181818;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 0 auto 32px;
+    max-width: 600px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
 
-        input {
-            width: 100%;
-            padding: 12px;
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            border-radius: 6px;
-            color: #e0e0e0;
-            font-size: 14px;
-        }
+.controls {
+    background: #181818;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
 
-        input:focus {
-            outline: none;
-            border-color: #4267B2;
-        }
+.input-group {
+    margin-bottom: 20px;
+}
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
+label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #ffffff;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
 
-        button {
-            flex: 1;
-            padding: 12px 24px;
-            background: #4267B2;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
+input[type="number"] {
+    width: 100%;
+    background: #000000;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
 
-        button:hover {
-            background: #365899;
-        }
+input[type="number"]:hover {
+    border-color: #535353;
+}
 
-        button.active {
-            background: #42b72a;
-        }
+input[type="number"]:focus {
+    outline: none;
+    border-color: #1db954;
+    box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.1);
+}
 
-        button.active:hover {
-            background: #36a420;
-        }
+button {
+    background: #1db954;
+    color: #ffffff;
+    border: none;
+    border-radius: 500px;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
 
-        #video-container {
-            background: #2a2a2a;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            min-height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+button:hover {
+    background: #1ed760;
+    transform: scale(1.04);
+    box-shadow: 0 6px 16px rgba(29, 185, 84, 0.4);
+}
 
-        .status {
-            text-align: center;
-            padding: 10px;
-            background: #2a2a2a;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
+button:active {
+    transform: scale(0.98);
+}
 
-        .status.active {
-            background: #1e4620;
-        }
+button.secondary {
+    background: transparent;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    box-shadow: none;
+}
 
-        .info {
-            font-size: 12px;
-            color: #888;
-            text-align: center;
-            margin-top: 20px;
-        }
+button.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #1db954;
+    color: #1db954;
+    transform: scale(1.04);
+}
+
+button.danger {
+    background: #e22134;
+    box-shadow: 0 4px 12px rgba(226, 33, 52, 0.3);
+}
+
+button.danger:hover {
+    background: #ff2e46;
+    box-shadow: 0 6px 16px rgba(226, 33, 52, 0.4);
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.button-group button {
+    margin-top: 0;
+}
+
+#status {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efeito de loading */
+.loading::after {
+    content: '';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+}
+
+/* Scrollbar personalizada (estilo Spotify) */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #282828;
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3e3e3e;
+}
+
+/* Mobile Responsivo */
+@media (max-width: 768px) {
+    body {
+        padding: 12px;
+    }
+
+    h2 {
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+
+    .video-container {
+        padding: 16px;
+        min-height: 300px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+
+    .controls {
+        padding: 16px;
+        border-radius: 8px;
+    }
+
+    label {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    input[type="number"] {
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 6px;
+    }
+
+    button {
+        padding: 12px 24px;
+        font-size: 14px;
+        border-radius: 500px;
+    }
+
+    .button-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .status {
+        padding: 10px 16px;
+        font-size: 12px;
+        margin-bottom: 16px;
+        border-radius: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    h2 {
+        font-size: 20px;
+    }
+
+    .video-container {
+        padding: 12px;
+        min-height: 250px;
+    }
+
+    .controls {
+        padding: 12px;
+    }
+
+    input[type="number"] {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    label {
+        font-size: 11px;
+    }
+}
+
+/* Modo landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    body {
+        padding: 8px;
+    }
+
+    .video-container {
+        min-height: 200px;
+        margin-bottom: 12px;
+    }
+
+    h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+}
+
+/* Tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 700px;
+    }
+
+    h2 {
+        font-size: 28px;
+    }
+
+    .video-container,
+    .controls {
+        max-width: 100%;
+    }
+}
+
+/* Animações suaves para inputs */
+input[type="number"],
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Suporte para dark mode do sistema */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: linear-gradient(180deg, #121212 0%, #000000 100%);
+    }
+}
+
+/* Acessibilidade - foco visível */
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid #1db954;
+    outline-offset: 2px;
+}
+
+/* Melhorias para touch devices */
+@media (hover: none) and (pointer: coarse) {
+    button {
+        min-height: 44px;
+    }
+
+    input[type="number"] {
+        min-height: 44px;
+    }
+}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔄 Facebook Video Loop Controller</h1>
 
-        <div class="input-group">
-            <label for="videoUrl">URL do Vídeo do Facebook:</label>
-            <input 
-                type="text" 
-                id="videoUrl" 
-                placeholder="Cole aqui o link do vídeo do Facebook"
-            >
-        </div>
+    <h2>Controle de Vídeo via Facebook API</h2>
+    <div id="status" class="status">Carregando player...</div>
 
-        <div class="input-group">
-            <label for="loopSeconds">Segundos para retroceder no loop:</label>
-            <input 
-                type="number" 
-                id="loopSeconds" 
-                placeholder="Ex: 3"
-                value="3"
-                min="1"
-            >
-        </div>
-
-        <div class="button-group">
-            <button id="loadBtn">Carregar Vídeo</button>
-            <button id="toggleLoopBtn">Ativar Loop</button>
-        </div>
-
-        <div class="status" id="status">
-            Loop desativado
-        </div>
-
-        <div id="video-container">
-            <p>Carregue um vídeo para começar</p>
-        </div>
-
-        <div class="info">
-            💡 O loop funcionará retrocedendo o número de segundos especificado quando o vídeo estiver reproduzindo
+    <div class="video-container">
+        <div 
+            class="fb-video" 
+            id="meu-player-fb"
+            data-href="https://www.facebook.com/watch/?v=712864497879562" 
+            data-width="300" 
+            data-allowfullscreen="true">
         </div>
     </div>
 
+    <div class="controls">
+        <label for="segundos-input">Segundos:</label>
+        <input type="number" id="segundos-input" value="3" min="1" step="1">
+
+        <label for="repeticoes-input">Repetições:</label>
+        <input type="number" id="repeticoes-input" value="2" min="1" step="1">
+
+        <button onclick="dispararFluxo()">Retroceder e Repetir</button>
+
+        <div id="status">Aguardando...</div>
+    </div>
+
+    <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js"></script>
+
     <script>
-        let player = null;
-        let loopActive = false;
-        let loopInterval = null;
-        let loopSeconds = 3;
+let player;
+let blocos = [];
+let blocoAtual = 0;
+let repeticoesRestantes = 0;
+let monitorIntervalo;
+let fluxoAtivo = false;
 
-        // Inicializa o SDK do Facebook
-        window.fbAsyncInit = function() {
-            FB.init({
-                xfbml: true,
-                version: 'v18.0'
-            });
-        };
+window.fbAsyncInit = function() {
+    FB.init({
+        appId      : '',
+        xfbml      : true,
+        version    : 'v18.0'
+    });
 
-        // Carrega o SDK do Facebook
-        (function(d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) return;
-            js = d.createElement(s); js.id = id;
-            js.src = "https://connect.facebook.net/pt_BR/sdk.js";
-            fjs.parentNode.insertBefore(js, fjs);
-        }(document, 'script', 'facebook-jssdk'));
+    FB.Event.subscribe('xfbml.ready', function(msg) {
+        if (msg.type === 'video' && msg.id === 'meu-player-fb') {
+            player = msg.instance;
+            document.getElementById('status').innerText = "Player pronto!";
+        }
+    });
+};
 
-        // Elementos DOM
-        const videoUrlInput = document.getElementById('videoUrl');
-        const loopSecondsInput = document.getElementById('loopSeconds');
-        const loadBtn = document.getElementById('loadBtn');
-        const toggleLoopBtn = document.getElementById('toggleLoopBtn');
-        const videoContainer = document.getElementById('video-container');
-        const statusDiv = document.getElementById('status');
+// Função que divide o vídeo em blocos
+function dividirVideoEmBlocos(duracao, segundosPorBloco) {
+    let blocosArray = [];
+    let inicio = 0;
+    
+    while (inicio < duracao) {
+        let fim = Math.min(inicio + segundosPorBloco, duracao);
+        blocosArray.push({
+            inicio: inicio,
+            fim: fim,
+            duracao: fim - inicio
+        });
+        inicio = fim;
+    }
+    
+    return blocosArray;
+}
 
-        // Função para carregar o vídeo
-        function loadVideo() {
-            const url = videoUrlInput.value.trim();
+// Função principal que inicia todo o fluxo
+function dispararFluxo() {
+    if (!player) {
+        alert("Player não está pronto ainda.");
+        return;
+    }
+    
+    const inputSegundos = document.getElementById('segundos-input');
+    const inputRepeticoes = document.getElementById('repeticoes-input');
+    
+    const segundos = parseInt(inputSegundos.value);
+    const totalRepeticoes = parseInt(inputRepeticoes.value);
+    
+    if (isNaN(segundos) || segundos <= 0 || isNaN(totalRepeticoes) || totalRepeticoes <= 0) {
+        alert("Insira valores válidos.");
+        return;
+    }
+
+    // Pega a duração total do vídeo
+    const duracao = player.getDuration();
+    
+    // Divide o vídeo em blocos
+    blocos = dividirVideoEmBlocos(duracao, segundos);
+    
+    console.log("Vídeo dividido em " + blocos.length + " blocos:", blocos);
+    document.getElementById('status').innerText = 
+        `Vídeo dividido em ${blocos.length} blocos de ${segundos}s`;
+    
+    // Reseta variáveis de controle
+    blocoAtual = 0;
+    repeticoesRestantes = totalRepeticoes;
+    fluxoAtivo = true;
+    
+    // Pausa antes de começar
+    player.pause();
+    
+    // Delay inicial antes de processar
+    setTimeout(function() {
+        processarBloco(totalRepeticoes);
+    }, 500);
+}
+
+// Função que processa um bloco específico
+function processarBloco(totalRepeticoes) {
+    if (!fluxoAtivo || blocoAtual >= blocos.length) {
+        document.getElementById('status').innerText = "Processamento concluído!";
+        pararFluxo();
+        return;
+    }
+    
+    const bloco = blocos[blocoAtual];
+    
+    document.getElementById('status').innerText = 
+        `Bloco ${blocoAtual + 1}/${blocos.length} - Repetição ${totalRepeticoes - repeticoesRestantes + 1}/${totalRepeticoes} (${bloco.inicio.toFixed(1)}s - ${bloco.fim.toFixed(1)}s)`;
+    
+    console.log(`Processando bloco ${blocoAtual + 1}: ${bloco.inicio.toFixed(1)}s a ${bloco.fim.toFixed(1)}s`);
+    
+    // GAMBIARRA 1: Pausa antes de fazer seek
+    player.pause();
+    
+    // GAMBIARRA 2: Aguarda um pouco antes de fazer o seek
+    setTimeout(function() {
+        if (!fluxoAtivo) return;
+        
+        // Vai para o início do bloco
+        player.seek(bloco.inicio);
+        
+        // GAMBIARRA 3: Aguarda o seek "pegar" antes de dar play
+        setTimeout(function() {
+            if (!fluxoAtivo) return;
             
-            if (!url) {
-                alert('Por favor, insira um URL válido');
+            player.play();
+            
+            // GAMBIARRA 4: Aguarda começar a tocar antes de monitorar
+            setTimeout(function() {
+                if (!fluxoAtivo) return;
+                monitorarBloco(bloco, totalRepeticoes);
+            }, 200);
+            
+        }, 300);
+        
+    }, 200);
+}
+
+// Função que monitora a reprodução do bloco
+function monitorarBloco(bloco, totalRepeticoes) {
+    clearInterval(monitorIntervalo);
+    
+    let ultimaPosicao = -1;
+    let contadorTravado = 0;
+    
+    monitorIntervalo = setInterval(function() {
+        if (!player || !fluxoAtivo) {
+            clearInterval(monitorIntervalo);
+            return;
+        }
+        
+        let tempoAgora = player.getCurrentPosition();
+        
+        // Verifica se o vídeo travou (não está avançando)
+        if (Math.abs(tempoAgora - ultimaPosicao) < 0.01) {
+            contadorTravado++;
+            if (contadorTravado > 10) {
+                console.warn("Vídeo travado, forçando próximo bloco");
+                clearInterval(monitorIntervalo);
+                avancarParaProximoEstado(totalRepeticoes);
                 return;
             }
-
-            videoContainer.innerHTML = `
-                <div class="fb-video" 
-                     data-href="${url}" 
-                     data-width="750" 
-                     data-allowfullscreen="true"
-                     data-autoplay="false">
-                </div>
-            `;
-
-            FB.XFBML.parse(videoContainer, function() {
-                console.log('Vídeo carregado');
-            });
-
-            stopLoop();
+        } else {
+            contadorTravado = 0;
         }
-
-        // Função para obter o tempo atual do vídeo
-        function getCurrentTime() {
-            const iframe = videoContainer.querySelector('iframe');
-            if (!iframe) return 0;
+        ultimaPosicao = tempoAgora;
+        
+        // Verifica se está fora do bloco (pulou)
+        if (tempoAgora < bloco.inicio - 0.5 || tempoAgora > bloco.fim + 0.5) {
+            console.warn(`Posição ${tempoAgora.toFixed(1)}s fora do bloco esperado. Corrigindo...`);
+            clearInterval(monitorIntervalo);
             
-            // Nota: A API do Facebook tem limitações para controle via JS
-            // Esta é uma implementação simplificada
-            return 0;
+            // GAMBIARRA 5: Força voltar para o bloco correto
+            setTimeout(function() {
+                processarBloco(totalRepeticoes);
+            }, 300);
+            return;
         }
-
-        // Função para verificar se pode retroceder com segurança
-        function canSafelySeek(currentTime, seekSeconds) {
-            return currentTime >= seekSeconds;
+        
+        // Verifica se chegou no fim do bloco atual (com margem menor)
+        if (tempoAgora >= bloco.fim - 0.2) {
+            clearInterval(monitorIntervalo);
+            avancarParaProximoEstado(totalRepeticoes);
         }
+    }, 100);
+}
 
-        // Função para retroceder o vídeo
-        function seekBackward(seconds) {
-            const currentTime = getCurrentTime();
-            
-            if (canSafelySeek(currentTime, seconds)) {
-                const newTime = Math.max(0, currentTime - seconds);
-                console.log(`Retrocedendo de ${currentTime}s para ${newTime}s`);
-                // Implementação específica dependeria da API completa do Facebook
-            } else {
-                // Se o tempo de retrocesso é maior que o tempo atual,
-                // avança para evitar travamento
-                console.log('Tempo insuficiente para retroceder, mantendo posição atual');
+// Função auxiliar para avançar o estado (repetir ou próximo bloco)
+function avancarParaProximoEstado(totalRepeticoes) {
+    if (repeticoesRestantes > 1) {
+        // Ainda faltam repetições deste bloco
+        repeticoesRestantes--;
+        console.log(`Repetindo bloco ${blocoAtual + 1}. Restam ${repeticoesRestantes} repetições`);
+        
+        // GAMBIARRA 6: Delay antes de repetir
+        setTimeout(function() {
+            if (fluxoAtivo) {
+                processarBloco(totalRepeticoes);
             }
-        }
-
-        // Função para monitorar e executar o loop
-        function monitorLoop() {
-            if (!loopActive) return;
-
-            loopSeconds = parseInt(loopSecondsInput.value) || 3;
-            
-            // Simula o monitoramento (em implementação real, usaria eventos da API)
-            seekBackward(loopSeconds);
-        }
-
-        // Função para iniciar o loop
-        function startLoop() {
-            if (loopActive) return;
-            
-            loopActive = true;
-            loopSeconds = parseInt(loopSecondsInput.value) || 3;
-            
-            toggleLoopBtn.textContent = 'Desativar Loop';
-            toggleLoopBtn.classList.add('active');
-            statusDiv.textContent = `Loop ativo - retrocedendo ${loopSeconds}s`;
-            statusDiv.classList.add('active');
-
-            // Monitora a cada 100ms
-            loopInterval = setInterval(() => {
-                if (loopActive) {
-                    // Adiciona um pequeno delay antes de retroceder
-                    setTimeout(() => {
-                        monitorLoop();
-                    }, 100);
-                }
-            }, 1000);
-        }
-
-        // Função para parar o loop
-        function stopLoop() {
-            loopActive = false;
-            
-            if (loopInterval) {
-                clearInterval(loopInterval);
-                loopInterval = null;
+        }, 400);
+        
+    } else {
+        // Acabaram as repetições deste bloco, vai para o próximo
+        console.log(`Bloco ${blocoAtual + 1} concluído. Avançando para bloco ${blocoAtual + 2}...`);
+        
+        blocoAtual++;
+        repeticoesRestantes = totalRepeticoes;
+        
+        // GAMBIARRA 7: Delay maior antes de mudar de bloco
+        setTimeout(function() {
+            if (fluxoAtivo) {
+                processarBloco(totalRepeticoes);
             }
+        }, 500);
+    }
+}
 
-            toggleLoopBtn.textContent = 'Ativar Loop';
-            toggleLoopBtn.classList.remove('active');
-            statusDiv.textContent = 'Loop desativado';
-            statusDiv.classList.remove('active');
-        }
+// Função para parar o fluxo
+function pararFluxo() {
+    fluxoAtivo = false;
+    clearInterval(monitorIntervalo);
+    if (player) {
+        player.pause();
+    }
+    document.getElementById('status').innerText = "Fluxo interrompido.";
+}
 
-        // Função para alternar o loop
-        function toggleLoop() {
-            if (loopActive) {
-                stopLoop();
-            } else {
-                startLoop();
-            }
-        }
-
-        // Event listeners
-        loadBtn.addEventListener('click', loadVideo);
-        toggleLoopBtn.addEventListener('click', toggleLoop);
-
-        // Permite carregar com Enter
-        videoUrlInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loadVideo();
-            }
-        });
-    </script>
+function pausarVideo() {
+    pararFluxo();
+}
+</script>
 </body>
 </html>
