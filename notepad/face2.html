@@ -228,6 +228,7 @@ button.danger:hover {
     }
 
     .controls {
+    	width: 300px;
         padding: 16px;
         border-radius: 8px;
     }
@@ -241,6 +242,7 @@ button.danger:hover {
         padding: 10px 14px;
         font-size: 14px;
         border-radius: 6px;
+        margin-bottom: 12px;
     }
 
     button {
@@ -376,11 +378,11 @@ input:focus-visible {
         <input type="number" id="segundos-input" value="3" min="1" step="1">
 
         <label for="repeticoes-input">Repetições:</label>
-        <input type="number" id="repeticoes-input" value="2" min="1" step="1">
+        <input type="number" id="repeticoes-input" value="4" min="1" step="1">
 
         <button onclick="dispararFluxo()">Retroceder e Repetir</button>
 
-        <div id="status">Aguardando...</div>
+        <div id="status"></div>
     </div>
 
     <div id="fb-root"></div>
