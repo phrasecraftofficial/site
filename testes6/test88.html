@@ -1,12 +1,9 @@
 <!-- 88
-O que mudou?
-Detecção Automática: Adicionei 'onError': handleYoutubeError na criação do Player. O YouTube emite erros (código 150 para restrição de site, código 101 para restrição de embed, etc).
+Verificação: Assim que o YouTube der erro, o código olha se currentLesson.videoFallbackUrl existe.
 
-Interface de Erro: Se o erro dispara, o vídeo some e aparece um ícone de "Vídeo Quebrado" e um botão amarelo "Usar Áudio Sintético".
+Se existir: Ele exibe o console.log e para (return), mantendo a tela preta ou o estado atual do player (aguardando sua implementação futura de carregar o vídeo nativo).
 
-Continuidade: O botão chama speakText com o texto em inglês da frase. Assim, o usuário ouve a frase (voz do Google/Apple) e pode organizar as palavras normalmente, sem ficar travado na lição.
-
-Recuperação: No início do setupVideo, adicionei uma verificação para restaurar o yt-player caso ele tenha sido removido na tarefa anterior por um erro. Isso garante que, se o PRÓXIMO vídeo funcionar, o player volta a aparecer.
+Se não existir: Ele segue o fluxo anterior, esconde o player e mostra o botão de "Usar Áudio Sintético".
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -4251,6 +4248,17 @@ function validateTrainingData() {
     function handleYoutubeError(event) {
         console.warn("⚠️ Erro no YouTube detectado. Código:", event.data);
     
+        // 1. VERIFICA SE EXISTE URL DE FALLBACK NO APPWRITE
+        // Acessamos 'currentLesson', que guarda o documento completo vindo do banco
+        if (currentLesson && currentLesson.videoFallbackUrl) {
+            console.log("🔗 [Fallback Encontrado] URL alternativa disponível:", currentLesson.videoFallbackUrl);
+            
+            // Por enquanto, apenas loga e interrompe o fluxo (não mostra a tela de erro/voz sintética)
+            return; 
+        }
+    
+        // 2. FLUXO PADRÃO (Se não tiver URL de fallback, ativa a Voz Sintética)
+    
         // Esconde o player (iframe)
         const playerDiv = document.getElementById('yt-player');
         if(playerDiv) playerDiv.style.display = 'none';
@@ -4262,8 +4270,7 @@ function validateTrainingData() {
         const blocker = container.querySelector('.video-blocker');
         if(blocker) blocker.style.display = 'none';
     
-        // Define qual texto será lido (EN ou PT dependendo da tarefa, mas geralmente EN no vídeo)
-        // No seu código, o vídeo geralmente toca o áudio em inglês.
+        // Define qual texto será lido (EN ou PT dependendo da tarefa)
         const textToSpeak = currentTask.en || currentTask.question || currentTask.correct;
     
         container.innerHTML = `
@@ -4281,7 +4288,7 @@ function validateTrainingData() {
                 <i class="fa-solid fa-video-slash" style="font-size: 3rem; color: var(--error-color); margin-bottom: 10px;"></i>
                 <h3 style="margin-bottom: 5px;">Vídeo Indisponível</h3>
                 <p style="font-size: 0.9rem; color: #aaa; margin-bottom: 20px;">
-                    Sua rede ou o YouTube bloqueou este vídeo.
+                    Problema na reprodução do YouTube.
                 </p>
                 
                 <button class="check-btn" onclick="fallbackAudio('${textToSpeak.replace(/'/g, "\\'")}')" style="background-color: var(--accent-color); color: #000;">
@@ -4290,8 +4297,8 @@ function validateTrainingData() {
             </div>
         `;
     
-        // Marca a tarefa como "sem vídeo" para pular lógicas de loop visual
-        isVideoTaskComplete = true; // Libera travamentos de loop
+        // Marca a tarefa como "sem vídeo" para pular lógicas de loop visual do YouTube
+        isVideoTaskComplete = true; 
     }
     
     // Função auxiliar para tocar o áudio no modo fallback
