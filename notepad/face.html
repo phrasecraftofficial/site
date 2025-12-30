@@ -85,6 +85,16 @@ h2 {
     z-index: 10;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
+.timeline-container {
+    cursor: pointer;
+    position: relative;
+    user-select: none; /* Evita selecionar texto ao arrastar */
+}
+
+.timeline-handle {
+    pointer-events: none; /* Faz o clique "atravessar" a bolinha e pegar na barra */
+    transition: left 0.1s ease-out; /* Movimento suave */
+}
 .controls {
     background: #181818;
     border-radius: 12px;
@@ -402,10 +412,6 @@ input:focus-visible {
     </div>
 	
     <div class="controls">
-    	<div id="timeline" class="timeline-container">
-            <div class="timeline-handle" id="handle">
-            </div>
-        </div>
         
         <label for="segundos-input">Segundos:</label>
         
@@ -413,6 +419,11 @@ input:focus-visible {
 
         <label for="repeticoes-input">Repetições:</label>
         <input type="number" id="repeticoes-input" value="4" min="1" step="1">
+        
+    	<div id="timeline" class="timeline-container">
+            <div class="timeline-handle" id="handle">
+            </div>
+        </div>
 
         <button id="btn-principal" onclick="dispararFluxo()">Retroceder e Repetir</button>
 		
@@ -721,17 +732,31 @@ function criarTimeline(duracaoTotal, segundosPorBloco) {
 }
 
 function pularParaBloco(index) {
+    if (!player) return;
+
     blocoAtual = index;
-    repeticoesRestantes = parseInt(document.getElementById('repeticoes-input').value);
-    
     const bloco = blocos[blocoAtual];
-    atualizarPosicaoBolinha(bloco.inicio);
     
-    // Força o player a ir para o tempo, mesmo se a SDK estiver lenta
-    if (player) {
-        player.seek(bloco.inicio);
-        if (!fluxoAtivo) dispararFluxo();
+    // Resetar repetições para o valor original do input
+    const inputRepeticoes = document.getElementById('repeticoes-input');
+    repeticoesRestantes = parseInt(inputRepeticoes.value) || 4;
+
+    console.log(`Pulando para Bloco ${index + 1}: ${bloco.inicio}s`);
+    
+    // Força o player a ir para o início do bloco
+    player.seek(bloco.inicio);
+    
+    // Se o fluxo não estiver ativo, inicia ele automaticamente ao clicar
+    if (!fluxoAtivo) {
+        fluxoAtivo = true;
+        document.getElementById('btn-principal').innerText = "Parar Fluxo";
+        document.getElementById('btn-principal').classList.add('danger');
     }
+
+    // Reinicia o processamento a partir deste novo bloco
+    setTimeout(() => {
+        processarBloco(parseInt(inputRepeticoes.value));
+    }, 300);
 }
 
 function atualizarPosicaoBolinha(tempoAtual) {
@@ -751,6 +776,40 @@ document.getElementById('segundos-input').addEventListener('change', function() 
         criarTimeline(duracaoTotal, novosSegundos);
     }
 });
+
+// Adiciona os eventos de interação após o carregamento da página
+document.addEventListener('DOMContentLoaded', function() {
+    const timeline = document.getElementById('timeline');
+    
+    // Clique direto na barra
+    timeline.addEventListener('mousedown', (e) => lidarCliqueBarra(e));
+    
+    // Suporte para Touch (Celular)
+    timeline.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        lidarCliqueBarra(touch);
+    });
+});
+
+function lidarCliqueBarra(e) {
+    if (!player) return;
+
+    const timeline = document.getElementById('timeline');
+    const rect = timeline.getBoundingClientRect();
+    const x = e.clientX - rect.left; // Posição X do clique dentro da barra
+    const larguraTotal = rect.width;
+    
+    // Calcula a porcentagem clicada (0 a 1)
+    const percentual = Math.max(0, Math.min(1, x / larguraTotal));
+    const tempoDesejado = percentual * player.getDuration();
+
+    // Encontra qual bloco corresponde a esse tempo
+    const indexBloco = blocos.findIndex(b => tempoDesejado >= b.inicio && tempoDesejado <= b.fim);
+    
+    if (indexBloco !== -1) {
+        pularParaBloco(indexBloco);
+    }
+}
 </script>
 </body>
 </html>
