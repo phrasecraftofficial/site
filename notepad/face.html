@@ -2,21 +2,399 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Controle de Vídeo Facebook</title>
+    <title>Listening Pratice by Facebook Video</title>
     <style>
-        body { background-color: #121212; color: white; font-family: sans-serif; text-align: center; }
-        .video-container { margin: 20px auto; max-width: 500px; min-height: 300px; }
-        button { 
-            background: #4267B2; color: white; border: none; 
-            padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 4px;
-        }
-        button:hover { background: #365899; }
-        .status { color: #aaa; font-size: 0.9em; margin-bottom: 10px; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(180deg, #121212 0%, #000000 100%);
+    color: #ffffff;
+    font-family: 'Circular', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h2 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    text-align: center;
+    letter-spacing: -0.04em;
+}
+
+.status {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 24px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #b3b3b3;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.video-container {
+    background: #181818;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 0 auto 32px;
+    max-width: 600px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.timeline-container {
+    width: 100%;
+    background: #181818;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    overflow-x: auto; /* Permite scroll se houver muitos blocos */
+    display: flex;
+    gap: 4px;
+}
+
+.timeline-block {
+    flex: 0 0 40px; /* Largura fixa para cada bloco na régua */
+    height: 30px;
+    background: #333;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.timeline-block:hover {
+    background: #1db954;
+    color: #000;
+}
+
+.timeline-block.active {
+    background: #1db954;
+    border-color: #ffffff;
+    font-weight: bold;
+}
+.controls {
+    background: #181818;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #ffffff;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+input[type="number"] {
+    width: 100%;
+    background: #000000;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+input[type="number"]:hover {
+    border-color: #535353;
+}
+
+input[type="number"]:focus {
+    outline: none;
+    border-color: #1db954;
+    box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.1);
+}
+
+button {
+    background: #1db954;
+    color: #ffffff;
+    border: none;
+    border-radius: 500px;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
+button:hover {
+    background: #1ed760;
+    transform: scale(1.04);
+    box-shadow: 0 6px 16px rgba(29, 185, 84, 0.4);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button.secondary {
+    background: transparent;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+button.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #1db954;
+    color: #1db954;
+    transform: scale(1.04);
+}
+
+button.danger {
+    background: #e22134;
+    box-shadow: 0 4px 12px rgba(226, 33, 52, 0.3);
+}
+
+button.danger:hover {
+    background: #ff2e46;
+    box-shadow: 0 6px 16px rgba(226, 33, 52, 0.4);
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.button-group button {
+    margin-top: 0;
+}
+
+#status {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efeito de loading */
+.loading::after {
+    content: '';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+}
+
+/* Scrollbar personalizada (estilo Spotify) */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #282828;
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3e3e3e;
+}
+
+/* Mobile Responsivo */
+@media (max-width: 768px) {
+    body {
+        padding: 12px;
+    }
+
+    h2 {
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+
+    .video-container {
+        padding: 16px;
+        min-height: 300px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+
+    .controls {
+    	width: 300px;
+        padding: 16px;
+        border-radius: 8px;
+    }
+
+    label {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    input[type="number"] {
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        padding: 12px 24px;
+        font-size: 14px;
+        border-radius: 500px;
+    }
+
+    .button-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .status {
+        padding: 10px 16px;
+        font-size: 12px;
+        margin-bottom: 16px;
+        border-radius: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    h2 {
+        font-size: 20px;
+    }
+
+    .video-container {
+        padding: 12px;
+        min-height: 250px;
+    }
+
+    .controls {
+        padding: 12px;
+    }
+
+    input[type="number"] {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    label {
+        font-size: 11px;
+    }
+}
+
+/* Modo landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    body {
+        padding: 8px;
+    }
+
+    .video-container {
+        min-height: 200px;
+        margin-bottom: 12px;
+    }
+
+    h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+}
+
+/* Tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 700px;
+    }
+
+    h2 {
+        font-size: 28px;
+    }
+
+    .video-container,
+    .controls {
+        max-width: 100%;
+    }
+}
+
+/* Animações suaves para inputs */
+input[type="number"],
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Suporte para dark mode do sistema */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: linear-gradient(180deg, #121212 0%, #000000 100%);
+    }
+}
+
+/* Acessibilidade - foco visível */
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid #1db954;
+    outline-offset: 2px;
+}
+
+/* Melhorias para touch devices */
+@media (hover: none) and (pointer: coarse) {
+    button {
+        min-height: 44px;
+    }
+
+    input[type="number"] {
+        min-height: 44px;
+    }
+}
     </style>
 </head>
 <body>
 
-    <h2>Controle de Vídeo via Facebook API</h2>
+    <h2>Listening Pratice by Facebook Video</h2>
     <div id="status" class="status">Carregando player...</div>
 
     <div class="video-container">
@@ -28,116 +406,294 @@
             data-allowfullscreen="true">
         </div>
     </div>
-
+	
     <div class="controls">
+    	<div id="timeline-visual" class="timeline-container"></div>
+        
         <label for="segundos-input">Segundos:</label>
+        
         <input type="number" id="segundos-input" value="3" min="1" step="1">
 
         <label for="repeticoes-input">Repetições:</label>
-        <input type="number" id="repeticoes-input" value="2" min="1" step="1">
+        <input type="number" id="repeticoes-input" value="4" min="1" step="1">
 
-        <button onclick="dispararFluxo()">Retroceder e Repetir</button>
-
-        <div id="status">Aguardando...</div>
+        <button id="btn-principal" onclick="dispararFluxo()">Retroceder e Repetir</button>
+		
+        <div id="status"></div>
     </div>
 
-    <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js"></script>
+<div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 
     <script>
-    let player; // Variável global para armazenar a instância do vídeo
-    
-    let repeticoesRestantes =  document.getElementById('repeticoes-input');
-    
-    
-	let monitorIntervalo; // Variável para controlar o loop de monitoramento
-    
+    let player;
+    let blocos = [];
+    let blocoAtual = 0;
+    let repeticoesRestantes = 0;
+    let monitorIntervalo;
+    let fluxoAtivo = false;
 
+    // Configuração inicial da SDK
     window.fbAsyncInit = function() {
         FB.init({
-            appId      : '', // Pode deixar vazio para testes locais
+            appId      : '', // Pode deixar vazio para uso básico
             xfbml      : true,
             version    : 'v18.0'
         });
 
-        // Quando o player estiver pronto, capturamos a instância dele
+        // Captura o evento de quando o player está pronto
         FB.Event.subscribe('xfbml.ready', function(msg) {
             if (msg.type === 'video' && msg.id === 'meu-player-fb') {
                 player = msg.instance;
                 document.getElementById('status').innerText = "Player pronto!";
                 
-                // Exemplo: Dar play automático (opcional, mas navegadores podem bloquear)
-                // player.play(); 
+                player.subscribe('pause', function() {
+                    if (fluxoAtivo) {
+                        pararFluxo();
+                    }
+                });
             }
         });
     };
 
-function dispararFluxo() {
-    const input = document.getElementById('segundos-input');
-    const segundos = parseInt(input.value);
+// Função que divide o vídeo em blocos
+function dividirVideoEmBlocos(duracao, segundosPorBloco) {
+    let blocosArray = [];
+    let inicio = 0;
     
-    if (isNaN(segundos) || segundos <= 0) {
-        alert("Insira um valor válido.");
+    while (inicio < duracao) {
+        let fim = Math.min(inicio + segundosPorBloco, duracao);
+        blocosArray.push({
+            inicio: inicio,
+            fim: fim,
+            duracao: fim - inicio
+        });
+        inicio = fim;
+    }
+    
+    return blocosArray;
+}
+
+// Função principal que inicia todo o fluxo
+function dispararFluxo() {
+    if (!player) {
+        alert("Player não está pronto ainda.");
         return;
     }
 
-    repeticoesRestantes = 6;
-    retroceder(segundos);
-}
+    // Se já estiver ativo, o botão funciona como "Parar"
+    if (fluxoAtivo) {
+        pararFluxo();
+        return;
+    }
+    
+    const inputSegundos = document.getElementById('segundos-input');
+    const inputRepeticoes = document.getElementById('repeticoes-input');
+    
+    const segundos = parseInt(inputSegundos.value);
+    const totalRepeticoes = parseInt(inputRepeticoes.value);
+    
+    if (isNaN(segundos) || segundos <= 0 || isNaN(totalRepeticoes) || totalRepeticoes <= 0) {
+        alert("Insira valores válidos.");
+        return;
+    }
 
-function retroceder(segundos) {
-    if (!player) return;
+    // Alterar visual do botão ao iniciar
+    const btn = document.getElementById('btn-principal');
+    btn.innerText = "Parar Fluxo";
 
-    const tempoAtual = player.getCurrentPosition();
-    let novoTempo = tempoAtual - segundos;
-    if (novoTempo < 0) novoTempo = 0;
-
-    // 1. Primeiro movemos o "cabeçote" do vídeo para o passado (ainda pausado)
-    player.seek(novoTempo);
-    player.play();  
-
-    // 2. O delay de 1s agora acontece com o vídeo parado ou saltando
+    // Pega a duração total do vídeo
+    const duracao = player.getDuration();
+    
+    // Divide o vídeo em blocos
+    blocos = dividirVideoEmBlocos(duracao, segundos);
+    
+    console.log("Vídeo dividido em " + blocos.length + " blocos:", blocos);
+    document.getElementById('status').innerText = 
+        `Vídeo dividido em ${blocos.length} blocos de ${segundos}s`;
+    
+    // Reseta variáveis de controle
+    blocoAtual = 0;
+    repeticoesRestantes = totalRepeticoes;
+    fluxoAtivo = true;
+    
+    // Pausa antes de começar
+    player.pause();
+    
+    // Delay inicial antes de processar
     setTimeout(function() {
-        console.log("Iniciando reprodução do trecho em: " + novoTempo + "s");
-        
-        // 3. Só damos play DEPOIS que o tempo já foi ajustado
-        player.play(); 
-        
-        monitorarEPausar(tempoAtual, segundos);
-    }, 100); 
-}
-
-function monitorarEPausar(tempoAlvo, segundos) {
-    clearInterval(monitorIntervalo);
-
-    monitorIntervalo = setInterval(function() {
-        if (!player) return;
-
-        let tempoAgora = player.getCurrentPosition();
-
-        if (tempoAgora >= tempoAlvo) {
-            clearInterval(monitorIntervalo);
-            pausarVideo(); // Pausa ao chegar no objetivo
-
-            if (repeticoesRestantes > 1) {
-                repeticoesRestantes--; 
-                console.log("Preparando segunda repetição...");
-                
-                // Chama retroceder diretamente. 
-                // A função retroceder agora cuida de posicionar e dar play.
-                retroceder(segundos);
-            } else {
-                console.log("Fluxo finalizado.");
-                repeticoesRestantes = 0;
-            }
-        }
+        processarBloco(totalRepeticoes);
     }, 500);
 }
 
-function pausarVideo() {
-    if (player) player.pause();
-}
+// Função que processa um bloco específico
+function processarBloco(totalRepeticoes) {
+    if (!fluxoAtivo || blocoAtual >= blocos.length) {
+        document.getElementById('status').innerText = "Processamento concluído!";
+        pararFluxo();
+        return;
+    }
     
+    const bloco = blocos[blocoAtual];
+    
+    document.getElementById('status').innerText = 
+        `Bloco ${blocoAtual + 1}/${blocos.length} - Repetição ${totalRepeticoes - repeticoesRestantes + 1}/${totalRepeticoes} (${bloco.inicio.toFixed(1)}s - ${bloco.fim.toFixed(1)}s)`;
+    
+    console.log(`Processando bloco ${blocoAtual + 1}: ${bloco.inicio.toFixed(1)}s a ${bloco.fim.toFixed(1)}s`);
+    
+    // GAMBIARRA 1: Pausa antes de fazer seek
+    player.pause();
+    
+    // GAMBIARRA 2: Aguarda um pouco antes de fazer o seek
+    setTimeout(function() {
+        if (!fluxoAtivo) return;
+        
+        // Vai para o início do bloco
+        player.seek(bloco.inicio);
+        
+        // GAMBIARRA 3: Aguarda o seek "pegar" antes de dar play
+        setTimeout(function() {
+            if (!fluxoAtivo) return;
+            
+            player.play();
+            
+            // GAMBIARRA 4: Aguarda começar a tocar antes de monitorar
+            setTimeout(function() {
+                if (!fluxoAtivo) return;
+                monitorarBloco(bloco, totalRepeticoes);
+            }, 200);
+            
+        }, 300);
+        
+    }, 200);
+}
+
+// Função que monitora a reprodução do bloco
+function monitorarBloco(bloco, totalRepeticoes) {
+    clearInterval(monitorIntervalo);
+    
+    let ultimaPosicao = -1;
+    let contadorTravado = 0;
+    
+    monitorIntervalo = setInterval(function() {
+        if (!player || !fluxoAtivo) {
+            clearInterval(monitorIntervalo);
+            return;
+        }
+        
+        let tempoAgora = player.getCurrentPosition();
+        
+        // Verifica se o vídeo travou (não está avançando)
+        if (Math.abs(tempoAgora - ultimaPosicao) < 0.01) {
+            // Só incrementa se o fluxo ainda estiver ativo (evita falsos positivos)
+            if (fluxoAtivo) {
+                contadorTravado++;
+            }
+            
+            if (contadorTravado > 20) { // Aumentei um pouco a tolerância para 2 segundos
+                console.warn("Vídeo travado ou buffer longo, forçando próximo bloco");
+                clearInterval(monitorIntervalo);
+                avancarParaProximoEstado(totalRepeticoes);
+                return;
+            }
+        }
+        else {
+            contadorTravado = 0;
+        }
+        ultimaPosicao = tempoAgora;
+        
+        // Verifica se está fora do bloco (pulou)
+        if (tempoAgora < bloco.inicio - 0.5 || tempoAgora > bloco.fim + 0.5) {
+            console.warn(`Posição ${tempoAgora.toFixed(1)}s fora do bloco esperado. Corrigindo...`);
+            clearInterval(monitorIntervalo);
+            
+            // GAMBIARRA 5: Força voltar para o bloco correto
+            setTimeout(function() {
+                processarBloco(totalRepeticoes);
+            }, 300);
+            return;
+        }
+        
+        // Verifica se chegou no fim do bloco atual (com margem menor)
+        if (tempoAgora >= bloco.fim - 0.2) {
+            clearInterval(monitorIntervalo);
+            avancarParaProximoEstado(totalRepeticoes);
+        }
+    }, 100);
+}
+
+// Função auxiliar para avançar o estado (repetir ou próximo bloco)
+function avancarParaProximoEstado(totalRepeticoes) {
+    if (repeticoesRestantes > 1) {
+        // Ainda faltam repetições deste bloco
+        repeticoesRestantes--;
+        console.log(`Repetindo bloco ${blocoAtual + 1}. Restam ${repeticoesRestantes} repetições`);
+        
+        // GAMBIARRA 6: Delay antes de repetir
+        setTimeout(function() {
+            if (fluxoAtivo) {
+                processarBloco(totalRepeticoes);
+            }
+        }, 400);
+        
+    } else {
+        // Acabaram as repetições deste bloco, vai para o próximo
+        console.log(`Bloco ${blocoAtual + 1} concluído. Avançando para bloco ${blocoAtual + 2}...`);
+        
+        blocoAtual++;
+        repeticoesRestantes = totalRepeticoes;
+        
+        // GAMBIARRA 7: Delay maior antes de mudar de bloco
+        setTimeout(function() {
+            if (fluxoAtivo) {
+                processarBloco(totalRepeticoes);
+            }
+        }, 500);
+    }
+}
+
+// Função para parar o fluxo
+function pararFluxo() {
+    fluxoAtivo = false;
+    clearInterval(monitorIntervalo);
+    
+    if (player) {
+        player.pause();
+    }
+
+    // Resetar o botão para o estado inicial
+    const btn = document.getElementById('btn-principal');
+    btn.innerText = "Retroceder e Repetir";
+
+    document.getElementById('status').innerText = "Fluxo interrompido.";
+}
+
+function pausarVideo() {
+    pararFluxo();
+}
+function gerarTimelineVisual(blocos) {
+    const container = document.getElementById('timeline-visual');
+    container.innerHTML = ''; // Limpa anterior
+
+    blocos.forEach((bloco, index) => {
+        const div = document.createElement('div');
+        div.className = 'timeline-block';
+        div.innerText = index + 1;
+        div.title = `${bloco.inicio.toFixed(1)}s - ${bloco.fim.toFixed(1)}s`;
+        
+        div.onclick = () => {
+            // Remove ativo de todos e adiciona neste
+            document.querySelectorAll('.timeline-block').forEach(b => b.classList.remove('active'));
+            div.classList.add('active');
+            
+            // Pula o vídeo para o início do bloco
+            player.seek(bloco.inicio);
+            player.play();
+        };
+        
+        container.appendChild(div);
+    });
+}
 </script>
 </body>
 </html>
