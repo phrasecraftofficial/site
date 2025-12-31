@@ -1,9 +1,6 @@
-<!-- 88
-Verificação: Assim que o YouTube der erro, o código olha se currentLesson.videoFallbackUrl existe.
-
-Se existir: Ele exibe o console.log e para (return), mantendo a tela preta ou o estado atual do player (aguardando sua implementação futura de carregar o vídeo nativo).
-
-Se não existir: Ele segue o fluxo anterior, esconde o player e mostra o botão de "Usar Áudio Sintético".
+<!-- 87
+injeta a lista de legendas em preview-earsSentences
+e gere o trecho para eu ajustar ao clicar no card em ears ir para view-earsLesson
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -644,7 +641,7 @@ Se não existir: Ele segue o fluxo anterior, esconde o player e mostra o botão 
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v88
+            PhraseCraft v87
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -664,11 +661,18 @@ Se não existir: Ele segue o fluxo anterior, esconde o player e mostra o botão 
                 You
             </a>
             <a class="sidebar-item" onclick="navigateTo('duels')">
-                <span class="material-symbols-outlined">swords</span> Duels
+                <span class="material-symbols-outlined">swords</span> 			  	  Duels
             </a>
             <a class="sidebar-item" onclick="navigateTo('path')">
                 <i class="fa-solid fa-map-location-dot"></i> Path
             </a>
+            <a class="sidebar-item" onclick="navigateTo('ears')">
+                <span class="material-symbols-outlined">
+                    headphones
+                </span>
+                Ears
+            </a>
+            
             <div style="margin-top: auto; padding: 20px; font-size: 0.8rem; color: #555;">
                 PhraseCraft v1.0
             </div>
@@ -697,6 +701,13 @@ Se não existir: Ele segue o fluxo anterior, esconde o player e mostra o botão 
                     <div id="duels" style="display: flex; flex-direction: column; gap: 15px;">
                     </div>
                 </div>
+            </section>
+
+            <section id="view-ears" class="view-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Ears</h2>
+                </div>
+                <div id="ears-list"></div>
             </section>
 
             <section id="view-path" class="view-section">
@@ -783,6 +794,26 @@ Se não existir: Ele segue o fluxo anterior, esconde o player e mostra o botão 
                     </button>
                 
                 </div>
+            </section>
+
+            <section id="view-earsLesson" class="view-section">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                     <button onclick="navigateTo('ears')" style="background:none; border:none; color:var(--text-primary); font-size:1.2rem; cursor:pointer; margin-right:10px;">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h3 id="ears-lesson-title" style="margin:0; font-size:1.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Title</h3>
+                </div>
+
+                <div class="video-responsive-container" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 15px; flex-shrink: 0;">
+                    <div id="yt-player-ears"></div> 
+                    </div>
+
+                <div style="padding: 10px; background: var(--surface-color); border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #888; text-align: center;">
+                    <i class="fa-solid fa-circle-info"></i> Toque em uma frase para ouvir o trecho.
+                </div>
+
+                <ul id="preview-earsSentences" class="preview-list" style="padding-bottom: 80px;">
+                    </ul>
             </section>
 
             <section id="view-you" class="view-section">
@@ -1003,6 +1034,12 @@ Se não existir: Ele segue o fluxo anterior, esconde o player e mostra o botão 
         <div class="footer-item" onclick="navigateTo('path')">
             <i class="fa-solid fa-map-location-dot"></i>
             <span>Path</span>
+        </div>
+        <div class="footer-item" onclick="navigateTo('ears')">
+            <span class="material-symbols-outlined">
+            	headphones
+            </span>
+            <span>Ears</span>
         </div>
     </footer>
 <script>
@@ -1809,6 +1846,9 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (activeFooter) activeFooter.classList.add('active');
     
         // --- LAYOUT: Só configuramos explicitamente para views especiais ---
+        if (view === 'ears') {
+            renderEarsList();
+        }
         if (view === 'preview') {
             setLayoutMode('full');
         } else if (view === 'training' && !currentTaskMode) {
@@ -3808,50 +3848,47 @@ function validateTrainingData() {
     }
 
     // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
-    // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
     function setupVideo() {
         ui.videoWrapper.classList.remove('hidden');
         isVideoTaskComplete = false;
         
-        // Garante que o container do vídeo esteja visível e limpo de erros anteriores
-        const container = document.querySelector('.video-responsive-container');
-        // Se houve erro antes, o container foi sobrescrito. Vamos restaurar o div do player se necessário
-        if(!document.getElementById('yt-player')) {
-            container.innerHTML = '<div id="yt-player"></div><div class="video-blocker"></div>';
-        } else {
-             document.getElementById('yt-player').style.display = 'block';
-             const blocker = container.querySelector('.video-blocker');
-             if(blocker) blocker.style.display = 'block';
-        }
-        
-        // ... (Lógica de decisão de modo e texto do prompt mantém igual) ...
+        // --- 1. DECISÃO DE MODO (O IF MÁGICO) ---
         let targetText = "";
         let promptHTML = "";
-        let synthLang = ""; 
+        let synthLang = ""; // Variável para controlar o idioma da fala
 
         if (currentTask.type === 'video_translate') {
+            // MODO TREINO (Tarefa 2): Alvo é Português
             targetText = currentTask.correct; 
             promptHTML = `<span style="color:#aaa; font-size:0.9em;">Traduza o que ouvir para <b>Português</b>:</span>`;
+            
+            // 🔥 MUDANÇA: null para NÃO ler as palavras em PT
             synthLang = null; 
         } else {
+            // MODO VÍDEO (Padrão): Alvo é Inglês
             targetText = currentTask.question || currentTask.en || ""; 
             promptHTML = `<span style="color:#aaa; font-size:0.9em;">Organize o que ouvir em <b>Inglês</b>:</span>`;
+            
+            // Mantém leitura em EN para ajudar na pronúncia
             synthLang = 'en-US'; 
         }
 
+        // Atualiza o texto de instrução na tela
         document.getElementById('video-feedback').innerHTML = promptHTML;
 
+        // Prepara a frase alvo para validação (remove pontuação, normaliza)
         currentTargetSentence = targetText
             .replace(/\r?\n|\r/g, ' ')
             .trim()
             .split(/\s+/)
             .map(w => normalizeWord(w));
 
+        // Limpa a área visual
         document.getElementById('video-answer-zone').innerHTML = '';
         document.getElementById('video-word-bank').innerHTML = '';
         document.getElementById('video-answer-zone').style.borderColor = '#444';
 
-        // --- 2. SETUP DO PLAYER COM GESTÃO DE ERRO ---
+        // --- 2. SETUP DO PLAYER (Idêntico ao anterior) ---
         const videoId = getYoutubeId(currentTask.videoUrl);
         const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
 
@@ -3864,29 +3901,19 @@ function validateTrainingData() {
                         event.target.setPlaybackQuality(userQuality);
                         window.speechSynthesis.cancel();
                         playSegment(currentTask.start, currentTask.end); 
-                    },
-                    // 🔥 AQUI ESTÁ A MUDANÇA: Adicionando o ouvinte de erro
-                    'onError': handleYoutubeError 
+                    }
                 }
             });
         } else {
             window.speechSynthesis.cancel();
-            // Recarrega o vídeo
             ytPlayer.loadVideoById({
                 'videoId': videoId,
                 'startSeconds': currentTask.start,
                 'suggestedQuality': userQuality
             });
-            // 🔥 REFORÇO: Reatribui o erro caso o player tenha perdido a referência (raro, mas seguro)
-            // Nota: A API do YouTube Iframe nem sempre permite rebind fácil de eventos em player existente,
-            // mas como o player é instanciado uma vez, o 'onError' inicial deve persistir.
-            
             setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
         }
 
-        // ... (Restante da função: Geração de palavras, etc. continua igual) ...
-        // ... (Copie o restante da sua função setupVideo original daqui para baixo) ...
-        
         // --- 3. GERA PALAVRAS EMBARALHADAS ---
         let words = targetText
             .replace(/\r?\n|\r/g, ' ')
@@ -3907,6 +3934,7 @@ function validateTrainingData() {
                 if (this.classList.contains('disabled-word')) return;
                 if (document.body.classList.contains('audio-playing')) return;
                 
+                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
                 if (synthLang) {
                     speakText(word, synthLang); 
                 }
@@ -3915,9 +3943,11 @@ function validateTrainingData() {
                 const expectedClean = currentTargetSentence[expectedWordIndex];
             
                 if (clickedClean === expectedClean) {
+                    // ACERTOU
                     zone.appendChild(this);
                     expectedWordIndex++;
             
+                    // Reabilita palavras erradas (UX Preventiva reset)
                     const disabledWords = bank.querySelectorAll('.disabled-word');
                     disabledWords.forEach(w => w.classList.remove('disabled-word'));
             
@@ -3925,6 +3955,7 @@ function validateTrainingData() {
                         finishVideoTaskSuccess();
                     }
                 } else {
+                    // ERROU
                     this.classList.add('disabled-word');
                     this.animate([
                         { transform: 'translateX(0)' }, 
@@ -3937,26 +3968,14 @@ function validateTrainingData() {
             bank.appendChild(span);
         });
 
-        // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR (COM PROTEÇÃO PARA FALLBACK) ---
+        // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR ---
         let videoStarted = false;
-        
-        // Limpa intervalo anterior se existir
-        if(window.videoCheckInterval) clearInterval(window.videoCheckInterval);
-
-        window.videoCheckInterval = setInterval(() => {
-            // Se o player sumiu (entrou no modo erro), para de checar e libera as palavras
-            if(document.getElementById('yt-player').style.display === 'none') {
-                videoStarted = true;
-                clearInterval(window.videoCheckInterval);
-                const allWords = bank.querySelectorAll('.word-tag');
-                allWords.forEach(w => w.classList.remove('disabled-word'));
-                return;
-            }
-
+        const checkVideoInterval = setInterval(() => {
             if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
                 if (!videoStarted) {
                     videoStarted = true;
-                    clearInterval(window.videoCheckInterval);
+                    clearInterval(checkVideoInterval);
+                    // Libera as palavras quando o trecho terminar de tocar a primeira vez
                     setTimeout(() => {
                         const allWords = bank.querySelectorAll('.word-tag');
                         allWords.forEach(w => w.classList.remove('disabled-word'));
@@ -3968,11 +3987,11 @@ function validateTrainingData() {
         // Timeout de segurança
         setTimeout(() => {
             if (!videoStarted) {
-                if(window.videoCheckInterval) clearInterval(window.videoCheckInterval);
+                clearInterval(checkVideoInterval);
                 const allWords = bank.querySelectorAll('.word-tag');
                 allWords.forEach(w => w.classList.remove('disabled-word'));
             }
-        }, 8000); // Reduzi para 8s para ser mais ágil
+        }, 10000);
     }
 
     // Função auxiliar para sucesso no Vídeo
@@ -4244,31 +4263,242 @@ function validateTrainingData() {
         setTimeout(() => select.style.borderColor = originalBorder, 500);
     }
     
-    // --- FUNÇÃO DE ERRO (MODO TESTE: APENAS LOG DE FALLBACK) ---
-    function handleYoutubeError(event) {
-        console.warn("⚠️ Erro no YouTube detectado. Código:", event.data);
-    
-        // Verifica se existe URL de fallback no objeto da lição atual carregado do Appwrite
-        if (currentLesson && currentLesson.videoFallbackUrl) {
-            console.log("🔗 [Fallback Encontrado] URL alternativa disponível:", currentLesson.videoFallbackUrl);
-            // Futuramente aqui entrará o código para carregar o player nativo
-        } else {
-            console.log("❌ [Fallback] Nenhuma URL alternativa configurada para esta lição no Appwrite.");
+    // --- FUNÇÃO PARA CONTAR VIDEO FALLBACK ---
+    async function checkVideoFallbackCount() {
+        console.log('🔍 Verificando contagem de videoFallbackUrl...');
+
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTION_ID,
+                [
+                    // Filtra apenas documentos onde o campo existe e não é nulo
+                    Appwrite.Query.isNotNull('videoFallbackUrl'),
+                    // Opcional: define limite 1 para economizar banda, pois queremos apenas o 'total'
+                    Appwrite.Query.limit(1) 
+                ]
+            );
+
+            const count = response.total;
+            console.log(`📊 TOTAL de rows com videoFallbackUrl preenchido: ${count}`);
+            return count;
+
+        } catch (error) {
+            console.error("❌ Erro ao consultar videoFallbackUrl:", error);
+            return 0;
         }
     }
+
+    // --- LOGICA ESPECÍFICA PARA EARS (LISTENING MODE) ---
+
+    // 1. Função que abre a lição, carrega dados e configura a tela
+    async function openEarsLesson(lessonId) {
+        console.log("🎧 [Ears] Abrindo lição ID:", lessonId);
     
-    // Função auxiliar para tocar o áudio no modo fallback
-    function fallbackAudio(text) {
-        speakText(text, 'en-US', () => {
-            // Callback opcional: Se for tarefa de Jumble, libera as palavras após o áudio
-            const bank = document.getElementById('video-word-bank');
-            if(bank) {
-                const allWords = bank.querySelectorAll('.word-tag');
-                allWords.forEach(w => w.classList.remove('disabled-word'));
+        // Limpa player anterior e estados
+        clean(); 
+        
+        // Busca a lição
+        let rawLesson = allLessons.find(l => l.id == lessonId);
+        if (!rawLesson) { console.error("Lição não encontrada"); return; }
+    
+        // Carrega/Compila os dados (Reutilizando lógica de cache do openPreview)
+        // Precisamos garantir que 'currentLesson' esteja populada com 'data' (frases)
+        let lessonDataCompiled;
+        if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
+            lessonDataCompiled = currentLesson.data;
+        } else {
+            // Mostra loading rápido se precisar baixar
+            ui.listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Carregando dados...</div>';
+            const loadedData = await fetchLessonData(rawLesson);
+            if (!loadedData) return;
+            
+            lessonDataCompiled = compileLessonData(
+                loadedData.srtEn, loadedData.srtPt, loadedData.vocabData, rawLesson.video
+            );
+        }
+    
+        // Atualiza estado global
+        currentLesson = { ...rawLesson, data: lessonDataCompiled };
+    
+        // Navega para a view correta
+        navigateTo('earsLesson', { lessonId: rawLesson.id });
+        
+        // Atualiza título na UI
+        const titleEl = document.getElementById('ears-lesson-title');
+        if(titleEl) titleEl.innerText = currentLesson.title;
+    
+        // Renderiza a lista de frases
+        renderEarsSentences();
+    
+        // Inicializa o Player Específico do Ears
+        setupEarsPlayer(currentLesson.video);
+    }
+    
+    // 2. Função que injeta a lista de legendas (Sua solicitação principal)
+    function renderEarsSentences() {
+        const listContainer = document.getElementById('preview-earsSentences');
+        listContainer.innerHTML = ''; // Limpa lista anterior
+    
+        if (!currentLesson || !currentLesson.data) return;
+    
+        currentLesson.data.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = 'preview-item';
+            
+            // Estilização para parecer clicável e interativo
+            li.style.cursor = 'pointer';
+            li.style.display = 'flex';
+            li.style.flexDirection = 'column';
+            li.style.gap = '5px';
+            li.style.transition = 'background-color 0.2s';
+            
+            // Conteúdo: Inglês (Destaque) e Português (Sutil)
+            li.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <span style="font-weight:bold; color:var(--text-primary); font-size: 1rem;">${item.en}</span>
+                    <i class="fa-solid fa-play-circle" style="color:var(--accent-color); font-size:1.2rem; margin-left:10px;"></i>
+                </div>
+                <span style="font-size:0.85em; color:var(--text-secondary); font-style: italic;">${item.pt || ''}</span>
+            `;
+    
+            // AÇÃO DE CLIQUE: Toca o trecho específico
+            li.onclick = () => {
+                // Remove destaque de outros
+                document.querySelectorAll('#preview-earsSentences .preview-item').forEach(el => {
+                    el.style.backgroundColor = 'transparent';
+                    el.style.borderLeft = 'none';
+                });
+                
+                // Adiciona destaque ao atual
+                li.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                li.style.borderLeft = '4px solid var(--accent-color)';
+    
+                // Toca o segmento (Usa a função playSegment que já existe, mas precisamos garantir que o player certo seja alvo)
+                // Como criamos um player separado (ytPlayerEars), precisamos adaptar a função de play
+                playEarsSegment(item.start, item.end);
+            };
+    
+            listContainer.appendChild(li);
+        });
+    }
+    
+    // 3. Player Específico para a View Ears (Para não conflitar com o Treino)
+    let ytPlayerEars = null;
+    let earsTimer = null;
+    
+    function setupEarsPlayer(videoUrl) {
+        const videoId = getYoutubeId(videoUrl);
+        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+    
+        // Se já existe, apenas carrega o vídeo novo
+        if (ytPlayerEars) {
+            ytPlayerEars.loadVideoById({
+                'videoId': videoId,
+                'suggestedQuality': userQuality
+            });
+            return;
+        }
+    
+        // Cria novo player apontando para a div 'yt-player-ears'
+        ytPlayerEars = new YT.Player('yt-player-ears', {
+            height: '100%',
+            width: '100%',
+            videoId: videoId,
+            playerVars: { 
+                'playsinline': 1, 
+                'controls': 1, // Aqui permitimos controles para o usuário navegar se quiser
+                'modestbranding': 1, 
+                'rel': 0 
+            },
+            events: {
+                'onReady': (event) => {
+                    event.target.setPlaybackQuality(userQuality);
+                }
             }
         });
     }
-  
+    
+    // 4. Toca segmento no Player Ears
+    function playEarsSegment(start, end) {
+        if (!ytPlayerEars || !ytPlayerEars.seekTo) return;
+    
+        ytPlayerEars.seekTo(start);
+        ytPlayerEars.playVideo();
+    
+        // Limpa timer anterior
+        if (earsTimer) clearInterval(earsTimer);
+    
+        // Cria loop ou pausa ao fim (aqui configurei para pausar ao fim da frase)
+        earsTimer = setInterval(() => {
+            if (!ytPlayerEars.getCurrentTime) return;
+            
+            const current = ytPlayerEars.getCurrentTime();
+            if (current >= end) {
+                ytPlayerEars.pauseVideo();
+                clearInterval(earsTimer);
+            }
+        }, 100);
+    }
+    
+    function renderEarsList() {
+    
+    	checkVideoFallbackCount();
+        
+        const container = document.getElementById('ears-list');
+
+        // Proteção se o container não existir
+        if (!container) return;
+
+        container.innerHTML = ''; // Limpa conteúdo anterior
+
+        // 1. Filtra apenas lições que têm videoFallbackUrl válido
+        const earsLessons = allLessons.filter(lesson => 
+            lesson.videoFallbackUrl && lesson.videoFallbackUrl.trim() !== ''
+        );
+
+        // 2. Verifica se encontrou algo
+        if (earsLessons.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#666;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: 10px; display:block;">
+                        headphones_battery
+                    </span>
+                    <p>Nenhuma prática de áudio encontrada.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // 3. Renderiza os Cards
+        earsLessons.forEach(lesson => {
+            const card = document.createElement('div');
+            card.className = 'lesson-card';
+
+            // Ao clicar, abre o preview normal (ou você pode criar uma função específica para abrir direto em modo áudio)
+            card.onclick = () => openEarsLesson(lesson.id);
+
+            // Subtítulo personalizado para a seção Ears
+            const subtitle = lesson.stats 
+                ? `${lesson.stats.phrases} frases de áudio` 
+                : "Prática de Listening";
+
+            card.innerHTML = `
+                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" 
+                     onerror="this.src='https://placehold.co/200x150?text=No+Image'">
+
+                <div class="lesson-info">
+                    <div class="lesson-title">${lesson.title}</div>
+                    <div class="lesson-subtitle" style="color: var(--success-color); display: flex; align-items: center; gap: 5px;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">headphones</span>
+                        ${subtitle}
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
