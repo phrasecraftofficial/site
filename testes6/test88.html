@@ -704,13 +704,10 @@ O setLayoutMode tem que saber quando o app esta no desktop ou no mobile, pois qu
             </section>
 
             <section id="view-ears" class="view-section">
-                <div style="text-align: center; padding: 20px;">
-
-                    <h2 style="margin-bottom: 10px;">Ears</h2>
-                    
-                    <div id="duels" style="display: flex; flex-direction: column; gap: 15px;">
-                    </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Ears</h2>
                 </div>
+                <div id="ears-list"></div>
             </section>
 
             <section id="view-path" class="view-section">
@@ -1829,6 +1826,9 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (activeFooter) activeFooter.classList.add('active');
     
         // --- LAYOUT: Só configuramos explicitamente para views especiais ---
+        if (view === 'ears') {
+            renderEarsList();
+        }
         if (view === 'preview') {
             setLayoutMode('full');
         } else if (view === 'training' && !currentTaskMode) {
@@ -4243,6 +4243,89 @@ function validateTrainingData() {
         setTimeout(() => select.style.borderColor = originalBorder, 500);
     }
     
+    // --- FUNÇÃO PARA CONTAR VIDEO FALLBACK ---
+    async function checkVideoFallbackCount() {
+        console.log('🔍 Verificando contagem de videoFallbackUrl...');
+
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTION_ID,
+                [
+                    // Filtra apenas documentos onde o campo existe e não é nulo
+                    Appwrite.Query.isNotNull('videoFallbackUrl'),
+                    // Opcional: define limite 1 para economizar banda, pois queremos apenas o 'total'
+                    Appwrite.Query.limit(1) 
+                ]
+            );
+
+            const count = response.total;
+            console.log(`📊 TOTAL de rows com videoFallbackUrl preenchido: ${count}`);
+            return count;
+
+        } catch (error) {
+            console.error("❌ Erro ao consultar videoFallbackUrl:", error);
+            return 0;
+        }
+    }
+    
+    function renderEarsList() {
+    
+    	checkVideoFallbackCount();
+        
+        const container = document.getElementById('ears-list');
+
+        // Proteção se o container não existir
+        if (!container) return;
+
+        container.innerHTML = ''; // Limpa conteúdo anterior
+
+        // 1. Filtra apenas lições que têm videoFallbackUrl válido
+        const earsLessons = allLessons.filter(lesson => 
+            lesson.videoFallbackUrl && lesson.videoFallbackUrl.trim() !== ''
+        );
+
+        // 2. Verifica se encontrou algo
+        if (earsLessons.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#666;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: 10px; display:block;">
+                        headphones_battery
+                    </span>
+                    <p>Nenhuma prática de áudio encontrada.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // 3. Renderiza os Cards
+        earsLessons.forEach(lesson => {
+            const card = document.createElement('div');
+            card.className = 'lesson-card';
+
+            // Ao clicar, abre o preview normal (ou você pode criar uma função específica para abrir direto em modo áudio)
+            card.onclick = () => openPreview(lesson.id);
+
+            // Subtítulo personalizado para a seção Ears
+            const subtitle = lesson.stats 
+                ? `${lesson.stats.phrases} frases de áudio` 
+                : "Prática de Listening";
+
+            card.innerHTML = `
+                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" 
+                     onerror="this.src='https://placehold.co/200x150?text=No+Image'">
+
+                <div class="lesson-info">
+                    <div class="lesson-title">${lesson.title}</div>
+                    <div class="lesson-subtitle" style="color: var(--success-color); display: flex; align-items: center; gap: 5px;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">headphones</span>
+                        ${subtitle}
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
 
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
