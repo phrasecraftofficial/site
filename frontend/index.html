@@ -1,6 +1,5 @@
-<!-- 90
-Usa em ears usa o video do Bacbblaze,
-lista de legenda se move de acordo com o tempo do video.
+<!-- 91
+Repetiçã ok
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -665,7 +664,7 @@ lista de legenda se move de acordo com o tempo do video.
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v90
+            PhraseCraft v91
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1384,8 +1383,14 @@ const projectData = [
   
     // Variável global para impedir que o Garbage Collector "coma" o áudio no celular
     window.currentUtterance = null;
-    
 
+    // Variáveis Globais de Controle de Repetição
+    let userRepeatTotal = 1; // Padrão: 1 (toca uma vez só)
+    let currentRepeatCount = 0; // Contador atual
+    let earsMonitorTimer = null;    // O intervalo do setInterval
+    let lastActiveSentenceId = null; // Para saber se mudamos de frase
+    let sentenceRepetitionCount = 0; // Quantas vezes a frase ATUAL já tocou
+    
     // --- VARIÁVEIS GLOBAIS DO YOUTUBE ---
     let ytPlayer = null;
     let videoTimer = null;
@@ -1866,6 +1871,13 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         
         // 4. Remove classe de bloqueio de UI
         document.body.classList.remove('audio-playing');
+        
+        if (earsMonitorTimer) {
+            clearInterval(earsMonitorTimer);
+            earsMonitorTimer = null;
+        }
+        lastActiveSentenceId = null;
+        sentenceRepetitionCount = 0;
         
         console.log('✅ [Clean] Limpeza concluída');
     }
@@ -4368,52 +4380,74 @@ function validateTrainingData() {
     // 1. Função que abre a lição, carrega dados e configura a tela
     async function openEarsLesson(lessonId) {
         console.log("🎧 [Ears] Abrindo lição ID:", lessonId);
-
-        clean(); 
-
+    
+        clean();
+    
         let rawLesson = allLessons.find(l => l.id == lessonId);
-        if (!rawLesson) { console.error("Lição não encontrada"); return; }
-
+        if (!rawLesson) { 
+            console.error("Lição não encontrada"); 
+            return; 
+        }
+    
         let lessonDataCompiled;
-        // Verifica se já temos os dados carregados para não buscar de novo
+    
+        // Evita buscar dados novamente se já estiverem carregados
         if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
             lessonDataCompiled = currentLesson.data;
         } else {
-            // Mostra loading rápido se necessário
-            if(ui.listContainer) ui.listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Carregando dados...</div>';
-
+            if (ui.listContainer) {
+                ui.listContainer.innerHTML = `
+                    <div style="text-align:center; padding:20px;">
+                        Carregando dados...
+                    </div>`;
+            }
+    
             const loadedData = await fetchLessonData(rawLesson);
             if (!loadedData) return;
-
+    
             lessonDataCompiled = compileLessonData(
-                loadedData.srtEn, loadedData.srtPt, loadedData.vocabData, rawLesson.video
+                loadedData.srtEn,
+                loadedData.srtPt,
+                loadedData.vocabData,
+                rawLesson.video
             );
         }
-
+    
         currentLesson = { ...rawLesson, data: lessonDataCompiled };
-
-        // 1. Navega para a tela
-        navigateTo('earsLesson', { lessonId:  rawLesson.id });
-
-        // 2. Atualiza título
+    
+        // Navega para a tela
+        navigateTo('earsLesson', { lessonId: rawLesson.id });
+    
+        // Atualiza título
         const titleEl = document.getElementById('ears-lesson-title');
-        if(titleEl) titleEl.innerText = currentLesson.title;
-
-        // 3. Renderiza as frases e configura o player com um pequeno DELAY
-        // Isso garante que a div 'yt-player-ears' exista no DOM
-        setTimeout(() => {
+        if (titleEl) titleEl.innerText = currentLesson.title;
+    
+        try {
+            console.log("⏳ Aguardando renderização do player...");
+            await waitForElement('yt-player-ears');
+    
+            // Renderiza frases
             renderEarsSentences();
-
-            // Lógica de prioridade: Fallback > Video Normal
-            const videoToPlay = rawLesson.videoFallbackUrl && rawLesson.videoFallbackUrl.trim() !== '' 
-                                ? rawLesson.videoFallbackUrl 
-                                : rawLesson.video;
-
+    
+            // Prioridade: Fallback > Vídeo normal
+            const videoToPlay =
+                rawLesson.videoFallbackUrl &&
+                rawLesson.videoFallbackUrl.trim() !== ''
+                    ? rawLesson.videoFallbackUrl
+                    : rawLesson.video;
+    
             console.log("▶️ Reproduzindo via:", videoToPlay);
+    
+            // Configura player
             setupEarsPlayer(videoToPlay);
-        }, 100); 
+    
+            // 🔥 NOVO: Cria o botão / controle de repetição
+            setupRepeatControlUI();
+    
+        } catch (error) {
+            console.error("❌ Erro ao inicializar player Ears:", error);
+        }
     }
-  
     
     // 2. Função que injeta a lista de legendas (Sua solicitação principal)
     function renderEarsSentences() {
@@ -4509,11 +4543,16 @@ function validateTrainingData() {
                     events: {
                         onReady: (event) => {
                             event.target.setPlaybackQuality(userQuality);
-                            startAutoScrollEars(); // 🔥 ADICIONADO
+                            // 🔥 ATUALIZADO
+                            startSmartPlayerMonitor(); 
                         },
                         onStateChange: (event) => {
                             if (event.data === YT.PlayerState.PLAYING) {
-                                startAutoScrollEars(); // 🔥 ADICIONADO
+                                // 🔥 ATUALIZADO
+                                startSmartPlayerMonitor(); 
+                            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                                // Opcional: Parar o monitor para economizar CPU se pausado
+                                if (earsMonitorTimer) clearInterval(earsMonitorTimer);
                             }
                         }
                     }
@@ -4541,7 +4580,12 @@ function validateTrainingData() {
 
                 // 🔥 ADICIONADO
                 videoElement.addEventListener('play', () => {
+                    startSmartPlayerMonitor();
                     startAutoScrollEars();
+                });
+              
+                videoElement.addEventListener('pause', () => {
+                    if (earsMonitorTimer) clearInterval(earsMonitorTimer);
                 });
 
                 container.appendChild(videoElement);
@@ -4557,43 +4601,27 @@ function validateTrainingData() {
     }
     
     // 4. Toca segmento no Player Ears
+    // Localizar a função playEarsSegment e SUBSTITUIR por esta versão:
     function playEarsSegment(start, end) {
-        // Se for vídeo HTML5 (fallback)
-        if (window.earsVideoElement) {
-            const videoElement = window.earsVideoElement;
-            videoElement.currentTime = start;
-            videoElement.play();
-
-            if (earsTimer) clearInterval(earsTimer);
-
-            earsTimer = setInterval(() => {
-                if (videoElement.currentTime >= end) {
-                    videoElement.pause();
-                    clearInterval(earsTimer);
-                }
-            }, 100);
-            return;
+        // 1. Reseta a lógica de repetição para começar "fresco"
+        lastActiveSentenceId = null; 
+        sentenceRepetitionCount = 0;
+    
+        // 2. Posiciona e Toca (YouTube)
+        if (ytPlayerEars && ytPlayerEars.seekTo) {
+            ytPlayerEars.seekTo(start, true);
+            ytPlayerEars.playVideo();
+        } 
+        // 2. Posiciona e Toca (Fallback HTML5)
+        else if (window.earsVideoElement) {
+            window.earsVideoElement.currentTime = start;
+            window.earsVideoElement.play();
         }
-
-        // Se for YouTube
-        if (!ytPlayerEars || !ytPlayerEars.seekTo) return;
-
-        ytPlayerEars.seekTo(start);
-        ytPlayerEars.playVideo();
-
-        if (earsTimer) clearInterval(earsTimer);
-
-        earsTimer = setInterval(() => {
-            if (!ytPlayerEars.getCurrentTime) return;
-
-            const current = ytPlayerEars.getCurrentTime();
-            if (current >= end) {
-                ytPlayerEars.pauseVideo();
-                clearInterval(earsTimer);
-            }
-        }, 100);
+    
+        // 3. Garante que o monitor está rodando
+        startSmartPlayerMonitor();
     }
-
+  
     // 🔥 NOVA FUNÇÃO: Auto-scroll sincronizado com o vídeo
     function startAutoScrollEars() {
         let autoScrollTimer = null;
@@ -4728,6 +4756,186 @@ function validateTrainingData() {
         });
     }
 
+    function setupRepeatControlUI() {
+        const container = document.getElementById('ears-player-wrapper');
+        
+        // Evita criar duplicado se já existir
+        if (document.getElementById('repeat-control-overlay')) return;
+        
+        // Se o container ainda não existir (caso o player demore a carregar), aborta
+        // O container geralmente é o pai do iframe do youtube
+        const playerElement = document.getElementById('yt-player-ears');
+        if (!playerElement) return; 
+        const playerContainer = playerElement.parentElement;
+
+        const controlDiv = document.createElement('div');
+        controlDiv.id = 'repeat-control-overlay';
+        
+        Object.assign(controlDiv.style, {
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            zIndex: '100',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            borderRadius: '20px',
+            padding: '8px 15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: 'white',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+        });
+        
+        controlDiv.innerHTML = `
+            <span class="material-symbols-outlined" id="repeat-icon" style="font-size: 1.3rem;">
+                repeat
+            </span>
+            <span id="repeat-label" style="font-weight: bold; font-size: 1rem;">${userRepeatTotal}x</span>
+            <select id="repeat-selector" style="
+                display: none;
+                background: transparent;
+                border: none;
+                color: white;
+                font-weight: bold;
+                font-size: 1rem;
+                cursor: pointer;
+                outline: none;
+                appearance: none;
+            ">
+                <option value="1" style="color:black">1x</option>
+                <option value="2" style="color:black">2x</option>
+                <option value="3" style="color:black">3x</option>
+                <option value="4" style="color:black">4x</option>
+            </select>
+        `;
+        
+        playerContainer.style.position = 'relative'; 
+        playerContainer.appendChild(controlDiv);
+        
+        const selector = document.getElementById('repeat-selector');
+        const label = document.getElementById('repeat-label');
+        const icon = document.getElementById('repeat-icon');
+        
+        // Define o valor inicial do select visualmente
+        selector.value = userRepeatTotal;
+
+        // Toggle: Mostra/Esconde o select ao clicar no ícone/div
+        controlDiv.addEventListener('click', (e) => {
+            // 🔥 CORREÇÃO AQUI:
+            // Se o clique foi no próprio Select (para abrir a lista),
+            // paramos a função aqui. Isso impede que a div pai rode o código 
+            // de "esconder" o select imediatamente.
+            if (e.target.id === 'repeat-selector') return;
+
+            const isHidden = selector.style.display === 'none';
+            
+            if (isHidden) {
+                // Mostra o select
+                selector.style.display = 'inline-block';
+                label.style.display = 'none';
+                icon.style.transform = 'rotate(180deg)'; 
+            } else {
+                // Esconde o select
+                selector.style.display = 'none';
+                label.style.display = 'inline-block';
+                icon.style.transform = 'rotate(0deg)';
+            }
+        });
+        
+        // Atualiza o valor quando o usuário escolher uma opção
+        selector.addEventListener('change', (e) => {
+            userRepeatTotal = parseInt(e.target.value);
+            label.innerText = `${userRepeatTotal}x`;
+            
+            // Esconde o select automaticamente após selecionar
+            selector.style.display = 'none';
+            label.style.display = 'inline-block';
+            icon.style.transform = 'rotate(0deg)';
+            
+            console.log(`🔁 Repetição definida para: ${userRepeatTotal}x`);
+        });
+        
+        // Blur: Fecha se o usuário clicar fora ou sair do foco (melhora UX desktop)
+        selector.addEventListener('blur', () => {
+             setTimeout(() => {
+                selector.style.display = 'none';
+                label.style.display = 'inline-block';
+                icon.style.transform = 'rotate(0deg)';
+             }, 200);
+        });
+    }
+
+    // 🔥 FUNÇÃO INTELIGENTE: Controla Repetição, Avanço e Scroll
+    function startSmartPlayerMonitor() {
+        if (earsMonitorTimer) clearInterval(earsMonitorTimer);
+    
+        earsMonitorTimer = setInterval(() => {
+            let currentTime = 0;
+            let playerObj = null;
+    
+            // Detecta qual player está ativo
+            if (window.earsVideoElement && !window.earsVideoElement.paused) {
+                currentTime = window.earsVideoElement.currentTime;
+                playerObj = window.earsVideoElement;
+            } else if (ytPlayerEars && ytPlayerEars.getPlayerState && ytPlayerEars.getPlayerState() === 1) {
+                currentTime = ytPlayerEars.getCurrentTime();
+                playerObj = ytPlayerEars;
+            } else {
+                return; // Nada tocando
+            }
+    
+            // Encontra a frase atual baseada no tempo
+            // Usamos uma margem de segurança pequena (-0.1) para garantir que pegamos a frase antes dela acabar
+            const activeSentence = currentLesson.data.find(item => 
+                currentTime >= item.start && currentTime < item.end
+            );
+    
+            if (activeSentence) {
+                // --- DETECÇÃO DE MUDANÇA DE FRASE ---
+                if (activeSentence.id !== lastActiveSentenceId) {
+                    console.log(`🔀 Entrou na frase: ${activeSentence.id}`);
+                    lastActiveSentenceId = activeSentence.id;
+                    sentenceRepetitionCount = 0; // Reseta o contador para a nova frase
+                    
+                    // Atualiza visual (Scroll e Destaque)
+                    highlightAndScrollToSentence(activeSentence.id);
+                }
+    
+                // --- LÓGICA DE REPETIÇÃO ---
+                // Verifica se está chegando no final da frase (dentro de 0.25s do fim)
+                // E se o vídeo está rodando para frente (evita bugs em seek manual)
+                if (currentTime >= (activeSentence.end - 0.25)) {
+                    
+                    // Verifica: Já tocamos o número de vezes solicitado?
+                    // Ex: Se userRepeatTotal é 2, queremos tocar: 
+                    // 1ª vez (count 0) -> Seek -> 2ª vez (count 1) -> Deixa passar
+                    if (sentenceRepetitionCount < (userRepeatTotal - 1)) {
+                        
+                        console.log(`🔄 Repetindo frase ${activeSentence.id} (${sentenceRepetitionCount + 1}/${userRepeatTotal})`);
+                        
+                        // Volta o vídeo para o início da frase
+                        if (window.earsVideoElement) {
+                            window.earsVideoElement.currentTime = activeSentence.start;
+                        } else if (ytPlayerEars && ytPlayerEars.seekTo) {
+                            ytPlayerEars.seekTo(activeSentence.start, true);
+                        }
+    
+                        sentenceRepetitionCount++; // Incrementa o contador
+                    }
+                    // SE JÁ REPETIU O SUFICIENTE:
+                    // Não fazemos nada. O vídeo naturalmente vai passar do activeSentence.end
+                    // e entrará na próxima frase (ou no silêncio entre frases).
+                    // Quando entrar na próxima, o "if (activeSentence.id !== ...)" lá em cima vai resetar tudo.
+                }
+            } else {
+                // Se estiver num "buraco" entre legendas, removemos destaque
+                // (Opcional, mas fica visualmente mais limpo)
+                // removeAllHighlights(); 
+            }
+    
+        }, 100); // Checa a cada 100ms
+    }
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
