@@ -557,7 +557,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v61</span>
+        <span>PhraseCraft v0.61</span>
       </div>
     </div>
     
@@ -4667,33 +4667,22 @@ function startWordTimer(currentWord) {
         const isSpeaking = ('speechSynthesis' in window) && window.speechSynthesis.speaking;
 
         if (isVideoPlaying || isSpeaking) {
-            // 1. Pausa o tempo (empurra o início para frente)
-            wordStartTime += 50; 
-            if (decayStartTime !== null) decayStartTime += 50;
-            
-            // 2. BLOQUEIA APENAS SE FOR MEU TURNO (Modo Multi)
-            if (palavrasContainer && currentMatchId) {
-                try {
-                    const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
-                    const user = await account.get();
-                    const isMyTurn = (match.currentPlayerId === user.$id);
-                    
-                    // Só bloqueia se for realmente meu turno
-                    if (isMyTurn) {
-                        palavrasContainer.style.pointerEvents = 'none';
-                        palavrasContainer.style.opacity = '0.5';
-                    }
-                } catch (e) {
-                    console.warn("Erro ao verificar turno no timer:", e);
-                }
-            } else if (palavrasContainer && !currentMatchId) {
-                // Modo Solo: sempre bloqueia durante vídeo/voz
-                palavrasContainer.style.pointerEvents = 'none';
-                palavrasContainer.style.opacity = '0.5';
-            }
-            
-            return;
-        } else {
+		    // Pausa o tempo empurrando o início
+		    wordStartTime += 50;
+		    if (decayStartTime !== null) {
+		        decayStartTime += 50;
+		    }
+		
+		    // Enquanto vídeo/voz estiverem ativos, força bloqueio para todos.
+		    const palavrasContainer = document.getElementById('palavras');
+		    if (palavrasContainer) {
+		        palavrasContainer.style.pointerEvents = 'none';
+		        palavrasContainer.style.opacity = 0.5;
+		    }
+		
+		    return;
+		}
+		else {
             // 3. DESBLOQUEIA QUANDO PARAR (Apenas se estiver bloqueado)
             if (palavrasContainer && palavrasContainer.style.pointerEvents === 'none') {
                 // Em modo Multi, verifica se é meu turno antes de desbloquear
@@ -5321,45 +5310,47 @@ function showCompletionMessage() {
  */
 // Bloqueia ou desbloqueia as palavras e inicia/para o timer
 // param boolean unlock - true para desbloquear, false para bloquear
-function toggleWordsLock(unlock) {
-  const palavrasContainer = document.getElementById("palavras");
-  if (!palavrasContainer) return;
+// Bloqueia ou desbloqueia as palavras com base no turno atual.
+// unlock = true -> tenta desbloquear, unlock = false -> força bloquear.
+async function toggleWordsLock(unlock) {
+    const palavrasContainer = document.getElementById('palavras');
+    if (!palavrasContainer) return;
 
-  const wordButtons = palavrasContainer.querySelectorAll(".word-button");
+    // Sempre bloqueia quando unlock === false (para qualquer modo)
+    if (!unlock) {
+        palavrasContainer.style.pointerEvents = 'none';
+        palavrasContainer.style.opacity = 0.5;
+        return;
+    }
 
-  if (unlock) {
-    console.log("🔓 Palavras desbloqueadas - meu turno");
-    palavrasContainer.style.opacity = 1;
-    palavrasContainer.style.pointerEvents = "auto";
-    
-    // ✅ FORÇA a remoção do atributo disabled
-    palavrasContainer.removeAttribute('data-locked');
+    // Se chegou aqui, unlock === true: queremos "tentar desbloquear".
 
-    // Garante que TODOS os botões voltem a ficar clicáveis
-    wordButtons.forEach((btn) => {
-      btn.disabled = false;
-      btn.style.cursor = "pointer";
-    });
+    // Modo MULTI: desbloqueia só se for realmente meu turno.
+    if (currentMatchId) {
+        try {
+            const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+            const user = await account.get();
+            const isMyTurn = match.currentPlayerId === user.id;
 
-    // Se quiser, aqui você pode iniciar o timer da próxima palavra,
-    // mas hoje isso já é feito em loadNextSegment / isNextWord.
-  } else {
-    console.log("🔒 Palavras bloqueadas - aguardando turno");
-    palavrasContainer.style.opacity = 0.5;
-    palavrasContainer.style.pointerEvents = "none";
-    
-    // ✅ MARCA visualmente que está bloqueado
-    palavrasContainer.setAttribute('data-locked', 'true');
-
-    // Desabilita TODOS os botões para evitar clique via teclado / scripts
-    wordButtons.forEach((btn) => {
-      btn.disabled = true;
-      btn.style.cursor = "not-allowed";
-    });
-
-    // Para o timer se estiver rodando
-    stopWordTimer();
-  }
+            if (isMyTurn) {
+                palavrasContainer.style.pointerEvents = 'auto';
+                palavrasContainer.style.opacity = 1;
+            } else {
+                // Não é meu turno: continua bloqueado.
+                palavrasContainer.style.pointerEvents = 'none';
+                palavrasContainer.style.opacity = 0.5;
+            }
+        } catch (e) {
+            console.warn('Erro ao verificar turno no toggleWordsLock', e);
+            // Em caso de erro, melhor manter bloqueado para não dar vantagem errada.
+            palavrasContainer.style.pointerEvents = 'none';
+            palavrasContainer.style.opacity = 0.5;
+        }
+    } else {
+        // Modo SOLO: sempre desbloqueia.
+        palavrasContainer.style.pointerEvents = 'auto';
+        palavrasContainer.style.opacity = 1;
+    }
 }
 
 // ✅ Função utilitária para o onclick nos botões em Play
@@ -5968,14 +5959,38 @@ async function handleMatchUpdate(payload) {
         // 2c. ATUALIZAÇÃO NORMAL DE JOGO (playing)
         
         // A. Verifica se a SENTENÇA AVANÇOU
-        if (payload.currentSentenceIndex > currentSegmentIndex) {
-            console.log("Servidor avançou a sentença. Carregando próximo segmento...");
-            currentSegmentIndex = payload.currentSentenceIndex; // Sincroniza índice local
-            
-            // loadNextSegment limpa a frase, os botões e carrega o novo segmento
-            await loadNextSegment(); 
-        
-        } else {
+        if (payload.currentSentenceIndex !== currentSegmentIndex) {
+		    console.log('Servidor avançou a sentença. Carregando próximo segmento...');
+		    currentSegmentIndex = payload.currentSentenceIndex;
+		
+		    await loadNextSegment();
+		
+		    // Se for modo MULTI, verifica o turno atual e usa toggleWordsLock
+		    if (currentMatchId) {
+		        try {
+		            const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+		            const user = await account.get();
+		            const isMyTurn = match.currentPlayerId === user.id;
+		            toggleWordsLock(true); // pede desbloqueio, a função se encarrega de respeitar o turno
+		            // Inicia o timer apenas se for meu turno e houver palavras
+		            if (isMyTurn && words.length > 0) {
+		                startWordTimer(words[0]);
+		            }
+		        } catch (error) {
+		            console.error('Erro ao verificar turno ao carregar novo segmento', error);
+		            toggleWordsLock(false); // em caso de erro, mantém bloqueado
+		        }
+		    } else {
+		        // Modo solo
+		        toggleWordsLock(true);
+		        if (words.length > 0) {
+		            startWordTimer(words[0]);
+		        }
+		    }
+		
+		    return;
+		}
+        else {
             // B. Foi apenas uma ATUALIZAÇÃO DE PALAVRA
             console.log(`ATUALIZAÇÃO DE PALAVRA`);
             const fraseContainer = document.getElementById('frase');
