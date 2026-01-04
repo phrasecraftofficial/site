@@ -1,5 +1,5 @@
-<!-- 94
-controles do video
+<!-- 96
+botao pause
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -664,7 +664,7 @@ controles do video
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v94
+            PhraseCraft v96
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -4534,19 +4534,20 @@ function validateTrainingData() {
                         onReady: (event) => {
                             event.target.setPlaybackQuality(userQuality);
                             startSmartPlayerMonitor();
-                            setupVideoControlsUI(); // <--- Cria os botões aqui
+                            drawActionButton();
                         },
                         onStateChange: (event) => {
                             if (event.data === YT.PlayerState.PLAYING) {
-                                updatePlayIconState(true);
+                                
                                 if (!isProgrammaticPlay) {
                                     isSinglePhraseMode = false;
                                 }
                                 startSmartPlayerMonitor();
+                                drawActionButton();
                             } 
                             // --- AQUI ESTAVA O ERRO DE SINTAXE CORRIGIDO ---
                             else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                                updatePlayIconState(false); // Executa DENTRO do bloco
+                                 // Executa DENTRO do bloco
                                 if (earsMonitorTimer) {
                                     clearInterval(earsMonitorTimer);
                                 }
@@ -4574,23 +4575,62 @@ function validateTrainingData() {
                 videoElement.playsInline = true;
 
                 videoElement.addEventListener('play', () => {
-                    updatePlayIconState(true);
                     if (!isProgrammaticPlay) {
                         isSinglePhraseMode = false;
+                        
+                        // 🔥 CORREÇÃO: Só executa TTS se estiver em tempo 0 ou pausado há muito tempo (primeiro play do usuário)
+                        const currentTime = videoElement.currentTime;
+                        
+                        // Verifica se é o primeiro play (tempo próximo de 0 OU não há frase ativa registrada)
+                        const isFirstPlay = currentTime < 0.5 || lastActiveSentenceId === null;
+                        
+                        if (isFirstPlay) {
+                            const currentSentence = currentLesson.data.find(item => 
+                                currentTime >= item.start && currentTime < item.end
+                            ) || currentLesson.data[0]; // Fallback para primeira frase
+                            
+                            if (currentSentence) {
+                                // Pausa o vídeo temporariamente para executar o TTS
+                                videoElement.pause();
+                                
+                                // 🔥 ATIVA A FLAG para evitar loop recursivo
+                                isProgrammaticPlay = true;
+                                
+                                // Executa a sequência PT→EN e depois retoma o vídeo
+                                speakPhraseSequence(currentSentence, () => {
+                                    // 🔥 CORREÇÃO: Posiciona o vídeo no início da frase ANTES de dar play
+                                    videoElement.currentTime = currentSentence.start;
+                                    videoElement.play();
+                                    
+                                    // 🔥 DESATIVA A FLAG após delay para permitir próximos plays manuais
+                                    setTimeout(() => { isProgrammaticPlay = false; }, 1000);
+                                    
+                                    // 🔥 Reseta os contadores para iniciar a contagem de repetições corretamente
+                                    lastActiveSentenceId = null;
+                                    sentenceRepetitionCount = 0;
+                                    
+                                    startSmartPlayerMonitor();
+                                    startAutoScrollEars();
+                                    drawActionButton();
+                                });
+                                return; // Importante: sai aqui para não executar o monitor antes do TTS
+                            }
+                        }
                     }
+                    
                     startSmartPlayerMonitor();
                     startAutoScrollEars();
                 });
 
                 videoElement.addEventListener('pause', () => {
-                    updatePlayIconState(false);
+                    
                     if (earsMonitorTimer) {
                         clearInterval(earsMonitorTimer);
                     }
                 });
 
                 container.appendChild(videoElement);
-                setupVideoControlsUI(); // <--- Cria os botões aqui também
+                 // <--- Cria os botões aqui também
             }
 
             if (videoElement.src !== videoUrl) {
@@ -4857,41 +4897,53 @@ function validateTrainingData() {
     }
 
     // 🔥 FUNÇÃO INTELIGENTE: Controla Repetição, Avanço e Scroll
+    // 🔥 FUNÇÃO INTELIGENTE: Controla Repetição, Avanço e Scroll
     function startSmartPlayerMonitor() {
+        // 1. Limpa timer anterior para evitar duplicidade
         if (earsMonitorTimer) clearInterval(earsMonitorTimer);
-    
+
+        // 2. Inicia o novo intervalo CORRETAMENTE
         earsMonitorTimer = setInterval(() => {
+            
+            // --- Atualiza ícone do botão (Play/Pause) ---
+            const actionBtn = document.getElementById('ears-action-btn');
+            if (actionBtn) {
+                const isPlaying = (window.earsVideoElement && !window.earsVideoElement.paused) || 
+                                  (ytPlayerEars && ytPlayerEars.getPlayerState && ytPlayerEars.getPlayerState() === 1);
+                
+                actionBtn.innerHTML = isPlaying 
+                    ? '<i class="fa-solid fa-pause" style="font-size: 2rem; color: white;"></i>'
+                    : '<i class="fa-solid fa-play" style="font-size: 2rem; color: white;"></i>';
+            }
+        
             let currentTime = 0;
-            let playerObj = null;
-    
-            // Detecta player
+            
+            // --- Detecta qual player está ativo e pega o tempo ---
             if (window.earsVideoElement && !window.earsVideoElement.paused) {
                 currentTime = window.earsVideoElement.currentTime;
-                playerObj = window.earsVideoElement;
             } else if (ytPlayerEars && ytPlayerEars.getPlayerState && ytPlayerEars.getPlayerState() === 1) {
                 currentTime = ytPlayerEars.getCurrentTime();
-                playerObj = ytPlayerEars;
             } else {
-                return; 
+                return; // Nenhum player rodando, não faz nada
             }
-    
-            // Encontra frase atual
+
+            // --- Encontra frase atual baseada no tempo ---
             const activeSentence = currentLesson.data.find(item => 
                 currentTime >= item.start && currentTime < item.end
             );
-    
+
             if (activeSentence) {
-                // Mudança de frase (apenas visual)
+                // Mudança de frase (reseta contador de repetições se mudou a frase manualmente)
                 if (activeSentence.id !== lastActiveSentenceId) {
                     lastActiveSentenceId = activeSentence.id;
-                    sentenceRepetitionCount = 0; 
-                    highlightAndScrollToSentence(activeSentence.id);
+                    sentenceRepetitionCount = 0;
                 }
-    
+
                 // --- MONITORAMENTO DE FIM DE FRASE ---
+                // Se chegou perto do fim da frase (margem de 0.25s)
                 if (currentTime >= (activeSentence.end - 0.25)) {
                     
-                    // CASO 1: Ainda precisa repetir o vídeo
+                    // CASO 1: Ainda precisa repetir o vídeo (Loop da mesma frase)
                     if (sentenceRepetitionCount < (userRepeatTotal - 1)) {
                         // Seek para o início da frase atual
                         if (window.earsVideoElement) {
@@ -4910,40 +4962,45 @@ function validateTrainingData() {
                             clearInterval(earsMonitorTimer);
                         } else {
                             // 🔥 MODO CONTÍNUO: PREPARA A PRÓXIMA FRASE
-                            // Precisamos pausar o vídeo agora para ele não invadir a próxima frase sem ler o TTS antes
                             
                             pauseAnyPlayer(); // Pausa o vídeo para o TTS falar
                             clearInterval(earsMonitorTimer); // Para o monitor temporariamente
-    
+
                             // Acha a próxima frase na lista
                             const currentIndex = currentLesson.data.findIndex(i => i.id === activeSentence.id);
                             const nextSentence = currentLesson.data[currentIndex + 1];
-    
+
                             if (nextSentence) {
                                 console.log("🗣️ Iniciando TTS da próxima frase:", nextSentence.en);
                                 
-                                // 1. Toca o TTS da próxima
-                                speakPhraseSequence(nextSentence, () => {
-                                    // 2. Quando acabar o TTS, avança o vídeo e solta o play
-                                    lastActiveSentenceId = null; // Reseta para detectar entrada
-                                    sentenceRepetitionCount = 0;
-                                    
-                                    if (window.earsVideoElement) {
-                                        window.earsVideoElement.currentTime = nextSentence.start;
-                                        window.earsVideoElement.play();
-                                    } else if (ytPlayerEars) {
-                                        ytPlayerEars.seekTo(nextSentence.start, true);
-                                        ytPlayerEars.playVideo();
-                                    }
-                                    // O monitor vai reiniciar sozinho via evento 'play' ou chamamos aqui
-                                    startSmartPlayerMonitor();
-                                });
+                                // Marca a próxima frase como ativa
+                                lastActiveSentenceId = nextSentence.id;
+                                sentenceRepetitionCount = 0;
+                                
+                                // 🔥 PAUSA: Entre repetições e nova frase
+                                setTimeout(() => {
+                                    // 1. Toca o TTS da próxima
+                                    speakPhraseSequence(nextSentence, () => {
+                                        // 2. Quando acabar o TTS, avança o vídeo e solta o play
+                                        
+                                        if (window.earsVideoElement) {
+                                            window.earsVideoElement.currentTime = nextSentence.start;
+                                            window.earsVideoElement.play();
+                                        } else if (ytPlayerEars) {
+                                            ytPlayerEars.seekTo(nextSentence.start, true);
+                                            ytPlayerEars.playVideo();
+                                        }
+                                        // O monitor vai reiniciar sozinho via evento 'play' ou chamamos aqui
+                                        startSmartPlayerMonitor();
+                                    });
+                                }, 700); 
                             }
                         }
                     }
                 }
-            } 
-        }, 100);
+            } // Fim if(activeSentence)
+            
+        }, 100); // Fechamento do setInterval
     }
     
     // Helper simples para pausar qualquer player
@@ -4962,6 +5019,12 @@ function validateTrainingData() {
         // 1. Cancela qualquer áudio anterior
         window.speechSynthesis.cancel();
         
+        // 🔥 HIGHLIGHT NO INÍCIO DA ETAPA 1 (PT)
+        highlightAndScrollToSentence(sentence.id);
+        
+        // 🔥 NOVO: Desenha o botão de pause ANTES de iniciar o TTS
+        drawActionButton();
+        
         // Configurações visuais (opcional: bloqueia tela ou mostra icone)
         document.body.classList.add('audio-playing');
     
@@ -4977,178 +5040,109 @@ function validateTrainingData() {
     
         // --- Encadeamento de Eventos ---
         
-        // Quando PT terminar -> Toca EN
+        // Quando PT terminar -> Pausa cognitiva → Toca EN
         utterPt.onend = () => {
-            // Pequeno delay natural
+            // 🔥 PAUSA 1: Entre PT e EN (processamento da tradução)
             setTimeout(() => {
                 window.speechSynthesis.speak(utterEn);
-            }, 300);
+            }, 600); // 600ms = tempo para "digerir" a tradução
         };
     
-        // Quando EN terminar -> Executa o callback (Toca o vídeo)
+        // Quando EN terminar → Pausa cognitiva → Prepara para o vídeo
         utterEn.onend = () => {
-            document.body.classList.remove('audio-playing');
-            if (onComplete) onComplete();
+            // 🔥 PAUSA 2: Entre TTS e Vídeo (preparação auditiva)
+            setTimeout(() => {
+                document.body.classList.remove('audio-playing');
+                if (onComplete) onComplete();
+            }, 400); // 400ms = transição suave para áudio nativo
         };
     
         // --- Início ---
         window.speechSynthesis.speak(utterPt);
     }
-
-    function setupVideoControlsUI() {
-        // Evita duplicação
-        if (document.getElementById('ears-center-controls')) return;
-    
-        const playerContainer = document.getElementById('yt-player-ears').parentElement;
-        playerContainer.style.position = 'relative'; // Garante que o absolute funcione
-    
-        const controlsDiv = document.createElement('div');
-        controlsDiv.id = 'ears-center-controls';
-    
-        // CSS Inline para centralizar e estilizar
-        Object.assign(controlsDiv.style, {
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: '101', // Acima do vídeo e do seletor de repetição
-            display: 'flex',
-            gap: '20px',
-            alignItems: 'center',
-            background: 'rgba(0, 0, 0, 0.6)',
-            padding: '10px 20px',
-            borderRadius: '30px',
-            backdropFilter: 'blur(4px)'
-        });
-    
-        controlsDiv.innerHTML = `
-            <button onclick="controlEarsPlayback('prev')" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; padding: 10px;">
-                <i class="fa-solid fa-backward-step"></i>
-            </button>
-    
-            <button id="btn-toggle-play" onclick="controlEarsPlayback('toggle')" style="background:var(--accent-color); border:none; color:black; font-size:1.8rem; cursor:pointer; width: 60px; height: 60px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
-                <i class="fa-solid fa-play" style="margin-left:4px;"></i>
-            </button>
-    
-            <button onclick="controlEarsPlayback('next')" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; padding: 10px;">
-                <i class="fa-solid fa-forward-step"></i>
-            </button>
-        `;
-    
-        playerContainer.appendChild(controlsDiv);
-    }
-    
-    // Helper para atualizar o ícone do Play/Pause visualmente
-    function updatePlayIconState(isPlaying) {
-        const btn = document.getElementById('btn-toggle-play');
-        if (!btn) return;
-        
-        if (isPlaying) {
-            btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-        } else {
-            btn.innerHTML = '<i class="fa-solid fa-play" style="margin-left:4px;"></i>';
-        }
-    }
-
-    function controlEarsPlayback(action) {
-        // 1. Identifica o tempo atual e a frase atual
-        let currentTime = 0;
-        if (window.earsVideoElement) currentTime = window.earsVideoElement.currentTime;
-        else if (ytPlayerEars && ytPlayerEars.getCurrentTime) currentTime = ytPlayerEars.getCurrentTime();
-
-        // Acha o índice da frase atual
-        const currentIndex = currentLesson.data.findIndex(item => 
-            currentTime >= item.start && currentTime < item.end
-        );
-        
-        // Se não achou (está no início ou entre frases), tenta achar a mais próxima
-        let targetIndex = currentIndex !== -1 ? currentIndex : 0;
-        
-        // --- LÓGICA DE AÇÃO ---
-        switch (action) {
-            case 'prev':
-                // Recua um índice (se possível)
-                targetIndex = currentIndex > 0 ? currentIndex - 1 : 0;
-                goToPhrase(targetIndex);
-                break;
-
-            case 'next':
-                // Avança um índice (se possível)
-                targetIndex = currentIndex < (currentLesson.data.length - 1) ? currentIndex + 1 : currentIndex;
-                goToPhrase(targetIndex);
-                break;
-
-            case 'toggle':
-                handleTogglePlay(currentIndex);
-                break;
-        }
-
-        // --- SUB-FUNÇÕES INTERNAS ---
-
-        function goToPhrase(index) {
-            const sentence = currentLesson.data[index];
-            if (!sentence) return;
-
-            // Navegação manual ativa o modo "Frase Única"
-            isSinglePhraseMode = true; 
-            isProgrammaticPlay = true; // Evita conflito de lógica
-            
-            // Inicia sequência: TTS -> Video
-            speakPhraseSequence(sentence, () => {
-                playVideoAt(sentence.start);
-            });
-        }
-
-        function handleTogglePlay(idx) {
-            const isTTSPlaying = window.speechSynthesis.speaking;
-            const isVideoPlaying = (window.earsVideoElement && !window.earsVideoElement.paused) || 
-                                   (ytPlayerEars && ytPlayerEars.getPlayerState && ytPlayerEars.getPlayerState() === 1);
-
-            if (isTTSPlaying || isVideoPlaying) {
-                // --- PAUSAR TUDO ---
-                window.speechSynthesis.cancel();
-                pauseAnyPlayer();
-                updatePlayIconState(false);
-                if (earsMonitorTimer) clearInterval(earsMonitorTimer);
-            } else {
-                // --- DAR PLAY (RESUME OU INÍCIO) ---
-                updatePlayIconState(true);
-                
-                // Play no botão central assume MODO CONTÍNUO
-                isSinglePhraseMode = false;
-                
-                const sentence = currentLesson.data[idx !== -1 ? idx : 0];
-                
-                // Reinicia o fluxo da frase atual (TTS -> Video)
-                if (sentence) {
-                     isProgrammaticPlay = true;
-                     speakPhraseSequence(sentence, () => {
-                        playVideoAt(sentence.start);
-                     });
-                } else {
-                    playVideoAt(currentTime); // Fallback
-                }
-            }
-        }
-
-        function playVideoAt(time) {
-            lastActiveSentenceId = null; 
-            sentenceRepetitionCount = 0;
-            
-            if (ytPlayerEars && ytPlayerEars.seekTo) {
-                ytPlayerEars.seekTo(time, true);
-                ytPlayerEars.playVideo();
-            } else if (window.earsVideoElement) {
-                window.earsVideoElement.currentTime = time;
-                window.earsVideoElement.play();
-            }
-            
-            setTimeout(() => { isProgrammaticPlay = false; }, 1000);
-            startSmartPlayerMonitor();
-            updatePlayIconState(true);
-        }
-    }
   
+    // 1. Função Visual: Desenha o botão assim que chamada (Coloque na inicialização)
+    function drawActionButton() {
+        const playerElement = document.getElementById('yt-player-ears');
+        if (!playerElement) return;
+        const playerContainer = playerElement.parentElement;
+    
+        // Evita duplicar se o botão já existe
+        let btn = document.getElementById('ears-action-btn');
+        
+        if (!btn) {
+            // Garante posicionamento relativo no pai
+            playerContainer.style.position = 'relative';
+    
+            btn = document.createElement('div');
+            btn.id = 'ears-action-btn';
+    
+            // CSS para centralizar no vídeo
+            Object.assign(btn.style, {
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: '101',
+                width: '70px',
+                height: '70px',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(0,0,0,0.5)',
+                transition: 'opacity 0.3s ease'
+            });
+    
+            // Ação: Ao clicar, chama a função que para o fluxo
+            btn.onclick = () => {
+                controlEarsPlayback('pause');
+            };
+    
+            playerContainer.appendChild(btn);
+        }
+        
+        // 🔥 NOVO: Atualiza o ícone dinamicamente baseado no estado
+        const isPlaying = (window.earsVideoElement && !window.earsVideoElement.paused) || 
+                          (ytPlayerEars && ytPlayerEars.getPlayerState && ytPlayerEars.getPlayerState() === 1);
+        
+        btn.innerHTML = isPlaying 
+            ? '<i class="fa-solid fa-pause" style="font-size: 2rem; color: white;"></i>'
+            : '<i class="fa-solid fa-play" style="font-size: 2rem; color: white;"></i>';
+        
+        // Torna o botão visível
+        btn.style.opacity = '1';
+    }
+    
+    // 2. Função Lógica: Para o fluxo (1pt -> 2en -> 3loops)
+    function controlEarsPlayback(action) {
+        if (action === 'pause') {
+            console.log("⏸️ [Ears] Parando fluxo...");
+    
+            // 1. Para a Fala (PT ou EN)
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+    
+            // 2. Para o Vídeo
+            pauseAnyPlayer();
+    
+            // 3. Mata o Timer do Loop (A sequência)
+            if (earsMonitorTimer) {
+                clearInterval(earsMonitorTimer);
+                earsMonitorTimer = null;
+            }
+    
+            // Reseta a flag programática para parar de forçar o play
+            isProgrammaticPlay = false;
+            
+            // 🔥 NOVO: Atualiza o ícone para Play
+            drawActionButton();
+        }
+    }
+    
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
