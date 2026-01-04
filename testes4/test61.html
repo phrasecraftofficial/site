@@ -557,7 +557,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v0.61</span>
+        <span>PhraseCraft v61</span>
       </div>
     </div>
     
@@ -5312,44 +5312,47 @@ function showCompletionMessage() {
 // param boolean unlock - true para desbloquear, false para bloquear
 // Bloqueia ou desbloqueia as palavras com base no turno atual.
 // unlock = true -> tenta desbloquear, unlock = false -> força bloquear.
+// Bloqueia ou desbloqueia as palavras com base APENAS no turno atual da partida.
+// unlock = true -> tenta desbloquear (mas só se for minha vez).
+// unlock = false -> força bloquear sempre.
 async function toggleWordsLock(unlock) {
     const palavrasContainer = document.getElementById('palavras');
     if (!palavrasContainer) return;
 
-    // Sempre bloqueia quando unlock === false (para qualquer modo)
+    // Sempre bloqueia quando unlock === false
     if (!unlock) {
         palavrasContainer.style.pointerEvents = 'none';
         palavrasContainer.style.opacity = 0.5;
         return;
     }
 
-    // Se chegou aqui, unlock === true: queremos "tentar desbloquear".
+    // Modo SOLO: não tem turno, sempre desbloqueia
+    if (!currentMatchId) {
+        palavrasContainer.style.pointerEvents = 'auto';
+        palavrasContainer.style.opacity = 1;
+        return;
+    }
 
-    // Modo MULTI: desbloqueia só se for realmente meu turno.
-    if (currentMatchId) {
-        try {
-            const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
-            const user = await account.get();
-            const isMyTurn = match.currentPlayerId === user.id;
+    // Modo MULTI: consulta SEMPRE o servidor para saber quem joga
+    try {
+        const match = await databases.getDocument(DATABASEID, MATCHESCOLLECTIONID, currentMatchId);
+        const user = await account.get();
+        const isMyTurn = match.currentPlayerId === user.id;
 
-            if (isMyTurn) {
-                palavrasContainer.style.pointerEvents = 'auto';
-                palavrasContainer.style.opacity = 1;
-            } else {
-                // Não é meu turno: continua bloqueado.
-                palavrasContainer.style.pointerEvents = 'none';
-                palavrasContainer.style.opacity = 0.5;
-            }
-        } catch (e) {
-            console.warn('Erro ao verificar turno no toggleWordsLock', e);
-            // Em caso de erro, melhor manter bloqueado para não dar vantagem errada.
+        if (isMyTurn) {
+            // É MINHA VEZ -> palavras liberadas
+            palavrasContainer.style.pointerEvents = 'auto';
+            palavrasContainer.style.opacity = 1;
+        } else {
+            // NÃO é minha vez -> palavras SEMPRE travadas
             palavrasContainer.style.pointerEvents = 'none';
             palavrasContainer.style.opacity = 0.5;
         }
-    } else {
-        // Modo SOLO: sempre desbloqueia.
-        palavrasContainer.style.pointerEvents = 'auto';
-        palavrasContainer.style.opacity = 1;
+    } catch (e) {
+        console.warn('Erro ao verificar turno em toggleWordsLock', e);
+        // Em caso de erro, mantém tudo bloqueado para não quebrar regra de turno
+        palavrasContainer.style.pointerEvents = 'none';
+        palavrasContainer.style.opacity = 0.5;
     }
 }
 
@@ -5960,36 +5963,36 @@ async function handleMatchUpdate(payload) {
         
         // A. Verifica se a SENTENÇA AVANÇOU
         if (payload.currentSentenceIndex !== currentSegmentIndex) {
-		    console.log('Servidor avançou a sentença. Carregando próximo segmento...');
-		    currentSegmentIndex = payload.currentSentenceIndex;
-		
-		    await loadNextSegment();
-		
-		    // Se for modo MULTI, verifica o turno atual e usa toggleWordsLock
-		    if (currentMatchId) {
-		        try {
-		            const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
-		            const user = await account.get();
-		            const isMyTurn = match.currentPlayerId === user.id;
-		            toggleWordsLock(true); // pede desbloqueio, a função se encarrega de respeitar o turno
-		            // Inicia o timer apenas se for meu turno e houver palavras
-		            if (isMyTurn && words.length > 0) {
-		                startWordTimer(words[0]);
-		            }
-		        } catch (error) {
-		            console.error('Erro ao verificar turno ao carregar novo segmento', error);
-		            toggleWordsLock(false); // em caso de erro, mantém bloqueado
-		        }
-		    } else {
-		        // Modo solo
-		        toggleWordsLock(true);
-		        if (words.length > 0) {
-		            startWordTimer(words[0]);
-		        }
-		    }
-		
-		    return;
-		}
+            console.log('Servidor avançou a sentença. Carregando próximo segmento...');
+            currentSegmentIndex = payload.currentSentenceIndex;
+        
+            await loadNextSegment();
+        
+            // Se for modo MULTI, verifica o turno atual e usa toggleWordsLock
+            if (currentMatchId) {
+                try {
+                    const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+                    const user = await account.get();
+                    const isMyTurn = match.currentPlayerId === user.id;
+                    toggleWordsLock(true); // pede desbloqueio, a função se encarrega de respeitar o turno
+                    // Inicia o timer apenas se for meu turno e houver palavras
+                    if (isMyTurn && words.length > 0) {
+                        startWordTimer(words[0]);
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar turno ao carregar novo segmento', error);
+                    toggleWordsLock(false); // em caso de erro, mantém bloqueado
+                }
+            } else {
+                // Modo solo
+                toggleWordsLock(true);
+                if (words.length > 0) {
+                    startWordTimer(words[0]);
+                }
+            }
+        
+            return;
+        }
         else {
             // B. Foi apenas uma ATUALIZAÇÃO DE PALAVRA
             console.log(`ATUALIZAÇÃO DE PALAVRA`);
@@ -6002,7 +6005,6 @@ async function handleMatchUpdate(payload) {
                 const phraseButton = document.createElement('button');
                 phraseButton.className = 'phrase-word-button';
                 phraseButton.textContent = word;
-                // (Adicione seu estilo CSS aqui se necessário)
                 phraseButton.style.cssText = `
                     width: auto; color: #fff; padding: 0 10px; margin: 4px; 
                     background: transparent; border: none; border-radius: 8px; 
@@ -6020,23 +6022,26 @@ async function handleMatchUpdate(payload) {
                 const lastWordUsed = palavras[palavras.length - 1];
                 const wordButtons = document.querySelectorAll('#palavras .word-button');
                 for (const btn of wordButtons) {
-                    // ATENÇÃO: Se houver palavras duplicadas, isso pode remover a errada.
-                    // Uma lógica mais robusta usaria IDs únicos por botão.
-                    // Mas para a maioria dos casos, isso funciona:
                     if (btn.textContent === lastWordUsed) {
                         btn.remove();
-                        break; // Remove apenas o primeiro que encontrar
+                        break; 
                     }
                 }
             }
         }
 
-        // C. Lógica de TURNOS (Roda em ambos os casos: avanço ou palavra)
-        // Roda em ambos os casos avanço ou palavra
-        const myId = await account.get().id;
-        toggleWordsLock(payload.currentPlayerId === myId);
+        // C. Lógica de TURNOS (Substituído conforme solicitação)
+        if (currentMatchId) {
+            // Recalcula bloqueio SEMPRE a partir do estado da partida
+            toggleWordsLock(true);
+        } else {
+            // Solo continua livre
+            toggleWordsLock(true);
+        }
 
         // Atualizar performances na UI
+        const userStatus = await account.get();
+        const myId = userStatus.id;
         if (payload.hostPerformance !== undefined && payload.opponentPerformance !== undefined) {
             const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
             const isHost = (myId === match.hostId);
