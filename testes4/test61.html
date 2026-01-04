@@ -557,7 +557,7 @@ label input[type="checkbox"] {
     <div class="logo-area" onclick="showSection('home')">
       <img src="https://files.catbox.moe/6nkxcx.svg" alt="Ícone SVG" width="30" height="30" />
       <div class="text-area" id="text-area">
-        <span>PhraseCraft v61</span>
+        <span>PhraseCraft v0.61</span>
       </div>
     </div>
     
@@ -4655,64 +4655,13 @@ function startWordTimer(currentWord) {
     // Inicializa a exibição em 200%
     updateWordPerformance(MAX_WORD_PERFORMANCE);
     
-    // Pega a referência do container de palavras
-    const palavrasContainer = document.getElementById('palavras');
-
     // Atualiza a cada 50ms
-    timerInterval = setInterval(async () => {
-        
-        // --- 🔒 LÓGICA DE PAUSA E BLOQUEIO (CORRIGIDA) ---
-        const video = document.getElementById("videoPlayer-play");
-        const isVideoPlaying = video && !video.paused && !video.ended;
-        const isSpeaking = ('speechSynthesis' in window) && window.speechSynthesis.speaking;
-
-        if (isVideoPlaying || isSpeaking) {
-		    // Pausa o tempo empurrando o início
-		    wordStartTime += 50;
-		    if (decayStartTime !== null) {
-		        decayStartTime += 50;
-		    }
-		
-		    // Enquanto vídeo/voz estiverem ativos, força bloqueio para todos.
-		    const palavrasContainer = document.getElementById('palavras');
-		    if (palavrasContainer) {
-		        palavrasContainer.style.pointerEvents = 'none';
-		        palavrasContainer.style.opacity = 0.5;
-		    }
-		
-		    return;
-		}
-		else {
-            // 3. DESBLOQUEIA QUANDO PARAR (Apenas se estiver bloqueado)
-            if (palavrasContainer && palavrasContainer.style.pointerEvents === 'none') {
-                // Em modo Multi, verifica se é meu turno antes de desbloquear
-                if (currentMatchId) {
-                    try {
-                        const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
-                        const user = await account.get();
-                        const isMyTurn = (match.currentPlayerId === user.$id);
-                        
-                        if (isMyTurn) {
-                            palavrasContainer.style.pointerEvents = 'auto';
-                            palavrasContainer.style.opacity = '1';
-                        }
-                    } catch (e) {
-                        console.warn("Erro ao verificar turno no desbloqueio:", e);
-                    }
-                } else {
-                    // Modo Solo: sempre desbloqueia
-                    palavrasContainer.style.pointerEvents = 'auto';
-                    palavrasContainer.style.opacity = '1';
-                }
-            }
-        }
-        // --- FIM DA LÓGICA DE PAUSA E BLOQUEIO ---
-        
+    timerInterval = setInterval(() => {
         // ✅ CÓDIGO QUE ESTAVA FALTANDO: Atualiza a performance
         const currentPerformance = calculateCurrentWordPerformance();
         updateWordPerformance(currentPerformance);
         
-    }, 50); // ✅ FECHAMENTO CORRETO DO setInterval
+    }, 50);
 }
 
 /**
@@ -5220,7 +5169,6 @@ async function loadNextSegment() {
   palavrasContainer.innerHTML = '';
   fraseContainer.innerHTML = '';
   
-  // ✅ DECLARA 'words' ANTES de usar
   const words = nextSegment.text
     .split(/\s+/)
     .filter(word => word.trim().length > 0);
@@ -5231,10 +5179,7 @@ async function loadNextSegment() {
   // Cria botões para cada palavra
   shuffledWords.forEach((word) => {
     const wordButton = document.createElement('button');
-    
-    // 1. APLICA A CLASSE BASE
     wordButton.className = 'word-button word-button-base';
-    
     wordButton.textContent = word;
     
     wordButton.onmouseenter = () => {
@@ -5248,7 +5193,6 @@ async function loadNextSegment() {
     };
     
     wordButton.onclick = () => {
-      // Lê a palavra na velocidade normal, pausando o vídeo se necessário
       speakText(word, 1.0);
       moveWordToPhrase(wordButton, word);
     };
@@ -5258,8 +5202,7 @@ async function loadNextSegment() {
   
   console.log(`✅ Segmento ${currentSegmentIndex + 1} carregado`);
   
-  // Se for modo MULTIPLAYER, verifica o turno antes de iniciar o timer
-  // Se for modo MULTIPLAYER, verifica o turno antes de iniciar o timer
+  // ✅ SIMPLIFICADO: Verifica turno apenas no Multi
   if (currentMatchId) {
     try {
       const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
@@ -5267,27 +5210,32 @@ async function loadNextSegment() {
       const isMyTurn = (match.currentPlayerId === user.$id);
       
       console.log(`🎮 Carregando segmento. Meu turno? ${isMyTurn}`);
-      toggleWordsLock(isMyTurn);
       
-      // ✅ Inicia o timer APENAS se for meu turno
-      if (isMyTurn && words.length > 0) {
+      // Define bloqueio baseado APENAS no turno
+      if (isMyTurn) {
+        palavrasContainer.style.pointerEvents = 'auto';
+        palavrasContainer.style.opacity = '1';
         startWordTimer(words[0]);
+      } else {
+        palavrasContainer.style.pointerEvents = 'none';
+        palavrasContainer.style.opacity = '0.5';
       }
     } catch (error) {
       console.error("Erro ao verificar turno", error);
+      palavrasContainer.style.pointerEvents = 'none';
+      palavrasContainer.style.opacity = '0.5';
     }
   } else {
     // Modo SOLO - sempre desbloqueado
-    toggleWordsLock(true);
+    palavrasContainer.style.pointerEvents = 'auto';
+    palavrasContainer.style.opacity = '1';
+    startWordTimer(words[0]);
   }
   
-  // Atualiza o progresso
   updateProgress();
-  
-  // 🎵 AGUARDA RENDERIZAÇÃO ANTES DE TOCAR
   await waitForRenderAndPlay();
 }
-
+	
 /**
  * Mostra mensagem de conclusão
  */
@@ -5302,58 +5250,6 @@ function showCompletionMessage() {
   if (palavrasContainer) {
     palavrasContainer.innerHTML = '';
   }
-}
-
-/**
- * Bloqueia ou desbloqueia as palavras e inicia/para o timer
- * @param {boolean} unlock - true para desbloquear, false para bloquear
- */
-// Bloqueia ou desbloqueia as palavras e inicia/para o timer
-// param boolean unlock - true para desbloquear, false para bloquear
-// Bloqueia ou desbloqueia as palavras com base no turno atual.
-// unlock = true -> tenta desbloquear, unlock = false -> força bloquear.
-// Bloqueia ou desbloqueia as palavras com base APENAS no turno atual da partida.
-// unlock = true -> tenta desbloquear (mas só se for minha vez).
-// unlock = false -> força bloquear sempre.
-async function toggleWordsLock(unlock) {
-    const palavrasContainer = document.getElementById('palavras');
-    if (!palavrasContainer) return;
-
-    // Sempre bloqueia quando unlock === false
-    if (!unlock) {
-        palavrasContainer.style.pointerEvents = 'none';
-        palavrasContainer.style.opacity = 0.5;
-        return;
-    }
-
-    // Modo SOLO: não tem turno, sempre desbloqueia
-    if (!currentMatchId) {
-        palavrasContainer.style.pointerEvents = 'auto';
-        palavrasContainer.style.opacity = 1;
-        return;
-    }
-
-    // Modo MULTI: consulta SEMPRE o servidor para saber quem joga
-    try {
-        const match = await databases.getDocument(DATABASEID, MATCHESCOLLECTIONID, currentMatchId);
-        const user = await account.get();
-        const isMyTurn = match.currentPlayerId === user.id;
-
-        if (isMyTurn) {
-            // É MINHA VEZ -> palavras liberadas
-            palavrasContainer.style.pointerEvents = 'auto';
-            palavrasContainer.style.opacity = 1;
-        } else {
-            // NÃO é minha vez -> palavras SEMPRE travadas
-            palavrasContainer.style.pointerEvents = 'none';
-            palavrasContainer.style.opacity = 0.5;
-        }
-    } catch (e) {
-        console.warn('Erro ao verificar turno em toggleWordsLock', e);
-        // Em caso de erro, mantém tudo bloqueado para não quebrar regra de turno
-        palavrasContainer.style.pointerEvents = 'none';
-        palavrasContainer.style.opacity = 0.5;
-    }
 }
 
 // ✅ Função utilitária para o onclick nos botões em Play
@@ -5876,11 +5772,9 @@ async function joinMatchOnServer(matchId, dataPayload = null) {
  * AGORA REAGE AO AVANÇO DE SENTENÇA.
  */
 async function handleMatchUpdate(payload) {
-    // --- DETECTAR DESISTÊNCIA DO HOST ---
     if (payload.status === 'deleted_by_host') {
         console.log("🚫 O Host excluiu a partida.");
         
-        // ✅ CORREÇÃO: Verifica AMBAS as seções (editSrt e challenge)
         if (appState.currentSection === 'editSrt' || appState.currentSection === 'challenge') {
             alert("O Host cancelou esta partida.");
             
@@ -5896,16 +5790,13 @@ async function handleMatchUpdate(payload) {
         return;
     }
   
-    // 1. Oponente entrou (Lógica do Host no Lobby)
     if (appState.currentSection === 'challenge' && payload.status === 'playing') {
         console.log("✅ Oponente entrou! Iniciando partida para o Host...");
         
-        // Move o host para a tela de jogo
         endCreateMode(); 
         hideFooter();
         showSection('play');
         
-        // Inicializa o jogo
         requestAnimationFrame(() => {
             if (srtData.length > 0) {
                 resetAccumulatedPerformance();
@@ -5914,15 +5805,13 @@ async function handleMatchUpdate(payload) {
             }
         });
         
-        return; // Importante: sai da função para não executar a lógica de play
+        return;
     }
     
-    // 1b. Oponente saiu (pode acontecer em qualquer seção)
     if (payload.status === 'left') {
         console.log("🚨 Oponente saiu da partida!");
         alert("O oponente saiu da partida.");
         
-        // Deleta a partida (já que é o segundo a receber a notificação)
         if (currentMatchId) {
             try {
                 await databases.deleteDocument(
@@ -5936,7 +5825,6 @@ async function handleMatchUpdate(payload) {
             }
         }
         
-        // Limpa variáveis e volta pra home
         currentMatchId = null;
         if (window.unsubscribeFromMatch) {
             window.unsubscribeFromMatch();
@@ -5944,53 +5832,25 @@ async function handleMatchUpdate(payload) {
         }
         
         showSection('home');
-        return; // Sai da função
+        return;
     }
   
-    // 2. Lógica de Jogo (Atualização de palavras e turnos)
     if (appState.currentSection === 'play') {
 
-        // 2a. JOGO TERMINOU
         if (payload.status === 'finished') {
             console.log("🏆 Jogo terminado!");
-            showCompletionMessage(); // Mostra msg de parabéns
-            if (unsubscribeMatch) unsubscribeMatch(); // Para de escutar
-            currentMatchId = null; // Finaliza a partida local
+            showCompletionMessage();
+            if (window.unsubscribeFromMatch) window.unsubscribeFromMatch();
+            currentMatchId = null;
             return;
         }
       
-        // 2c. ATUALIZAÇÃO NORMAL DE JOGO (playing)
-        
         // A. Verifica se a SENTENÇA AVANÇOU
         if (payload.currentSentenceIndex !== currentSegmentIndex) {
             console.log('Servidor avançou a sentença. Carregando próximo segmento...');
             currentSegmentIndex = payload.currentSentenceIndex;
         
-            await loadNextSegment();
-        
-            // Se for modo MULTI, verifica o turno atual e usa toggleWordsLock
-            if (currentMatchId) {
-                try {
-                    const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
-                    const user = await account.get();
-                    const isMyTurn = match.currentPlayerId === user.id;
-                    toggleWordsLock(true); // pede desbloqueio, a função se encarrega de respeitar o turno
-                    // Inicia o timer apenas se for meu turno e houver palavras
-                    if (isMyTurn && words.length > 0) {
-                        startWordTimer(words[0]);
-                    }
-                } catch (error) {
-                    console.error('Erro ao verificar turno ao carregar novo segmento', error);
-                    toggleWordsLock(false); // em caso de erro, mantém bloqueado
-                }
-            } else {
-                // Modo solo
-                toggleWordsLock(true);
-                if (words.length > 0) {
-                    startWordTimer(words[0]);
-                }
-            }
-        
+            await loadNextSegment(); // Já trata o bloqueio internamente
             return;
         }
         else {
@@ -5999,7 +5859,6 @@ async function handleMatchUpdate(payload) {
             const fraseContainer = document.getElementById('frase');
             const palavras = payload.currentSentenceWords ? payload.currentSentenceWords.split(' ').filter(p => p) : [];
             
-            // Recria a frase
             fraseContainer.innerHTML = '';
             palavras.forEach(word => {
                 const phraseButton = document.createElement('button');
@@ -6014,10 +5873,8 @@ async function handleMatchUpdate(payload) {
                 fraseContainer.appendChild(phraseButton);
             });
             
-            // Atualiza estado local
             selectedWords = palavras;
 
-            // Remove o botão usado da lista de escolhas
             if (palavras.length > 0) {
                 const lastWordUsed = palavras[palavras.length - 1];
                 const wordButtons = document.querySelectorAll('#palavras .word-button');
@@ -6030,18 +5887,31 @@ async function handleMatchUpdate(payload) {
             }
         }
 
-        // C. Lógica de TURNOS (Substituído conforme solicitação)
-        if (currentMatchId) {
-            // Recalcula bloqueio SEMPRE a partir do estado da partida
-            toggleWordsLock(true);
-        } else {
-            // Solo continua livre
-            toggleWordsLock(true);
+        // ✅ DESBLOQUEIA APENAS SE FOR MEU TURNO
+        const palavrasContainer = document.getElementById('palavras');
+        if (palavrasContainer && currentMatchId) {
+            try {
+                const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+                const user = await account.get();
+                const isMyTurn = (match.currentPlayerId === user.$id);
+                
+                if (isMyTurn) {
+                    palavrasContainer.style.pointerEvents = 'auto';
+                    palavrasContainer.style.opacity = '1';
+                    console.log("✅ Meu turno! Palavras desbloqueadas.");
+                } else {
+                    palavrasContainer.style.pointerEvents = 'none';
+                    palavrasContainer.style.opacity = '0.5';
+                    console.log("⏸️ Não é meu turno. Palavras bloqueadas.");
+                }
+            } catch (error) {
+                console.error("Erro ao verificar turno:", error);
+            }
         }
 
         // Atualizar performances na UI
         const userStatus = await account.get();
-        const myId = userStatus.id;
+        const myId = userStatus.$id;
         if (payload.hostPerformance !== undefined && payload.opponentPerformance !== undefined) {
             const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
             const isHost = (myId === match.hostId);
@@ -6057,57 +5927,52 @@ async function handleMatchUpdate(payload) {
  * AGORA VERIFICA SE A FRASE FOI CONCLUÍDA.
  */
 async function sendWordToMatch(word) {
-    if (!currentMatchId) return; // Não é jogo multi
+    if (!currentMatchId) return;
 
     console.log(`Enviando palavra: ${word}`);
-    showLoading('Enviando...'); // Feedback
+    
+    // ✅ BLOQUEIA IMEDIATAMENTE ao clicar (feedback visual)
+    const palavrasContainer = document.getElementById('palavras');
+    if (palavrasContainer) {
+        palavrasContainer.style.pointerEvents = 'none';
+        palavrasContainer.style.opacity = '0.5';
+    }
+    
+    showLoading('Enviando...');
     
     try {
-        // 1. Pega o estado ATUAL da partida
         const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
         const myId = (await account.get()).$id;
 
-        // 2. Segurança: Verifica se é realmente meu turno
         if (match.currentPlayerId !== myId) {
             console.warn("Não é meu turno!");
             hideLoading();
             return;
         }
 
-        // 3. Monta os novos dados
         const newWords = (match.currentSentenceWords ? match.currentSentenceWords + " " : "") + word;
         
-        // 4. Pega a frase correta localmente
         const correctSegment = srtData[match.currentSentenceIndex];
         const correctWords = correctSegment.text.split(/\s+/).filter(w => w.trim().length > 0);
 
-        // 5. Prepara o payload de atualização
         let updatePayload = {};
-
-        // Calcular performance antes de montar o payload
         const averagePerformance = calculateAveragePerformance();
         const isHost = (myId === match.hostId);
 
-        // 6. Verifica se a frase está completa
         if (newWords.split(' ').length === correctWords.length) {
-            // === FRASE COMPLETA ===
             console.log("Frase completa! Avançando para o próximo índice.");
             
-            // Verifica se o jogo terminou
             if (match.currentSentenceIndex + 1 >= srtData.length) {
-                // JOGO TERMINOU
                 updatePayload = {
-                    status: 'finished', // Sinaliza fim de jogo
-                    currentSentenceWords: newWords, // Envia a última frase completa
+                    status: 'finished',
+                    currentSentenceWords: newWords,
                     hostPerformance: isHost ? averagePerformance : match.hostPerformance,
                     opponentPerformance: isHost ? match.opponentPerformance : averagePerformance
                 };
             } else {
-                // PRÓXIMA FRASE
                 updatePayload = {
-                    currentSentenceWords: "", // Reseta as palavras
-                    currentSentenceIndex: match.currentSentenceIndex + 1, // Avança o índice
-                    // O oponente (ou quem não jogou por último) começa a próxima
+                    currentSentenceWords: "",
+                    currentSentenceIndex: match.currentSentenceIndex + 1,
                     currentPlayerId: match.opponentId === myId ? match.hostId : match.opponentId,
                     hostPerformance: isHost ? averagePerformance : match.hostPerformance,
                     opponentPerformance: isHost ? match.opponentPerformance : averagePerformance
@@ -6115,9 +5980,7 @@ async function sendWordToMatch(word) {
             }
 
         } else {
-            // === FRASE INCOMPLETA ===
             console.log("Palavra enviada, passando o turno.");
-            // Passa o turno para o outro jogador
             const nextPlayerId = (myId === match.hostId) ? match.opponentId : match.hostId;
             updatePayload = {
                 currentSentenceWords: newWords,
@@ -6127,21 +5990,30 @@ async function sendWordToMatch(word) {
             };
         }
 
-        // 7. Atualiza o documento no servidor
-        await databases.updateDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId, updatePayload); // Envia o payload decidido
-        
-        // Bloqueia imediatamente até o servidor confirmar o novo turno
-        toggleWordsLock(false);
+        await databases.updateDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId, updatePayload);
         
         hideLoading();
-
+        
+        // ✅ MANTÉM BLOQUEADO - O Realtime vai desbloquear quando for a vez novamente
         
     } catch (error) {
         console.error("Erro ao enviar jogada:", error);
         hideLoading();
+        
+        // ✅ Em caso de erro, tenta reabilitar se ainda for meu turno
+        try {
+            const match = await databases.getDocument(DATABASE_ID, MATCHES_COLLECTION_ID, currentMatchId);
+            const user = await account.get();
+            if (match.currentPlayerId === user.$id && palavrasContainer) {
+                palavrasContainer.style.pointerEvents = 'auto';
+                palavrasContainer.style.opacity = '1';
+            }
+        } catch (e) {
+            console.warn("Erro ao tentar reabilitar palavras", e);
+        }
     }
 }
-
+	
 /**
  * Deleta partidas antigas do usuário (ao recarregar, fechar ou sair de play)
  */
