@@ -1,6 +1,6 @@
-<!-- 87
+<!-- 88
 RESOLVIDO:
-O setLayoutMode tem que saber quando o app esta no desktop ou no mobile, pois quando troco de tela no desktop ele aplica o layout do mobile.
+contar video de fallback
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -641,7 +641,7 @@ O setLayoutMode tem que saber quando o app esta no desktop ou no mobile, pois qu
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v87
+            PhraseCraft v88
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -4270,8 +4270,6 @@ function validateTrainingData() {
     }
     
     function renderEarsList() {
-    
-    	checkVideoFallbackCount();
         
         const container = document.getElementById('ears-list');
 
@@ -4353,7 +4351,9 @@ function validateTrainingData() {
         structuredData = generateDynamicIds(projectData);
     
         // 2. Renderiza os Estágios
-        renderStageCards();      
+        renderStageCards();  
+    
+    	checkVideoFallbackCount();
     });
     </script>
 </body>
