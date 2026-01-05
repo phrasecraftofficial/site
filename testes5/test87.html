@@ -4220,7 +4220,61 @@ function validateTrainingData() {
         setTimeout(() => select.style.borderColor = originalBorder, 500);
     }
     
-
+    // --- 4. RACUNHO MODO DUELS ---
+    // 1. Gerenciador de Coleção com Realtime Integrado
+    const collectionManager = (collectionId) => {
+        let unsubscribe = null;
+    
+        return {
+            // --- CRUD BÁSICO ---
+            create: (data, id = 'unique()') => 
+                databases.createDocument(DATABASE_ID, collectionId, id, data),
+    
+            read: (docId = null, queries = []) => 
+                docId ? databases.getDocument(DATABASE_ID, collectionId, docId) 
+                      : databases.listDocuments(DATABASE_ID, collectionId, queries),
+    
+            update: (docId, data) => 
+                databases.updateDocument(DATABASE_ID, collectionId, docId, data),
+    
+            delete: (docId) => 
+                databases.deleteDocument(DATABASE_ID, collectionId, docId),
+    
+            // --- REALTIME ---
+            /**
+             * Escuta mudanças na coleção ou em um documento específico
+             * @param {Function} callback - Função executada ao receber update
+             * @param {string} docId - (Opcional) ID de um documento específico
+             */
+            subscribe: (callback, docId = null) => {
+                // Se já houver uma inscrição ativa, fecha ela antes
+                if (unsubscribe) unsubscribe();
+    
+                const channel = docId 
+                    ? `databases.${DATABASE_ID}.collections.${collectionId}.documents.${docId}`
+                    : `databases.${DATABASE_ID}.collections.${collectionId}.documents`;
+    
+                console.log(`📡 Inscrito no canal: ${channel}`);
+                
+                unsubscribe = client.subscribe(channel, (response) => {
+                    // Retorna apenas o payload (o documento atualizado) para o callback
+                    callback(response.payload, response.events);
+                });
+    
+                return unsubscribe; // Retorna a função para fechar manualmente se necessário
+            },
+    
+            // Fecha a conexão realtime
+            stop: () => {
+                if (unsubscribe) {
+                    unsubscribe();
+                    unsubscribe = null;
+                    console.log(`🛑 Realtime parado para: ${collectionId}`);
+                }
+            }
+        };
+    };
+    
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
