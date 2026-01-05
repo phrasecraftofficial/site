@@ -1,6 +1,10 @@
-<!-- 87
-injeta a lista de legendas em preview-earsSentences
-e gere o trecho para eu ajustar ao clicar no card em ears ir para view-earsLesson
+<!-- 89
+Principais Melhorias:
+Flexibilidade: Se amanhã você criar uma seção "Favoritos", basta adicionar um novo type e mudar a cor ou o ícone.
+
+Consistência: O estilo dos cards (sombras, bordas, carregamento de imagem) será idêntico em todo o app.
+
+Performance: Mantém o loading="lazy" e o tratamento de erro de imagem em um só lugar.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -641,7 +645,7 @@ e gere o trecho para eu ajustar ao clicar no card em ears ir para view-earsLesso
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v87
+            PhraseCraft v89
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -805,7 +809,7 @@ e gere o trecho para eu ajustar ao clicar no card em ears ir para view-earsLesso
                 </div>
 
                 <div class="video-responsive-container" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 15px; flex-shrink: 0;">
-                    <div id="yt-player-ears"></div> 
+                    <div id="native-ears-video-container"></div> 
                     </div>
 
                 <div style="padding: 10px; background: var(--surface-color); border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #888; text-align: center;">
@@ -1716,7 +1720,10 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         allLessons = [...serverData, ...localUnique];
     
         // 4. Renderiza
-        renderLessonList(allLessons);
+        renderLessonList(allLessons, ui.listContainer, { type: 'default' });
+
+        const earsData = allLessons.filter(l => l.videoFallbackUrl?.trim());
+        renderLessonList(earsData, document.getElementById('ears-list'), { type: 'ears' });
 
         // --- NOVO: CHECA O LINK DEPOIS DE CARREGAR TUDO ---
         checkDeepLink();
@@ -1724,53 +1731,73 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
 
     // Agora a função aceita uma lista como parâmetro
     // --- 3. ATUALIZAÇÃO DA RENDERIZAÇÃO (CORRIGIDA PARA LER DO SERVIDOR) ---
-    function renderLessonList(lessonsToRender) {
-        ui.listContainer.innerHTML = '';
+    /**
+     * Renderiza uma lista de lições de forma genérica.
+     * @param {Array} lessonsToRender - Array de lições a exibir.
+     * @param {HTMLElement} container - Onde os cards serão inseridos.
+     * @param {Object} options - Configurações específicas (type: 'default' | 'ears').
+     */
+    function renderLessonList(lessonsToRender, container, options = { type: 'default' }) {
+        if (!container) return;
         
+        container.innerHTML = '';
+    
+        // Validação de lista vazia
         if (!lessonsToRender || lessonsToRender.length === 0) {
-            ui.listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#888">Nenhuma lição disponível.</p>';
+            const emptyMsg = options.type === 'ears' 
+                ? 'Nenhuma prática de áudio encontrada.' 
+                : 'Nenhuma lição disponível.';
+            
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#888;">
+                    ${options.type === 'ears' ? '<span class="material-symbols-outlined" style="font-size: 3rem; display:block;">headphones_battery</span>' : ''}
+                    <p>${emptyMsg}</p>
+                </div>`;
             return;
         }
-
+    
         lessonsToRender.forEach(lesson => {
             const card = document.createElement('div');
             card.className = 'lesson-card';
-            card.onclick = () => openPreview(lesson.id);
-
-            // --- LÓGICA DE SUBTÍTULO OTIMIZADA ---
+            
+            // 1. Lógica de Clique Dinâmica
+            card.onclick = () => {
+                options.type === 'ears' ? openEarsLesson(lesson.id) : openPreview(lesson.id);
+            };
+    
+            // 2. Lógica de Subtítulo Unificada
             let subtitleText = "";
-
-            // 1. Prioridade: Dados diretos do Appwrite (na raiz do objeto)
-            // Usamos != null para garantir que pegue mesmo se for 0, mas ignore undefined
-            if (lesson.cards != null && lesson.phrases != null) {
-                subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
+            
+            // 1. Defina a classe do ícone conforme o tipo
+            let iconClass = options.type === 'ears' ? 'fa-headphones' : 'fa-layer-group';
+            let accentColor = options.type === 'ears' ? 'var(--success-color)' : 'var(--accent-color)';
+    
+            if (options.type === 'ears') {
+                subtitleText = lesson.stats ? `${lesson.stats.phrases} frases de áudio` : "Prática de Listening";
+            } else {
+                // Lógica de prioridade que você já usava
+                if (lesson.cards != null && lesson.phrases != null) {
+                    subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
+                } else if (lesson.stats) {
+                    subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
+                } else {
+                    subtitleText = "...";
+                }
             }
-            // 2. Fallback: Dados manuais locais (objeto stats antigo)
-            else if (lesson.stats) {
-                subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
-            } 
-            // 3. Fallback: Cálculo se os dados brutos já estiverem carregados
-            else if (Array.isArray(lesson.data)) {
-                const totalPhrases = lesson.data.length;
-                const totalCards = lesson.data.reduce((acc, item) => acc + (item.vocab ? item.vocab.length : 0), 0);
-                subtitleText = `${totalCards} cards | ${totalPhrases} frases`;
-            } 
-            // 4. Último caso: Deixa vazio ou coloca um placeholder discreto
-            else {
-                subtitleText = "..."; 
-            }
-
-            // Renderiza o card
+    
+            // 3. Renderização do HTML
             card.innerHTML = `
-                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
+                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" 
+                     onerror="this.src='https://placehold.co/200x150?text=No+Image'">
                 <div class="lesson-info">
                     <div class="lesson-title">${lesson.title}</div>
-                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--accent-color);">
-                        <i class="fa-solid fa-layer-group"></i> ${subtitleText}
+                    <div class="lesson-subtitle" style="font-size: 0.85em; color: ${accentColor}; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid ${iconClass}"></i> 
+                        ${subtitleText}
                     </div>
                 </div>
             `;
-            ui.listContainer.appendChild(card);
+            container.appendChild(card);
         });
     }
 
@@ -4289,214 +4316,54 @@ function validateTrainingData() {
         }
     }
 
-    // --- LOGICA ESPECÍFICA PARA EARS (LISTENING MODE) ---
-
-    // 1. Função que abre a lição, carrega dados e configura a tela
-    async function openEarsLesson(lessonId) {
-        console.log("🎧 [Ears] Abrindo lição ID:", lessonId);
-    
-        // Limpa player anterior e estados
-        clean(); 
+    // --- ABRE A LIÇÃO EARS COM VÍDEO NATIVO ---
+    function openEarsLesson(lessonId) {
+        // 1. Busca a lição na memória (reaproveitando allLessons)
+        const lesson = allLessons.find(l => l.id == lessonId);
         
-        // Busca a lição
-        let rawLesson = allLessons.find(l => l.id == lessonId);
-        if (!rawLesson) { console.error("Lição não encontrada"); return; }
-    
-        // Carrega/Compila os dados (Reutilizando lógica de cache do openPreview)
-        // Precisamos garantir que 'currentLesson' esteja populada com 'data' (frases)
-        let lessonDataCompiled;
-        if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
-            lessonDataCompiled = currentLesson.data;
-        } else {
-            // Mostra loading rápido se precisar baixar
-            ui.listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Carregando dados...</div>';
-            const loadedData = await fetchLessonData(rawLesson);
-            if (!loadedData) return;
-            
-            lessonDataCompiled = compileLessonData(
-                loadedData.srtEn, loadedData.srtPt, loadedData.vocabData, rawLesson.video
-            );
+        if (!lesson) {
+            console.error("Lição não encontrada");
+            return;
         }
     
-        // Atualiza estado global
-        currentLesson = { ...rawLesson, data: lessonDataCompiled };
+        if (!lesson.videoFallbackUrl) {
+            alert("Esta lição não possui vídeo de fallback cadastrado.");
+            return;
+        }
     
-        // Navega para a view correta
-        navigateTo('earsLesson', { lessonId: rawLesson.id });
-        
-        // Atualiza título na UI
+        console.log("🎧 Abrindo Ears Lesson com Vídeo Nativo:", lesson.title);
+    
+        // 2. Navegação (Reaproveita sua função existente)
+        navigateTo('earsLesson');
+    
+        // 3. Atualiza UI Básica
         const titleEl = document.getElementById('ears-lesson-title');
-        if(titleEl) titleEl.innerText = currentLesson.title;
+        if (titleEl) titleEl.innerText = lesson.title;
     
-        // Renderiza a lista de frases
-        renderEarsSentences();
-    
-        // Inicializa o Player Específico do Ears
-        setupEarsPlayer(currentLesson.video);
-    }
-    
-    // 2. Função que injeta a lista de legendas (Sua solicitação principal)
-    function renderEarsSentences() {
-        const listContainer = document.getElementById('preview-earsSentences');
-        listContainer.innerHTML = ''; // Limpa lista anterior
-    
-        if (!currentLesson || !currentLesson.data) return;
-    
-        currentLesson.data.forEach((item, index) => {
-            const li = document.createElement('li');
-            li.className = 'preview-item';
-            
-            // Estilização para parecer clicável e interativo
-            li.style.cursor = 'pointer';
-            li.style.display = 'flex';
-            li.style.flexDirection = 'column';
-            li.style.gap = '5px';
-            li.style.transition = 'background-color 0.2s';
-            
-            // Conteúdo: Inglês (Destaque) e Português (Sutil)
-            li.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <span style="font-weight:bold; color:var(--text-primary); font-size: 1rem;">${item.en}</span>
-                    <i class="fa-solid fa-play-circle" style="color:var(--accent-color); font-size:1.2rem; margin-left:10px;"></i>
-                </div>
-                <span style="font-size:0.85em; color:var(--text-secondary); font-style: italic;">${item.pt || ''}</span>
-            `;
-    
-            // AÇÃO DE CLIQUE: Toca o trecho específico
-            li.onclick = () => {
-                // Remove destaque de outros
-                document.querySelectorAll('#preview-earsSentences .preview-item').forEach(el => {
-                    el.style.backgroundColor = 'transparent';
-                    el.style.borderLeft = 'none';
-                });
-                
-                // Adiciona destaque ao atual
-                li.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                li.style.borderLeft = '4px solid var(--accent-color)';
-    
-                // Toca o segmento (Usa a função playSegment que já existe, mas precisamos garantir que o player certo seja alvo)
-                // Como criamos um player separado (ytPlayerEars), precisamos adaptar a função de play
-                playEarsSegment(item.start, item.end);
-            };
-    
-            listContainer.appendChild(li);
-        });
-    }
-    
-    // 3. Player Específico para a View Ears (Para não conflitar com o Treino)
-    let ytPlayerEars = null;
-    let earsTimer = null;
-    
-    function setupEarsPlayer(videoUrl) {
-        const videoId = getYoutubeId(videoUrl);
-        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
-    
-        // Se já existe, apenas carrega o vídeo novo
-        if (ytPlayerEars) {
-            ytPlayerEars.loadVideoById({
-                'videoId': videoId,
-                'suggestedQuality': userQuality
-            });
-            return;
-        }
-    
-        // Cria novo player apontando para a div 'yt-player-ears'
-        ytPlayerEars = new YT.Player('yt-player-ears', {
-            height: '100%',
-            width: '100%',
-            videoId: videoId,
-            playerVars: { 
-                'playsinline': 1, 
-                'controls': 1, // Aqui permitimos controles para o usuário navegar se quiser
-                'modestbranding': 1, 
-                'rel': 0 
-            },
-            events: {
-                'onReady': (event) => {
-                    event.target.setPlaybackQuality(userQuality);
-                }
-            }
-        });
-    }
-    
-    // 4. Toca segmento no Player Ears
-    function playEarsSegment(start, end) {
-        if (!ytPlayerEars || !ytPlayerEars.seekTo) return;
-    
-        ytPlayerEars.seekTo(start);
-        ytPlayerEars.playVideo();
-    
-        // Limpa timer anterior
-        if (earsTimer) clearInterval(earsTimer);
-    
-        // Cria loop ou pausa ao fim (aqui configurei para pausar ao fim da frase)
-        earsTimer = setInterval(() => {
-            if (!ytPlayerEars.getCurrentTime) return;
-            
-            const current = ytPlayerEars.getCurrentTime();
-            if (current >= end) {
-                ytPlayerEars.pauseVideo();
-                clearInterval(earsTimer);
-            }
-        }, 100);
-    }
-    
-    function renderEarsList() {
-    
-    	checkVideoFallbackCount();
+        // 4. INJEÇÃO DO VÍDEO NATIVO (Aqui está a mágica)
+        const videoContainer = document.getElementById('native-ears-video-container');
         
-        const container = document.getElementById('ears-list');
-
-        // Proteção se o container não existir
-        if (!container) return;
-
-        container.innerHTML = ''; // Limpa conteúdo anterior
-
-        // 1. Filtra apenas lições que têm videoFallbackUrl válido
-        const earsLessons = allLessons.filter(lesson => 
-            lesson.videoFallbackUrl && lesson.videoFallbackUrl.trim() !== ''
-        );
-
-        // 2. Verifica se encontrou algo
-        if (earsLessons.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:40px; color:#666;">
-                    <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: 10px; display:block;">
-                        headphones_battery
-                    </span>
-                    <p>Nenhuma prática de áudio encontrada.</p>
-                </div>
+        if (videoContainer) {
+            // Limpa qualquer conteúdo anterior e injeta o vídeo HTML5
+            videoContainer.innerHTML = `
+                <video 
+                    id="native-ears-player" 
+                    controls 
+                    autoplay 
+                    playsinline 
+                    style="width: 100%; height: 100%; object-fit: contain; background: #000;"
+                    src="${lesson.videoFallbackUrl}"
+                >
+                    Seu navegador não suporta a tag de vídeo.
+                </video>
             `;
-            return;
         }
-
-        // 3. Renderiza os Cards
-        earsLessons.forEach(lesson => {
-            const card = document.createElement('div');
-            card.className = 'lesson-card';
-
-            // Ao clicar, abre o preview normal (ou você pode criar uma função específica para abrir direto em modo áudio)
-            card.onclick = () => openEarsLesson(lesson.id);
-
-            // Subtítulo personalizado para a seção Ears
-            const subtitle = lesson.stats 
-                ? `${lesson.stats.phrases} frases de áudio` 
-                : "Prática de Listening";
-
-            card.innerHTML = `
-                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" 
-                     onerror="this.src='https://placehold.co/200x150?text=No+Image'">
-
-                <div class="lesson-info">
-                    <div class="lesson-title">${lesson.title}</div>
-                    <div class="lesson-subtitle" style="color: var(--success-color); display: flex; align-items: center; gap: 5px;">
-                        <span class="material-symbols-outlined" style="font-size: 1rem;">headphones</span>
-                        ${subtitle}
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
+    
+        // Opcional: Limpar a lista de frases antigas para não confundir visualmente
+        const listContainer = document.getElementById('preview-earsSentences');
+        if (listContainer) {
+            listContainer.innerHTML = '<li class="preview-item" style="text-align:center; padding:20px;">Legendas em breve...</li>';
+        }
     }
 
     // --- 5. INICIALIZA O APP ---
@@ -4525,7 +4392,9 @@ function validateTrainingData() {
         structuredData = generateDynamicIds(projectData);
     
         // 2. Renderiza os Estágios
-        renderStageCards();      
+        renderStageCards();  
+    
+    	checkVideoFallbackCount();
     });
     </script>
 </body>
