@@ -796,6 +796,26 @@ contar video de fallback
                 </div>
             </section>
 
+            <section id="view-earsLesson" class="view-section">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                     <button onclick="navigateTo('ears')" style="background:none; border:none; color:var(--text-primary); font-size:1.2rem; cursor:pointer; margin-right:10px;">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h3 id="ears-lesson-title" style="margin:0; font-size:1.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Title</h3>
+                </div>
+
+                <div class="video-responsive-container" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 15px; flex-shrink: 0;">
+                    <div id="native-ears-video-container"></div> 
+                    </div>
+
+                <div style="padding: 10px; background: var(--surface-color); border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #888; text-align: center;">
+                    <i class="fa-solid fa-circle-info"></i> Toque em uma frase para ouvir o trecho.
+                </div>
+
+                <ul id="preview-earsSentences" class="preview-list" style="padding-bottom: 80px;">
+                    </ul>
+            </section>
+
             <section id="view-you" class="view-section">
                 <div style="background: var(--surface-color); padding: 30px 20px; text-align: center; border-bottom: 1px solid var(--border-color);">
                     <div id="profile-avatar" style="width: 80px; height: 80px; background: var(--accent-color); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin: 0 auto 15px auto; border: 3px solid #fff;">
@@ -4301,8 +4321,8 @@ function validateTrainingData() {
             const card = document.createElement('div');
             card.className = 'lesson-card';
 
-            // Ao clicar, abre o preview normal (ou você pode criar uma função específica para abrir direto em modo áudio)
-            card.onclick = () => openPreview(lesson.id);
+            // Ao clicar, abre a função específica que criamos acima
+            card.onclick = () => openEarsLesson(lesson.id);
 
             // Subtítulo personalizado para a seção Ears
             const subtitle = lesson.stats 
@@ -4323,6 +4343,58 @@ function validateTrainingData() {
             `;
             container.appendChild(card);
         });
+    }
+    
+    
+
+    // --- ABRE A LIÇÃO EARS COM VÍDEO NATIVO ---
+    function openEarsLesson(lessonId) {
+        // 1. Busca a lição na memória (reaproveitando allLessons)
+        const lesson = allLessons.find(l => l.id == lessonId);
+        
+        if (!lesson) {
+            console.error("Lição não encontrada");
+            return;
+        }
+    
+        if (!lesson.videoFallbackUrl) {
+            alert("Esta lição não possui vídeo de fallback cadastrado.");
+            return;
+        }
+    
+        console.log("🎧 Abrindo Ears Lesson com Vídeo Nativo:", lesson.title);
+    
+        // 2. Navegação (Reaproveita sua função existente)
+        navigateTo('earsLesson');
+    
+        // 3. Atualiza UI Básica
+        const titleEl = document.getElementById('ears-lesson-title');
+        if (titleEl) titleEl.innerText = lesson.title;
+    
+        // 4. INJEÇÃO DO VÍDEO NATIVO (Aqui está a mágica)
+        const videoContainer = document.getElementById('native-ears-video-container');
+        
+        if (videoContainer) {
+            // Limpa qualquer conteúdo anterior e injeta o vídeo HTML5
+            videoContainer.innerHTML = `
+                <video 
+                    id="native-ears-player" 
+                    controls 
+                    autoplay 
+                    playsinline 
+                    style="width: 100%; height: 100%; object-fit: contain; background: #000;"
+                    src="${lesson.videoFallbackUrl}"
+                >
+                    Seu navegador não suporta a tag de vídeo.
+                </video>
+            `;
+        }
+    
+        // Opcional: Limpar a lista de frases antigas para não confundir visualmente
+        const listContainer = document.getElementById('preview-earsSentences');
+        if (listContainer) {
+            listContainer.innerHTML = '<li class="preview-item" style="text-align:center; padding:20px;">Legendas em breve...</li>';
+        }
     }
 
     // --- 5. INICIALIZA O APP ---
