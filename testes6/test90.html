@@ -1,6 +1,11 @@
 <!-- 90
-Setup Video gerencia a exibicção do video
-Cache ok
+CacheManager: Baixa o vídeo e usa a versão local.
+
+CSS/Enquadramento: Usa object-fit: contain e position: absolute para corrigir vídeos verticais.
+
+Loading: Mostra feedback visual enquanto o cache prepara o vídeo.
+
+Fallback: Verifica se existe URL de backup antes de usar a principal.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -1459,6 +1464,48 @@ function reloadWithFeedback(event) {
         location.reload();
     }, 300);
 }     
+
+/**
+Como ela recebe o elementId como parâmetro, pode usá-la para esperar qualquer coisa na aplicação, não apenas o player de vídeo.
+
+Desempenho: Se o navegador renderizar em 5ms, o código roda em 5ms. Não espera 100ms à toa.
+
+Legibilidade: O fluxo fica síncrono visualmente (await waitForElement), facilitando o entendimento de que "aqui esperamos a tela estar pronta".
+
+Segurança: Se o navegador travar e demorar 500ms para desenhar a tela, o código espera os 500ms. O setTimeout falharia nesse caso.
+
+Se o elemento não aparecer em X segundos, ela cancela a espera e lança um erro para tratar.
+**/
+function waitForElement(elementId, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+        // 1. Verificação imediata
+        const element = document.getElementById(elementId);
+        if (element) return resolve(element);
+
+        let observer;
+        
+        // 2. Cria o timer de segurança (Timeout)
+        const timer = setTimeout(() => {
+            if (observer) observer.disconnect();
+            reject(new Error(`Timeout: Elemento #${elementId} não apareceu após ${timeout}ms`));
+        }, timeout);
+
+        // 3. Cria o observador
+        observer = new MutationObserver((mutations) => {
+            const target = document.getElementById(elementId);
+            if (target) {
+                clearTimeout(timer); // Cancela o erro do timeout
+                observer.disconnect(); // Para de observar
+                resolve(target);
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}
     
 // --- PATH ---
 // --- Função de Geração Dinâmica de IDs ---
@@ -1949,7 +1996,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     /**
      * Gerencia a injeção e controle do player (YouTube ou Servidor com Cache)
      */
-    function videoManager(mode, config) {
+    async function videoManager(mode, config) {
         if (mode === 'streaming') {
             // --- MODO YOUTUBE (STREAMING) ---
             const { videoUrl, start, end, onReady } = config;
@@ -2006,64 +2053,117 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         else if (mode === 'server') {
             // --- MODO SERVIDOR (VÍDEO NATIVO HTML5 COM CACHE) ---
             
-            // Nota: config.videoUrl aqui vem do currentTask ou lesson logic
-            // Mas para o player nativo, geralmente pegamos do ID da lição no contexto global
-            // ou passamos o URL direto no config. Vou assumir a lógica de buscar pelo ID 
-            // como estava no seu código original, mas usando o cacheManager.
+            // 1. Identificação da Lição
+            const lessonId = config.lessonId || (currentLesson ? currentLesson.id : null);
 
-            // Se você passar 'lessonId' dentro de config, fica mais limpo:
-            // Vamos assumir que 'config.lessonId' foi passado ou pegamos do global currentLesson
-            
-            const targetLesson = currentLesson; // Usa a lição global atual
-
-            if (!targetLesson || !targetLesson.videoFallbackUrl) {
-                console.error("Lição ou vídeo de fallback não encontrados.");
+            if (!lessonId) {
+                console.error("❌ Erro: ID da lição não definido em videoManager (modo server).");
                 return;
             }
-        
-            console.log("🎧 Preparando Vídeo Nativo com Cache:", targetLesson.title);
-        
-            // Navegação (se necessário, ou se já estiver na view, mantém)
-            navigateTo('earsLesson');
-        
-            // Atualiza Título
-            const titleEl = document.getElementById('ears-lesson-title');
-            if (titleEl) titleEl.innerText = targetLesson.title;
-        
-            const videoContainer = document.getElementById('native-ears-video-container');
             
-            if (videoContainer) {
-                // 1. Mostra estado de carregamento enquanto o Cache trabalha
-                videoContainer.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #000; color: #fff;">
-                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        <span style="font-size: 0.8rem; color: #aaa;">Carregando vídeo...</span>
+            console.log("🎧 [Ears] Abrindo lição ID:", lessonId);
+
+            clean(); // Limpa áudios e processos anteriores
+        
+            let rawLesson = allLessons.find(l => l.id == lessonId);
+            
+            if (!rawLesson) { 
+                console.error("Lição não encontrada"); 
+                return; 
+            }
+        
+            // 2. Compilação de Dados (Garante que srt/vocab estejam carregados)
+            let lessonDataCompiled;
+        
+            if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
+                lessonDataCompiled = currentLesson.data;
+            } else {        
+                const loadedData = await fetchLessonData(rawLesson);
+                if (!loadedData) return;
+        
+                lessonDataCompiled = compileLessonData(
+                    loadedData.srtEn,
+                    loadedData.srtPt,
+                    loadedData.vocabData,
+                    rawLesson.video
+                );
+            }
+        
+            // Atualiza estado global
+            currentLesson = { ...rawLesson, data: lessonDataCompiled };
+        
+            // 3. Navegação e UI
+            navigateTo('earsLesson', { lessonId: rawLesson.id });
+        
+            const titleEl = document.getElementById('ears-lesson-title');
+            if (titleEl) titleEl.innerText = currentLesson.title;
+        
+            // 4. Lógica do Player (Cache + CSS + Injeção)
+            try {
+                // A. Define qual URL usar (Prioridade: Fallback > Video Principal)
+                const rawUrl = rawLesson.videoFallbackUrl && rawLesson.videoFallbackUrl.trim() !== ''
+                        ? rawLesson.videoFallbackUrl
+                        : rawLesson.video;
+                
+                // B. Aguarda o Container existir no DOM
+                const container = await waitForElement('native-ears-video-container');
+                
+                // C. Ajuste de CSS para o Container (Preencher o pai 16:9)
+                container.style.position = "absolute";
+                container.style.top = "0";
+                container.style.left = "0";
+                container.style.width = "100%";
+                container.style.height = "100%";
+                
+                // D. Feedback de Carregamento (UX)
+                container.innerHTML = `
+                    <div style="display:flex; height:100%; width:100%; align-items:center; justify-content:center; background:#000; color:#888; flex-direction:column; gap:10px;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.5rem;"></i> 
+                        <span>Baixando vídeo...</span>
                     </div>
                 `;
 
-                // 2. Chama o Cache Manager
-                cacheManager(targetLesson.videoFallbackUrl).then(cachedSrc => {
-                    
-                    // 3. Injeta o vídeo com a URL do blob (ou fallback)
-                    videoContainer.innerHTML = `
-                        <video 
-                            id="native-ears-player" 
-                            controls 
-                            autoplay 
-                            playsinline 
-                            style="width: 100%; height: 100%; object-fit: contain; background: #000;"
-                            src="${cachedSrc}"
-                        >
-                            Seu navegador não suporta a tag de vídeo.
-                        </video>
+                console.log("⬇️ [Video] Solicitando URL ao CacheManager...");
+
+                // E. Chamada ao Cache (Baixa ou recupera do dispositivo)
+                const playUrl = await cacheManager(rawUrl);
+                
+                console.log("▶️ [Video] Reproduzindo:", playUrl);
+
+                // F. Injeção do Player HTML5
+                container.innerHTML = `
+                    <video id="native-ears-player" controls playsinline 
+                        style="
+                            width: 100%; 
+                            height: 100%; 
+                            object-fit: contain; /* O SEGREDO: Não corta vídeos verticais */
+                            background: #000;    /* Preenche o espaço vazio com preto */
+                        ">
+                        <source src="${playUrl}" type="video/mp4">
+                        Seu navegador não suporta a tag de vídeo.
+                    </video>
+                `;
+
+                // G. Autoplay seguro
+                const nativePlayer = document.getElementById('native-ears-player');
+                if(nativePlayer) {
+                    // Tenta tocar. Se o navegador bloquear, falha silenciosamente.
+                    nativePlayer.play().catch(e => console.log("Autoplay aguardando interação:", e));
+                }
+
+            } catch (error) {
+                console.error("❌ Erro ao inicializar player Ears:", error);
+                
+                // Mostra erro na tela
+                const container = document.getElementById('native-ears-video-container');
+                if(container) {
+                    container.innerHTML = `
+                        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--error-color); background:#111; text-align:center; padding:10px;">
+                            <i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> 
+                            Erro ao carregar vídeo.
+                        </div>
                     `;
-                });
-            }
-        
-            // Opcional: Limpar lista de frases
-            const listContainer = document.getElementById('preview-earsSentences');
-            if (listContainer) {
-                listContainer.innerHTML = '<li class="preview-item" style="text-align:center; padding:20px;">Legendas em breve...</li>';
+                }
             }
         }
         else {
@@ -2152,7 +2252,13 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     // --- CORREÇÃO DA NAVEGAÇÃO ---
     function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
         // --- Lógica de stack mantida como já está ---
-        // Dentro do navigateTo, onde você trata MENU_VIEWS:
+
+        // Se estiver indo para Home e já tivermos as lições, renderiza de novo para garantir
+        if (view === 'home' && window.allLessons && window.allLessons.length > 0) {
+            console.log("🏠 [Nav] Re-renderizando lista da Home...");
+            renderLessonList(window.allLessons, ui.listContainer, { type: 'default' });
+        }
+        
         if (MENU_VIEWS.includes(view)) {
             const sidebar = document.querySelector('.app-sidebar');
             const footer = document.querySelector('.app-footer');
