@@ -1,5 +1,10 @@
 <!-- 91
-Repetiçã ok
+Resumo do que fizemos:
+clean() agora enxerga o HTML5 Video: Ele pausa e remove o src do vídeo do servidor, impedindo que o áudio continue no fundo.
+
+stopVideoPlayback() reforçado: Usa stopVideo() para garantir que o YouTube pare de carregar.
+
+MapsTo() automático: Ao clicar em "Home" ou qualquer ícone do menu, ele dispara a limpeza automaticamente antes de trocar a visualização.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -202,22 +207,7 @@ Repetiçã ok
 
         /* PREVIEW DA LIÇÃO */
         .preview-header { margin-bottom: 20px; text-align: center; }
-        .preview-list { 
-            list-style: none; 
-            background: var(--surface-color); 
-            border-radius: 8px; 
-            padding: 10px; 
-            margin-bottom: 60px;
-
-            /* 🔥 NOVO: Scroll independente */
-            overflow-y: auto; /* Ativa scroll vertical */
-            overflow-x: hidden; /* Esconde scroll horizontal */ 
-            
-            /* Altura dinâmica baseada na viewport */
-            max-height: calc(var(--app-vh) - 450px);
-
-            -webkit-overflow-scrolling: touch; /* Scroll suave no iOS */
-        }
+        .preview-list { list-style: none; background: var(--surface-color); border-radius: 8px; padding: 10px; margin-bottom: 60px; }
         .preview-item {
             padding: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -538,16 +528,6 @@ Repetiçã ok
           left: 0;
           width: 100%;
           height: 100%;
-      }      
-      /* 🔥 NOVO: Aplica o mesmo estilo para vídeos HTML5 */
-      .video-responsive-container video {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: contain; /* no cut */
-          background: #000;
       }
       /* Camada invisível que fica por cima do vídeo */
       .video-blocker {
@@ -655,6 +635,7 @@ Repetiçã ok
       background-color: #333;
       cursor: pointer;
     }
+
     </style>
 </head>
 <body>
@@ -684,7 +665,8 @@ Repetiçã ok
                 You
             </a>
             <a class="sidebar-item" onclick="navigateTo('duels')">
-                <span class="material-symbols-outlined">swords</span> 			  	  Duels
+                <span class="material-symbols-outlined">swords</span>
+                Duels
             </a>
             <a class="sidebar-item" onclick="navigateTo('path')">
                 <i class="fa-solid fa-map-location-dot"></i> Path
@@ -828,7 +810,7 @@ Repetiçã ok
                 </div>
 
                 <div class="video-responsive-container" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 15px; flex-shrink: 0;">
-                    <div id="yt-player-ears"></div> 
+                    <div id="native-ears-video-container"></div> 
                     </div>
 
                 <div style="padding: 10px; background: var(--surface-color); border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #888; text-align: center;">
@@ -1383,14 +1365,8 @@ const projectData = [
   
     // Variável global para impedir que o Garbage Collector "coma" o áudio no celular
     window.currentUtterance = null;
-
-    // Variáveis Globais de Controle de Repetição
-    let userRepeatTotal = 1; // Padrão: 1 (toca uma vez só)
-    let currentRepeatCount = 0; // Contador atual
-    let earsMonitorTimer = null;    // O intervalo do setInterval
-    let lastActiveSentenceId = null; // Para saber se mudamos de frase
-    let sentenceRepetitionCount = 0; // Quantas vezes a frase ATUAL já tocou
     
+
     // --- VARIÁVEIS GLOBAIS DO YOUTUBE ---
     let ytPlayer = null;
     let videoTimer = null;
@@ -1530,7 +1506,7 @@ function waitForElement(elementId, timeout = 5000) {
         });
     });
 }
-
+    
 // --- PATH ---
 // --- Função de Geração Dinâmica de IDs ---
 function generateDynamicIds(data) {
@@ -1787,7 +1763,10 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         allLessons = [...serverData, ...localUnique];
     
         // 4. Renderiza
-        renderLessonList(allLessons);
+        renderLessonList(allLessons, ui.listContainer, { type: 'default' });
+
+        const earsData = allLessons.filter(l => l.videoFallbackUrl?.trim());
+        renderLessonList(earsData, document.getElementById('ears-list'), { type: 'ears' });
 
         // --- NOVO: CHECA O LINK DEPOIS DE CARREGAR TUDO ---
         checkDeepLink();
@@ -1795,91 +1774,440 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
 
     // Agora a função aceita uma lista como parâmetro
     // --- 3. ATUALIZAÇÃO DA RENDERIZAÇÃO (CORRIGIDA PARA LER DO SERVIDOR) ---
-    function renderLessonList(lessonsToRender) {
-        ui.listContainer.innerHTML = '';
+    /**
+     * Renderiza uma lista de lições de forma genérica.
+     * @param {Array} lessonsToRender - Array de lições a exibir.
+     * @param {HTMLElement} container - Onde os cards serão inseridos.
+     * @param {Object} options - Configurações específicas (type: 'default' | 'ears').
+     */
+    function renderLessonList(lessonsToRender, container, options = { type: 'default' }) {
+        if (!container) return;
         
+        container.innerHTML = '';
+    
+        // Validação de lista vazia
         if (!lessonsToRender || lessonsToRender.length === 0) {
-            ui.listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#888">Nenhuma lição disponível.</p>';
+            const emptyMsg = options.type === 'ears' 
+                ? 'Nenhuma prática de áudio encontrada.' 
+                : 'Nenhuma lição disponível.';
+            
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#888;">
+                    ${options.type === 'ears' ? '<span class="material-symbols-outlined" style="font-size: 3rem; display:block;">headphones_battery</span>' : ''}
+                    <p>${emptyMsg}</p>
+                </div>`;
             return;
         }
-
+    
         lessonsToRender.forEach(lesson => {
             const card = document.createElement('div');
             card.className = 'lesson-card';
-            card.onclick = () => openPreview(lesson.id);
-
-            // --- LÓGICA DE SUBTÍTULO OTIMIZADA ---
+            
+            // 1. Lógica de Clique Dinâmica
+            card.onclick = () => {
+                if (options.type === 'ears') {
+                    // 1. Define a lição global atual para que o videoManager saiba qual vídeo buscar
+                    currentLesson = lesson; 
+                    
+                    // 2. Chama o gerenciador no modo 'server' (que lida com o native player e cache)
+                    videoManager('server', {}); 
+                } else {
+                    openPreview(lesson.id);
+                }
+            };
+    
+            // 2. Lógica de Subtítulo Unificada
             let subtitleText = "";
-
-            // 1. Prioridade: Dados diretos do Appwrite (na raiz do objeto)
-            // Usamos != null para garantir que pegue mesmo se for 0, mas ignore undefined
-            if (lesson.cards != null && lesson.phrases != null) {
-                subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
+            
+            // 1. Defina a classe do ícone conforme o tipo
+            let iconClass = options.type === 'ears' ? 'fa-headphones' : 'fa-layer-group';
+            let accentColor = options.type === 'ears' ? 'var(--success-color)' : 'var(--accent-color)';
+    
+            if (options.type === 'ears') {
+                subtitleText = lesson.stats ? `${lesson.stats.phrases} frases de áudio` : "Prática de Listening";
+            } else {
+                // Lógica de prioridade que você já usava
+                if (lesson.cards != null && lesson.phrases != null) {
+                    subtitleText = `${lesson.cards} cards | ${lesson.phrases} frases`;
+                } else if (lesson.stats) {
+                    subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
+                } else {
+                    subtitleText = "...";
+                }
             }
-            // 2. Fallback: Dados manuais locais (objeto stats antigo)
-            else if (lesson.stats) {
-                subtitleText = `${lesson.stats.cards} cards | ${lesson.stats.phrases} frases`;
-            } 
-            // 3. Fallback: Cálculo se os dados brutos já estiverem carregados
-            else if (Array.isArray(lesson.data)) {
-                const totalPhrases = lesson.data.length;
-                const totalCards = lesson.data.reduce((acc, item) => acc + (item.vocab ? item.vocab.length : 0), 0);
-                subtitleText = `${totalCards} cards | ${totalPhrases} frases`;
-            } 
-            // 4. Último caso: Deixa vazio ou coloca um placeholder discreto
-            else {
-                subtitleText = "..."; 
-            }
-
-            // Renderiza o card
+    
+            // 3. Renderização do HTML
             card.innerHTML = `
-                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
+                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" 
+                     onerror="this.src='https://placehold.co/200x150?text=No+Image'">
                 <div class="lesson-info">
                     <div class="lesson-title">${lesson.title}</div>
-                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--accent-color);">
-                        <i class="fa-solid fa-layer-group"></i> ${subtitleText}
+                    <div class="lesson-subtitle" style="font-size: 0.85em; color: ${accentColor}; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid ${iconClass}"></i> 
+                        ${subtitleText}
                     </div>
                 </div>
             `;
-            ui.listContainer.appendChild(card);
+            container.appendChild(card);
         });
     }
 
-    // --- FUNÇÃO DE LIMPEZA GERAL ---
-    function clean() {
-        console.log('🧹 [Clean] Limpando recursos...');
+    // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
+    function setupVideo() {
+        ui.videoWrapper.classList.remove('hidden');
+        isVideoTaskComplete = false;
         
-        // 1. Cancela qualquer síntese de voz ativa
-        if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-            console.log('🔇 [Clean] Sintetizador cancelado');
+        // --- 1. DECISÃO DE MODO (O IF MÁGICO) ---
+        let targetText = "";
+        let promptHTML = "";
+        let synthLang = ""; // Variável para controlar o idioma da fala
+
+        if (currentTask.type === 'video_translate') {
+            // MODO TREINO (Tarefa 2): Alvo é Português
+            targetText = currentTask.correct; 
+            promptHTML = `<span style="color:#aaa; font-size:0.9em;">Traduza o que ouvir para <b>Português</b>:</span>`;
+            
+            // 🔥 MUDANÇA: null para NÃO ler as palavras em PT
+            synthLang = null; 
+        } else {
+            // MODO VÍDEO (Padrão): Alvo é Inglês
+            targetText = currentTask.question || currentTask.en || ""; 
+            promptHTML = `<span style="color:#aaa; font-size:0.9em;">Organize o que ouvir em <b>Inglês</b>:</span>`;
+            
+            // Mantém leitura em EN para ajudar na pronúncia
+            synthLang = 'en-US'; 
         }
+
+        // Atualiza o texto de instrução na tela
+        document.getElementById('video-feedback').innerHTML = promptHTML;
+
+        // Prepara a frase alvo para validação (remove pontuação, normaliza)
+        currentTargetSentence = targetText
+            .replace(/\r?\n|\r/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .map(w => normalizeWord(w));
+
+        // Limpa a área visual
+        document.getElementById('video-answer-zone').innerHTML = '';
+        document.getElementById('video-word-bank').innerHTML = '';
+        document.getElementById('video-answer-zone').style.borderColor = '#444';
+
+        // --- 2. SETUP DO PLAYER (Delegado ao videoManager) ---
+        const mode = currentTask.videoUrl.includes('youtube.com') || currentTask.videoUrl.includes('youtu.be') 
+            ? 'streaming' 
+            : 'server';
         
-        // 2. Para reconhecimento de voz se estiver ativo
-        if (isListening && recognition) {
+        videoManager(mode, {
+            videoUrl: currentTask.videoUrl,
+            start: currentTask.start,
+            end: currentTask.end
+        });
+
+        // --- 3. GERA PALAVRAS EMBARALHADAS ---
+        let words = targetText
+            .replace(/\r?\n|\r/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .filter(w => w.length > 0)
+            .sort(() => Math.random() - 0.5);
+
+        const bank = document.getElementById('video-word-bank');
+        const zone = document.getElementById('video-answer-zone');
+
+        words.forEach(word => {
+            const span = document.createElement('span');
+            span.className = 'word-tag disabled-word';
+            span.innerText = word;
+            
+            span.onclick = function() { 
+                if (this.classList.contains('disabled-word')) return;
+                if (document.body.classList.contains('audio-playing')) return;
+                
+                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
+                if (synthLang) {
+                    speakText(word, synthLang); 
+                }
+            
+                const clickedClean = normalizeWord(word);
+                const expectedClean = currentTargetSentence[expectedWordIndex];
+            
+                if (clickedClean === expectedClean) {
+                    // ACERTOU
+                    zone.appendChild(this);
+                    expectedWordIndex++;
+            
+                    // Reabilita palavras erradas (UX Preventiva reset)
+                    const disabledWords = bank.querySelectorAll('.disabled-word');
+                    disabledWords.forEach(w => w.classList.remove('disabled-word'));
+            
+                    if (expectedWordIndex === currentTargetSentence.length) {
+                        finishVideoTaskSuccess();
+                    }
+                } else {
+                    // ERROU
+                    this.classList.add('disabled-word');
+                    this.animate([
+                        { transform: 'translateX(0)' }, 
+                        { transform: 'translateX(-5px)' }, 
+                        { transform: 'translateX(5px)' }, 
+                        { transform: 'translateX(0)' }
+                    ], { duration: 300 });
+                }
+            };
+            bank.appendChild(span);
+        });
+
+        // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR ---
+        let videoStarted = false;
+        const checkVideoInterval = setInterval(() => {
+            if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
+                if (!videoStarted) {
+                    videoStarted = true;
+                    clearInterval(checkVideoInterval);
+                    // Libera as palavras quando o trecho terminar de tocar a primeira vez
+                    setTimeout(() => {
+                        const allWords = bank.querySelectorAll('.word-tag');
+                        allWords.forEach(w => w.classList.remove('disabled-word'));
+                    }, (currentTask.end - currentTask.start) * 1000);
+                }
+            }
+        }, 100);
+        
+        // Timeout de segurança
+        setTimeout(() => {
+            if (!videoStarted) {
+                clearInterval(checkVideoInterval);
+                const allWords = bank.querySelectorAll('.word-tag');
+                allWords.forEach(w => w.classList.remove('disabled-word'));
+            }
+        }, 10000);
+    }
+
+    /**
+     * Gerencia a injeção e controle do player (YouTube ou Servidor)
+     * @param {string} mode - 'streaming' (YouTube) ou 'server' (Vídeo nativo)
+     * @param {Object} config - Configurações do vídeo
+     * @param {string} config.videoUrl - URL do vídeo (YouTube ou servidor)
+     * @param {number} config.start - Tempo de início em segundos
+     * @param {number} config.end - Tempo de fim em segundos
+     * @param {Function} config.onReady - Callback quando o player estiver pronto (opcional)
+     */
+    /**
+     * Gerencia a injeção e controle do player (YouTube ou Servidor com Cache)
+     */
+    async function videoManager(mode, config) {
+        if (mode === 'streaming') {
+            // --- MODO YOUTUBE (STREAMING) ---
+            const { videoUrl, start, end, onReady } = config;
+            
+            const videoId = getYoutubeId(videoUrl);
+            const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+    
+            if (!ytPlayer) {
+                // Cria o player pela primeira vez
+                ytPlayer = new YT.Player('yt-player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: videoId,
+                    playerVars: {
+                        'playsinline': 1,
+                        'controls': 0,
+                        'disablekb': 1,
+                        'fs': 0,
+                        'rel': 0,
+                        'iv_load_policy': 3,
+                        'modestbranding': 1,
+                        'vq': userQuality
+                    },
+                    events: {
+                        'onReady': (event) => {
+                            event.target.setPlaybackQuality(userQuality);
+                            window.speechSynthesis.cancel();
+                            playSegment(start, end);
+                            
+                            if (onReady && typeof onReady === 'function') {
+                                onReady(event);
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Reutiliza o player existente
+                window.speechSynthesis.cancel();
+                ytPlayer.loadVideoById({
+                    'videoId': videoId,
+                    'startSeconds': start,
+                    'suggestedQuality': userQuality
+                });
+                
+                setTimeout(() => {
+                    playSegment(start, end);
+                    
+                    if (onReady && typeof onReady === 'function') {
+                        onReady({ target: ytPlayer });
+                    }
+                }, 500);
+            }
+        } 
+        else if (mode === 'server') {
+            // --- MODO SERVIDOR (VÍDEO NATIVO HTML5 COM CACHE) ---
+            
+            // 1. Identificação da Lição
+            const lessonId = config.lessonId || (currentLesson ? currentLesson.id : null);
+
+            if (!lessonId) {
+                console.error("❌ Erro: ID da lição não definido em videoManager (modo server).");
+                return;
+            }
+            
+            console.log("🎧 [Ears] Abrindo lição ID:", lessonId);
+
+            clean(); // Limpa áudios e processos anteriores
+        
+            let rawLesson = allLessons.find(l => l.id == lessonId);
+            
+            if (!rawLesson) { 
+                console.error("Lição não encontrada"); 
+                return; 
+            }
+        
+            // 2. Compilação de Dados (Garante que srt/vocab estejam carregados)
+            let lessonDataCompiled;
+        
+            if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
+                lessonDataCompiled = currentLesson.data;
+            } else {        
+                const loadedData = await fetchLessonData(rawLesson);
+                if (!loadedData) return;
+        
+                lessonDataCompiled = compileLessonData(
+                    loadedData.srtEn,
+                    loadedData.srtPt,
+                    loadedData.vocabData,
+                    rawLesson.video
+                );
+            }
+        
+            // Atualiza estado global
+            currentLesson = { ...rawLesson, data: lessonDataCompiled };
+        
+            // 3. Navegação e UI
+            navigateTo('earsLesson', { lessonId: rawLesson.id });
+        
+            const titleEl = document.getElementById('ears-lesson-title');
+            if (titleEl) titleEl.innerText = currentLesson.title;
+        
+            // 4. Lógica do Player (Cache + CSS + Injeção)
             try {
-                recognition.stop();
-                isListening = false;
-                console.log('🎤 [Clean] Reconhecimento parado');
-            } catch(e) {
-                console.warn('⚠️ Recognition já estava parado');
+                // A. Define qual URL usar (Prioridade: Fallback > Video Principal)
+                const rawUrl = rawLesson.videoFallbackUrl && rawLesson.videoFallbackUrl.trim() !== ''
+                        ? rawLesson.videoFallbackUrl
+                        : rawLesson.video;
+                
+                // B. Aguarda o Container existir no DOM
+                const container = await waitForElement('native-ears-video-container');
+                
+                // C. Ajuste de CSS para o Container (Preencher o pai 16:9)
+                container.style.position = "absolute";
+                container.style.top = "0";
+                container.style.left = "0";
+                container.style.width = "100%";
+                container.style.height = "100%";
+                
+                // D. Feedback de Carregamento (UX)
+                container.innerHTML = `
+                    <div style="display:flex; height:100%; width:100%; align-items:center; justify-content:center; background:#000; color:#888; flex-direction:column; gap:10px;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.5rem;"></i> 
+                        <span>Baixando vídeo...</span>
+                    </div>
+                `;
+
+                console.log("⬇️ [Video] Solicitando URL ao CacheManager...");
+
+                // E. Chamada ao Cache (Baixa ou recupera do dispositivo)
+                const playUrl = await cacheManager(rawUrl);
+                
+                console.log("▶️ [Video] Reproduzindo:", playUrl);
+
+                // F. Injeção do Player HTML5
+                container.innerHTML = `
+                    <video id="native-ears-player" controls playsinline 
+                        style="
+                            width: 100%; 
+                            height: 100%; 
+                            object-fit: contain; /* O SEGREDO: Não corta vídeos verticais */
+                            background: #000;    /* Preenche o espaço vazio com preto */
+                        ">
+                        <source src="${playUrl}" type="video/mp4">
+                        Seu navegador não suporta a tag de vídeo.
+                    </video>
+                `;
+
+                // G. Autoplay seguro
+                const nativePlayer = document.getElementById('native-ears-player');
+                if(nativePlayer) {
+                    // Tenta tocar. Se o navegador bloquear, falha silenciosamente.
+                    nativePlayer.play().catch(e => console.log("Autoplay aguardando interação:", e));
+                }
+
+            } catch (error) {
+                console.error("❌ Erro ao inicializar player Ears:", error);
+                
+                // Mostra erro na tela
+                const container = document.getElementById('native-ears-video-container');
+                if(container) {
+                    container.innerHTML = `
+                        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--error-color); background:#111; text-align:center; padding:10px;">
+                            <i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> 
+                            Erro ao carregar vídeo.
+                        </div>
+                    `;
+                }
             }
         }
-        
-        // 3. Para o player do YouTube
-        stopVideoPlayback();
-        
-        // 4. Remove classe de bloqueio de UI
-        document.body.classList.remove('audio-playing');
-        
-        if (earsMonitorTimer) {
-            clearInterval(earsMonitorTimer);
-            earsMonitorTimer = null;
+        else {
+            console.error('❌ [videoManager] Modo inválido:', mode);
         }
-        lastActiveSentenceId = null;
-        sentenceRepetitionCount = 0;
-        
-        console.log('✅ [Clean] Limpeza concluída');
+    }
+    
+    // --- GERENCIADOR DE CACHE DE VÍDEO ---
+    async function cacheManager(url) {
+        const CACHE_NAME = 'phrasecraft-video-cache-v1';
+    
+        try {
+            // 1. Abre o cache
+            const cache = await caches.open(CACHE_NAME);
+    
+            // 2. Verifica se o vídeo já está salvo
+            const cachedResponse = await cache.match(url);
+    
+            if (cachedResponse) {
+                console.log('📦 [Cache] Vídeo carregado da memória local.');
+                const blob = await cachedResponse.blob();
+                return URL.createObjectURL(blob);
+            }
+    
+            // 3. Se não estiver, baixa da rede
+            console.log('☁️ [Cache] Baixando e salvando vídeo...');
+            const networkResponse = await fetch(url);
+    
+            if (!networkResponse.ok) {
+                throw new Error('Falha no download do vídeo');
+            }
+    
+            // 4. Salva no cache (é preciso clonar a resposta pois ela só pode ser lida uma vez)
+            cache.put(url, networkResponse.clone());
+    
+            // 5. Retorna o Blob URL para o player
+            const blob = await networkResponse.blob();
+            return URL.createObjectURL(blob);
+    
+        } catch (error) {
+            console.warn('⚠️ [Cache] Erro ou vídeo muito grande, usando URL direta:', error);
+            // Fallback: Se der erro no cache (ex: cota excedida), retorna a URL original
+            return url;
+        }
     }
 
     // Função auxiliar para criar um "Checkpoint" no histórico do celular
@@ -1893,8 +2221,17 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     // fromBack controla se empilha ou não
     // --- CORREÇÃO DA NAVEGAÇÃO ---
     function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
+        
+        // 🔥 Primeira coisa a fazer é limpar tudo da tela anterior
+        clean();
+
+        // Se estiver indo para Home e já tivermos as lições, renderiza de novo para garantir
+        if (view === 'home' && window.allLessons && window.allLessons.length > 0) {
+            console.log("🏠 [Nav] Re-renderizando lista da Home...");
+            renderLessonList(window.allLessons, ui.listContainer, { type: 'default' });
+        }
+        
         // --- Lógica de stack mantida como já está ---
-        // Dentro do navigateTo, onde você trata MENU_VIEWS:
         if (MENU_VIEWS.includes(view)) {
             const sidebar = document.querySelector('.app-sidebar');
             const footer = document.querySelector('.app-footer');
@@ -1924,16 +2261,6 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (activeFooter) activeFooter.classList.add('active');
     
         // --- LAYOUT: Só configuramos explicitamente para views especiais ---
-        if (view === 'ears') {
-            renderEarsList();
-        }
-        // 🔥 ADICIONE ESTE BLOCO:
-        else if (view === 'home') {
-            // Re-renderiza a lista se já estiver carregada
-            if (allLessons && allLessons.length > 0) {
-                renderLessonList(allLessons);
-            }
-        }
         if (view === 'preview') {
             setLayoutMode('full');
         } else if (view === 'training' && !currentTaskMode) {
@@ -2081,8 +2408,61 @@ function setLayoutMode(mode) {
     window.addEventListener('orientationchange', () => {
         setTimeout(fixViewportShift, 300);
     });
+    
+    // --- FUNÇÃO DE LIMPEZA GERAL ---
+    function clean() {
+        console.log('🧹 [Clean] Limpando recursos...');
+        
+        // 1. Cancela voz do robô (TTS)
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        
+        // 2. Para reconhecimento de voz (STT)
+        if (typeof isListening !== 'undefined' && isListening && typeof recognition !== 'undefined' && recognition) {
+            try { recognition.stop(); } catch(e) {}
+            isListening = false;
+        }
 
-  
+        // 3. Para o YouTube (Chama a função auxiliar)
+        stopVideoPlayback();
+        
+        // 4. 🔥 NOVO: Mata o Player Nativo (Server Mode)
+        const nativePlayer = document.getElementById('native-ears-player');
+        if (nativePlayer) {
+            nativePlayer.pause();       // Pausa
+            nativePlayer.currentTime = 0; // Zera o tempo
+            nativePlayer.src = "";      // Remove a fonte para parar o download
+            nativePlayer.load();        // Força o navegador a soltar o arquivo
+            console.log('🔇 [Clean] Player nativo parado.');
+        }
+
+        // 5. Remove classe de bloqueio visual
+        document.body.classList.remove('audio-playing');
+    }
+
+    function stopVideoPlayback() {
+        // 1. Pausa o YouTube
+        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+            try {
+                // Se for Short ou Video normal, stopVideo é mais agressivo que pause
+                if (typeof ytPlayer.stopVideo === 'function') {
+                    ytPlayer.stopVideo(); 
+                } else {
+                    ytPlayer.pauseVideo();
+                }
+            } catch (e) {
+                console.warn("Player YouTube não estava pronto para parar.");
+            }
+        }
+    
+        // 2. Limpa o intervalo de loop
+        if (videoTimer) {
+            clearInterval(videoTimer);
+            videoTimer = null;
+        }
+    }
+    
     // --- 4. ATUALIZAÇÃO DO OPEN PREVIEW (CORRIGIDA PARA LIMPAR O X) ---
     // A CORREÇÃO É AQUI: Adicionar ", addToHistory = true" dentro dos parênteses
     async function openPreview(lessonId, addToHistory = true) {
@@ -3899,10 +4279,6 @@ function validateTrainingData() {
         // 🔥 Cria o checkpoint para o botão voltar do celular
         setTaskHistoryMode('speaking');
     
-        // ❌ REMOVA ESTAS LINHAS:
-        // history.pushState({ view: 'training' }, '', '#training');
-        // navigationStack.push('training');
-    
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
         ui.quizContainer.classList.remove('hidden');
@@ -3931,154 +4307,7 @@ function validateTrainingData() {
         const phaseData = currentLesson.data.slice(start, end);
         initQuizLogic(phaseData);
     }
-
-    // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
-    function setupVideo() {
-        ui.videoWrapper.classList.remove('hidden');
-        isVideoTaskComplete = false;
-        
-        // --- 1. DECISÃO DE MODO (O IF MÁGICO) ---
-        let targetText = "";
-        let promptHTML = "";
-        let synthLang = ""; // Variável para controlar o idioma da fala
-
-        if (currentTask.type === 'video_translate') {
-            // MODO TREINO (Tarefa 2): Alvo é Português
-            targetText = currentTask.correct; 
-            promptHTML = `<span style="color:#aaa; font-size:0.9em;">Traduza o que ouvir para <b>Português</b>:</span>`;
-            
-            // 🔥 MUDANÇA: null para NÃO ler as palavras em PT
-            synthLang = null; 
-        } else {
-            // MODO VÍDEO (Padrão): Alvo é Inglês
-            targetText = currentTask.question || currentTask.en || ""; 
-            promptHTML = `<span style="color:#aaa; font-size:0.9em;">Organize o que ouvir em <b>Inglês</b>:</span>`;
-            
-            // Mantém leitura em EN para ajudar na pronúncia
-            synthLang = 'en-US'; 
-        }
-
-        // Atualiza o texto de instrução na tela
-        document.getElementById('video-feedback').innerHTML = promptHTML;
-
-        // Prepara a frase alvo para validação (remove pontuação, normaliza)
-        currentTargetSentence = targetText
-            .replace(/\r?\n|\r/g, ' ')
-            .trim()
-            .split(/\s+/)
-            .map(w => normalizeWord(w));
-
-        // Limpa a área visual
-        document.getElementById('video-answer-zone').innerHTML = '';
-        document.getElementById('video-word-bank').innerHTML = '';
-        document.getElementById('video-answer-zone').style.borderColor = '#444';
-
-        // --- 2. SETUP DO PLAYER (Idêntico ao anterior) ---
-        const videoId = getYoutubeId(currentTask.videoUrl);
-        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
-
-        if (!ytPlayer) {
-            ytPlayer = new YT.Player('yt-player', {
-                height: '100%', width: '100%', videoId: videoId,
-                playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1, 'fs': 0, 'rel': 0, 'iv_load_policy': 3, 'modestbranding': 1, 'vq': userQuality },
-                events: { 
-                    'onReady': (event) => {
-                        event.target.setPlaybackQuality(userQuality);
-                        window.speechSynthesis.cancel();
-                        playSegment(currentTask.start, currentTask.end); 
-                    }
-                }
-            });
-        } else {
-            window.speechSynthesis.cancel();
-            ytPlayer.loadVideoById({
-                'videoId': videoId,
-                'startSeconds': currentTask.start,
-                'suggestedQuality': userQuality
-            });
-            setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
-        }
-
-        // --- 3. GERA PALAVRAS EMBARALHADAS ---
-        let words = targetText
-            .replace(/\r?\n|\r/g, ' ')
-            .trim()
-            .split(/\s+/)
-            .filter(w => w.length > 0)
-            .sort(() => Math.random() - 0.5);
-
-        const bank = document.getElementById('video-word-bank');
-        const zone = document.getElementById('video-answer-zone');
-
-        words.forEach(word => {
-            const span = document.createElement('span');
-            span.className = 'word-tag disabled-word';
-            span.innerText = word;
-            
-            span.onclick = function() { 
-                if (this.classList.contains('disabled-word')) return;
-                if (document.body.classList.contains('audio-playing')) return;
-                
-                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
-                if (synthLang) {
-                    speakText(word, synthLang); 
-                }
-            
-                const clickedClean = normalizeWord(word);
-                const expectedClean = currentTargetSentence[expectedWordIndex];
-            
-                if (clickedClean === expectedClean) {
-                    // ACERTOU
-                    zone.appendChild(this);
-                    expectedWordIndex++;
-            
-                    // Reabilita palavras erradas (UX Preventiva reset)
-                    const disabledWords = bank.querySelectorAll('.disabled-word');
-                    disabledWords.forEach(w => w.classList.remove('disabled-word'));
-            
-                    if (expectedWordIndex === currentTargetSentence.length) {
-                        finishVideoTaskSuccess();
-                    }
-                } else {
-                    // ERROU
-                    this.classList.add('disabled-word');
-                    this.animate([
-                        { transform: 'translateX(0)' }, 
-                        { transform: 'translateX(-5px)' }, 
-                        { transform: 'translateX(5px)' }, 
-                        { transform: 'translateX(0)' }
-                    ], { duration: 300 });
-                }
-            };
-            bank.appendChild(span);
-        });
-
-        // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR ---
-        let videoStarted = false;
-        const checkVideoInterval = setInterval(() => {
-            if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
-                if (!videoStarted) {
-                    videoStarted = true;
-                    clearInterval(checkVideoInterval);
-                    // Libera as palavras quando o trecho terminar de tocar a primeira vez
-                    setTimeout(() => {
-                        const allWords = bank.querySelectorAll('.word-tag');
-                        allWords.forEach(w => w.classList.remove('disabled-word'));
-                    }, (currentTask.end - currentTask.start) * 1000);
-                }
-            }
-        }, 100);
-        
-        // Timeout de segurança
-        setTimeout(() => {
-            if (!videoStarted) {
-                clearInterval(checkVideoInterval);
-                const allWords = bank.querySelectorAll('.word-tag');
-                allWords.forEach(w => w.classList.remove('disabled-word'));
-            }
-        }, 10000);
-    }
-
+    
     // Função auxiliar para sucesso no Vídeo
     function finishVideoTaskSuccess() {
         const zone = document.getElementById('video-answer-zone');
@@ -4159,23 +4388,6 @@ function validateTrainingData() {
     function replayVideoSegment() {
         if (currentTask && currentTask.start !== undefined) {
             playSegment(currentTask.start, currentTask.end);
-        }
-    }
-
-    function stopVideoPlayback() {
-        // 1. Pausa o YouTube
-        if (ytPlayer && ytPlayer.pauseVideo && typeof ytPlayer.pauseVideo === 'function') {
-            try {
-                ytPlayer.pauseVideo();
-            } catch (e) {
-                console.warn("Player ainda não estava pronto para pausar");
-            }
-        }
-    
-        // 2. Limpa o intervalo de verificação de tempo (loop)
-        if (videoTimer) {
-            clearInterval(videoTimer);
-            videoTimer = null;
         }
     }
     
@@ -4348,8 +4560,7 @@ function validateTrainingData() {
         setTimeout(() => select.style.borderColor = originalBorder, 500);
     }
     
-    // --- FALLBACK ---
-    // --- FUNÇÃO PARA MONITORAR VIDEO FALLBACK ---
+    // --- FUNÇÃO PARA CONTAR VIDEO FALLBACK ---
     async function checkVideoFallbackCount() {
         console.log('🔍 Verificando contagem de videoFallbackUrl...');
 
@@ -4375,567 +4586,6 @@ function validateTrainingData() {
         }
     }
 
-    // --- LOGICA ESPECÍFICA PARA EARS (LISTENING MODE) ---
-
-    // 1. Função que abre a lição, carrega dados e configura a tela
-    async function openEarsLesson(lessonId) {
-        console.log("🎧 [Ears] Abrindo lição ID:", lessonId);
-    
-        clean();
-    
-        let rawLesson = allLessons.find(l => l.id == lessonId);
-        if (!rawLesson) { 
-            console.error("Lição não encontrada"); 
-            return; 
-        }
-    
-        let lessonDataCompiled;
-    
-        // Evita buscar dados novamente se já estiverem carregados
-        if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
-            lessonDataCompiled = currentLesson.data;
-        } else {
-            if (ui.listContainer) {
-                ui.listContainer.innerHTML = `
-                    <div style="text-align:center; padding:20px;">
-                        Carregando dados...
-                    </div>`;
-            }
-    
-            const loadedData = await fetchLessonData(rawLesson);
-            if (!loadedData) return;
-    
-            lessonDataCompiled = compileLessonData(
-                loadedData.srtEn,
-                loadedData.srtPt,
-                loadedData.vocabData,
-                rawLesson.video
-            );
-        }
-    
-        currentLesson = { ...rawLesson, data: lessonDataCompiled };
-    
-        // Navega para a tela
-        navigateTo('earsLesson', { lessonId: rawLesson.id });
-    
-        // Atualiza título
-        const titleEl = document.getElementById('ears-lesson-title');
-        if (titleEl) titleEl.innerText = currentLesson.title;
-    
-        try {
-            console.log("⏳ Aguardando renderização do player...");
-            await waitForElement('yt-player-ears');
-    
-            // Renderiza frases
-            renderEarsSentences();
-    
-            // Prioridade: Fallback > Vídeo normal
-            const videoToPlay =
-                rawLesson.videoFallbackUrl &&
-                rawLesson.videoFallbackUrl.trim() !== ''
-                    ? rawLesson.videoFallbackUrl
-                    : rawLesson.video;
-    
-            console.log("▶️ Reproduzindo via:", videoToPlay);
-    
-            // Configura player
-            setupEarsPlayer(videoToPlay);
-    
-            // 🔥 NOVO: Cria o botão / controle de repetição
-            setupRepeatControlUI();
-    
-        } catch (error) {
-            console.error("❌ Erro ao inicializar player Ears:", error);
-        }
-    }
-    
-    // 2. Função que injeta a lista de legendas (Sua solicitação principal)
-    function renderEarsSentences() {
-        const listContainer = document.getElementById('preview-earsSentences');
-
-        // CSS inline equivalente ao que você pediu
-        listContainer.style.overflowY = 'auto';
-        listContainer.style.position = 'relative';
-        listContainer.style.scrollBehavior = 'smooth';
-
-        listContainer.innerHTML = ''; // Limpa lista anterior
-
-        if (!currentLesson || !currentLesson.data) return;
-
-        currentLesson.data.forEach((item, index) => {
-            const li = document.createElement('li');
-            li.className = 'preview-item';
-
-            // Estilização para parecer clicável e interativo
-            li.style.cursor = 'pointer';
-            li.style.display = 'flex';
-            li.style.flexDirection = 'column';
-            li.style.gap = '5px';
-            li.style.transition = 'background-color 0.2s';
-
-            li.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <span style="font-weight:bold; color:var(--text-primary); font-size: 1rem;">${item.en}</span>
-                    <i class="fa-solid fa-play-circle" style="color:var(--accent-color); font-size:1.2rem; margin-left:10px;"></i>
-                </div>
-                <span style="font-size:0.85em; color:var(--text-secondary); font-style: italic;">${item.pt || ''}</span>
-            `;
-
-            li.onclick = () => {
-                document.querySelectorAll('#preview-earsSentences .preview-item').forEach(el => {
-                    el.style.backgroundColor = 'transparent';
-                    el.style.borderLeft = 'none';
-                });
-
-                li.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                li.style.borderLeft = '4px solid var(--accent-color)';
-
-                playEarsSegment(item.start, item.end);
-            };
-
-            listContainer.appendChild(li);
-        });
-    }
-    
-    // 3. Player Específico para a View Ears (Para não conflitar com o Treino)
-    let ytPlayerEars = null;
-    let earsTimer = null;
-    
-    function setupEarsPlayer(videoUrl) {
-        if (!videoUrl) return console.error("URL do vídeo inválida");
-
-        const isYouTubeUrl = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-        const container = document.getElementById('yt-player-ears');
-
-        if (!container) {
-            console.error("❌ Elemento #yt-player-ears não encontrado.");
-            return;
-        }
-
-        // --- CENÁRIO 1: YOUTUBE ---
-        if (isYouTubeUrl) {
-            // Remove vídeo HTML5 se existir
-            const oldVideo = document.getElementById('ears-video-player');
-            if (oldVideo) {
-                oldVideo.remove();
-                ytPlayerEars = null;
-            }
-
-            const videoId = getYoutubeId(videoUrl);
-            const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
-
-            if (ytPlayerEars && typeof ytPlayerEars.loadVideoById === 'function') {
-                ytPlayerEars.loadVideoById({
-                    videoId: videoId,
-                    suggestedQuality: userQuality
-                });
-            } else {
-                ytPlayerEars = new YT.Player('yt-player-ears', {
-                    height: '100%',
-                    width: '100%',
-                    videoId: videoId,
-                    playerVars: {
-                        playsinline: 1,
-                        controls: 1,
-                        modestbranding: 1,
-                        rel: 0
-                    },
-                    events: {
-                        onReady: (event) => {
-                            event.target.setPlaybackQuality(userQuality);
-                            // 🔥 ATUALIZADO
-                            startSmartPlayerMonitor(); 
-                        },
-                        onStateChange: (event) => {
-                            if (event.data === YT.PlayerState.PLAYING) {
-                                // 🔥 ATUALIZADO
-                                startSmartPlayerMonitor(); 
-                            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                                // Opcional: Parar o monitor para economizar CPU se pausado
-                                if (earsMonitorTimer) clearInterval(earsMonitorTimer);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        // --- CENÁRIO 2: FALLBACK (MP4 / WebM) ---
-        else {
-            // Destroi player do YouTube se existir
-            if (ytPlayerEars && typeof ytPlayerEars.destroy === 'function') {
-                try { ytPlayerEars.destroy(); } catch (e) {}
-                ytPlayerEars = null;
-            }
-
-            let videoElement = document.getElementById('ears-video-player');
-
-            if (!videoElement) {
-                container.innerHTML = '';
-
-                videoElement = document.createElement('video');
-                videoElement.id = 'ears-video-player';
-                videoElement.controls = true;
-                videoElement.playsInline = true;
-
-                // 🔥 ADICIONADO
-                videoElement.addEventListener('play', () => {
-                    startSmartPlayerMonitor();
-                    startAutoScrollEars();
-                });
-              
-                videoElement.addEventListener('pause', () => {
-                    if (earsMonitorTimer) clearInterval(earsMonitorTimer);
-                });
-
-                container.appendChild(videoElement);
-            }
-
-            if (videoElement.src !== videoUrl) {
-                videoElement.src = videoUrl;
-                videoElement.load();
-            }
-
-            window.earsVideoElement = videoElement;
-        }
-    }
-    
-    // 4. Toca segmento no Player Ears
-    // Localizar a função playEarsSegment e SUBSTITUIR por esta versão:
-    function playEarsSegment(start, end) {
-        // 1. Reseta a lógica de repetição para começar "fresco"
-        lastActiveSentenceId = null; 
-        sentenceRepetitionCount = 0;
-    
-        // 2. Posiciona e Toca (YouTube)
-        if (ytPlayerEars && ytPlayerEars.seekTo) {
-            ytPlayerEars.seekTo(start, true);
-            ytPlayerEars.playVideo();
-        } 
-        // 2. Posiciona e Toca (Fallback HTML5)
-        else if (window.earsVideoElement) {
-            window.earsVideoElement.currentTime = start;
-            window.earsVideoElement.play();
-        }
-    
-        // 3. Garante que o monitor está rodando
-        startSmartPlayerMonitor();
-    }
-  
-    // 🔥 NOVA FUNÇÃO: Auto-scroll sincronizado com o vídeo
-    function startAutoScrollEars() {
-        let autoScrollTimer = null;
-
-        if (autoScrollTimer) clearInterval(autoScrollTimer);
-
-        autoScrollTimer = setInterval(() => {
-            let currentTime = 0;
-
-            // Pega o tempo atual do player ativo
-            if (window.earsVideoElement) {
-                currentTime = window.earsVideoElement.currentTime;
-            } else if (ytPlayerEars && ytPlayerEars.getCurrentTime) {
-                currentTime = ytPlayerEars.getCurrentTime();
-            } else {
-                return; // Player não disponível
-            }
-
-            // Busca a frase correspondente ao tempo atual
-            const currentSentence = currentLesson.data.find(item => 
-                currentTime >= item.start && currentTime < item.end
-            );
-
-            if (currentSentence) {
-                highlightAndScrollToSentence(currentSentence.id);
-            }
-        }, 500); // Verifica a cada 500ms
-
-        // Limpa o intervalo quando o vídeo pausar ou terminar
-        const cleanupListener = () => {
-            clearInterval(autoScrollTimer);
-        };
-
-        if (window.earsVideoElement) {
-            window.earsVideoElement.addEventListener('pause', cleanupListener, { once: true });
-            window.earsVideoElement.addEventListener('ended', cleanupListener, { once: true });
-        }
-    }
-
-    // 🔥 FUNÇÃO AUXILIAR: Destaca e rola apenas a lista
-    function highlightAndScrollToSentence(sentenceId) {
-        const listContainer = document.getElementById('preview-earsSentences');
-        const allItems = listContainer.querySelectorAll('.preview-item');
-
-        allItems.forEach((item, index) => {
-            const currentItem = currentLesson.data[index];
-
-            if (currentItem && currentItem.id === sentenceId) {
-                // Destaca a frase atual
-                item.style.backgroundColor = 'rgba(187, 134, 252, 0.2)'; // Roxo suave
-                item.style.borderLeft = '4px solid var(--accent-color)';
-                item.style.transition = 'all 0.3s ease';
-
-                // 🔥 CORREÇÃO: Rola APENAS o container da lista, não a página inteira
-                const itemTop = item.offsetTop;
-                const itemHeight = item.offsetHeight;
-                const containerHeight = listContainer.clientHeight;
-                const containerScroll = listContainer.scrollTop;
-
-                // Calcula a posição para centralizar o item
-                const targetScroll = itemTop - (containerHeight / 2) + (itemHeight / 2);
-
-                // Rola suavemente o container
-                listContainer.scrollTo({
-                    top: targetScroll,
-                    behavior: 'smooth'
-                });
-
-            } else {
-                // Remove destaque das outras
-                item.style.backgroundColor = 'transparent';
-                item.style.borderLeft = 'none';
-            }
-        });
-    }
-    
-    function renderEarsList() {
-    
-    	checkVideoFallbackCount();
-        
-        const container = document.getElementById('ears-list');
-
-        // Proteção se o container não existir
-        if (!container) return;
-
-        container.innerHTML = ''; // Limpa conteúdo anterior
-
-        // 1. Filtra apenas lições que têm videoFallbackUrl válido
-        const earsLessons = allLessons.filter(lesson => 
-            lesson.videoFallbackUrl && lesson.videoFallbackUrl.trim() !== ''
-        );
-
-        // 2. Verifica se encontrou algo
-        if (earsLessons.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:40px; color:#666;">
-                    <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: 10px; display:block;">
-                        headphones_battery
-                    </span>
-                    <p>Nenhuma prática de áudio encontrada.</p>
-                </div>
-            `;
-            return;
-        }
-
-        // 3. Renderiza os Cards
-        earsLessons.forEach(lesson => {
-            const card = document.createElement('div');
-            card.className = 'lesson-card';
-
-            // Ao clicar, abre o preview normal (ou você pode criar uma função específica para abrir direto em modo áudio)
-            card.onclick = () => openEarsLesson(lesson.id);
-
-            // Subtítulo personalizado para a seção Ears
-            const subtitle = lesson.stats 
-                ? `${lesson.stats.phrases} frases de áudio` 
-                : "Prática de Listening";
-
-            card.innerHTML = `
-                <img src="${lesson.thumb}" class="lesson-thumb" alt="${lesson.title}" loading="lazy" 
-                     onerror="this.src='https://placehold.co/200x150?text=No+Image'">
-
-                <div class="lesson-info">
-                    <div class="lesson-title">${lesson.title}</div>
-                    <div class="lesson-subtitle" style="color: var(--success-color); display: flex; align-items: center; gap: 5px;">
-                        <span class="material-symbols-outlined" style="font-size: 1rem;">headphones</span>
-                        ${subtitle}
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    function setupRepeatControlUI() {
-        const container = document.getElementById('ears-player-wrapper');
-        
-        // Evita criar duplicado se já existir
-        if (document.getElementById('repeat-control-overlay')) return;
-        
-        // Se o container ainda não existir (caso o player demore a carregar), aborta
-        // O container geralmente é o pai do iframe do youtube
-        const playerElement = document.getElementById('yt-player-ears');
-        if (!playerElement) return; 
-        const playerContainer = playerElement.parentElement;
-
-        const controlDiv = document.createElement('div');
-        controlDiv.id = 'repeat-control-overlay';
-        
-        Object.assign(controlDiv.style, {
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            zIndex: '100',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            borderRadius: '20px',
-            padding: '8px 15px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: 'white',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease'
-        });
-        
-        controlDiv.innerHTML = `
-            <span class="material-symbols-outlined" id="repeat-icon" style="font-size: 1.3rem;">
-                repeat
-            </span>
-            <span id="repeat-label" style="font-weight: bold; font-size: 1rem;">${userRepeatTotal}x</span>
-            <select id="repeat-selector" style="
-                display: none;
-                background: transparent;
-                border: none;
-                color: white;
-                font-weight: bold;
-                font-size: 1rem;
-                cursor: pointer;
-                outline: none;
-                appearance: none;
-            ">
-                <option value="1" style="color:black">1x</option>
-                <option value="2" style="color:black">2x</option>
-                <option value="3" style="color:black">3x</option>
-                <option value="4" style="color:black">4x</option>
-            </select>
-        `;
-        
-        playerContainer.style.position = 'relative'; 
-        playerContainer.appendChild(controlDiv);
-        
-        const selector = document.getElementById('repeat-selector');
-        const label = document.getElementById('repeat-label');
-        const icon = document.getElementById('repeat-icon');
-        
-        // Define o valor inicial do select visualmente
-        selector.value = userRepeatTotal;
-
-        // Toggle: Mostra/Esconde o select ao clicar no ícone/div
-        controlDiv.addEventListener('click', (e) => {
-            // 🔥 CORREÇÃO AQUI:
-            // Se o clique foi no próprio Select (para abrir a lista),
-            // paramos a função aqui. Isso impede que a div pai rode o código 
-            // de "esconder" o select imediatamente.
-            if (e.target.id === 'repeat-selector') return;
-
-            const isHidden = selector.style.display === 'none';
-            
-            if (isHidden) {
-                // Mostra o select
-                selector.style.display = 'inline-block';
-                label.style.display = 'none';
-                icon.style.transform = 'rotate(180deg)'; 
-            } else {
-                // Esconde o select
-                selector.style.display = 'none';
-                label.style.display = 'inline-block';
-                icon.style.transform = 'rotate(0deg)';
-            }
-        });
-        
-        // Atualiza o valor quando o usuário escolher uma opção
-        selector.addEventListener('change', (e) => {
-            userRepeatTotal = parseInt(e.target.value);
-            label.innerText = `${userRepeatTotal}x`;
-            
-            // Esconde o select automaticamente após selecionar
-            selector.style.display = 'none';
-            label.style.display = 'inline-block';
-            icon.style.transform = 'rotate(0deg)';
-            
-            console.log(`🔁 Repetição definida para: ${userRepeatTotal}x`);
-        });
-        
-        // Blur: Fecha se o usuário clicar fora ou sair do foco (melhora UX desktop)
-        selector.addEventListener('blur', () => {
-             setTimeout(() => {
-                selector.style.display = 'none';
-                label.style.display = 'inline-block';
-                icon.style.transform = 'rotate(0deg)';
-             }, 200);
-        });
-    }
-
-    // 🔥 FUNÇÃO INTELIGENTE: Controla Repetição, Avanço e Scroll
-    function startSmartPlayerMonitor() {
-        if (earsMonitorTimer) clearInterval(earsMonitorTimer);
-    
-        earsMonitorTimer = setInterval(() => {
-            let currentTime = 0;
-            let playerObj = null;
-    
-            // Detecta qual player está ativo
-            if (window.earsVideoElement && !window.earsVideoElement.paused) {
-                currentTime = window.earsVideoElement.currentTime;
-                playerObj = window.earsVideoElement;
-            } else if (ytPlayerEars && ytPlayerEars.getPlayerState && ytPlayerEars.getPlayerState() === 1) {
-                currentTime = ytPlayerEars.getCurrentTime();
-                playerObj = ytPlayerEars;
-            } else {
-                return; // Nada tocando
-            }
-    
-            // Encontra a frase atual baseada no tempo
-            // Usamos uma margem de segurança pequena (-0.1) para garantir que pegamos a frase antes dela acabar
-            const activeSentence = currentLesson.data.find(item => 
-                currentTime >= item.start && currentTime < item.end
-            );
-    
-            if (activeSentence) {
-                // --- DETECÇÃO DE MUDANÇA DE FRASE ---
-                if (activeSentence.id !== lastActiveSentenceId) {
-                    console.log(`🔀 Entrou na frase: ${activeSentence.id}`);
-                    lastActiveSentenceId = activeSentence.id;
-                    sentenceRepetitionCount = 0; // Reseta o contador para a nova frase
-                    
-                    // Atualiza visual (Scroll e Destaque)
-                    highlightAndScrollToSentence(activeSentence.id);
-                }
-    
-                // --- LÓGICA DE REPETIÇÃO ---
-                // Verifica se está chegando no final da frase (dentro de 0.25s do fim)
-                // E se o vídeo está rodando para frente (evita bugs em seek manual)
-                if (currentTime >= (activeSentence.end - 0.25)) {
-                    
-                    // Verifica: Já tocamos o número de vezes solicitado?
-                    // Ex: Se userRepeatTotal é 2, queremos tocar: 
-                    // 1ª vez (count 0) -> Seek -> 2ª vez (count 1) -> Deixa passar
-                    if (sentenceRepetitionCount < (userRepeatTotal - 1)) {
-                        
-                        console.log(`🔄 Repetindo frase ${activeSentence.id} (${sentenceRepetitionCount + 1}/${userRepeatTotal})`);
-                        
-                        // Volta o vídeo para o início da frase
-                        if (window.earsVideoElement) {
-                            window.earsVideoElement.currentTime = activeSentence.start;
-                        } else if (ytPlayerEars && ytPlayerEars.seekTo) {
-                            ytPlayerEars.seekTo(activeSentence.start, true);
-                        }
-    
-                        sentenceRepetitionCount++; // Incrementa o contador
-                    }
-                    // SE JÁ REPETIU O SUFICIENTE:
-                    // Não fazemos nada. O vídeo naturalmente vai passar do activeSentence.end
-                    // e entrará na próxima frase (ou no silêncio entre frases).
-                    // Quando entrar na próxima, o "if (activeSentence.id !== ...)" lá em cima vai resetar tudo.
-                }
-            } else {
-                // Se estiver num "buraco" entre legendas, removemos destaque
-                // (Opcional, mas fica visualmente mais limpo)
-                // removeAllHighlights(); 
-            }
-    
-        }, 100); // Checa a cada 100ms
-    }
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
@@ -4962,7 +4612,9 @@ function validateTrainingData() {
         structuredData = generateDynamicIds(projectData);
     
         // 2. Renderiza os Estágios
-        renderStageCards();      
+        renderStageCards();  
+    
+    	checkVideoFallbackCount();
     });
     </script>
 </body>
