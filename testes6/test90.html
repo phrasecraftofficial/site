@@ -1757,13 +1757,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             
             // 1. Lógica de Clique Dinâmica
             card.onclick = () => {
-                if (options.type === 'ears' && lesson.videoFallbackUrl) {
-                    // Abre lição de áudio com vídeo nativo
-                    openEarsLesson(lesson.id);
-                } else {
-                    // Abre preview normal (YouTube)
-                    openPreview(lesson.id);
-                }
+                options.type === 'ears' ? openEarsLesson(lesson.id) : openPreview(lesson.id);
             };
     
             // 2. Lógica de Subtítulo Unificada
@@ -1803,94 +1797,56 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     }
 
     // --- VIDEO (HÍBRIDO: AULA OU TRADUÇÃO) ---
-    function setupVideo(source, isFallback = false) {
+    function setupVideo() {
         ui.videoWrapper.classList.remove('hidden');
         isVideoTaskComplete = false;
         
         // --- 1. DECISÃO DE MODO (O IF MÁGICO) ---
         let targetText = "";
         let promptHTML = "";
-        let synthLang = "";
+        let synthLang = ""; // Variável para controlar o idioma da fala
 
         if (currentTask.type === 'video_translate') {
+            // MODO TREINO (Tarefa 2): Alvo é Português
             targetText = currentTask.correct; 
             promptHTML = `<span style="color:#aaa; font-size:0.9em;">Traduza o que ouvir para <b>Português</b>:</span>`;
+            
+            // 🔥 MUDANÇA: null para NÃO ler as palavras em PT
             synthLang = null; 
         } else {
+            // MODO VÍDEO (Padrão): Alvo é Inglês
             targetText = currentTask.question || currentTask.en || ""; 
             promptHTML = `<span style="color:#aaa; font-size:0.9em;">Organize o que ouvir em <b>Inglês</b>:</span>`;
+            
+            // Mantém leitura em EN para ajudar na pronúncia
             synthLang = 'en-US'; 
         }
 
+        // Atualiza o texto de instrução na tela
         document.getElementById('video-feedback').innerHTML = promptHTML;
 
+        // Prepara a frase alvo para validação (remove pontuação, normaliza)
         currentTargetSentence = targetText
             .replace(/\r?\n|\r/g, ' ')
             .trim()
             .split(/\s+/)
             .map(w => normalizeWord(w));
 
+        // Limpa a área visual
         document.getElementById('video-answer-zone').innerHTML = '';
         document.getElementById('video-word-bank').innerHTML = '';
         document.getElementById('video-answer-zone').style.borderColor = '#444';
 
-        // --- 2. SETUP DO PLAYER (COM TYPE ear / video) ---
-        const type = currentTask.type === 'ear' ? 'ear' : 'video';
-        const targetId = (type === 'ear') ? 'native-ears-video-container' : 'yt-player';
-        const videoContainer = document.getElementById(targetId);
-
-        if (!videoContainer) {
-            console.error(`Container '${targetId}' não encontrado.`);
-            return;
-        }
-
-        const commonStyle = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;";
-
-        if (type === 'ear') {
-            videoContainer.innerHTML = `
-                <video 
-                    src="${source}" 
-                    controls 
-                    autoplay 
-                    style="${commonStyle}"
-                >
-                    Seu navegador não suporta a tag de vídeo.
-                </video>`;
-        } else {
-            videoContainer.innerHTML = `
-                <iframe 
-                    src="https://www.youtube.com/embed/${source}?enablejsapi=1&autoplay=1" 
-                    title="YouTube video player" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen 
-                    style="${commonStyle}"
-                ></iframe>`;
-        }
-
-        const videoId = getYoutubeId(currentTask.videoUrl);
-        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
-
-        if (!ytPlayer && type !== 'ear') {
-            ytPlayer = new YT.Player(targetId, {
-                height: '100%', width: '100%', videoId: videoId,
-                playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1, 'fs': 0, 'rel': 0, 'iv_load_policy': 3, 'modestbranding': 1, 'vq': userQuality },
-                events: { 
-                    'onReady': (event) => {
-                        event.target.setPlaybackQuality(userQuality);
-                        window.speechSynthesis.cancel();
-                        playSegment(currentTask.start, currentTask.end); 
-                    }
-                }
-            });
-        } else if (ytPlayer && type !== 'ear') {
-            window.speechSynthesis.cancel();
-            ytPlayer.loadVideoById({
-                'videoId': videoId,
-                'startSeconds': currentTask.start,
-                'suggestedQuality': userQuality
-            });
-            setTimeout(() => playSegment(currentTask.start, currentTask.end), 500);
-        }
+        // --- 2. SETUP DO PLAYER (Delegado ao videoManager) ---
+        const mode = currentTask.videoUrl.includes('youtube.com') || currentTask.videoUrl.includes('youtu.be') 
+            ? 'streaming' 
+            : 'server';
+        
+        videoManager(mode, {
+            videoUrl: currentTask.videoUrl,
+            start: currentTask.start,
+            end: currentTask.end
+        });
 
         // --- 3. GERA PALAVRAS EMBARALHADAS ---
         let words = targetText
@@ -1912,6 +1868,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
                 if (this.classList.contains('disabled-word')) return;
                 if (document.body.classList.contains('audio-playing')) return;
                 
+                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
                 if (synthLang) {
                     speakText(word, synthLang); 
                 }
@@ -1920,9 +1877,11 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
                 const expectedClean = currentTargetSentence[expectedWordIndex];
             
                 if (clickedClean === expectedClean) {
+                    // ACERTOU
                     zone.appendChild(this);
                     expectedWordIndex++;
             
+                    // Reabilita palavras erradas (UX Preventiva reset)
                     const disabledWords = bank.querySelectorAll('.disabled-word');
                     disabledWords.forEach(w => w.classList.remove('disabled-word'));
             
@@ -1930,6 +1889,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
                         finishVideoTaskSuccess();
                     }
                 } else {
+                    // ERROU
                     this.classList.add('disabled-word');
                     this.animate([
                         { transform: 'translateX(0)' }, 
@@ -1943,23 +1903,204 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         });
 
         // --- 4. BLOQUEIO ATÉ O VÍDEO TOCAR ---
-        if (type !== 'ear') {
-            let videoStarted = false;
-            const checkVideoInterval = setInterval(() => {
-                if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
-                    if (!videoStarted) {
-                        videoStarted = true;
-                        clearInterval(checkVideoInterval);
-                        setTimeout(() => {
-                            const allWords = bank.querySelectorAll('.word-tag');
-                            allWords.forEach(w => w.classList.remove('disabled-word'));
-                        }, (currentTask.end - currentTask.start) * 1000);
-                    }
+        let videoStarted = false;
+        const checkVideoInterval = setInterval(() => {
+            if (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1) {
+                if (!videoStarted) {
+                    videoStarted = true;
+                    clearInterval(checkVideoInterval);
+                    // Libera as palavras quando o trecho terminar de tocar a primeira vez
+                    setTimeout(() => {
+                        const allWords = bank.querySelectorAll('.word-tag');
+                        allWords.forEach(w => w.classList.remove('disabled-word'));
+                    }, (currentTask.end - currentTask.start) * 1000);
                 }
-            }, 100);
-        }
+            }
+        }, 100);
+        
+        // Timeout de segurança
+        setTimeout(() => {
+            if (!videoStarted) {
+                clearInterval(checkVideoInterval);
+                const allWords = bank.querySelectorAll('.word-tag');
+                allWords.forEach(w => w.classList.remove('disabled-word'));
+            }
+        }, 10000);
     }
 
+    /**
+     * Gerencia a injeção e controle do player (YouTube ou Servidor)
+     * @param {string} mode - 'streaming' (YouTube) ou 'server' (Vídeo nativo)
+     * @param {Object} config - Configurações do vídeo
+     * @param {string} config.videoUrl - URL do vídeo (YouTube ou servidor)
+     * @param {number} config.start - Tempo de início em segundos
+     * @param {number} config.end - Tempo de fim em segundos
+     * @param {Function} config.onReady - Callback quando o player estiver pronto (opcional)
+     */
+    /**
+     * Gerencia a injeção e controle do player (YouTube ou Servidor com Cache)
+     */
+    function videoManager(mode, config) {
+        if (mode === 'streaming') {
+            // --- MODO YOUTUBE (STREAMING) ---
+            const { videoUrl, start, end, onReady } = config;
+            
+            const videoId = getYoutubeId(videoUrl);
+            const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+    
+            if (!ytPlayer) {
+                // Cria o player pela primeira vez
+                ytPlayer = new YT.Player('yt-player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: videoId,
+                    playerVars: {
+                        'playsinline': 1,
+                        'controls': 0,
+                        'disablekb': 1,
+                        'fs': 0,
+                        'rel': 0,
+                        'iv_load_policy': 3,
+                        'modestbranding': 1,
+                        'vq': userQuality
+                    },
+                    events: {
+                        'onReady': (event) => {
+                            event.target.setPlaybackQuality(userQuality);
+                            window.speechSynthesis.cancel();
+                            playSegment(start, end);
+                            
+                            if (onReady && typeof onReady === 'function') {
+                                onReady(event);
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Reutiliza o player existente
+                window.speechSynthesis.cancel();
+                ytPlayer.loadVideoById({
+                    'videoId': videoId,
+                    'startSeconds': start,
+                    'suggestedQuality': userQuality
+                });
+                
+                setTimeout(() => {
+                    playSegment(start, end);
+                    
+                    if (onReady && typeof onReady === 'function') {
+                        onReady({ target: ytPlayer });
+                    }
+                }, 500);
+            }
+        } 
+        else if (mode === 'server') {
+            // --- MODO SERVIDOR (VÍDEO NATIVO HTML5 COM CACHE) ---
+            
+            // Nota: config.videoUrl aqui vem do currentTask ou lesson logic
+            // Mas para o player nativo, geralmente pegamos do ID da lição no contexto global
+            // ou passamos o URL direto no config. Vou assumir a lógica de buscar pelo ID 
+            // como estava no seu código original, mas usando o cacheManager.
+
+            // Se você passar 'lessonId' dentro de config, fica mais limpo:
+            // Vamos assumir que 'config.lessonId' foi passado ou pegamos do global currentLesson
+            
+            const targetLesson = currentLesson; // Usa a lição global atual
+
+            if (!targetLesson || !targetLesson.videoFallbackUrl) {
+                console.error("Lição ou vídeo de fallback não encontrados.");
+                return;
+            }
+        
+            console.log("🎧 Preparando Vídeo Nativo com Cache:", targetLesson.title);
+        
+            // Navegação (se necessário, ou se já estiver na view, mantém)
+            navigateTo('earsLesson');
+        
+            // Atualiza Título
+            const titleEl = document.getElementById('ears-lesson-title');
+            if (titleEl) titleEl.innerText = targetLesson.title;
+        
+            const videoContainer = document.getElementById('native-ears-video-container');
+            
+            if (videoContainer) {
+                // 1. Mostra estado de carregamento enquanto o Cache trabalha
+                videoContainer.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #000; color: #fff;">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <span style="font-size: 0.8rem; color: #aaa;">Carregando vídeo...</span>
+                    </div>
+                `;
+
+                // 2. Chama o Cache Manager
+                cacheManager(targetLesson.videoFallbackUrl).then(cachedSrc => {
+                    
+                    // 3. Injeta o vídeo com a URL do blob (ou fallback)
+                    videoContainer.innerHTML = `
+                        <video 
+                            id="native-ears-player" 
+                            controls 
+                            autoplay 
+                            playsinline 
+                            style="width: 100%; height: 100%; object-fit: contain; background: #000;"
+                            src="${cachedSrc}"
+                        >
+                            Seu navegador não suporta a tag de vídeo.
+                        </video>
+                    `;
+                });
+            }
+        
+            // Opcional: Limpar lista de frases
+            const listContainer = document.getElementById('preview-earsSentences');
+            if (listContainer) {
+                listContainer.innerHTML = '<li class="preview-item" style="text-align:center; padding:20px;">Legendas em breve...</li>';
+            }
+        }
+        else {
+            console.error('❌ [videoManager] Modo inválido:', mode);
+        }
+    }
+    
+    // --- GERENCIADOR DE CACHE DE VÍDEO ---
+    async function cacheManager(url) {
+        const CACHE_NAME = 'phrasecraft-video-cache-v1';
+    
+        try {
+            // 1. Abre o cache
+            const cache = await caches.open(CACHE_NAME);
+    
+            // 2. Verifica se o vídeo já está salvo
+            const cachedResponse = await cache.match(url);
+    
+            if (cachedResponse) {
+                console.log('📦 [Cache] Vídeo carregado da memória local.');
+                const blob = await cachedResponse.blob();
+                return URL.createObjectURL(blob);
+            }
+    
+            // 3. Se não estiver, baixa da rede
+            console.log('☁️ [Cache] Baixando e salvando vídeo...');
+            const networkResponse = await fetch(url);
+    
+            if (!networkResponse.ok) {
+                throw new Error('Falha no download do vídeo');
+            }
+    
+            // 4. Salva no cache (é preciso clonar a resposta pois ela só pode ser lida uma vez)
+            cache.put(url, networkResponse.clone());
+    
+            // 5. Retorna o Blob URL para o player
+            const blob = await networkResponse.blob();
+            return URL.createObjectURL(blob);
+    
+        } catch (error) {
+            console.warn('⚠️ [Cache] Erro ou vídeo muito grande, usando URL direta:', error);
+            // Fallback: Se der erro no cache (ex: cota excedida), retorna a URL original
+            return url;
+        }
+    }
+    
     // --- FUNÇÃO DE LIMPEZA GERAL ---
     function clean() {
         console.log('🧹 [Clean] Limpando recursos...');
@@ -2032,9 +2173,6 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (activeFooter) activeFooter.classList.add('active');
     
         // --- LAYOUT: Só configuramos explicitamente para views especiais ---
-        if (view === 'ears') {
-            renderEarsList();
-        }
         if (view === 'preview') {
             setLayoutMode('full');
         } else if (view === 'training' && !currentTaskMode) {
