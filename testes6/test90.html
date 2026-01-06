@@ -1757,7 +1757,15 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             
             // 1. Lógica de Clique Dinâmica
             card.onclick = () => {
-                options.type === 'ears' ? openEarsLesson(lesson.id) : openPreview(lesson.id);
+                if (options.type === 'ears') {
+                    // 1. Define a lição global atual para que o videoManager saiba qual vídeo buscar
+                    currentLesson = lesson; 
+                    
+                    // 2. Chama o gerenciador no modo 'server' (que lida com o native player e cache)
+                    videoManager('server', {}); 
+                } else {
+                    openPreview(lesson.id);
+                }
             };
     
             // 2. Lógica de Subtítulo Unificada
@@ -4138,10 +4146,6 @@ function validateTrainingData() {
         // 🔥 Cria o checkpoint para o botão voltar do celular
         setTaskHistoryMode('speaking');
     
-        // ❌ REMOVA ESTAS LINHAS:
-        // history.pushState({ view: 'training' }, '', '#training');
-        // navigationStack.push('training');
-    
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
         ui.quizContainer.classList.remove('hidden');
@@ -4463,56 +4467,6 @@ function validateTrainingData() {
         } catch (error) {
             console.error("❌ Erro ao consultar videoFallbackUrl:", error);
             return 0;
-        }
-    }
-
-    // --- ABRE A LIÇÃO EARS COM VÍDEO NATIVO ---
-    function openEarsLesson(lessonId) {
-        // 1. Busca a lição na memória (reaproveitando allLessons)
-        const lesson = allLessons.find(l => l.id == lessonId);
-        
-        if (!lesson) {
-            console.error("Lição não encontrada");
-            return;
-        }
-    
-        if (!lesson.videoFallbackUrl) {
-            alert("Esta lição não possui vídeo de fallback cadastrado.");
-            return;
-        }
-    
-        console.log("🎧 Abrindo Ears Lesson com Vídeo Nativo:", lesson.title);
-    
-        // 2. Navegação (Reaproveita sua função existente)
-        navigateTo('earsLesson');
-    
-        // 3. Atualiza UI Básica
-        const titleEl = document.getElementById('ears-lesson-title');
-        if (titleEl) titleEl.innerText = lesson.title;
-    
-        // 4. INJEÇÃO DO VÍDEO NATIVO (Aqui está a mágica)
-        const videoContainer = document.getElementById('native-ears-video-container');
-        
-        if (videoContainer) {
-            // Limpa qualquer conteúdo anterior e injeta o vídeo HTML5
-            videoContainer.innerHTML = `
-                <video 
-                    id="native-ears-player" 
-                    controls 
-                    autoplay 
-                    playsinline 
-                    style="width: 100%; height: 100%; object-fit: contain; background: #000;"
-                    src="${lesson.videoFallbackUrl}"
-                >
-                    Seu navegador não suporta a tag de vídeo.
-                </video>
-            `;
-        }
-    
-        // Opcional: Limpar a lista de frases antigas para não confundir visualmente
-        const listContainer = document.getElementById('preview-earsSentences');
-        if (listContainer) {
-            listContainer.innerHTML = '<li class="preview-item" style="text-align:center; padding:20px;">Legendas em breve...</li>';
         }
     }
 
