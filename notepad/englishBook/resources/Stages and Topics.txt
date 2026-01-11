@@ -1,17 +1,5 @@
 ▝ INDICE STAGES
-Topicos Fundamentais
-Pronomes Detalhados
-Verbos Auxiliares e Estrutura de Tempo
-Passado Simples e Subjuntivo
-Modais e Obrigacoes
-Formas Verbais Nao Finitas
-Verbos Multifuncionais
-Adverbios e Particulas Essenciais
-Elementos de Conexao (Preposicoes e Conectores)
-Tempos Verbais Avancados
-Estruturas Especiais
-Dominio de Sentencas e Nuances
-Estruturas de Enfase e Modificacao
+Fazer essa lista quando terminar os tópicos
 
 ▝ INDICE TOPICOS
 Topicos Fundamentais
@@ -19,12 +7,13 @@ Topicos Fundamentais
 ▪︎ Pronomes
 ▪︎ Pronomes Pessoais
 
-▪︎ Verbo To be no Simple Present
+Presente Simples
+▪︎ Verbo To Be
 ▪︎ Simple Present
 ▪︎ Artigos e Determinantes (A, An, The)
-▪︎ Quantificadores (Much, Many, Some, Any)
 
-Pronomes Detalhados
+
+▪︎ Quantificadores (Much, Many, Some, Any)
 ▪︎ Pronomes Objeto e Verbo To Be
 ▪︎ Sujeitos Vazios (It e There)
 ▪︎ Auxiliares (Do, Does, Did, Will)
