@@ -1,6 +1,6 @@
 Topicos Fundamentais
 
-▘Substantivos
+▪︎ Substantivos
 Explicação
 O que é Substantivo?
 É a palavra que dá nome a tudo o que existe. Se algo tem um nome, esse nome é um substantivo.
@@ -36,7 +36,7 @@ O gato bebe o leite.
 The cat drinks the milk.
 Resposta: gato (cat), leite (milk)
 
-▘Pronomes
+▪︎ Pronomes
 Explicação
 O que é Pronome?
 É a palavra que usamos para substituir esses nomes (substantivos), evitando que a frase fique repetitiva ou cansativa.
@@ -72,7 +72,7 @@ Você e eu estamos trabalhando muito.
 You and I are working very hard.
 Resposta: você (my) / eu (I)
 
-▘Pronomes Pessoais
+▪︎ Pronomes Pessoais
 Explicação
 Pronomes pessoais são palavras usadas para se referir a uma pessoa sem dizer o nome dela.
 Servindo para substituir o substantivo (nome) e evitar que a frase fique repetitiva. 
