@@ -1,10 +1,42 @@
 <!-- 92
-Resumo do que fizemos:
-clean() agora enxerga o HTML5 Video: Ele pausa e remove o src do vídeo do servidor, impedindo que o áudio continue no fundo.
+Aqui está um resumo detalhado de todas as alterações e melhorias implementadas nesta sessão:
 
-stopVideoPlayback() reforçado: Usa stopVideo() para garantir que o YouTube pare de carregar.
+### 1. Reestruturação da Renderização (Refatoração)
 
-MapsTo() automático: Ao clicar em "Home" ou qualquer ícone do menu, ele dispara a limpeza automaticamente antes de trocar a visualização.
+* **Criação de `renderSegments(mode)`:** Unificamos a lógica de exibição das listas.
+* **Modo `'preview'`:** Exibe lista paginada (respeitando sua lógica de distribuição de cards) e numerada.
+* **Modo `'ears'`:** Exibe lista completa (scroll infinito), sem numeração lateral.
+
+
+* **Criação de `renderPhasePagination()`:** Isolamos a lógica que cria os botões de fases (1, 2, 3...) da lógica que renderiza as frases.
+* **Limpeza:** Removemos as funções antigas e redundantes (`renderPreviewSentences`, `renderPhaseButtons`, `renderEarsList`).
+
+### 2. Melhorias no Modo "Ears" (Listening)
+
+* **Novo Layout Visual:**
+* Frases agora aparecem em duas linhas.
+* **Topo:** Inglês em **Negrito** (com correção de estilo para não herdar itálico).
+* **Baixo:** Português em *Itálico*.
+
+
+* **Lógica de Reprodução (`earsFlow`):**
+* Criado fluxo sequencial robusto: **Falar PT ➝ Falar EN ➝ Tocar Vídeo**.
+* Uso de `async/await` para garantir que um áudio só comece quando o anterior terminar.
+* Encapsulamento da função `speak` dentro do fluxo.
+
+
+* **Precisão do Vídeo:** Implementação de `requestAnimationFrame` combinado com `setTimeout` para garantir que o player nativo pare exatamente no milissegundo final do trecho.
+
+### 3. Otimização de Dados (Cache)
+
+* **Atualização do `fetchLessonData`:** Agora, além dos vídeos, o sistema baixa e salva em cache os arquivos de **texto (SRT)** e **JSON (Vocabulário)**.
+* **Atualização do `cacheManager`:** Tornado mais genérico para aceitar qualquer URL e retornar um `Blob URL` local, economizando dados e acelerando o carregamento ao repetir lições.
+
+### 4. Correções de Bugs e Estabilidade
+
+* **Correção de CSS:** Forçado `font-style: normal` no texto em inglês para evitar herança indesejada de itálico.
+
+O sistema agora está mais modular (separação de UI e Lógica), mais performático (Cache total) e com uma experiência de usuário mais rica no modo Ears.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
