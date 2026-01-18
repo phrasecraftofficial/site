@@ -2820,30 +2820,58 @@ function setLayoutMode(mode) {
 
     // --- PARSER DE SRT ---
   
-    // Converte "00:00:02,500" para segundos (float)
+    // Converte "00:00:02,500" para segundos (float) com proteção contra erros
     function timeToSeconds(timeString) {
-        const parts = timeString.split(':');
+        if (!timeString) return 0;
+        
+        const parts = timeString.trim().split(':');
+        
+        // Verifica se temos as 3 partes (Horas:Minutos:Segundos)
+        if (parts.length < 3) return 0;
+
+        // Troca vírgula por ponto para o parseFloat aceitar
         const seconds = parts[2].replace(',', '.');
+        
         return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60) + parseFloat(seconds);
     }
     
     function parseSRT(srtContent) {
         if (!srtContent) return [];
-        const normalizedContent = srtContent.replace(/\r\n/g, '\n');
+        
+        // Normaliza quebras de linha para evitar problemas com arquivos Windows/Mac
+        const normalizedContent = srtContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        
+        // Divide por blocos (linha vazia dupla ou simples dependendo da formatação)
         const blocks = normalizedContent.trim().split(/\n\s*\n/);
         
         return blocks.map(block => {
             const lines = block.split('\n');
+            
+            // Um bloco válido precisa ter pelo menos ID, Tempo e Texto
             if (lines.length < 3) return null;
     
-            // Linha 1: "00:00:00,000 --> 00:00:02,000"
-            const times = lines[1].split(' --> ');
+            // Procura a linha que tem a seta "-->" (Geralmente é a linha 1, mas prevenimos se for a 2)
+            let timeLineIndex = lines.findIndex(l => l.includes('-->'));
+            
+            if (timeLineIndex === -1) return null; // Não achou tempo, ignora o bloco
+            
+            const times = lines[timeLineIndex].split(' --> ');
+            
+            // Proteção extra: se o split não gerou 2 tempos
+            if (times.length < 2) return null;
+
             const start = timeToSeconds(times[0]);
             const end = timeToSeconds(times[1]);
     
-            // Linha 2+: Texto
-            const text = lines.slice(2).join(' ').replace(/<[^>]*>/g, '').trim();
+            // O texto é tudo que vem depois da linha do tempo
+            // .join(' ') junta múltiplas linhas de texto em uma só
+            const text = lines.slice(timeLineIndex + 1).join(' ')
+                .replace(/<[^>]*>/g, '') // Remove tags HTML como <i>, <b>
+                .trim();
             
+            // Só retorna se tiver texto válido
+            if (!text) return null;
+
             return { text, start, end };
         }).filter(item => item !== null);
     }
