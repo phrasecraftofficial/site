@@ -1,12 +1,12 @@
 <!-- 93
-Resumo do que vai acontecer agora:
-Preview: A URL será .../#lesson-694...
+Resumo das mudanças:
 
-Entrar no Treino: A URL permanecerá .../#lesson-694... (mas o estado interno muda para saber que está no treino se o usuário der refresh).
-
-Sair do Treino (X): A URL é forçada a se manter/ser .../#lesson-694....
-
-Console: Você verá mensagens como 🔗 https://www.merriam-webster.com/dictionary/debug URL atualizada para... no console do navegador.
+✅ navigateTo agora escreve #lesson-{id} na URL
+✅ openPreview passa o lessonId para o navegador
+✅ goBack preserva o ID ao voltar
+✅ toggleCloseExit restaura a URL ao fechar treino
+✅ Funções de treino mantêm a URL correta
+✅ popstate restaura o estado completo
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -647,7 +647,7 @@ Console: Você verá mensagens como 🔗 https://www.merriam-webster.com/diction
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v93
+            PhraseCraft v93---
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -792,7 +792,7 @@ Console: Você verá mensagens como 🔗 https://www.merriam-webster.com/diction
                         <i class="fa-solid fa-video"></i>
                     </button>
                 
-                    <button class="btn-train" onclick="startTrainingMode()" title="Exercícios Mentais">
+                    <button class="btn-train" onclick="startTranslatePractice()" title="Exercícios Mentais">
                         <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.6rem;"></i> 
                     </button>
                 
@@ -2214,17 +2214,8 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
 
     // Função auxiliar para criar um "Checkpoint" no histórico do celular
     function setTaskHistoryMode(mode) {
-        // CORREÇÃO: Mantém o hash da lição em vez de mudar para #training
-        const lessonHash = currentLesson ? `#lesson-${currentLesson.id}` : '#training';
-        
-        // Adiciona ao histórico com o ID da lição no objeto de estado
-        history.pushState(
-            { view: 'training', mode: mode, lessonId: currentLesson ? currentLesson.id : null }, 
-            '', 
-            lessonHash
-        );
-
-        console.log(`🔗 https://www.merriam-webster.com/dictionary/debug URL atualizada para: ${window.location.href} (Modo: ${mode})`);
+        // Empurra um estado novo. Se o usuário der "Back", cai no popstate event
+        history.pushState({ view: 'training', mode: mode }, '', '#training');
     }
     // Adicionado parâmetro 'addToHistory' com padrão true
     // Stack é a ÚNICA fonte de verdade
@@ -2292,28 +2283,27 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             sidebar.style.display = '';
         }
             
-        // --- Histórico de URL do navegador ---
+        // --- Histórico do navegador COM DEEP LINKING ---
         if (!fromBack) {
-            // Se for preview, FORÇA o uso do lessonId no hash
-            let hash = `#${view}`;
+            let newHash = '';
             
+            // Define o hash baseado na view e lessonId
             if (view === 'preview' && lessonId) {
-                hash = `#lesson-${lessonId}`;
-            } 
-            // Se estiver indo para training, mantém o hash da lição se existir
-            else if (view === 'training' && currentLesson) {
-                hash = `#lesson-${currentLesson.id}`;
-            }
-
-            if (resetStack) {
-                history.replaceState({ view, lessonId }, '', hash);
+                newHash = `#lesson-${lessonId}`;
+            } else if (view === 'training' && currentLesson?.id) {
+                newHash = `#lesson-${currentLesson.id}`;
             } else {
-                history.pushState({ view, lessonId }, '', hash);
+                newHash = `#${view}`;
+            }
+            
+            console.log(`🔗 URL atualizada para: ${window.location.origin}${window.location.pathname}${newHash}`);
+            
+            if (resetStack) {
+                history.replaceState({ view, lessonId }, '', newHash);
+            } else {
+                history.pushState({ view, lessonId }, '', newHash);
             }
         }
-        
-        // 🔥 LOG SOLICITADO
-        console.log(`🔗 https://www.merriam-webster.com/dictionary/debug Navegou para: ${view} | URL Final: ${window.location.href}`);
     }
     
     function goBack() {
@@ -2321,41 +2311,34 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (currentTaskMode) {
             console.log('🔙 [Back] Encerrando modo tarefa:', currentTaskMode);
             clean(); // Para vídeos e áudios
-
+    
             currentTaskMode = null;
             toggleCloseExit('hide');
-
-            // CORREÇÃO: Força a volta para o preview com o ID correto
-            if (currentLesson) {
-                console.log(`🔗 https://www.merriam-webster.com/dictionary/debug Voltando do treino para lição: ${currentLesson.id}`);
-                // Ao invés de apenas voltar no histórico, navegamos explicitamente para garantir a URL
-                navigateTo('preview', { fromBack: true, lessonId: currentLesson.id });
-                
-                // Força atualização visual da URL caso o navegador não tenha feito
-                if(!window.location.hash.includes(currentLesson.id)) {
-                     history.replaceState({ view: 'preview', lessonId: currentLesson.id }, '', `#lesson-${currentLesson.id}`);
-                }
+    
+            // Volta para a view anterior na pilha
+            const lastView = navigationStack[navigationStack.length - 1];
+            if (lastView) {
+                navigateTo(lastView, { fromBack: true });
             } else {
                 navigateTo('home', { fromBack: true });
             }
             return;
         }
-
-        // 2. Navegação padrão (Stack)
+    
+        // 2. Navegação padrão
         if (navigationStack.length > 1) {
             navigationStack.pop();
             const previousView = navigationStack[navigationStack.length - 1];
+            console.log('🔙 [Back] Voltando para:', previousView, '| Stack:', navigationStack);
             
-            // Tenta recuperar o ID se estivermos voltando para um preview
-            let prevId = null;
-            if (previousView === 'preview' && currentLesson) {
-                prevId = currentLesson.id;
-            }
-
-            navigateTo(previousView, { fromBack: true, lessonId: prevId });
+            // 🔥 NOVO: Preserva o lessonId se estiver voltando para preview
+            const lessonId = (previousView === 'preview' && currentLesson) 
+                ? currentLesson.id 
+                : null;
+            
+            navigateTo(previousView, { fromBack: true, lessonId });
         } else {
-            // Se não tem para onde voltar, vai para home
-            navigateTo('home', { fromBack: true });
+            console.log('🏠 [Nav] Na raiz - Stack já está no mínimo:', navigationStack);
         }
     }
 
@@ -2371,6 +2354,13 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         exitBtn.classList.add('hidden');
     }
     else if (action === 'goback') {
+        // 🔥 NOVO: Força a URL voltar para o preview da lição
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState({ view: 'preview', lessonId: currentLesson.id }, '', newHash);
+            console.log(`🔗 [Exit] URL restaurada para: ${newHash}`);
+        }
+        
         goBack();
     }
 }
@@ -2527,10 +2517,10 @@ function setLayoutMode(mode) {
     
         console.log("✅ Lição carregada:", rawLesson.title);
     
-        // 3. NAVEGAÇÃO (centralizada)
+        // 3. NAVEGAÇÃO (centralizada) - COM LESSONID
         navigateTo('preview', {
             addToStack: addToHistory,
-            lessonId: rawLesson.id
+            lessonId: rawLesson.id 
         });
     
         toggleCloseExit('hide');
@@ -4352,17 +4342,20 @@ function validateTrainingData() {
         speakingResults = []; 
         trainingMode = 'speaking';
         currentTaskMode = 'speaking'; // Define o modo
+
+        // 🔥 Atualiza URL para manter o lessonId durante o treino
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState(
+                { view: 'training', lessonId: currentLesson.id, mode: currentTaskMode }, 
+                '', 
+                newHash
+            );
+        }
     
         // Ajustes visuais
         setLayoutMode('training');
         toggleCloseExit('show'); // Mostra o X
-      
-        // 🔥 Cria o checkpoint para o botão voltar do celular
-        setTaskHistoryMode('speaking');
-    
-        // ❌ REMOVA ESTAS LINHAS:
-        // history.pushState({ view: 'training' }, '', '#training');
-        // navigationStack.push('training'); 
     
         // Ativa a view visualmente, mas sem mexer no stack de navegação
         ui.views.forEach(v => v.classList.remove('active'));
@@ -4382,12 +4375,18 @@ function validateTrainingData() {
     
         trainingMode = 'video';
         currentTaskMode = 'video'; // Define o modo
+
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState(
+                { view: 'training', lessonId: currentLesson.id, mode: currentTaskMode }, 
+                '', 
+                newHash
+            );
+        }
     
         setLayoutMode('training');
         toggleCloseExit('show');
-      
-        // 🔥 Cria o checkpoint para o botão voltar do celular
-        setTaskHistoryMode('speaking');
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
@@ -4399,16 +4398,23 @@ function validateTrainingData() {
         initQuizLogic(phaseData); 
     }
     // Modo Treino
-    function startTrainingMode() {
+    function startTranslatePractice() {
         if (!validateTrainingData()) return;
     
         currentTaskMode = 'training';
-    
         console.log('[Task] training iniciado');
+
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState(
+                { view: 'training', lessonId: currentLesson.id, mode: currentTaskMode }, 
+                '', 
+                newHash
+            );
+        }
     
         setLayoutMode('training');  // aqui é correto
         toggleCloseExit('show');
-        setTaskHistoryMode('training');
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
@@ -4602,26 +4608,27 @@ function validateTrainingData() {
             const state = event.state;
             console.log("📱 [Mobile Back] Estado:", state);
         
+            // Se estiver em modo tarefa, fecha e volta para preview
             if (currentTaskMode) {
                 console.log("🔙 Fechando tarefa via botão físico");
                 currentTaskMode = null;
                 clean();
                 toggleCloseExit('hide');
         
-                if (state && state.view) {
-                    navigateTo(state.view, { fromBack: true, lessonId: state.lessonId });
+                // Restaura para preview da lição
+                if (state?.lessonId) {
+                    openPreview(state.lessonId, false);
                 } else {
                     navigateTo('home', { fromBack: true });
                 }
                 return;
             }
         
-            if (state && state.view) {
-                if (state.view === 'preview' && state.lessonId) {
-                    openPreview(state.lessonId, false); // openPreview já chama navigateTo('preview')
-                } else {
-                    navigateTo(state.view, { fromBack: true });
-                }
+            // Navegação normal
+            if (state?.view === 'preview' && state?.lessonId) {
+                openPreview(state.lessonId, false);
+            } else if (state?.view) {
+                navigateTo(state.view, { fromBack: true, lessonId: state.lessonId });
             } else {
                 navigateTo('home', { fromBack: true });
             }
