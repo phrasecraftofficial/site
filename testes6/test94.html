@@ -2214,8 +2214,17 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
 
     // Função auxiliar para criar um "Checkpoint" no histórico do celular
     function setTaskHistoryMode(mode) {
-        // Empurra um estado novo. Se o usuário der "Back", cai no popstate event
-        history.pushState({ view: 'training', mode: mode }, '', '#training');
+        // CORREÇÃO: Mantém o hash da lição em vez de mudar para #training
+        const lessonHash = currentLesson ? `#lesson-${currentLesson.id}` : '#training';
+        
+        // Adiciona ao histórico com o ID da lição no objeto de estado
+        history.pushState(
+            { view: 'training', mode: mode, lessonId: currentLesson ? currentLesson.id : null }, 
+            '', 
+            lessonHash
+        );
+
+        console.log(`🔗 https://www.merriam-webster.com/dictionary/debug URL atualizada para: ${window.location.href} (Modo: ${mode})`);
     }
     // Adicionado parâmetro 'addToHistory' com padrão true
     // Stack é a ÚNICA fonte de verdade
@@ -2283,15 +2292,28 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             sidebar.style.display = '';
         }
             
-        // --- Histórico do navegador ---
+        // --- Histórico de URL do navegador ---
         if (!fromBack) {
+            // Se for preview, FORÇA o uso do lessonId no hash
+            let hash = `#${view}`;
+            
+            if (view === 'preview' && lessonId) {
+                hash = `#lesson-${lessonId}`;
+            } 
+            // Se estiver indo para training, mantém o hash da lição se existir
+            else if (view === 'training' && currentLesson) {
+                hash = `#lesson-${currentLesson.id}`;
+            }
+
             if (resetStack) {
-                history.replaceState({ view, lessonId }, '', `#${view}`);
+                history.replaceState({ view, lessonId }, '', hash);
             } else {
-                const hash = lessonId ? `#lesson-${lessonId}` : `#${view}`;
                 history.pushState({ view, lessonId }, '', hash);
             }
         }
+        
+        // 🔥 LOG SOLICITADO
+        console.log(`🔗 https://www.merriam-webster.com/dictionary/debug Navegou para: ${view} | URL Final: ${window.location.href}`);
     }
     
     function goBack() {
@@ -2299,28 +2321,41 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (currentTaskMode) {
             console.log('🔙 [Back] Encerrando modo tarefa:', currentTaskMode);
             clean(); // Para vídeos e áudios
-    
+
             currentTaskMode = null;
             toggleCloseExit('hide');
-    
-            // Volta para a view anterior na pilha
-            const lastView = navigationStack[navigationStack.length - 1];
-            if (lastView) {
-                navigateTo(lastView, { fromBack: true });
+
+            // CORREÇÃO: Força a volta para o preview com o ID correto
+            if (currentLesson) {
+                console.log(`🔗 https://www.merriam-webster.com/dictionary/debug Voltando do treino para lição: ${currentLesson.id}`);
+                // Ao invés de apenas voltar no histórico, navegamos explicitamente para garantir a URL
+                navigateTo('preview', { fromBack: true, lessonId: currentLesson.id });
+                
+                // Força atualização visual da URL caso o navegador não tenha feito
+                if(!window.location.hash.includes(currentLesson.id)) {
+                     history.replaceState({ view: 'preview', lessonId: currentLesson.id }, '', `#lesson-${currentLesson.id}`);
+                }
             } else {
                 navigateTo('home', { fromBack: true });
             }
             return;
         }
-    
-        // 2. Navegação padrão
+
+        // 2. Navegação padrão (Stack)
         if (navigationStack.length > 1) {
             navigationStack.pop();
             const previousView = navigationStack[navigationStack.length - 1];
-            console.log('🔙 [Back] Voltando para:', previousView, '| Stack:', navigationStack);
-            navigateTo(previousView, { fromBack: true });
+            
+            // Tenta recuperar o ID se estivermos voltando para um preview
+            let prevId = null;
+            if (previousView === 'preview' && currentLesson) {
+                prevId = currentLesson.id;
+            }
+
+            navigateTo(previousView, { fromBack: true, lessonId: prevId });
         } else {
-            console.log('🏠 [Nav] Na raiz - Stack já está no mínimo:', navigationStack);
+            // Se não tem para onde voltar, vai para home
+            navigateTo('home', { fromBack: true });
         }
     }
 
