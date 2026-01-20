@@ -4428,6 +4428,10 @@ function validateTrainingData() {
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
+        
+        // 🔥 Garante que o quiz apareça e a tela final suma
+        ui.quizContainer.classList.remove('hidden');
+        ui.finalScreen.classList.add('hidden');
     
         const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
         const phaseData = currentLesson.data.slice(start, end);
