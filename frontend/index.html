@@ -653,7 +653,7 @@ function startTranslatePractice()
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v94
+            PhraseCraft v0.94
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -4408,7 +4408,7 @@ function validateTrainingData() {
         if (!validateTrainingData()) return;
         
         // --- CORREÇÃO AQUI ---
-        trainingMode = 'full';       // <--- ADICIONE ESTA LINHA (Define que não é Video nem Speaking)
+        trainingMode = 'full';       // <--- Define que não é Video nem Speaking
         currentTaskMode = 'training'; 
         // ---------------------
 
@@ -4428,6 +4428,10 @@ function validateTrainingData() {
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
+
+        // 🔥 Garante que o quiz apareça e a tela final suma
+        ui.quizContainer.classList.remove('hidden');
+        ui.finalScreen.classList.add('hidden');
     
         const { start, end } = getPhaseIndices(currentPhase, currentLesson.data.length);
         const phaseData = currentLesson.data.slice(start, end);
