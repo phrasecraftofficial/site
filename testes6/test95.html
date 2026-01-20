@@ -1,4 +1,4 @@
-<!-- 94
+<!-- 95
 Resumo das mudanças:
 
 Agora, toda vez que o # da URL mudar (seja clicando em voltar, avançar ou colando um novo link na barra de endereço), o navegador avisa o seu código, e a função checkDeepLink() é executada novamente para abrir a tela correta.
@@ -653,7 +653,7 @@ function startTranslatePractice()
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v0.94
+            PhraseCraft v95
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1933,9 +1933,16 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             
             span.onclick = function() { 
                 if (this.classList.contains('disabled-word')) return;
+                
+                // 🔥 NOVO: Bloqueia clique durante áudio ou processamento
                 if (document.body.classList.contains('audio-playing')) return;
                 
-                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
+                // 🔥 CRÍTICO: Para qualquer áudio antes de falar a palavra
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+                
+                // Só fala se o idioma estiver definido (ou seja, só em Inglês)
                 if (synthLang) {
                     speakText(word, synthLang); 
                 }
@@ -1953,6 +1960,15 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
                     disabledWords.forEach(w => w.classList.remove('disabled-word'));
             
                     if (expectedWordIndex === currentTargetSentence.length) {
+                        // 🔥 CRÍTICO: Para o loop do vídeo ANTES de chamar finishVideoTaskSuccess
+                        if (videoTimer) {
+                            clearInterval(videoTimer);
+                            videoTimer = null;
+                        }
+                        if (ytPlayer && ytPlayer.pauseVideo) {
+                            ytPlayer.pauseVideo();
+                        }
+                        
                         finishVideoTaskSuccess();
                     }
                 } else {
@@ -2475,7 +2491,13 @@ function setLayoutMode(mode) {
     }
 
     function stopVideoPlayback() {
-        // 1. Pausa o YouTube
+        // 1. Limpa o intervalo de loop PRIMEIRO
+        if (videoTimer) {
+            clearInterval(videoTimer);
+            videoTimer = null;
+        }
+    
+        // 2. Pausa o YouTube
         if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
             try {
                 // Se for Short ou Video normal, stopVideo é mais agressivo que pause
@@ -2487,12 +2509,6 @@ function setLayoutMode(mode) {
             } catch (e) {
                 console.warn("Player YouTube não estava pronto para parar.");
             }
-        }
-    
-        // 2. Limpa o intervalo de loop
-        if (videoTimer) {
-            clearInterval(videoTimer);
-            videoTimer = null;
         }
     }
     
@@ -4188,11 +4204,19 @@ function validateTrainingData() {
         ui.answerZone.style.borderColor = "var(--success-color)";
         score++; 
         ui.scoreDisplay.innerText = score;
-
+    
+        // 🔥 CRÍTICO: Cancela qualquer TTS anterior antes de falar a frase final
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+    
         if (currentTask.finalAudio) {
-            speakText(currentTask.finalAudio, 'en-US', () => {
-                setTimeout(nextTask, 500);
-            });
+            // Aguarda 200ms para garantir que o cancel() foi processado
+            setTimeout(() => {
+                speakText(currentTask.finalAudio, 'en-US', () => {
+                    setTimeout(nextTask, 500);
+                });
+            }, 200);
         } else {
             setTimeout(nextTask, 1000);
         }
@@ -4446,23 +4470,29 @@ function validateTrainingData() {
         score++;
         ui.scoreDisplay.innerText = score;
         isVideoTaskComplete = true; 
-
-        // Toca o trecho do vídeo e avança
+    
+        // 🔥 CRÍTICO: Para TUDO antes de tocar o feedback final
+        clean(); // Para TTS, STT e pausa o vídeo
+        
+        // Aguarda 300ms para garantir que tudo parou
         setTimeout(() => {
             if(ytPlayer && ytPlayer.seekTo) {
                 ytPlayer.seekTo(currentTask.start);
                 ytPlayer.playVideo();
+                
                 let finalCheck = setInterval(() => {
                     if(ytPlayer.getCurrentTime() >= currentTask.end) {
                         ytPlayer.pauseVideo();
                         clearInterval(finalCheck);
-                        setTimeout(nextTask, 1000); 
+                        
+                        // 🔥 NOVO: Aguarda mais 500ms antes de avançar (feedback visual)
+                        setTimeout(nextTask, 500); 
                     }
                 }, 100);
             } else {
                 setTimeout(nextTask, 1500);
             }
-        }, 500);
+        }, 300); // Delay inicial para garantir que clean() finalizou
     }
   
     // Função chamada automaticamente pela API quando pronta
@@ -4577,10 +4607,19 @@ function validateTrainingData() {
             `;
             score++;
             ui.scoreDisplay.innerText = score;
-    
+        
             isVideoTaskComplete = true; 
-    
-            // Toca o trecho final
+        
+            // 🔥 CRÍTICO: Para o vídeo antes do feedback final
+            if (videoTimer) {
+                clearInterval(videoTimer);
+                videoTimer = null;
+            }
+            if (ytPlayer && ytPlayer.pauseVideo) {
+                ytPlayer.pauseVideo();
+            }
+            
+            // Aguarda meio segundo antes de tocar o trecho final
             setTimeout(() => {
                 if(ytPlayer && ytPlayer.seekTo) {
                     ytPlayer.seekTo(currentTask.start);
@@ -4590,15 +4629,15 @@ function validateTrainingData() {
                         if(ytPlayer.getCurrentTime() >= currentTask.end) {
                             ytPlayer.pauseVideo();
                             clearInterval(finalCheck);
-                            setTimeout(nextTask, 1000); 
+                            setTimeout(nextTask, 500); 
                         }
                     }, 100);
                 } else {
                     setTimeout(nextTask, 1500);
                 }
-            }, 500);
-    
-        } else {
+            }, 500); // Delay para garantir que o vídeo parou
+        }
+        else {
             // --- ERROU ---
             zone.style.borderColor = "var(--error-color)";
             zone.animate([
