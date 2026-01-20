@@ -1,53 +1,18 @@
 <!-- 94
----
+Resumo das mudanças:
 
-## ✅ **CHECKLIST FINAL**
+Agora, toda vez que o # da URL mudar (seja clicando em voltar, avançar ou colando um novo link na barra de endereço), o navegador avisa o seu código, e a função checkDeepLink() é executada novamente para abrir a tela correta.
 
-Após as mudanças, você deve ter:
-
-1. ✅ Apenas `srt-en` ou `srt-en-url` nas lições
-2. ✅ `fetchLessonData()` retornando só `{ srtEn }`
-3. ✅ `compileLessonData()` recebendo 2 parâmetros: `(srtEn, videoUrl)`
-4. ✅ `compileLessonData()` fazendo tradução automática de frases e palavras
-5. ✅ Todas as chamadas de `compileLessonData()` usando `await`
-6. ✅ Função `translateText()` adicionada
-
----
-
-## 🎯 **FLUXO PRESERVADO**
-
-O fluxo permanece idêntico:
-```
-Dashboard → Clica Lição → Preview → Escolhe Modo → Modo Treino → Gera Pares → etc
-
----
-
-## 📋 **RESUMO DAS MUDANÇAS**
-
-| Local | Ação | Motivo |
-|-------|------|--------|
-| `setupMatch` | Adicionar `usedIds: []` | Rastrear palavras já usadas |
-| `handleMatchClick` (seleção EN) | Substituir lógica | Validar ordem + permitir repetidas |
-| `handleMatchClick` (validação match) | Adicionar `usedIds.push(id)` | Marcar par usado |
-| Lógica simplificada anterior | **REMOVER COMPLETAMENTE** | Estava ignorando ordem |
-
----
-
-## ✅ **RESULTADO ESPERADO**
-
-Após essas mudanças:
-```
-Frase: "The cat, the dog" / "o gato, o cão"
-
-Clica em "cat" → ❌ Erro (esperava "the" primeiro)
-Clica em "the" (qualquer um) → ✅ Aceita
-Clica em "o" (qualquer um) → ✅ Aceita
-Clica em "cat" → ✅ Aceita
-Clica em "gato" → ✅ Aceita
-Clica em "the" (o outro) → ✅ Aceita
-Clica em "o" (o outro) → ✅ Aceita
-Clica em "dog" → ✅ Aceita
-Clica em "cão" → ✅ Aceita
+✅ navigateTo agora escreve #lesson-{id} na URL
+✅ openPreview passa o lessonId para o navegador
+✅ goBack preserva o ID ao voltar
+✅ toggleCloseExit restaura a URL ao fechar treino
+✅ Funções de treino mantêm a URL correta
+✅ popstate restaura o estado completo
+✅ padronizei o nome dos mods
+function startSpeakingPractice()
+function startVideoPractice()
+function startTranslatePractice()
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -829,11 +794,11 @@ Clica em "cão" → ✅ Aceita
 
                 <div class="train-btn-container">
     
-                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPratice()">
+                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPractice()">
                         <i class="fa-solid fa-video"></i>
                     </button>
                 
-                    <button class="btn-train" onclick="startTrainingMode()" title="Exercícios Mentais">
+                    <button class="btn-train" onclick="startTranslatePractice()" title="Exercícios Mentais">
                         <i class="fa-solid fa-graduation-cap icon-pulsing" style="font-size: 1.6rem;"></i> 
                     </button>
                 
@@ -1970,6 +1935,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
                 if (this.classList.contains('disabled-word')) return;
                 if (document.body.classList.contains('audio-playing')) return;
                 
+                // 🔥 MUDANÇA: Só fala se o idioma estiver definido (ou seja, só em Inglês)
                 if (synthLang) {
                     speakText(word, synthLang); 
                 }
@@ -1977,17 +1943,15 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
                 const clickedClean = normalizeWord(word);
                 const expectedClean = currentTargetSentence[expectedWordIndex];
             
-                // ✅ VALIDA SE A PALAVRA CLICADA É A ESPERADA NA SEQUÊNCIA
                 if (clickedClean === expectedClean) {
                     // ACERTOU
                     zone.appendChild(this);
                     expectedWordIndex++;
             
-                    // Reabilita palavras erradas
+                    // Reabilita palavras erradas (UX Preventiva reset)
                     const disabledWords = bank.querySelectorAll('.disabled-word');
                     disabledWords.forEach(w => w.classList.remove('disabled-word'));
             
-                    // Verifica se completou
                     if (expectedWordIndex === currentTargetSentence.length) {
                         finishVideoTaskSuccess();
                     }
@@ -2128,8 +2092,10 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
                 const loadedData = await fetchLessonData(rawLesson);
                 if (!loadedData) return;
         
-                lessonDataCompiled = await compileLessonData(
+                lessonDataCompiled = compileLessonData(
                     loadedData.srtEn,
+                    loadedData.srtPt,
+                    loadedData.vocabData,
                     rawLesson.video
                 );
             }
@@ -2323,13 +2289,25 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             sidebar.style.display = '';
         }
             
-        // --- Histórico do navegador ---
+        // --- Histórico do navegador COM DEEP LINKING ---
         if (!fromBack) {
-            if (resetStack) {
-                history.replaceState({ view, lessonId }, '', `#${view}`);
+            let newHash = '';
+            
+            // Define o hash baseado na view e lessonId
+            if (view === 'preview' && lessonId) {
+                newHash = `#lesson-${lessonId}`;
+            } else if (view === 'training' && currentLesson?.id) {
+                newHash = `#lesson-${currentLesson.id}`;
             } else {
-                const hash = lessonId ? `#lesson-${lessonId}` : `#${view}`;
-                history.pushState({ view, lessonId }, '', hash);
+                newHash = `#${view}`;
+            }
+            
+            console.log(`🔗 URL atualizada para: ${window.location.origin}${window.location.pathname}${newHash}`);
+            
+            if (resetStack) {
+                history.replaceState({ view, lessonId }, '', newHash);
+            } else {
+                history.pushState({ view, lessonId }, '', newHash);
             }
         }
     }
@@ -2358,7 +2336,13 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             navigationStack.pop();
             const previousView = navigationStack[navigationStack.length - 1];
             console.log('🔙 [Back] Voltando para:', previousView, '| Stack:', navigationStack);
-            navigateTo(previousView, { fromBack: true });
+            
+            // 🔥 NOVO: Preserva o lessonId se estiver voltando para preview
+            const lessonId = (previousView === 'preview' && currentLesson) 
+                ? currentLesson.id 
+                : null;
+            
+            navigateTo(previousView, { fromBack: true, lessonId });
         } else {
             console.log('🏠 [Nav] Na raiz - Stack já está no mínimo:', navigationStack);
         }
@@ -2376,6 +2360,13 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         exitBtn.classList.add('hidden');
     }
     else if (action === 'goback') {
+        // 🔥 NOVO: Força a URL voltar para o preview da lição
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState({ view: 'preview', lessonId: currentLesson.id }, '', newHash);
+            console.log(`🔗 [Exit] URL restaurada para: ${newHash}`);
+        }
+        
         goBack();
     }
 }
@@ -2532,10 +2523,10 @@ function setLayoutMode(mode) {
     
         console.log("✅ Lição carregada:", rawLesson.title);
     
-        // 3. NAVEGAÇÃO (centralizada)
+        // 3. NAVEGAÇÃO (centralizada) - COM LESSONID
         navigateTo('preview', {
             addToStack: addToHistory,
-            lessonId: rawLesson.id
+            lessonId: rawLesson.id 
         });
     
         toggleCloseExit('hide');
@@ -2578,8 +2569,10 @@ function setLayoutMode(mode) {
                 return;
             }
     
-            lessonDataCompiled = await compileLessonData(
+            lessonDataCompiled = compileLessonData(
                 loadedData.srtEn,
+                loadedData.srtPt,
+                loadedData.vocabData,
                 rawLesson.video
             );
         }
@@ -2596,55 +2589,59 @@ function setLayoutMode(mode) {
         renderPhasePagination();
         renderSegments('preview'); // Renderiza as frases da fase 0
     }
-
-    /**
-     * Função utilitária para traduzir texto usando a API não oficial do Google
-     * @param {string} text - Texto original
-     * @param {string} targetLang - Idioma alvo (ex: 'pt')
-     * @returns {Promise<string>} Tradução
-     */
-    async function translateText(text, targetLang = "pt") {
-        const url =
-          'https://translate.googleapis.com/translate_a/single' +
-          '?client=gtx' +
-          '&sl=auto' +
-          '&tl=' + encodeURIComponent(targetLang) +
-          '&dt=t' +
-          '&q=' + encodeURIComponent(text);
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Falha na requisição");
-        const data = await response.json();
-        let translation = "";
-        if (Array.isArray(data[0])) {
-            data[0].forEach(item => {
-                if (item[0]) translation += item[0];
-            });
-        }
-        return translation;
-    }
+  
     // --- Gerencia o download dos dados (AGORA COM CACHE) ---
     async function fetchLessonData(lesson) {
         console.log("📥 [Data] Iniciando download de dados da lição...");
     
+        // Helper para buscar Texto (SRT) via Cache
         const fetchTextCached = async (url) => {
-            const blobUrl = await cacheManager(url);
-            const res = await fetch(blobUrl);
-            return await res.text();
+            const blobUrl = await cacheManager(url); // 1. Pega URL do Cache
+            const res = await fetch(blobUrl);        // 2. Lê o conteúdo do Blob
+            return await res.text();                 // 3. Retorna texto
         };
     
-        // Apenas SRT Inglês
+        // Helper para buscar JSON (Vocab) via Cache
+        const fetchJsonCached = async (url) => {
+            const blobUrl = await cacheManager(url);
+            const res = await fetch(blobUrl);
+            return await res.json();                 // 3. Retorna Objeto JSON
+        };
+    
+        // 1. Prepara as promessas (Prioridade: Dados diretos > Cache > Download)
+        
+        // SRT Inglês
         let srtEnPromise = lesson['srt-en']; 
         if (!srtEnPromise && lesson['srt-en-url']) {
             srtEnPromise = fetchTextCached(lesson['srt-en-url']);
         }
+        
+        // SRT Português
+        let srtPtPromise = lesson['srt-pt'];
+        if (!srtPtPromise && lesson['srt-pt-url']) {
+            srtPtPromise = fetchTextCached(lesson['srt-pt-url']);
+        }
     
+        // Vocabulário (JSON)
+        let vocabPromise = lesson['data'];
+        if (!vocabPromise && lesson['pairs-url']) {
+            vocabPromise = fetchJsonCached(lesson['pairs-url']);
+        }
+    
+        // 2. Aguarda tudo baixar (Paralelo)
         try {
-            const srtEn = await Promise.resolve(srtEnPromise);
-            console.log("✅ [Data] SRT-EN carregado.");
-            return { srtEn }; // Retorna apenas o SRT inglês
+            const [srtEn, srtPt, vocabData] = await Promise.all([
+                Promise.resolve(srtEnPromise),
+                Promise.resolve(srtPtPromise),
+                Promise.resolve(vocabPromise)
+            ]);
+    
+            console.log("✅ [Data] Todos os dados carregados/cacheados com sucesso.");
+            return { srtEn, srtPt, vocabData };
     
         } catch (error) {
-            console.error("❌ Erro ao carregar SRT-EN:", error);
+            console.error("❌ Erro fatal ao carregar dados da lição:", error);
+            // Feedback visual simples se falhar tudo
             if(ui && ui.previewTitle) ui.previewTitle.innerText = "Erro de Conexão";
             return null;
         }
@@ -2820,128 +2817,60 @@ function setLayoutMode(mode) {
 
     // --- PARSER DE SRT ---
   
-    // Converte "00:00:02,500" para segundos (float) com proteção contra erros
+    // Converte "00:00:02,500" para segundos (float)
     function timeToSeconds(timeString) {
-        if (!timeString) return 0;
-        
-        const parts = timeString.trim().split(':');
-        
-        // Verifica se temos as 3 partes (Horas:Minutos:Segundos)
-        if (parts.length < 3) return 0;
-
-        // Troca vírgula por ponto para o parseFloat aceitar
+        const parts = timeString.split(':');
         const seconds = parts[2].replace(',', '.');
-        
         return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60) + parseFloat(seconds);
     }
     
     function parseSRT(srtContent) {
         if (!srtContent) return [];
-        
-        // Normaliza quebras de linha para evitar problemas com arquivos Windows/Mac
-        const normalizedContent = srtContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        
-        // Divide por blocos (linha vazia dupla ou simples dependendo da formatação)
+        const normalizedContent = srtContent.replace(/\r\n/g, '\n');
         const blocks = normalizedContent.trim().split(/\n\s*\n/);
         
         return blocks.map(block => {
             const lines = block.split('\n');
-            
-            // Um bloco válido precisa ter pelo menos ID, Tempo e Texto
             if (lines.length < 3) return null;
     
-            // Procura a linha que tem a seta "-->" (Geralmente é a linha 1, mas prevenimos se for a 2)
-            let timeLineIndex = lines.findIndex(l => l.includes('-->'));
-            
-            if (timeLineIndex === -1) return null; // Não achou tempo, ignora o bloco
-            
-            const times = lines[timeLineIndex].split(' --> ');
-            
-            // Proteção extra: se o split não gerou 2 tempos
-            if (times.length < 2) return null;
-
+            // Linha 1: "00:00:00,000 --> 00:00:02,000"
+            const times = lines[1].split(' --> ');
             const start = timeToSeconds(times[0]);
             const end = timeToSeconds(times[1]);
     
-            // O texto é tudo que vem depois da linha do tempo
-            // .join(' ') junta múltiplas linhas de texto em uma só
-            const text = lines.slice(timeLineIndex + 1).join(' ')
-                .replace(/<[^>]*>/g, '') // Remove tags HTML como <i>, <b>
-                .trim();
+            // Linha 2+: Texto
+            const text = lines.slice(2).join(' ').replace(/<[^>]*>/g, '').trim();
             
-            // Só retorna se tiver texto válido
-            if (!text) return null;
-
             return { text, start, end };
         }).filter(item => item !== null);
     }
     
-/**
- * Compila os dados da lição a partir do SRT-EN único
- * Traduz automaticamente frases e vocabulário
- */
-async function compileLessonData(srtEnContent, videoUrl) {
-    // Se já vier compilado (cache), retorna direto
-    if (Array.isArray(srtEnContent) && srtEnContent.length > 0 && srtEnContent[0].en && srtEnContent[0].id) {
-        return srtEnContent;
-    }
-
-    const enBlocks = parseSRT(srtEnContent);
-    const compiledData = [];
-
-    console.log(`🔄 [Compile] Iniciando tradução de ${enBlocks.length} frases...`);
-
-    for (let i = 0; i < enBlocks.length; i++) {
-        const block = enBlocks[i];
-        
-        // 1. Traduz a frase completa
-        const ptSentence = await translateText(block.text, 'pt');
-        
-        // 2. Extrai palavras da frase (remove pontuação, filtra vazias)
-        const words = block.text
-            .replace(/[.,?!":;]/g, '')
-            .split(/\s+/)
-            .filter(w => w.length > 0);
-        
-        // 3. Traduz cada palavra individualmente
-        const translatedWords = [];
-        for (const word of words) {
-            try {
-                const translated = await translateText(word, 'pt');
-                translatedWords.push(translated);
-            } catch (error) {
-                console.warn(`⚠️ Erro ao traduzir "${word}":`, error);
-                translatedWords.push(word); // Usa a palavra original se falhar
-            }
-            
-            // Delay para evitar bloqueio da API (100ms entre palavras)
-            await new Promise(resolve => setTimeout(resolve, 100));
+    // Agora ela não lê "lesson['srt-en']" direto, ela recebe os textos como argumentos
+    function compileLessonData(srtEnContent, srtPtContent, vocabList, videoUrl) {
+        // Se o vocabList já vier formatado como array final (lição antiga compilada), retorna ele
+        if (Array.isArray(vocabList) && vocabList.length > 0 && vocabList[0].en && vocabList[0].id) {
+            return vocabList;
         }
-        
-        // 4. Forma os pares de vocabulário
-        const vocabPairs = words.map((enWord, idx) => ({
-            en: enWord,
-            pt: translatedWords[idx] || enWord // Fallback se faltar tradução
-        }));
-
-        // 5. Monta o objeto final
-        compiledData.push({
-            id: i + 1,
-            en: block.text,
-            pt: ptSentence,
-            start: block.start,
-            end: block.end,
-            videoUrl: videoUrl,
-            vocab: vocabPairs
+    
+        const enBlocks = parseSRT(srtEnContent);
+        const ptBlocks = parseSRT(srtPtContent);
+        const vocabData = vocabList || [];
+    
+        return enBlocks.map((block, index) => {
+            const ptBlock = ptBlocks[index] || { text: "" };
+            const vocabObj = vocabData.find(v => v.vocab === (index + 1));
+    
+            return {
+                id: index + 1,
+                en: block.text,      
+                pt: ptBlock.text,    
+                start: block.start,  
+                end: block.end,      
+                videoUrl: videoUrl, 
+                vocab: vocabObj ? vocabObj.list : []
+            };
         });
-
-        // Pequeno delay para não sobrecarregar a API (opcional)
-        await new Promise(resolve => setTimeout(resolve, 100));
     }
-
-    console.log(`✅ [Compile] ${compiledData.length} frases traduzidas.`);
-    return compiledData;
-}
   
 // --- VALIDAÇÃO DE DADOS PARA TREINO ---
 function validateTrainingData() {
@@ -3288,13 +3217,13 @@ function validateTrainingData() {
         ui.matchWrapper.classList.remove('hidden');
         
         ui.display.innerHTML = `
-            Vocabulário na ordem correta
+            Conecte os pares da frase
             <i class="fa-solid fa-volume-high" id="replay-match-btn" 
                title="Ouvir frase completa" 
                style="margin-left:10px; cursor:pointer; color:var(--accent-color); font-size: 0.8em;">
             </i>
         `;
-        ui.prompt.innerText = "Conecte os pares da frase";
+        ui.prompt.innerText = "Vocabulário na ordem correta";
     
         document.getElementById('replay-match-btn').onclick = (e) => {
             e.stopPropagation();
@@ -3309,8 +3238,7 @@ function validateTrainingData() {
             selectedSide: null, 
             selectedElement: null, 
             matchesFound: 0,
-            expectedIndex: 0,  // ✅ MANTER ISSO
-            usedIds: []
+            expectedIndex: 0 
         };
     
         let pairs = currentTask.vocab; 
@@ -3364,41 +3292,13 @@ function validateTrainingData() {
         // --- SELEÇÃO DO INGLÊS (Lado Esquerdo) ---
         if (!matchState.selectedElement) {
             
-            // 🔥 CORREÇÃO: Valida se é a palavra esperada OU se é repetida
-            const expectedPair = currentTask.vocab[matchState.expectedIndex];
-            const clickedText = el.innerText.toLowerCase().trim();
-            const expectedText = expectedPair.en.toLowerCase().trim();
-            
-            // Verifica se o texto clicado bate com o esperado
-            const isCorrectWord = clickedText === expectedText;
-            
-            // Se NÃO for a palavra esperada, checa se é repetida
-            if (!isCorrectWord) {
-                // Checa se existe outra palavra idêntica já usada ou ainda disponível
-                const allSameWords = currentTask.vocab.filter(p => 
-                    p.en.toLowerCase().trim() === clickedText
-                );
-                
-                // Se só tem 1 ocorrência dessa palavra na frase inteira, é erro
-                if (allSameWords.length === 1) {
-                    triggerShake(el);
-                    return; // ❌ Bloqueia clique
-                }
-                
-                // Se tem múltiplas ocorrências, precisa checar se já usamos TODAS elas
-                const usedCount = matchState.usedIds.filter(usedId => {
-                    const usedPair = currentTask.vocab[usedId];
-                    return usedPair.en.toLowerCase().trim() === clickedText;
-                }).length;
-                
-                // Se já usamos todas as ocorrências dessa palavra, é erro
-                if (usedCount >= allSameWords.length) {
-                    triggerShake(el);
-                    return; // ❌ Bloqueia clique
-                }
+            // Validação de Ordem (Se clicar na palavra errada da sequência)
+            if (id !== matchState.expectedIndex) {
+                triggerShake(el);
+                return;
             }
-            
-            // ✅ Se chegou aqui: ou é a correta, ou é repetida válida
+    
+            // Seleciona
             matchState.selectedElement = el;
             matchState.selectedId = id;
             matchState.selectedSide = side;
@@ -3406,7 +3306,7 @@ function validateTrainingData() {
             
             speakText(el.innerText, 'en-US');
             
-            updateMatchBoardState();
+            updateMatchBoardState(); // 🔥 Bloqueia esquerda, Libera direita
             return;
         }
     
@@ -3414,14 +3314,13 @@ function validateTrainingData() {
         // (Neste ponto, só o lado direito está clicável, então não preciso checar 'side')
     
         if (matchState.selectedId === id) { 
-            // ✅ ACERTOU
+            // ACERTOU
             el.classList.add('matched');
             matchState.selectedElement.classList.remove('selected');
             matchState.selectedElement.classList.add('matched'); // Esconde/Desabilita o da esquerda
             
             matchState.matchesFound++;
-            matchState.usedIds.push(id); // 🔥 ADICIONA: marca esse ID como usado
-            matchState.expectedIndex++;   // 🔥 AVANÇA: para a próxima palavra da frase
+            matchState.expectedIndex++;
             
             // Reseta seleção
             matchState.selectedElement = null;
@@ -3436,7 +3335,7 @@ function validateTrainingData() {
                 });
             }
         } else { 
-            // ❌ ERROU
+            // ERROU
             el.classList.add('error');
             matchState.selectedElement.classList.add('error');
             
@@ -4449,17 +4348,20 @@ function validateTrainingData() {
         speakingResults = []; 
         trainingMode = 'speaking';
         currentTaskMode = 'speaking'; // Define o modo
+
+        // 🔥 Atualiza URL para manter o lessonId durante o treino
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState(
+                { view: 'training', lessonId: currentLesson.id, mode: currentTaskMode }, 
+                '', 
+                newHash
+            );
+        }
     
         // Ajustes visuais
         setLayoutMode('training');
         toggleCloseExit('show'); // Mostra o X
-      
-        // 🔥 Cria o checkpoint para o botão voltar do celular
-        setTaskHistoryMode('speaking');
-    
-        // ❌ REMOVA ESTAS LINHAS:
-        // history.pushState({ view: 'training' }, '', '#training');
-        // navigationStack.push('training'); 
     
         // Ativa a view visualmente, mas sem mexer no stack de navegação
         ui.views.forEach(v => v.classList.remove('active'));
@@ -4473,18 +4375,24 @@ function validateTrainingData() {
         initQuizLogic(phaseData); 
     }
     // Modo Video
-    function startVideoPratice() {
-        console.log('🎥 startVideoPratice iniciado');
+    function startVideoPractice() {
+        console.log('🎥 startVideoPractice iniciado');
         if (!currentLesson || currentLesson.data.length === 0) return;
     
         trainingMode = 'video';
         currentTaskMode = 'video'; // Define o modo
+
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState(
+                { view: 'training', lessonId: currentLesson.id, mode: currentTaskMode }, 
+                '', 
+                newHash
+            );
+        }
     
         setLayoutMode('training');
         toggleCloseExit('show');
-      
-        // 🔥 Cria o checkpoint para o botão voltar do celular
-        setTaskHistoryMode('speaking');
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
@@ -4495,17 +4403,28 @@ function validateTrainingData() {
         const phaseData = currentLesson.data.slice(start, end);
         initQuizLogic(phaseData); 
     }
-    // Modo Treino
-    function startTrainingMode() {
+    // Modo Treino (Exercícios Mentais)
+    function startTranslatePractice() {
         if (!validateTrainingData()) return;
-    
-        currentTaskMode = 'training';
-    
+        
+        // --- CORREÇÃO AQUI ---
+        trainingMode = 'full';       // <--- ADICIONE ESTA LINHA (Define que não é Video nem Speaking)
+        currentTaskMode = 'training'; 
+        // ---------------------
+
         console.log('[Task] training iniciado');
+
+        if (currentLesson?.id) {
+            const newHash = `#lesson-${currentLesson.id}`;
+            history.replaceState(
+                { view: 'training', lessonId: currentLesson.id, mode: currentTaskMode }, 
+                '', 
+                newHash
+            );
+        }
     
-        setLayoutMode('training');  // aqui é correto
+        setLayoutMode('training');
         toggleCloseExit('show');
-        setTaskHistoryMode('training');
     
         ui.views.forEach(v => v.classList.remove('active'));
         document.getElementById('view-training').classList.add('active');
@@ -4690,7 +4609,8 @@ function validateTrainingData() {
     // --- NAVEGAÇÃO MOBILE (CORRIGIDA PARA RESPEITAR LINKS) ---
     function initMobileNavigation() {
         // Define estado inicial se não houver
-        if (!history.state) {
+        // CORREÇÃO: Só força #home se não houver estado E não houver hash na URL
+        if (!history.state && !window.location.hash) {
             history.replaceState({ view: 'home' }, '', '#home');
         }
     
@@ -4699,26 +4619,27 @@ function validateTrainingData() {
             const state = event.state;
             console.log("📱 [Mobile Back] Estado:", state);
         
+            // Se estiver em modo tarefa, fecha e volta para preview
             if (currentTaskMode) {
                 console.log("🔙 Fechando tarefa via botão físico");
                 currentTaskMode = null;
                 clean();
                 toggleCloseExit('hide');
         
-                if (state && state.view) {
-                    navigateTo(state.view, { fromBack: true, lessonId: state.lessonId });
+                // Restaura para preview da lição
+                if (state?.lessonId) {
+                    openPreview(state.lessonId, false);
                 } else {
                     navigateTo('home', { fromBack: true });
                 }
                 return;
             }
         
-            if (state && state.view) {
-                if (state.view === 'preview' && state.lessonId) {
-                    openPreview(state.lessonId, false); // openPreview já chama navigateTo('preview')
-                } else {
-                    navigateTo(state.view, { fromBack: true });
-                }
+            // Navegação normal
+            if (state?.view === 'preview' && state?.lessonId) {
+                openPreview(state.lessonId, false);
+            } else if (state?.view) {
+                navigateTo(state.view, { fromBack: true, lessonId: state.lessonId });
             } else {
                 navigateTo('home', { fromBack: true });
             }
@@ -4889,34 +4810,29 @@ function validateTrainingData() {
     }
 
     // --- 5. INICIALIZA O APP ---
-    // Chame isso no final do script em vez de chamar renderLessonList() direto
-    // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
-    window.addEventListener('load', async () => {
-      const hash = location.hash;
-      if (!hash.startsWith('#lesson-')) return;
-  
-      while (!window.allLessons || allLessons.length === 0) {
-          await new Promise(r => setTimeout(r, 50));
-      }
-  
-      const id = hash.replace('#lesson-', '');
-  
-      navigateTo('home', { resetStack: true });
-      openPreview(id, true);
-  });
-
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         initMobileNavigation();
         loadUserPreferences();
-        initApp();
-      
+        
         // 1. Gera a estrutura de dados completa com IDs
         structuredData = generateDynamicIds(projectData);
     
         // 2. Renderiza os Estágios
         renderStageCards();  
     
-    	checkVideoFallbackCount();
+        checkVideoFallbackCount();
+        
+        // 🔥 3. CARREGA LIÇÕES PRIMEIRO
+        await initApp(); // Aguarda carregar allLessons
+        
+        // 🔥 4. DEPOIS processa o deep link
+        checkDeepLink();
+
+        // ✅ CORREÇÃO: Adicione isto para detectar mudanças manuais na URL
+        window.addEventListener('hashchange', () => {
+            console.log("🔗 [HashChange] Detectado:", window.location.hash);
+            checkDeepLink();
+        });
     });
     </script>
 </body>
