@@ -11,8 +11,8 @@ Agora, toda vez que o # da URL mudar (seja clicando em voltar, avançar ou colan
 ✅ popstate restaura o estado completo
 ✅ padronizei o nome dos mods
 function startSpeakingPractice()
-function startVideoPratice()
-function startTranslateMode()
+function startVideoPractice()
+function startTranslatePractice()
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -653,7 +653,7 @@ function startTranslateMode()
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v94-
+            PhraseCraft v94
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -794,7 +794,7 @@ function startTranslateMode()
 
                 <div class="train-btn-container">
     
-                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPratice()">
+                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPractice()">
                         <i class="fa-solid fa-video"></i>
                     </button>
                 
@@ -4375,8 +4375,8 @@ function validateTrainingData() {
         initQuizLogic(phaseData); 
     }
     // Modo Video
-    function startVideoPratice() {
-        console.log('🎥 startVideoPratice iniciado');
+    function startVideoPractice() {
+        console.log('🎥 startVideoPractice iniciado');
         if (!currentLesson || currentLesson.data.length === 0) return;
     
         trainingMode = 'video';
@@ -4403,11 +4403,15 @@ function validateTrainingData() {
         const phaseData = currentLesson.data.slice(start, end);
         initQuizLogic(phaseData); 
     }
-    // Modo Treino
+    // Modo Treino (Exercícios Mentais)
     function startTranslatePractice() {
         if (!validateTrainingData()) return;
-    
-        currentTaskMode = 'training';
+        
+        // --- CORREÇÃO AQUI ---
+        trainingMode = 'full';       // <--- ADICIONE ESTA LINHA (Define que não é Video nem Speaking)
+        currentTaskMode = 'training'; 
+        // ---------------------
+
         console.log('[Task] training iniciado');
 
         if (currentLesson?.id) {
@@ -4419,7 +4423,7 @@ function validateTrainingData() {
             );
         }
     
-        setLayoutMode('training');  // aqui é correto
+        setLayoutMode('training');
         toggleCloseExit('show');
     
         ui.views.forEach(v => v.classList.remove('active'));
