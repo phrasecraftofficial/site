@@ -1,6 +1,8 @@
 <!-- 94
 Resumo das mudanças:
 
+Agora, toda vez que o # da URL mudar (seja clicando em voltar, avançar ou colando um novo link na barra de endereço), o navegador avisa o seu código, e a função checkDeepLink() é executada novamente para abrir a tela correta.
+
 ✅ navigateTo agora escreve #lesson-{id} na URL
 ✅ openPreview passa o lessonId para o navegador
 ✅ goBack preserva o ID ao voltar
@@ -651,7 +653,7 @@ function startTranslateMode()
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v94
+            PhraseCraft v94-
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -4603,7 +4605,8 @@ function validateTrainingData() {
     // --- NAVEGAÇÃO MOBILE (CORRIGIDA PARA RESPEITAR LINKS) ---
     function initMobileNavigation() {
         // Define estado inicial se não houver
-        if (!history.state) {
+        // CORREÇÃO: Só força #home se não houver estado E não houver hash na URL
+        if (!history.state && !window.location.hash) {
             history.replaceState({ view: 'home' }, '', '#home');
         }
     
@@ -4803,34 +4806,29 @@ function validateTrainingData() {
     }
 
     // --- 5. INICIALIZA O APP ---
-    // Chame isso no final do script em vez de chamar renderLessonList() direto
-    // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
-    window.addEventListener('load', async () => {
-      const hash = location.hash;
-      if (!hash.startsWith('#lesson-')) return;
-  
-      while (!window.allLessons || allLessons.length === 0) {
-          await new Promise(r => setTimeout(r, 50));
-      }
-  
-      const id = hash.replace('#lesson-', '');
-  
-      navigateTo('home', { resetStack: true });
-      openPreview(id, true);
-  });
-
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         initMobileNavigation();
         loadUserPreferences();
-        initApp();
-      
+        
         // 1. Gera a estrutura de dados completa com IDs
         structuredData = generateDynamicIds(projectData);
     
         // 2. Renderiza os Estágios
         renderStageCards();  
     
-    	checkVideoFallbackCount();
+        checkVideoFallbackCount();
+        
+        // 🔥 3. CARREGA LIÇÕES PRIMEIRO
+        await initApp(); // Aguarda carregar allLessons
+        
+        // 🔥 4. DEPOIS processa o deep link
+        checkDeepLink();
+
+        // ✅ CORREÇÃO: Adicione isto para detectar mudanças manuais na URL
+        window.addEventListener('hashchange', () => {
+            console.log("🔗 [HashChange] Detectado:", window.location.hash);
+            checkDeepLink();
+        });
     });
     </script>
 </body>
