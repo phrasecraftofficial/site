@@ -651,7 +651,7 @@ function startTranslateMode()
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v94
+            PhraseCraft v94-
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -4821,6 +4821,12 @@ function validateTrainingData() {
         
         // 🔥 4. DEPOIS processa o deep link
         checkDeepLink();
+
+        // ✅ CORREÇÃO: Adicione isto para detectar mudanças manuais na URL
+        window.addEventListener('hashchange', () => {
+            console.log("🔗 [HashChange] Detectado:", window.location.hash);
+            checkDeepLink();
+        });
     });
     </script>
 </body>
