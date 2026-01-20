@@ -651,7 +651,7 @@ function startTranslateMode()
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v94-
+            PhraseCraft v94
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -4603,7 +4603,8 @@ function validateTrainingData() {
     // --- NAVEGAÇÃO MOBILE (CORRIGIDA PARA RESPEITAR LINKS) ---
     function initMobileNavigation() {
         // Define estado inicial se não houver
-        if (!history.state) {
+        // CORREÇÃO: Só força #home se não houver estado E não houver hash na URL
+        if (!history.state && !window.location.hash) {
             history.replaceState({ view: 'home' }, '', '#home');
         }
     
