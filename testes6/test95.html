@@ -1,18 +1,8 @@
 <!-- 95
-Resumo das mudanças:
-
-Agora, toda vez que o # da URL mudar (seja clicando em voltar, avançar ou colando um novo link na barra de endereço), o navegador avisa o seu código, e a função checkDeepLink() é executada novamente para abrir a tela correta.
-
-✅ navigateTo agora escreve #lesson-{id} na URL
-✅ openPreview passa o lessonId para o navegador
-✅ goBack preserva o ID ao voltar
-✅ toggleCloseExit restaura a URL ao fechar treino
-✅ Funções de treino mantêm a URL correta
-✅ popstate restaura o estado completo
-✅ padronizei o nome dos mods
-function startSpeakingPractice()
-function startVideoPractice()
-function startTranslatePractice()
+Correções necessárias para garantir que:
+✅ Apenas um áudio toque por vez
+✅ O vídeo pause quando necessário
+✅ A tarefa avance corretamente após todos os feedbacks
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -4471,28 +4461,41 @@ function validateTrainingData() {
         ui.scoreDisplay.innerText = score;
         isVideoTaskComplete = true; 
     
-        // 🔥 CRÍTICO: Para TUDO antes de tocar o feedback final
-        clean(); // Para TTS, STT e pausa o vídeo
+        // 🔥 CANCELAMENTO SELETIVO (NÃO USA CLEAN)
+        // 1. Para apenas o TTS (fala das palavras)
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
         
-        // Aguarda 300ms para garantir que tudo parou
+        // 2. Para o loop do vídeo (mas NÃO pausa o player)
+        if (videoTimer) {
+            clearInterval(videoTimer);
+            videoTimer = null;
+        }
+        
+        // 3. Aguarda 300ms e toca o trecho final
         setTimeout(() => {
             if(ytPlayer && ytPlayer.seekTo) {
-                ytPlayer.seekTo(currentTask.start);
-                ytPlayer.playVideo();
+                // 🔥 IMPORTANTE: Pausa ANTES de fazer seekTo para evitar "pulo visual"
+                ytPlayer.pauseVideo();
                 
-                let finalCheck = setInterval(() => {
-                    if(ytPlayer.getCurrentTime() >= currentTask.end) {
-                        ytPlayer.pauseVideo();
-                        clearInterval(finalCheck);
-                        
-                        // 🔥 NOVO: Aguarda mais 500ms antes de avançar (feedback visual)
-                        setTimeout(nextTask, 500); 
-                    }
+                // Pequeno delay para garantir que a pausa foi processada
+                setTimeout(() => {
+                    ytPlayer.seekTo(currentTask.start);
+                    ytPlayer.playVideo();
+                    
+                    let finalCheck = setInterval(() => {
+                        if(ytPlayer.getCurrentTime() >= currentTask.end) {
+                            ytPlayer.pauseVideo();
+                            clearInterval(finalCheck);
+                            setTimeout(nextTask, 500); 
+                        }
+                    }, 100);
                 }, 100);
             } else {
                 setTimeout(nextTask, 1500);
             }
-        }, 300); // Delay inicial para garantir que clean() finalizou
+        }, 300);
     }
   
     // Função chamada automaticamente pela API quando pronta
@@ -4514,10 +4517,9 @@ function validateTrainingData() {
     function playSegment(start, end) {
         if (!ytPlayer || !ytPlayer.seekTo) return;
     
-        // Se a tarefa já foi concluída, não faz loop, toca só uma vez
+        // 🔥 NOVO: Se a tarefa já acabou, não reinicia o loop
         if (isVideoTaskComplete) {
-            ytPlayer.seekTo(start);
-            ytPlayer.playVideo();
+            console.log('⏭️ [playSegment] Tarefa concluída, ignorando loop');
             return; 
         }
     
@@ -4531,13 +4533,10 @@ function validateTrainingData() {
             
             const current = ytPlayer.getCurrentTime();
             
-            // Chegou ao fim do trecho?
             if (current >= end) {
                 if (videoLoopEnabled && !isVideoTaskComplete) {
-                    // Se Loop ON e não acabou: Volta pro início
                     ytPlayer.seekTo(start);
                 } else {
-                    // Se Loop OFF ou acabou: Pausa
                     ytPlayer.pauseVideo();
                     clearInterval(videoTimer);
                 }
