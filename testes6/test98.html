@@ -1,5 +1,7 @@
 <!-- 98
 cria lista de partidas
+não mostra a propria partida
+mostra status aguardando oponente
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -1370,6 +1372,7 @@ const projectData = [
     let currentView = null;
     let currentTaskMode = null; // training | speaking | video | null
     const MENU_VIEWS = ['home', 'you', 'duels', 'path'];
+    let intendedAction = null; // Pode ser 'create_duel' ou 'view_duels'
 
     // 0 = primeira página (1-5)
     let currentPhase = 0;
@@ -1728,8 +1731,18 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             
             console.log("✅ Login realizado!");
             
-            // Redireciona para o perfil
-            navigateTo('you');
+            // 🔥 NOVO: Roteador de Intenções após o login
+            if (intendedAction === 'create_duel') {
+                intendedAction = null; // Limpa a memória
+                startDuelMode();       // Retoma a criação da partida automaticamente!
+                
+            } else if (intendedAction === 'view_duels') {
+                intendedAction = null; // Limpa a memória
+                navigateTo('duels');   // Vai para o lobby pesquisar partidas
+                
+            } else {
+                navigateTo('you');     // Fluxo padrão normal
+            }
 
         } catch (error) {
             console.error("Erro no login:", error);
@@ -1941,8 +1954,9 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         if (view === 'duels') {
             const user = await checkAuthStatus();
             if (!user) {
-                console.log("🔒 Acesso negado aos Duelos. Redirecionando para You...");
-                view = 'you'; // Intercepta e muda a intenção para "you"
+                console.log("🔒 Acesso negado aos Duelos. Redirecionando para Login...");
+                intendedAction = 'view_duels'; // Salva a vontade do usuário
+                view = 'login'; // Manda direto pro login em vez do "you"
             }
         }
         
@@ -5281,12 +5295,13 @@ function validateTrainingData() {
             return;
         }
 
-        // 🔥 NOVO: Bloqueio de acesso
+        // 🔥 Bloqueio de acesso
         const user = await checkAuthStatus();
         if (!user) {
-            console.log("🔒 Acesso negado ao Multi. Redirecionando para You...");
-            navigateTo('you');
-            return; // Interrompe a execução aqui
+            console.log("🔒 Acesso negado ao Multi. Redirecionando para Login...");
+            intendedAction = 'create_duel'; // Salva intenção: Criar a partida ao logar!
+            navigateTo('login');
+            return; 
         }
 
         // Navega para a seção de duelos visualmente e ajusta layout
@@ -5341,6 +5356,7 @@ function validateTrainingData() {
     // --- LÓGICA DO LOBBY DE DUELOS (Player 2) ---
 
     // 1. Busca as partidas no servidor
+    // 1. Busca as partidas no servidor
     async function loadDuelsLobby() {
         const duelsContainer = document.getElementById('duels');
         if (!duelsContainer) return;
@@ -5353,14 +5369,41 @@ function validateTrainingData() {
             </div>
         `;
 
+        // Manipula o subtítulo original do HTML ("Desafie amigos...")
+        const subtitleEl = document.querySelector('#view-duels p');
+        if (subtitleEl) {
+            subtitleEl.innerHTML = ''; // Limpa o texto original
+            subtitleEl.style.display = 'none'; // Esconde por padrão
+        }
+
         try {
-            // Busca na coleção apenas documentos onde status é 'waiting'
+            const user = await checkAuthStatus();
+            
+            // Verifica o status do HOST (se ele criou alguma partida)
+            const myActiveMatch = await hostMultiStatus();
+
+            // Se ele for o dono de uma partida em espera, mostra o texto de status
+            if (myActiveMatch && subtitleEl) {
+                subtitleEl.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Sua partida está aberta! Aguardando oponente...`;
+                subtitleEl.style.color = "var(--accent-color)";
+                subtitleEl.style.fontWeight = "bold";
+                subtitleEl.style.display = 'block';
+            }
+
+            // Busca na coleção TODAS as partidas onde status é 'waiting'
             const response = await duelsManager.read(null, [
                 Appwrite.Query.equal('status', 'waiting'),
                 Appwrite.Query.orderDesc('$createdAt')
             ]);
             
-            renderDuelsList(response.documents);
+            // Filtra a lista: Oculta as partidas onde o Host sou eu mesmo
+            let availableMatches = response.documents;
+            if (user) {
+                availableMatches = availableMatches.filter(match => match.hostId !== user.$id);
+            }
+            
+            // Manda renderizar apenas as partidas dos OUTROS
+            renderDuelsList(availableMatches);
             
         } catch (error) {
             console.error("❌ Erro ao buscar duelos:", error);
@@ -5398,6 +5441,29 @@ function validateTrainingData() {
             
             duelsContainer.appendChild(card);
         });
+    }
+
+    // Verifica se o usuário atual é host de uma partida em espera
+    async function hostMultiStatus() {
+        try {
+            const user = await checkAuthStatus();
+            if (!user) return null;
+
+            // Busca por 1 partida onde eu sou o host e está aguardando
+            const response = await duelsManager.read(null, [
+                Appwrite.Query.equal('hostId', user.$id),
+                Appwrite.Query.equal('status', 'waiting'),
+                Appwrite.Query.limit(1)
+            ]);
+
+            if (response.documents.length > 0) {
+                return response.documents[0]; // Retorna a partida ativa dele
+            }
+            return null; // Não tem partida ativa
+        } catch (error) {
+            console.error("Erro ao verificar status do host:", error);
+            return null;
+        }
     }
     
     // --- 5. INICIALIZA O APP ---
