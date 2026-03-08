@@ -1,7 +1,24 @@
-<!-- 98
-cria lista de partidas
-não mostra a propria partida
-mostra status aguardando oponente
+<!-- 99
+**Como funciona o fluxo:**
+
+Host entra em Duelos
+    → loadDuelsLobby() → startDuelsRealtime() ← escuta a coleção
+
+Host cria partida
+    → documento criado → myActiveDuelId = newMatch.$id
+    → Realtime dispara → refreshDuelsList() no Opponent → card aparece
+
+Host sai de Duelos (navigateTo para qualquer outra tela)
+    → cleanupActiveDuel() → documento deletado
+    → Realtime dispara → refreshDuelsList() no Opponent → card some
+
+A ideia é centralizar tudo em um gerenciador de estado do duelo com 3 responsabilidades:
+
+cleanupActiveDuel() — deleta o documento se o usuário for o host
+startDuelsRealtime() — escuta a coleção e atualiza o lobby automaticamente
+stopDuelsRealtime() — limpa a assinatura ao sair
+
+Os hooks de entrada/saída ficam dentro do navigateTo, que já é o guardião de rotas.
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -666,7 +683,7 @@ mostra status aguardando oponente
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v98
+            PhraseCraft v99
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1372,6 +1389,10 @@ const projectData = [
     let currentView = null;
     let currentTaskMode = null; // training | speaking | video | null
     const MENU_VIEWS = ['home', 'you', 'duels', 'path'];
+    
+    // --- ESTADO DO DUELO ---
+    let myActiveDuelId = null;      // ID do documento que EU criei como host
+    let duelsRealtimeUnsub = null;  // Função de cancelamento da assinatura realtime
     let intendedAction = null; // Pode ser 'create_duel' ou 'view_duels'
 
     // 0 = primeira página (1-5)
@@ -1950,20 +1971,26 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     // --- CORREÇÃO DA NAVEGAÇÃO ---
     async function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
         
+        // 🔥 Hook de saída: limpa recursos ao sair de duelos
+        if (currentView === 'duels' && view !== 'duels') {
+            cleanupActiveDuel();
+            stopDuelsRealtime();
+        }
+    
         // 1. 🔥 PROTEÇÃO DE ROTA (Executa antes de mexer no visual)
         if (view === 'duels') {
             const user = await checkAuthStatus();
             if (!user) {
                 console.log("🔒 Acesso negado aos Duelos. Redirecionando para Login...");
-                intendedAction = 'view_duels'; // Salva a vontade do usuário
-                view = 'login'; // Manda direto pro login em vez do "you"
+                intendedAction = 'view_duels';
+                view = 'login';
             }
         }
         
         if (view === 'you') {
             const user = await checkAuthStatus();
             if (!user) {
-                view = 'login'; // Se ia para "you" e não tá logado, manda pro login
+                view = 'login';
             } else {
                 loadUserProfile(user);
             }
@@ -5337,6 +5364,9 @@ function validateTrainingData() {
             // 2. CRIA O DOCUMENTO
             const newMatch = await duelsManager.create(initialDuelData);
             console.log("✅ [CRUD] Partida criada com sucesso! ID do Doc:", newMatch.$id);
+            
+            // 🔥 Salva para poder deletar ao sair
+            myActiveDuelId = newMatch.$id; 
 
             // 3. INICIA O REALTIME (ESCUTA O DOCUMENTO ESPECÍFICO)
             console.log(`📡 [Realtime] Escutando alterações no documento: ${newMatch.$id}`);
@@ -5356,57 +5386,39 @@ function validateTrainingData() {
     // --- LÓGICA DO LOBBY DE DUELOS (Player 2) ---
 
     // 1. Busca as partidas no servidor
-    // 1. Busca as partidas no servidor
     async function loadDuelsLobby() {
         const duelsContainer = document.getElementById('duels');
         if (!duelsContainer) return;
-
-        // Feedback visual de carregamento
+    
         duelsContainer.innerHTML = `
             <div style="text-align: center; padding: 20px; color: #888;">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color); margin-bottom: 10px;"></i>
                 <p>Buscando partidas abertas...</p>
             </div>
         `;
-
-        // Manipula o subtítulo original do HTML ("Desafie amigos...")
+    
         const subtitleEl = document.querySelector('#view-duels p');
-        if (subtitleEl) {
-            subtitleEl.innerHTML = ''; // Limpa o texto original
-            subtitleEl.style.display = 'none'; // Esconde por padrão
-        }
-
+        if (subtitleEl) subtitleEl.style.display = 'none';
+    
         try {
             const user = await checkAuthStatus();
-            
-            // Verifica o status do HOST (se ele criou alguma partida)
             const myActiveMatch = await hostMultiStatus();
-
-            // Se ele for o dono de uma partida em espera, mostra o texto de status
+    
             if (myActiveMatch && subtitleEl) {
                 subtitleEl.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Sua partida está aberta! Aguardando oponente...`;
-                subtitleEl.style.color = "var(--accent-color)";
-                subtitleEl.style.fontWeight = "bold";
+                subtitleEl.style.color = 'var(--accent-color)';
+                subtitleEl.style.fontWeight = 'bold';
                 subtitleEl.style.display = 'block';
             }
-
-            // Busca na coleção TODAS as partidas onde status é 'waiting'
-            const response = await duelsManager.read(null, [
-                Appwrite.Query.equal('status', 'waiting'),
-                Appwrite.Query.orderDesc('$createdAt')
-            ]);
-            
-            // Filtra a lista: Oculta as partidas onde o Host sou eu mesmo
-            let availableMatches = response.documents;
-            if (user) {
-                availableMatches = availableMatches.filter(match => match.hostId !== user.$id);
-            }
-            
-            // Manda renderizar apenas as partidas dos OUTROS
-            renderDuelsList(availableMatches);
-            
+    
+            // Primeira carga da lista
+            await refreshDuelsList();
+    
+            // 🔥 Inicia o Realtime para atualizações automáticas
+            startDuelsRealtime();
+    
         } catch (error) {
-            console.error("❌ Erro ao buscar duelos:", error);
+            console.error('❌ Erro ao carregar lobby:', error);
             duelsContainer.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar as partidas.</p>';
         }
     }
@@ -5483,6 +5495,80 @@ function validateTrainingData() {
         openPreview(id, true);
     });
 
+    // ============================================================
+    // GERENCIADOR DE ESTADO DO DUELO
+    // ============================================================
+    
+    /** Deleta o documento da partida se eu for o host */
+    async function cleanupActiveDuel() {
+        if (!myActiveDuelId) return;
+    
+        const idToDelete = myActiveDuelId;
+        myActiveDuelId = null; // Zera ANTES para evitar duplo delete em chamadas paralelas
+    
+        try {
+            await duelsManager.delete(idToDelete);
+            console.log('🗑️ [Duel] Partida deletada:', idToDelete);
+        } catch (e) {
+            // Ignora "document not found" — já foi deletado (ex: partida iniciada)
+            if (!e.message?.includes('not found')) {
+                console.error('❌ [Duel] Erro ao deletar partida:', e);
+            }
+        }
+    }
+    
+    /** Inicia assinatura Realtime na coleção de duelos (lobby) */
+    function startDuelsRealtime() {
+        if (duelsRealtimeUnsub) return; // Já está inscrito
+    
+        const channel = `databases.${DATABASE_ID}.collections.${DUELS_COLLECTION_ID}.documents`;
+    
+        duelsRealtimeUnsub = client.subscribe(channel, (response) => {
+            console.log('📡 [Lobby] Evento realtime:', response.events);
+    
+            // Só atualiza se o usuário ainda estiver na tela de duelos
+            if (currentView === 'duels') {
+                refreshDuelsList(); // Re-renderiza sem reiniciar a assinatura
+            }
+        });
+    
+        console.log('📡 [Duel] Realtime do lobby iniciado');
+    }
+    
+    /** Para a assinatura Realtime do lobby */
+    function stopDuelsRealtime() {
+        if (duelsRealtimeUnsub) {
+            duelsRealtimeUnsub();
+            duelsRealtimeUnsub = null;
+            console.log('🛑 [Duel] Realtime do lobby parado');
+        }
+    }
+    
+    /** 
+     * Só busca e re-renderiza a lista (sem re-assinar Realtime).
+     * Chamada pelo Realtime quando chega um evento.
+     */
+    async function refreshDuelsList() {
+        try {
+            const user = await checkAuthStatus();
+    
+            const response = await duelsManager.read(null, [
+                Appwrite.Query.equal('status', 'waiting'),
+                Appwrite.Query.orderDesc('$createdAt')
+            ]);
+    
+            let available = response.documents;
+            if (user) {
+                available = available.filter(match => match.hostId !== user.$id);
+            }
+    
+            renderDuelsList(available);
+    
+        } catch (error) {
+            console.error('❌ [Duel] Erro ao atualizar lista:', error);
+        }
+    }
+    
     document.addEventListener('DOMContentLoaded', () => {
         initMobileNavigation();
         loadUserPreferences();
