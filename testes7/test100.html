@@ -1,24 +1,5 @@
 <!-- 99
-**Como funciona o fluxo:**
-
-Host entra em Duelos
-    → loadDuelsLobby() → startDuelsRealtime() ← escuta a coleção
-
-Host cria partida
-    → documento criado → myActiveDuelId = newMatch.$id
-    → Realtime dispara → refreshDuelsList() no Opponent → card aparece
-
-Host sai de Duelos (navigateTo para qualquer outra tela)
-    → cleanupActiveDuel() → documento deletado
-    → Realtime dispara → refreshDuelsList() no Opponent → card some
-
-A ideia é centralizar tudo em um gerenciador de estado do duelo com 3 responsabilidades:
-
-cleanupActiveDuel() — deleta o documento se o usuário for o host
-startDuelsRealtime() — escuta a coleção e atualiza o lobby automaticamente
-stopDuelsRealtime() — limpa a assinatura ao sair
-
-Os hooks de entrada/saída ficam dentro do navigateTo, que já é o guardião de rotas.
+navegação para preview multi
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -838,6 +819,12 @@ Os hooks de entrada/saída ficam dentro do navigateTo, que já é o guardião de
                 </div>
             </section>
 
+            <section id="view-previewMulti" class="view-section">
+                <div style="text-align: center; padding: 40px 20px;">
+                    <p style="color: var(--text-secondary);">Preview do Duelo</p>
+                </div>
+            </section>
+            
             <section id="view-game-mode" class="view-section">
                 <div style="text-align: center; padding: 40px 20px;">
                     <span class="material-symbols-outlined" style="font-size: 4rem; color: var(--accent-color); margin-bottom: 20px;">
@@ -5438,7 +5425,10 @@ function validateTrainingData() {
             card.className = 'lesson-card'; // Reaproveita o CSS da Home
             
             // Por enquanto, apenas loga o ID da partida ao clicar (como pedido)
-            card.onclick = () => console.log('➡️ Clicou para entrar na partida:', duel.$id);
+            card.onclick = () => {
+                console.log('➡️ Clicou para entrar na partida:', duel.$id);
+                navigateTo('previewMulti');
+            };
 
             card.innerHTML = `
                 <img src="${duel.thumbFileId || 'https://placehold.co/200x150?text=No+Image'}" class="lesson-thumb" alt="${duel.lessonName}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
