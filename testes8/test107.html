@@ -5472,13 +5472,13 @@ function validateTrainingData() {
             if (payload.status === 'playing' && payload.opponentId) {
                 console.log('⚔️ [Host] Oponente encontrado! Entrando na partida...');
                 activeDuelDoc = payload;
-        
+            
                 navigateTo('duel-match');
-                renderDuelSection();
                 toggleCloseExit('show');
                 setLayoutMode('training');
-        
-                renderDuelSection(activeDuelDoc);
+            
+                // 🔥 CORREÇÃO: Chama apenas uma vez passando o payload correto
+                renderDuelSection(payload); 
             }
         }, newMatch.$id);
 
@@ -5765,6 +5765,12 @@ function validateTrainingData() {
 
     async function joinMatch(duel) {
         console.log('🤝 [joinMatch] Entrando na partida:', duel.$id);
+        
+        // 🔥 Garante que o oponente tenha a lição carregada para saber o vídeo
+        const rawLesson = allLessons.find(l => l.title === duel.lessonName);
+        if (rawLesson) {
+            currentLesson = rawLesson; 
+        }
         activeDuelDoc = duel;
     
         // 1. LIMPEZA: Cancela a assinatura do preview antes de criar a do jogo
@@ -5812,32 +5818,21 @@ function validateTrainingData() {
      * Prepara o vídeo, placar e os containers de palavras.
      */
     async function renderDuelSection(duelDoc) {
-        console.log("🎨 [Multi] Renderizando seção de duelo...");
+        if (!duelDoc) return;
+        console.log("🎨 [Multi] Renderizando seção de duelo para o documento:", duelDoc.$id);
     
-        // 1. Alterna visibilidade: Esconde o "Conectando" e mostra o "Game Area"
+        // 1. Visibilidade
         document.getElementById('multi-waiting-area').classList.add('hidden');
-        const gameArea = document.getElementById('multi-game-area');
-        gameArea.classList.remove('hidden');
+        document.getElementById('multi-game-area').classList.remove('hidden');
     
-        // 2. Atualiza Placar e Status Inicial
-        document.getElementById('multi-score-you').innerText = "0";
-        document.getElementById('multi-score-rival').innerText = "0";
-        
-        const feedbackEl = document.getElementById('multi-video-feedback');
-        feedbackEl.innerText = "Preparando frase...";
+        // 2. Título e Status
+        document.getElementById('duel-match-title').innerText = duelDoc.lessonName;
+        document.getElementById('duel-match-status').innerText = `Partida: ${duelDoc.$id}`;
     
-        // 3. Limpa as zonas de palavras
-        const zone = document.getElementById('multi-answer-zone');
-        const bank = document.getElementById('multi-word-bank');
-        zone.innerHTML = '';
-        bank.innerHTML = '';
-        zone.style.borderColor = '#444';
-    
-        // 4. Inicializa o Player de Vídeo (se ainda não existir)
+        // 3. Preparação do Player
         const videoId = getYoutubeId(currentLesson.video);
         const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
     
-        // Aguarda o elemento estar pronto no DOM antes de injetar o Player
         await waitForElement('multi-yt-player');
     
         if (!window.ytPlayerMulti) {
@@ -5850,19 +5845,60 @@ function validateTrainingData() {
                 events: {
                     'onReady': (e) => {
                         e.target.setPlaybackQuality(userQuality);
-                        console.log("✅ [Multi] Player pronto.");
                     }
                 }
             });
         } else {
-            // Se o player já existe, apenas carrega o vídeo da lição atual
-            window.ytPlayerMulti.cueVideoById({
+            window.ytPlayerMulti.loadVideoById({
                 videoId: videoId,
                 suggestedQuality: userQuality
             });
         }
     
-        console.log("✅ [Multi] Layout renderizado para o duelo:", duelDoc.$id);
+        // 4. 🔥 RENDERIZAÇÃO DE PALAVRAS (Fora do onReady para garantir execução imediata)
+        if (duelDoc.currentSentenceWords) {
+            console.log("📝 Injetando palavras na interface:", duelDoc.currentSentenceWords);
+            renderMultiWords(duelDoc.currentSentenceWords);
+        } else {
+            console.warn("⚠️ O documento não possui 'currentSentenceWords'");
+        }
+    }
+
+    /**
+     * Renderiza as palavras da frase no modo multiplayer.
+     * @param {string} sentenceText - A frase completa vinda do Appwrite.
+     */
+    function renderMultiWords(sentenceText) {
+        const bank = document.getElementById('multi-word-bank');
+        const zone = document.getElementById('multi-answer-zone');
+        
+        if (!bank || !zone) return;
+    
+        bank.innerHTML = '';
+        zone.innerHTML = '';
+    
+        // 🔥 Limpeza rigorosa para evitar tags vazias
+        const allWords = sentenceText.trim().split(/\s+/).filter(w => w.length > 0);
+        
+        if (allWords.length === 0) return;
+    
+        // Embaralha
+        const shuffledWords = [...allWords].sort(() => Math.random() - 0.5);
+    
+        shuffledWords.forEach(word => {
+            const span = document.createElement('span');
+            span.className = 'word-tag'; // Usa sua classe CSS existente
+            span.innerText = word;
+            
+            span.onclick = () => {
+                // Lógica de envio ao Appwrite virá aqui
+                console.log("Clicou em:", word);
+            };
+    
+            bank.appendChild(span);
+        });
+    
+        console.log(`🎲 [Multi] ${allWords.length} palavras renderizadas.`);
     }
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
