@@ -1126,7 +1126,7 @@ proxima frase, etc
                     </div>
                 
                     <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
-                        <button class="check-btn" onclick="replayMultiVideoSegment()" title="Tocar trecho uma vez">
+                        <button class="check-btn" onclick="replayDuelSegment()" title="Tocar trecho uma vez">
                             <i class="fa-solid fa-play"></i> Tocar
                         </button>
                         
@@ -5766,41 +5766,60 @@ function validateTrainingData() {
     async function joinMatch(duel) {
         console.log('🤝 [joinMatch] Entrando na partida:', duel.$id);
         
-        // 🔥 Garante que o oponente tenha a lição carregada para saber o vídeo
-        const rawLesson = allLessons.find(l => l.title === duel.lessonName);
-        if (rawLesson) {
-            currentLesson = rawLesson; 
-        }
         activeDuelDoc = duel;
     
-        // 1. LIMPEZA: Cancela a assinatura do preview antes de criar a do jogo
+        // 1. Cancela assinatura anterior
         if (activeDuelUnsub) {
             activeDuelUnsub();
             activeDuelUnsub = null;
         }
-
-        // ✅ Avisa o host: atualiza o documento com opponentId e status "playing"
+    
+        // 2. Avisa o host
         const user = await checkAuthStatus();
         await duelsManager.update(duel.$id, {
             opponentId: user.$id,
             status: 'playing'
         });
-
+    
         localStorage.setItem('phrasecraft_active_duel', duel.$id);
     
-        // 2. NOVA INSCRIÇÃO COM PROTEÇÃO DE DELEÇÃO
+        // 3. Busca e COMPILA os dados da lição (igual ao host faz)
+        const rawLesson = allLessons.find(l => l.title === duel.lessonName);
+        if (rawLesson) {
+            // Verifica se já tem dados compilados no cache
+            if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
+                console.log('✅ [joinMatch] Usando dados compilados do cache.');
+            } else {
+                console.log('⏳ [joinMatch] Compilando dados da lição para o oponente...');
+                const loadedData = await fetchLessonData(rawLesson);
+                if (loadedData) {
+                    const compiled = compileLessonData(
+                        loadedData.srtEn,
+                        loadedData.srtPt,
+                        loadedData.vocabData,
+                        rawLesson.video
+                    );
+                    currentLesson = { ...rawLesson, data: compiled };
+                    console.log('✅ [joinMatch] currentLesson.data compilado:', currentLesson.data.length, 'frases');
+                } else {
+                    console.error('❌ [joinMatch] Falha ao carregar dados da lição.');
+                    currentLesson = rawLesson; // fallback
+                }
+            }
+        }
+    
+        // 4. Assinatura Realtime com proteção de deleção
         duelsManager.subscribe((payload, events) => {
             console.log('🔄 [Opponent] Partida atualizada:', payload);
             
-            // Verifica se o Host deletou/encerrou a partida
             const isDeleted = events.some(e => e.includes('.delete'));
             if (isDeleted) {
                 console.log('🗑️ [Opponent] O Host encerrou a partida.');
                 alert('⚔️ O Host encerrou a partida.');
-                navigateTo('duels'); // Expulsa o oponente de volta para o lobby
+                navigateTo('duels');
                 return;
             }
-
+    
             activeDuelDoc = payload;
         }, duel.$id);
     
@@ -5859,6 +5878,11 @@ function validateTrainingData() {
         if (duelDoc.currentSentenceWords) {
             console.log("📝 Injetando palavras na interface:", duelDoc.currentSentenceWords);
             renderMultiWords(duelDoc.currentSentenceWords);
+            
+            const sentenceData = currentLesson.data[duelDoc.currentSentenceIndex];
+            if (sentenceData) {
+                playDuelSegment(sentenceData.start, sentenceData.end);
+            }
         } else {
             console.warn("⚠️ O documento não possui 'currentSentenceWords'");
         }
@@ -5900,6 +5924,84 @@ function validateTrainingData() {
     
         console.log(`🎲 [Multi] ${allWords.length} palavras renderizadas.`);
     }
+
+    // ===================
+    // CONTROLES DO VÍDEO
+    //====================
+    let multiVideoTimer = null;
+    let multiVideoLoopEnabled = true;
+    
+    /**
+     * Controla a reprodução do trecho de vídeo no modo Duelo
+     */
+    function playDuelSegment(start, end) {
+        if (!window.ytPlayerMulti || typeof window.ytPlayerMulti.seekTo !== 'function') {
+            console.warn("⚠️ Player Multi ainda não está pronto.");
+            return;
+        }
+    
+        // Posiciona e dá play
+        window.ytPlayerMulti.seekTo(start);
+        window.ytPlayerMulti.playVideo();
+    
+        // Limpa monitoramento anterior
+        if (multiVideoTimer) clearInterval(multiVideoTimer);
+    
+        // Inicia monitoramento de tempo para o Loop
+        multiVideoTimer = setInterval(() => {
+            if (!window.ytPlayerMulti.getCurrentTime) return;
+            
+            const current = window.ytPlayerMulti.getCurrentTime();
+            
+            if (current >= end) {
+                if (multiVideoLoopEnabled) {
+                    window.ytPlayerMulti.seekTo(start);
+                } else {
+                    window.ytPlayerMulti.pauseVideo();
+                    clearInterval(multiVideoTimer);
+                }
+            }
+        }, 100);
+    }
+    
+    /**
+     * Função chamada pelo botão "Tocar" na tela de duelo
+     */
+    function replayDuelSegment() {
+        if (!activeDuelDoc || !currentLesson) return;
+    
+        // Proteção: verifica se .data foi compilado antes de tentar acessar
+        if (!currentLesson.data || currentLesson.data.length === 0) {
+            console.warn('⚠️ [replayDuelSegment] currentLesson.data não está disponível ainda.');
+            return;
+        }
+        
+        const sentenceData = currentLesson.data[activeDuelDoc.currentSentenceIndex];
+        if (sentenceData) {
+            playDuelSegment(sentenceData.start, sentenceData.end);
+        } else {
+            console.warn('⚠️ [replayDuelSegment] sentenceData não encontrado para o índice:', activeDuelDoc.currentSentenceIndex);
+        }
+    }
+    
+    /**
+     * Liga/Desliga o loop no modo duelo (Opcional, caso queira atualizar o botão de loop multi)
+     */
+    function toggleMultiVideoLoop() {
+        multiVideoLoopEnabled = !multiVideoLoopEnabled;
+        const btn = document.getElementById('btn-multi-video-loop');
+        if (!btn) return;
+    
+        if (multiVideoLoopEnabled) {
+            btn.className = 'check-btn loop-active';
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Loop: ON</span>';
+            replayDuelSegment();
+        } else {
+            btn.className = 'check-btn loop-inactive';
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Loop: OFF</span>';
+        }
+    }
+    
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
