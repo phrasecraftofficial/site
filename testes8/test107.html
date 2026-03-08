@@ -5474,11 +5474,11 @@ function validateTrainingData() {
                 activeDuelDoc = payload;
         
                 navigateTo('duel-match');
+                renderDuelSection();
                 toggleCloseExit('show');
                 setLayoutMode('training');
         
-                document.getElementById('duel-match-title').innerText = payload.lessonName;
-                document.getElementById('duel-match-status').innerText = `Partida: ${payload.$id}`;
+                renderDuelSection(activeDuelDoc);
             }
         }, newMatch.$id);
 
@@ -5802,12 +5802,68 @@ function validateTrainingData() {
         toggleCloseExit('show');
         setLayoutMode('training');
     
-        document.getElementById('duel-match-title').innerText = duel.lessonName;
-        document.getElementById('duel-match-status').innerText = `Partida: ${duel.$id}`;
+        renderDuelSection(activeDuelDoc);
     
         console.log('✅ [joinMatch] Documento atualizado. Host será notificado via Realtime.');
     }
+
+    /**
+     * Renderiza a interface de jogo dentro da View de Duelos
+     * Prepara o vídeo, placar e os containers de palavras.
+     */
+    async function renderDuelSection(duelDoc) {
+        console.log("🎨 [Multi] Renderizando seção de duelo...");
     
+        // 1. Alterna visibilidade: Esconde o "Conectando" e mostra o "Game Area"
+        document.getElementById('multi-waiting-area').classList.add('hidden');
+        const gameArea = document.getElementById('multi-game-area');
+        gameArea.classList.remove('hidden');
+    
+        // 2. Atualiza Placar e Status Inicial
+        document.getElementById('multi-score-you').innerText = "0";
+        document.getElementById('multi-score-rival').innerText = "0";
+        
+        const feedbackEl = document.getElementById('multi-video-feedback');
+        feedbackEl.innerText = "Preparando frase...";
+    
+        // 3. Limpa as zonas de palavras
+        const zone = document.getElementById('multi-answer-zone');
+        const bank = document.getElementById('multi-word-bank');
+        zone.innerHTML = '';
+        bank.innerHTML = '';
+        zone.style.borderColor = '#444';
+    
+        // 4. Inicializa o Player de Vídeo (se ainda não existir)
+        const videoId = getYoutubeId(currentLesson.video);
+        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
+    
+        // Aguarda o elemento estar pronto no DOM antes de injetar o Player
+        await waitForElement('multi-yt-player');
+    
+        if (!window.ytPlayerMulti) {
+            window.ytPlayerMulti = new YT.Player('multi-yt-player', {
+                height: '100%', width: '100%', videoId: videoId,
+                playerVars: { 
+                    'playsinline': 1, 'controls': 0, 'disablekb': 1, 
+                    'fs': 0, 'rel': 0, 'iv_load_policy': 3, 'modestbranding': 1 
+                },
+                events: {
+                    'onReady': (e) => {
+                        e.target.setPlaybackQuality(userQuality);
+                        console.log("✅ [Multi] Player pronto.");
+                    }
+                }
+            });
+        } else {
+            // Se o player já existe, apenas carrega o vídeo da lição atual
+            window.ytPlayerMulti.cueVideoById({
+                videoId: videoId,
+                suggestedQuality: userQuality
+            });
+        }
+    
+        console.log("✅ [Multi] Layout renderizado para o duelo:", duelDoc.$id);
+    }
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
