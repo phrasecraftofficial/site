@@ -1,9 +1,6 @@
 <!-- 102
     OK:
-Host cria partida → salva ID no localStorage
-Host atualiza a página → initApp roda → acha o ID no localStorage → deleta o doc
-Realtime dispara → opponents recebem evento → refreshDuelsList() → card some
-se oponente estiver em preview e partida foi elimindada deve voltar para duels
+Oponente e Host são levados para mesma seção da partida.
     FUTURO
 Essa parte é crucial para vc entender.
 
@@ -846,7 +843,7 @@ proxima frase, etc
                 </div>
                 <ul id="previewMulti-sentences" class="preview-list"></ul>
                 <div class="train-btn-container">
-                    <button class="btn-train" title="Entrar no Duelo">
+                    <button class="btn-train" title="Entrar no Duelo" onclick="joinMatch(activeDuelDoc)">
                         <span class="material-symbols-outlined">swords</span>
                         Entrar no Duelo
                     </button>
@@ -1096,10 +1093,18 @@ proxima frase, etc
                     
                     <p style="font-size: 1.3em; margin: 20px 0;">Acertos: <span id="final-score"></span>/25</p>
                 </div>
-
-
             </section>
 
+            <section id="view-duel-match" class="view-section">
+                <div style="text-align: center; padding: 40px 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 10px;">
+                        swords
+                    </span>
+                    <h2 id="duel-match-title" style="margin-bottom: 10px;">Duelo</h2>
+                    <p id="duel-match-status" style="color: var(--text-secondary);">Conectando...</p>
+                </div>
+            </section>
+            
         </main>
     </div>
 
@@ -1409,6 +1414,7 @@ const projectData = [
     let myActiveDuelId = null;      // ID do documento que EU criei como host
     let duelsRealtimeUnsub = null;  // Função de cancelamento da assinatura realtime
     let intendedAction = null; // Pode ser 'create_duel' ou 'view_duels'
+    let activeDuelDoc = null; // Documento do duelo ativo (host ou oponente)
 
     // Assinar o documento específico via Realtime e detectar o evento de deleção
     let previewMultiUnsub = null;
@@ -5409,6 +5415,19 @@ function validateTrainingData() {
                 console.log("🔄 [Realtime] DISPAROU! Alguém alterou a partida!");
                 console.log("   👉 Novos Dados:", payload);
                 console.log("   👉 Tipo de Evento:", events);
+            
+                // ✅ Oponente entrou: host navega para a partida
+                if (payload.status === 'playing' && payload.opponentId) {
+                    console.log('⚔️ [Host] Oponente encontrado! Entrando na partida...');
+                    activeDuelDoc = payload;
+            
+                    navigateTo('duel-match');
+                    toggleCloseExit('show');
+                    setLayoutMode('training');
+            
+                    document.getElementById('duel-match-title').innerText = payload.lessonName;
+                    document.getElementById('duel-match-status').innerText = `Partida: ${payload.$id}`;
+                }
             }, newMatch.$id);
 
         } catch (error) {
@@ -5607,6 +5626,9 @@ function validateTrainingData() {
         console.log('🎯 openPreviewMulti chamado:', JSON.stringify(duel));
         console.log('⚔️ [previewMulti] Abrindo duelo:', duel.$id);
     
+        // ✅ Guarda o documento ANTES de qualquer navegação
+        activeDuelDoc = duel;
+    
         navigateTo('previewMulti');
     
         // ✅ Cancela assinatura anterior se houver
@@ -5685,6 +5707,34 @@ function validateTrainingData() {
             li.innerText = `${start + index + 1}. ${item.en}`;
             listEl.appendChild(li);
         });
+    }
+
+    async function joinMatch(duel) {
+        console.log('🤝 [joinMatch] Entrando na partida:', duel.$id);
+    
+        activeDuelDoc = duel;
+    
+        // Cancela escuta do previewMulti (já não precisa mais)
+        if (previewMultiUnsub) {
+            previewMultiUnsub();
+            previewMultiUnsub = null;
+        }
+    
+        // ✅ Avisa o host: atualiza o documento com opponentId e status "playing"
+        const user = await checkAuthStatus();
+        await duelsManager.update(duel.$id, {
+            opponentId: user.$id,
+            status: 'playing'
+        });
+    
+        navigateTo('duel-match');
+        toggleCloseExit('show');
+        setLayoutMode('training');
+    
+        document.getElementById('duel-match-title').innerText = duel.lessonName;
+        document.getElementById('duel-match-status').innerText = `Partida: ${duel.$id}`;
+    
+        console.log('✅ [joinMatch] Documento atualizado. Host será notificado via Realtime.');
     }
     
     // --- 5. INICIALIZA O APP ---
