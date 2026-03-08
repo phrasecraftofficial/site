@@ -1,7 +1,10 @@
-<!-- 105
+<!-- 106
     IMPLEMENTADO:
-Host e Oponente fazem o update da palavra enviado ao Aw.
+avanço de frase ok
     FUTURO
+Essa parte é crucial para vc entender.
+
+Quando o mdo video inicia ele carrega as frases.
 
 No modo multi os dois jogadores vao formar a mesma frase, mas cada um envia uma palavra da sequencia, ou seja eles não vao enviar a mesma palavra.
 
@@ -678,7 +681,7 @@ proxima frase, etc
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v102
+            PhraseCraft v103
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -1123,7 +1126,7 @@ proxima frase, etc
                     </div>
                 
                     <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
-                        <button class="check-btn" onclick="replayMultiVideoSegment()" title="Tocar trecho uma vez">
+                        <button class="check-btn" onclick="replayDuelSegment()" title="Tocar trecho uma vez">
                             <i class="fa-solid fa-play"></i> Tocar
                         </button>
                         
@@ -1510,11 +1513,6 @@ const projectData = [
     let videoTimer = null;
     let videoLoopEnabled = true; // Loop começa ativado por padrão
     let isVideoTaskComplete = false; // Controle para parar o loop quando acertar
-
-    // Multi (novas, isoladas)
-    window.multiVideoTimer = null;
-    window.multiVideoLoopEnabled = true;
-    window.multiVideoTaskComplete = false;
     
     // Carrega a API do YouTube assincronamente
     const tag = document.createElement('script');
@@ -2012,19 +2010,8 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             }
         }
         
-        // 3. Para o player do YouTube (solo)
+        // 3. Para o player do YouTube
         stopVideoPlayback();
-    
-        // 3b. Para o player do YouTube (multiplayer)
-        if (window.multiVideoTimer) {
-            clearInterval(window.multiVideoTimer);
-            window.multiVideoTimer = null;
-        }
-        if (window.multiYtPlayer && window.multiYtPlayer.pauseVideo) {
-            try { window.multiYtPlayer.pauseVideo(); } catch(e) {}
-        }
-        window.multiCurrentSentence = null;
-        window.multiVideoTaskComplete = false;
         
         // 4. Remove classe de bloqueio de UI
         document.body.classList.remove('audio-playing');
@@ -2058,7 +2045,6 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         // Se estou saindo de QUALQUER tela de duelo para uma tela fora do multiplayer
         if (duelViews.includes(currentView) && !duelViews.includes(view)) {
             console.log('🚪 Saindo do ecossistema de Duelos. Limpando recursos...');
-            clean();
             cleanupActiveDuel(); // Tenta deletar a partida (só afeta o Host)
             stopDuelsRealtime(); // Para de escutar o lobby
             
@@ -5404,109 +5390,128 @@ function validateTrainingData() {
         setLayoutMode('training'); // Esconde o menu inferior (footer)
     }
     
-    // Modo Duelo (Multiplayer)
-    // Modo Duelo (Multiplayer)
-    async function startDuelMode() {
-        console.log('⚔️ startDuelMode iniciado para a lição:', currentLesson ? currentLesson.id : 'Nenhuma');
+// Modo Duelo (Multiplayer)
+async function startDuelMode() {
+    console.log('⚔️ startDuelMode iniciado para a lição:', currentLesson ? currentLesson.id : 'Nenhuma');
+    
+    if (!currentLesson || currentLesson.data.length === 0) {
+        alert("Nenhuma lição carregada para o duelo.");
+        return;
+    }
+
+    // 🔥 Bloqueio de acesso
+    const user = await checkAuthStatus();
+    if (!user) {
+        console.log("🔒 Acesso negado ao Multi. Redirecionando para Login...");
+        intendedAction = 'create_duel'; // Salva intenção: Criar a partida ao logar!
+        navigateTo('login');
+        return; 
+    }
+
+    // Navega para a seção de duelos visualmente e ajusta layout
+    navigateTo('duels');
+    toggleCloseExit('show');
+    setLayoutMode('training');
+
+    // 🔥 Pega a primeira frase DA FASE SELECIONADA
+    const { start: phaseStartIdx } = getPhaseIndices(currentPhase, currentLesson.data.length);
+    const firstSentenceObj = currentLesson.data[phaseStartIdx];
+    const firstSentence = firstSentenceObj ? firstSentenceObj.en : "";
+    
+    // 🔥 NOVO: Usa o ID real do usuário logado
+    const myUserId = user.$id;
+
+    // 1. Prepara os dados iniciais exigidos
+    const initialDuelData = {
+        lessonName: currentLesson.title,
+        thumbFileId: currentLesson.thumb || "",
+        status: "waiting",
+        hostId: myUserId,
+        opponentId: "",
+        currentPlayerId: myUserId,
+        currentSentenceIndex: 0,
+        currentSentenceWords: firstSentence,
+        phaseIndex: currentPhase,
+        opponentPerformance: 0,
+        hostPerformance: 0,
+        winnerId: "",
+        lastActivity: new Date().toISOString(),
         
-        if (!currentLesson || currentLesson.data.length === 0) {
-            alert("Nenhuma lição carregada para o duelo.");
-            return;
-        }
+        // 🔥 OS DOIS CAMPOS NOVOS AQUI
+        lastWordSent: "",
+        wordIndex: 0
+    };
 
-        // 🔥 Bloqueio de acesso
-        const user = await checkAuthStatus();
-        if (!user) {
-            console.log("🔒 Acesso negado ao Multi. Redirecionando para Login...");
-            intendedAction = 'create_duel'; // Salva intenção: Criar a partida ao logar!
-            navigateTo('login');
-            return; 
-        }
-
-        // Navega para a seção de duelos visualmente e ajusta layout
-        navigateTo('duels');
-        toggleCloseExit('show');
-        setLayoutMode('training');
-
-        // Pega a primeira frase para o setup inicial
-        const firstSentence = currentLesson.data[0] ? currentLesson.data[0].en : "";
+    try {
+        console.log("⏳ [CRUD] Criando documento da partida no Appwrite...");
         
-        // 🔥 NOVO: Usa o ID real do usuário logado
-        const myUserId = user.$id;
+        // 2. CRIA O DOCUMENTO
+        const newMatch = await duelsManager.create(initialDuelData);
+        console.log("✅ [CRUD] Partida criada com sucesso! ID do Doc:", newMatch.$id);
+        
+        // 🔥 Salva para poder deletar ao sair
+        myActiveDuelId = newMatch.$id;
+        localStorage.setItem('phrasecraft_active_duel', newMatch.$id);
 
-        // 1. Prepara os dados iniciais exigidos
-        const initialDuelData = {
-            lessonName: currentLesson.title,
-            thumbFileId: currentLesson.thumb || "",
-            status: "waiting",
-            hostId: myUserId,
-            opponentId: "",
-            currentPlayerId: myUserId,
-            currentSentenceIndex: 0,
-            currentSentenceWords: firstSentence,
-            phaseIndex: currentPhase,
-            opponentPerformance: 0,
-            hostPerformance: 0,
-            winnerId: "",
-            lastActivity: new Date().toISOString()
-        };
+        // 3. INICIA O REALTIME (ESCUTA O DOCUMENTO ESPECÍFICO)
+        console.log(`📡 [Realtime] Escutando alterações no documento: ${newMatch.$id}`);
+        
+        duelsManager.subscribe((payload, events) => {
+            const isDeleted = events.some(e => e.includes('.delete'));
+            if (isDeleted) {
+                console.log('🗑️ Partida encerrada.');
+                if (currentView === 'duel-match') navigateTo('duels');
+                return;
+            }
 
-        try {
-            console.log("⏳ [CRUD] Criando documento da partida no Appwrite...");
-            
-            // 2. CRIA O DOCUMENTO
-            const newMatch = await duelsManager.create(initialDuelData);
-            console.log("✅ [CRUD] Partida criada com sucesso! ID do Doc:", newMatch.$id);
-            
-            // 🔥 Salva para poder deletar ao sair
-            myActiveDuelId = newMatch.$id;
-            localStorage.setItem('phrasecraft_active_duel', newMatch.$id);
+            // Sincroniza o documento global
+            activeDuelDoc = payload;
 
-            // 3. INICIA O REALTIME (ESCUTA O DOCUMENTO ESPECÍFICO)
-            console.log(`📡 [Realtime] Escutando alterações no documento: ${newMatch.$id}`);
-            
-            duelsManager.subscribe((payload, events) => {
-                console.log("🔄 [Realtime] DISPAROU! Alguém alterou a partida!");
-            
-                const isDeleted = events.some(e => e.includes('.delete'));
-            
-                if (isDeleted) {
-                    console.log('🗑️ [Host] Partida deletada. Voltando ao lobby...');
-                    if (currentView === 'previewMulti' || currentView === 'duel-match') {
-                        alert('⚔️ A partida foi encerrada.');
-                        navigateTo('duels');
-                    }
-                    return;
-                }
-            
-                // Oponente entrou: host inicia o jogo
-                if (payload.status === 'playing' && payload.opponentId && currentView !== 'duel-match') {
-                    console.log('⚔️ [Host] Oponente encontrado! Entrando na partida...');
-                    activeDuelDoc = payload;
-            
+            // 1. Gerencia bloqueio visual das palavras
+            updateDuelTurnUI();
+
+            // 2. Sincroniza palavra movida pelo oponente
+            if (payload.lastWordSent) {
+                syncOpponentWord(payload.lastWordSent);
+            }
+
+            // 3. Lógica de Renderização de Tela (Entrada Inicial ou Round Novo)
+            if (payload.status === 'playing') {
+                if (currentView !== 'duel-match') {
+                    // Primeira vez entrando na tela
+                    console.log('⚔️ Entrando na partida...');
                     navigateTo('duel-match');
                     toggleCloseExit('show');
                     setLayoutMode('training');
-            
-                    document.getElementById('duel-match-title').innerText = payload.lessonName;
-                    document.getElementById('duel-match-status').innerText = `Partida: ${payload.$id}`;
-            
-                    initDuelMatch(payload);
-                    return;
+                    renderDuelSection(payload);
+                } 
+                // 👇 SE o índice zerou e não há palavra salva, é um Round Novo!
+                else if (payload.wordIndex === 0 && payload.lastWordSent === "") {
+                    console.log('🔄 Nova frase recebida! Redesenhando a mesa...');
+                    
+                    // Reseta o visual de sucesso antes de redesenhar
+                    document.getElementById('multi-answer-zone').style.borderColor = '#444';
+                    
+                    // Redesenha a UI (Vídeo + Embaralhar Palavras)
+                    renderDuelSection(payload);
                 }
-            
-                // 🔥 Partida em andamento: reage à troca de vez
-                if (payload.status === 'playing' && currentView === 'duel-match') {
-                    handleDuelUpdate(payload);
-                }
-            }, newMatch.$id);
+            }
 
-        } catch (error) {
-            console.error("❌ Erro ao criar ou escutar a partida:", error);
-            alert("Erro ao iniciar o servidor de duelos. Olhe o console.");
-        }
+            // 4. Fim de jogo
+            if (payload.status === 'finished') {
+                alert('🏆 Fim de Jogo! Fase Concluída por ambos os jogadores!');
+                navigateTo('duels'); // Volta pro lobby
+            }
+            
+            // 🔥 erifica e avisa no console se a frase acabou
+            checkDuelSentenceCompleted();
+        }, newMatch.$id);
+
+    } catch (error) {
+        console.error("❌ Erro ao criar ou escutar a partida:", error);
+        alert("Erro ao iniciar o servidor de duelos. Olhe o console.");
     }
-
+}
     // --- LÓGICA DO LOBBY DE DUELOS (Player 2) ---
 
     // 1. Busca as partidas no servidor
@@ -5784,394 +5789,537 @@ function validateTrainingData() {
 
     async function joinMatch(duel) {
         console.log('🤝 [joinMatch] Entrando na partida:', duel.$id);
+        
         activeDuelDoc = duel;
     
-        // 1. LIMPEZA: Cancela a assinatura do preview antes de criar a do jogo
+        // 1. Cancela assinatura anterior
         if (activeDuelUnsub) {
             activeDuelUnsub();
             activeDuelUnsub = null;
         }
-
-        // ✅ Avisa o host: atualiza o documento com opponentId e status "playing"
+    
+        // 2. Avisa o host
         const user = await checkAuthStatus();
         await duelsManager.update(duel.$id, {
             opponentId: user.$id,
             status: 'playing'
         });
-
+    
         localStorage.setItem('phrasecraft_active_duel', duel.$id);
     
-        // 2. NOVA INSCRIÇÃO COM PROTEÇÃO DE DELEÇÃO
+        // 3. Busca e COMPILA os dados da lição (igual ao host faz)
+        const rawLesson = allLessons.find(l => l.title === duel.lessonName);
+        if (rawLesson) {
+            // Verifica se já tem dados compilados no cache
+            if (currentLesson && currentLesson.id == rawLesson.id && currentLesson.data) {
+                console.log('✅ [joinMatch] Usando dados compilados do cache.');
+            } else {
+                console.log('⏳ [joinMatch] Compilando dados da lição para o oponente...');
+                const loadedData = await fetchLessonData(rawLesson);
+                if (loadedData) {
+                    const compiled = compileLessonData(
+                        loadedData.srtEn,
+                        loadedData.srtPt,
+                        loadedData.vocabData,
+                        rawLesson.video
+                    );
+                    currentLesson = { ...rawLesson, data: compiled };
+                    console.log('✅ [joinMatch] currentLesson.data compilado:', currentLesson.data.length, 'frases');
+                } else {
+                    console.error('❌ [joinMatch] Falha ao carregar dados da lição.');
+                    currentLesson = rawLesson; // fallback
+                }
+            }
+        }
+    
+        // 4. Assinatura Realtime com proteção de deleção
+        // 4. Assinatura Realtime com proteção de deleção
         duelsManager.subscribe((payload, events) => {
-            console.log('🔄 [Opponent] Partida atualizada:', payload);
-        
             const isDeleted = events.some(e => e.includes('.delete'));
             if (isDeleted) {
-                console.log('🗑️ [Opponent] O Host encerrou a partida.');
                 alert('⚔️ O Host encerrou a partida.');
                 navigateTo('duels');
                 return;
             }
         
-            // 🔥 Partida em andamento: reage à troca de vez
-            if (payload.status === 'playing' && currentView === 'duel-match') {
-                handleDuelUpdate(payload);
+            activeDuelDoc = payload;
+        
+            // 1. Gerencia bloqueio visual das palavras
+            updateDuelTurnUI();
+        
+            // 2. Sincroniza palavra movida pelo oponente
+            if (payload.lastWordSent) {
+                syncOpponentWord(payload.lastWordSent);
             }
+
+            // 3. Lógica de Renderização de Tela (Entrada Inicial ou Round Novo)
+            if (payload.status === 'playing') {
+                if (currentView !== 'duel-match') {
+                    // Primeira vez entrando na tela
+                    console.log('⚔️ Entrando na partida...');
+                    navigateTo('duel-match');
+                    toggleCloseExit('show');
+                    setLayoutMode('training');
+                    renderDuelSection(payload);
+                } 
+                // 👇 SE o índice zerou e não há palavra salva, é um Round Novo!
+                else if (payload.wordIndex === 0 && payload.lastWordSent === "") {
+                    console.log('🔄 Nova frase recebida! Redesenhando a mesa...');
+                    
+                    // Reseta o visual de sucesso antes de redesenhar
+                    document.getElementById('multi-answer-zone').style.borderColor = '#444';
+                    document.getElementById('multi-video-feedback').innerHTML = `
+                        <p style="text-align: center; color: var(--accent-color); font-weight: bold; margin: 0 0 15px 0; min-height: 20px;">
+                            Formem a frase juntos!
+                        </p>
+                    `;
+                    
+                    // Redesenha a UI (Vídeo + Embaralhar Palavras)
+                    renderDuelSection(payload);
+                }
+            }
+
+            // 4. Fim de jogo
+            if (payload.status === 'finished') {
+                alert('🏆 Fim de Jogo! Fase Concluída por ambos os jogadores!');
+                navigateTo('duels'); // Volta pro lobby
+            }
+            
+            // 5. Verifica e avisa no console se a frase atual acabou (neste turno)
+            checkDuelSentenceCompleted();
         }, duel.$id);
     
         navigateTo('duel-match');
         toggleCloseExit('show');
         setLayoutMode('training');
-        
-        document.getElementById('duel-match-title').innerText = duel.lessonName;
-        document.getElementById('duel-match-status').innerText = `Partida: ${duel.$id}`;
-        
+    
+        renderDuelSection(activeDuelDoc);
+    
         console.log('✅ [joinMatch] Documento atualizado. Host será notificado via Realtime.');
-        
-        // Inicia a tela do jogo imediatamente
-        initDuelMatch(duel);
     }
 
-
-    // ========================= =========================
-    // FUNÇÕES DA PARTIDA EM SI COM RESPONSABILIDADES ISOLADAS
-    // ========================= =========================
-    async function initDuelMatch(duel) {
-        console.log('🎮 [initDuelMatch] Construindo tela do jogo...');
-        
-        try {
-            // 1. Carrega e compila dados da lição
-            const compiledData = await loadAndCompileLessonData(duel);
-            if (!compiledData) return;
+    /**
+     * Renderiza a interface de jogo dentro da View de Duelos
+     * Prepara o vídeo, placar e os containers de palavras.
+     */
+    async function renderDuelSection(duelDoc) {
+        if (!duelDoc) return;
+        console.log("🎨 [Multi] Renderizando seção de duelo para o documento:", duelDoc.$id);
     
-            // 2. Extrai dados da fase atual
-            const phaseData = getCurrentPhaseData(duel, compiledData);
-            const currentSentence = getCurrentSentence(duel, phaseData);
-            if (!currentSentence) {
-                console.error('❌ [initDuelMatch] Nenhuma frase encontrada.');
-                return;
-            }
-    
-            // 3. Configura interface do jogo
-            setupGameInterface();
-            
-            // 4. Determina se é minha vez
-            const isMyTurn = await isMyTurnToPlay(duel);
-            
-            // 5. Monta word bank
-            setupWordBank(currentSentence.en, isMyTurn);
-            
-            // 6. Feedback visual
-            updateTurnFeedback(isMyTurn);
-            
-            // 7. Inicializa vídeo
-            initMultiplayerVideo(currentSentence);
-            
-            console.log('✅ [initDuelMatch] Tela do jogo construída. Frase:', currentSentence.en);
-        } catch (error) {
-            console.error('❌ [initDuelMatch] Erro na inicialização:', error);
-        }
-    }
-    
-    async function loadAndCompileLessonData(duel) {
-        const rawLesson = allLessons.find(l => l.title === duel.lessonName);
-        if (!rawLesson) {
-            console.error('❌ [initDuelMatch] Lição não encontrada:', duel.lessonName);
-            return null;
-        }
-    
-        const loadedData = await fetchLessonData(rawLesson);
-        if (!loadedData) return null;
-    
-        const compiled = compileLessonData(
-            loadedData.srtEn,
-            loadedData.srtPt,
-            loadedData.vocabData,
-            rawLesson.video
-        );
-    
-        return compiled;
-    }
-    
-    function getCurrentPhaseData(duel, compiled) {
-        const phaseIndex = duel.phaseIndex ?? 0;
-        const { start, end } = getPhaseIndices(phaseIndex, compiled.length);
-        return compiled.slice(start, end);
-    }
-    
-    function getCurrentSentence(duel, phaseData) {
-        const sentenceIndex = duel.currentSentenceIndex ?? 0;
-        return phaseData[sentenceIndex] || phaseData[0];
-    }
-    
-    function setupGameInterface() {
+        // 1. Visibilidade
         document.getElementById('multi-waiting-area').classList.add('hidden');
         document.getElementById('multi-game-area').classList.remove('hidden');
-    }
     
-    async function isMyTurnToPlay(duel) {
-        const user = await checkAuthStatus();
-        return duel.currentPlayerId === user.$id;
-    }
+        // 2. Título e Status
+        document.getElementById('duel-match-title').innerText = duelDoc.lessonName;
+        document.getElementById('duel-match-status').innerText = `Partida: ${duelDoc.$id}`;
     
-    function setupWordBank(englishSentence, isMyTurn) {
-        const wordBank = document.getElementById('multi-word-bank');
-        const answerZone = document.getElementById('multi-answer-zone');
-        wordBank.innerHTML = '';
-        answerZone.innerHTML = '';
+        // 3. Preparação do Player
+        const videoId = getYoutubeId(currentLesson.video);
+        const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
     
-        const words = englishSentence
-            .replace(/[.?!]/g, '')
-            .split(' ')
-            .sort(() => Math.random() - 0.5);
+        await waitForElement('multi-yt-player');
     
-        words.forEach(word => createWordTag(word, isMyTurn, wordBank));
-    }
-    
-    function createWordTag(word, isMyTurn, wordBank) {
-        const span = document.createElement('span');
-        span.className = isMyTurn ? 'word-tag' : 'word-tag disabled-word';
-        span.innerText = word;
-    
-        span.onclick = async function() {
-            if (this.classList.contains('disabled-word')) return;
-            
-            await handleWordClick(this);
-        };
-    
-        wordBank.appendChild(span);
-    }
-    
-    async function handleWordClick(wordElement) {
-        const answerZone = document.getElementById('multi-answer-zone');
-        const wordBank = document.getElementById('multi-word-bank');
-    
-        // 1. Move visualmente
-        answerZone.appendChild(wordElement);
-    
-        // 2. Calcula próximo jogador
-        const nextPlayerId = activeDuelDoc.currentPlayerId === activeDuelDoc.hostId
-            ? activeDuelDoc.opponentId
-            : activeDuelDoc.hostId;
-    
-        // 3. Acumula a palavra
-        const updatedWords = (activeDuelDoc.currentSentenceWords || '') + ' ' + wordElement.innerText;
-    
-        // 4. Bloqueia todas as palavras
-        document.querySelectorAll('#multi-word-bank .word-tag').forEach(w => {
-            w.classList.add('disabled-word');
-        });
-    
-        try {
-            // 5. Envia ao Appwrite
-            await duelsManager.update(activeDuelDoc.$id, {
-                currentSentenceWords: updatedWords.trim(),
-                currentPlayerId: nextPlayerId
-            });
-        
-            // Atualiza o doc local com os dados enviados ANTES de verificar
-            activeDuelDoc = {
-                ...activeDuelDoc,
-                currentSentenceWords: updatedWords.trim(),
-                currentPlayerId: nextPlayerId
-            };
-        
-            // ✅ VERIFICAÇÃO: Usa activeDuelDoc já atualizado
-            if (!window.multiCurrentSentence) {
-                console.warn('⚠️ [Multi] multiCurrentSentence não definido ainda.');
-            } else {
-                const isSentenceComplete = checkMultiSentenceComplete(
-                    activeDuelDoc,
-                    window.multiCurrentSentence.en
-                );
-        
-                if (isSentenceComplete) {
-                    console.log('🎉 [Multi] FRASE COMPLETADA! Avançando...');
-                } else {
-                    console.log(`⏳ [Multi] Frase incompleta. Palavras até agora: "${updatedWords.trim()}"`);
-                }
-            }
-        
-        } catch (error) {
-            console.error('❌ [Multi] Erro ao enviar palavra:', error);
-            // Reverte visualmente se falhar
-            wordBank.appendChild(wordElement);
-        }
-
-    }
-    
-    function updateTurnFeedback(isMyTurn) {
-        document.getElementById('multi-video-feedback').innerHTML = isMyTurn
-            ? `<span style="color: var(--success-color);">Sua vez! Envie uma palavra.</span>`
-            : `<span style="color: var(--text-secondary);">Aguarde o rival...</span>`;
-    }
-
-    /**
-     * Verifica se a frase atual foi completada no duelo multiplayer
-     * @param {Object} duelDoc - Documento atual do duelo (activeDuelDoc)
-     * @param {string} targetSentence - Frase em inglês que deve ser completada
-     * @returns {boolean} true se completada, false caso contrário
-     */
-    function checkMultiSentenceComplete(duelDoc, targetSentence) {
-        const completedWords = (duelDoc.currentSentenceWords || '').trim();
-        const expectedWordsCount = getCleanWordCount(targetSentence);
-        const actualWordsCount = getCleanWordCount(completedWords);
-        
-        const isComplete = actualWordsCount === expectedWordsCount;
-        
-        console.log(`📊 [checkMultiSentenceComplete] 
-            Esperado: ${expectedWordsCount} palavras | 
-            Completado: ${actualWordsCount} palavras | 
-            Status: ${isComplete ? '✅ COMPLETA' : '⏳ INCOMPLETA'}`);
-        
-        return isComplete;
-    }
-    
-    /**
-     * Conta palavras limpas (remove pontuação e espaços extras)
-     */
-    function getCleanWordCount(text) {
-        if (!text) return 0;
-        return text
-            .replace(/[.?!,;:]/g, '')  // Remove pontuação
-            .trim()
-            .split(/\s+/)              // Divide por espaços
-            .filter(word => word.length > 0)  // Remove palavras vazias
-            .length;
-    }
-  
-    // VIDEO
-    function initMultiplayerVideo(currentSentence) {
-        const videoId = getYoutubeId(currentSentence.videoUrl);
-    
-        if (!window.multiYtPlayer) {
-            window.multiYtPlayer = new YT.Player('multi-yt-player', {
-                height: '100%', 
-                width: '100%', 
-                videoId: videoId,
-                playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1 },
+        if (!window.ytPlayerMulti) {
+            window.ytPlayerMulti = new YT.Player('multi-yt-player', {
+                height: '100%', width: '100%', videoId: videoId,
+                playerVars: { 
+                    'playsinline': 1, 'controls': 0, 'disablekb': 1, 
+                    'fs': 0, 'rel': 0, 'iv_load_policy': 3, 'modestbranding': 1 
+                },
                 events: {
-                    onReady: (event) => {
-                        window.multiCurrentSentence = currentSentence;
-                        window.multiVideoLoopEnabled = true;
-                        window.multiVideoTaskComplete = false;
-                        playMultiSegment(currentSentence.start, currentSentence.end);
+                    'onReady': (e) => {
+                        e.target.setPlaybackQuality(userQuality);
                     }
                 }
             });
         } else {
-            window.multiCurrentSentence = currentSentence;
-            window.multiVideoLoopEnabled = true;
-            window.multiVideoTaskComplete = false;
-            window.multiYtPlayer.loadVideoById({ videoId: videoId, startSeconds: currentSentence.start });
-            setTimeout(() => playMultiSegment(currentSentence.start, currentSentence.end), 500);
+            window.ytPlayerMulti.loadVideoById({
+                videoId: videoId,
+                suggestedQuality: userQuality
+            });
+        }
+    
+        // 4. 🔥 RENDERIZAÇÃO DE PALAVRAS (Fora do onReady para garantir execução imediata)
+        if (duelDoc.currentSentenceWords) {
+            console.log("📝 Injetando palavras na interface:", duelDoc.currentSentenceWords);
+            renderMultiWords(duelDoc.currentSentenceWords);
+            
+            // Calcula os limites da fase para achar a frase correta no array geral
+            const phaseIdx = duelDoc.phaseIndex ?? 0;
+            const { start: pStart, end: pEnd } = getPhaseIndices(phaseIdx, currentLesson.data.length);
+            const phaseData = currentLesson.data.slice(pStart, pEnd);
+            
+            // Pega a frase atual DENTRO da fase selecionada
+            const sentenceData = phaseData[duelDoc.currentSentenceIndex];
+            
+            if (sentenceData) {
+                playDuelSegment(sentenceData.start, sentenceData.end);
+            } else {
+                console.warn('⚠️ Frase não encontrada na fase atual.');
+            }
+        } else {
+            console.warn("⚠️ O documento não possui 'currentSentenceWords'");
+        }
+    }
+
+    /**
+     * Renderiza as palavras da frase no modo multiplayer.
+     * @param {string} sentenceText - A frase completa vinda do Appwrite.
+     */
+    function renderMultiWords(sentenceText) {
+        const bank = document.getElementById('multi-word-bank');
+        const zone = document.getElementById('multi-answer-zone');
+        
+        if (!bank || !zone) return;
+    
+        bank.innerHTML = '';
+        zone.innerHTML = '';
+    
+        // 🔥 Limpeza rigorosa para evitar tags vazias
+        const allWords = sentenceText.trim().split(/\s+/).filter(w => w.length > 0);
+        
+        if (allWords.length === 0) return;
+    
+        // Embaralha
+        const shuffledWords = [...allWords].sort(() => Math.random() - 0.5);
+    
+        shuffledWords.forEach(word => {
+            const span = document.createElement('span');
+            span.className = 'word-tag';
+            span.innerText = word;
+            
+            span.onclick = () => {
+                // Impede cliques se o áudio do sistema estiver ocupado
+                if (document.body.classList.contains('audio-playing')) return;
+                handleDuelWord(span);
+            };
+        
+            bank.appendChild(span);
+        });
+    
+        console.log(`🎲 [Multi] ${allWords.length} palavras renderizadas.`);
+    }
+
+    // ===================
+    // CONTROLES DO VÍDEO
+    //====================
+    let multiVideoTimer = null;
+    let multiVideoLoopEnabled = true;
+    
+    /**
+     * Controla a reprodução do trecho de vídeo no modo Duelo
+     */
+    function playDuelSegment(start, end) {
+        if (!window.ytPlayerMulti || typeof window.ytPlayerMulti.seekTo !== 'function') {
+            console.warn("⚠️ Player Multi ainda não está pronto.");
+            return;
+        }
+    
+        // Posiciona e dá play
+        window.ytPlayerMulti.seekTo(start);
+        window.ytPlayerMulti.playVideo();
+    
+        // Limpa monitoramento anterior
+        if (multiVideoTimer) clearInterval(multiVideoTimer);
+    
+        // Inicia monitoramento de tempo para o Loop
+        multiVideoTimer = setInterval(() => {
+            if (!window.ytPlayerMulti.getCurrentTime) return;
+            
+            const current = window.ytPlayerMulti.getCurrentTime();
+            
+            if (current >= end) {
+                if (multiVideoLoopEnabled) {
+                    window.ytPlayerMulti.seekTo(start);
+                } else {
+                    window.ytPlayerMulti.pauseVideo();
+                    clearInterval(multiVideoTimer);
+                }
+            }
+        }, 100);
+    }
+    
+    /**
+     * Função chamada pelo botão "Tocar" na tela de duelo
+     */
+    function replayDuelSegment() {
+        if (!activeDuelDoc || !currentLesson) return;
+    
+        // Proteção: verifica se .data foi compilado antes de tentar acessar
+        if (!currentLesson.data || currentLesson.data.length === 0) {
+            console.warn('⚠️ [replayDuelSegment] currentLesson.data não está disponível ainda.');
+            return;
+        }
+        
+        const sentenceData = currentLesson.data[activeDuelDoc.currentSentenceIndex];
+        if (sentenceData) {
+            playDuelSegment(sentenceData.start, sentenceData.end);
+        } else {
+            console.warn('⚠️ [replayDuelSegment] sentenceData não encontrado para o índice:', activeDuelDoc.currentSentenceIndex);
         }
     }
     
-    function replayMultiVideoSegment() {
-        if (!activeDuelDoc || !window.multiCurrentSentence) return;
-        playMultiSegment(window.multiCurrentSentence.start, window.multiCurrentSentence.end);
-    }
-    
+    /**
+     * Liga/Desliga o loop no modo duelo (Opcional, caso queira atualizar o botão de loop multi)
+     */
     function toggleMultiVideoLoop() {
-        window.multiVideoLoopEnabled = !window.multiVideoLoopEnabled;
+        multiVideoLoopEnabled = !multiVideoLoopEnabled;
         const btn = document.getElementById('btn-multi-video-loop');
-        if (window.multiVideoLoopEnabled) {
+        if (!btn) return;
+    
+        if (multiVideoLoopEnabled) {
             btn.className = 'check-btn loop-active';
             btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Loop: ON</span>';
+            replayDuelSegment();
         } else {
             btn.className = 'check-btn loop-inactive';
             btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Loop: OFF</span>';
         }
     }
 
-    function playMultiSegment(start, end) {
-        if (!window.multiYtPlayer || !window.multiYtPlayer.seekTo) return;
+/**
+ * Sincroniza a UI de ambos os jogadores sempre que o documento no Appwrite muda.
+ */
+function syncDuelState(payload) {
+    // 1. Atualiza a referência global do documento
+    activeDuelDoc = payload;
+
+    const zone = document.getElementById('multi-answer-zone');
+    const bank = document.getElementById('multi-word-bank');
+    const feedback = document.getElementById('multi-video-feedback');
+
+    // 2. Atualiza o Placar
+    document.getElementById('multi-score-you').innerText = activeDuelDoc.hostPerformance;
+    document.getElementById('multi-score-rival').innerText = activeDuelDoc.opponentPerformance;
+
+    // 3. Gerencia o campo visual das palavras (Sync visual)
+    // Se o wordIndex no servidor é maior que a quantidade de palavras na zona, 
+    // significa que o RIVAL moveu uma palavra e precisamos refletir aqui.
+    const wordsInZone = zone.querySelectorAll('.word-tag').length;
     
-        window.multiYtPlayer.seekTo(start);
-        window.multiYtPlayer.playVideo();
-    
-        if (window.multiVideoTimer) clearInterval(window.multiVideoTimer);
-    
-        window.multiVideoTimer = setInterval(() => {
-            if (!window.multiYtPlayer.getCurrentTime) return;
-    
-            const current = window.multiYtPlayer.getCurrentTime();
-    
-            if (current >= end) {
-                if (window.multiVideoLoopEnabled && !window.multiVideoTaskComplete) {
-                    window.multiYtPlayer.seekTo(start);
-                } else {
-                    window.multiYtPlayer.pauseVideo();
-                    clearInterval(window.multiVideoTimer);
-                }
-            }
-        }, 100);
+    if (payload.wordIndex > wordsInZone) {
+        // Encontra a palavra no banco e move para a zona
+        const wordToMove = Array.from(bank.querySelectorAll('.word-tag'))
+            .find(span => normalizeWord(span.innerText) === normalizeWord(payload.lastWordSent));
+        
+        if (wordToMove) {
+            wordToMove.classList.add('matched'); // Estilo visual diferenciado (opcional)
+            zone.appendChild(wordToMove);
+        }
     }
 
-    async function handleDuelUpdate(payload) {
-        console.log('🔄 [handleDuelUpdate] Payload recebido:', payload);
+    // 4. Feedback de quem é a vez
+    checkMyTurn();
+}
+
+async function checkMyTurn() {
+    const user = await checkAuthStatus();
+    const feedback = document.getElementById('multi-video-feedback');
+    const bank = document.getElementById('multi-word-bank');
+
+    if (activeDuelDoc.currentPlayerId === user.$id) {
+        feedback.innerText = "Sua vez! Escolha a próxima palavra.";
+        feedback.style.color = "var(--accent-color)";
+        bank.style.opacity = "1";
+        bank.style.pointerEvents = "auto";
+    } else {
+        feedback.innerText = "Aguardando oponente...";
+        feedback.style.color = "var(--text-secondary)";
+        bank.style.opacity = "0.6";
+        bank.style.pointerEvents = "none"; // Bloqueia cliques fora da vez
+    }
+}
+
+/**
+ * Gerencia o clique na palavra. 
+ * Valida a vez, a sequência correta e atualiza o Appwrite.
+ */
+async function handleDuelWord(wordTag) {
+    // 1. Bloqueio lógico: Não é a vez do usuário
+    const user = await checkAuthStatus();
+    if (!user || activeDuelDoc.currentPlayerId !== user.$id) {
+        triggerShake(wordTag); 
+        return;
+    }
+
+    const word = wordTag.innerText;
+
+// 🔥 CORREÇÃO: Isola apenas as frases da fase atual
+const phaseIdx = activeDuelDoc.phaseIndex ?? 0;
+const { start: pStart, end: pEnd } = getPhaseIndices(phaseIdx, currentLesson.data.length);
+const phaseData = currentLesson.data.slice(pStart, pEnd);
+
+// Pega a frase baseada no índice do duelo (que agora é relativo à fase)
+const currentSentence = phaseData[activeDuelDoc.currentSentenceIndex];
+
+if (!currentSentence) {
+    console.warn('⚠️ O jogo tentou acessar uma frase fora da fase.');
+    return;
+}
+
+const expectedWordsArray = currentSentence.en.split(/\s+/);
+const expectedWord = expectedWordsArray[activeDuelDoc.wordIndex ?? 0];
+
+    // 2. Validação de sequência
+    if (normalizeWord(word) !== normalizeWord(expectedWord)) {
+        triggerShake(wordTag);
+        return;
+    }
+
+    // 3. Feedback visual imediato para quem clicou
+    const zone = document.getElementById('multi-answer-zone');
+    wordTag.classList.add('matched'); // Estilo de "usada"
+    zone.appendChild(wordTag);
+
+    // 4. Lógica de troca de turno
+    const rivalId = user.$id === activeDuelDoc.hostId ? activeDuelDoc.opponentId : activeDuelDoc.hostId;
+    const nextWordIndex = (activeDuelDoc.wordIndex ?? 0) + 1;
+    const isSentenceComplete = nextWordIndex >= expectedWordsArray.length;
+
+    // 5. Update no Appwrite
+    // Nota: 'lastWordSent' é crucial para o rival saber qual palavra mover no Realtime dele
+    await duelsManager.update(activeDuelDoc.$id, {
+        lastWordSent: word, 
+        currentPlayerId: isSentenceComplete ? user.$id : rivalId, 
+        wordIndex: nextWordIndex,
+        lastActivity: new Date().toISOString()
+    });
+}
+
+/**
+ * Sincroniza a interface com base em quem deve jogar agora.
+ */
+async function updateDuelTurnUI() {
+    const user = await checkAuthStatus();
+    const isMyTurn = activeDuelDoc.currentPlayerId === user.$id;
     
-        // Atualiza o documento local
-        activeDuelDoc = payload;
+    const bank = document.getElementById('multi-word-bank');
+    const feedback = document.getElementById('multi-video-feedback');
+
+    if (isMyTurn) {
+        // Habilita interação
+        bank.style.pointerEvents = 'auto';
+        bank.style.opacity = '1';
+        feedback.innerText = "Sua vez! Monte a frase.";
+        feedback.style.color = "var(--accent-color)";
+    } else {
+        // Bloqueia interação física e visual
+        bank.style.pointerEvents = 'none';
+        bank.style.opacity = '0.5';
+        feedback.innerText = "Aguardando oponente...";
+        feedback.style.color = "var(--text-secondary)";
+    }
+}
+
+/**
+ * Move a palavra enviada pelo oponente para a zona de resposta
+ * na tela do jogador que está esperando.
+ */
+function syncOpponentWord(wordText) {
+    const bank = document.getElementById('multi-word-bank');
+    const zone = document.getElementById('multi-answer-zone');
     
-        const user = await checkAuthStatus();
-        const isMyTurn = payload.currentPlayerId === user.$id;
-    
-        const wordBank = document.getElementById('multi-word-bank');
-        const answerZone = document.getElementById('multi-answer-zone');
-    
-        // 1. Sincroniza o answerZone com as palavras já enviadas
-        const wordsConfirmed = payload.currentSentenceWords
-            ? payload.currentSentenceWords.trim().split(' ')
-            : [];
-    
-        // Conta quantas palavras já estão no answerZone
-        const wordsInZone = answerZone.children.length;
-    
-        // Só adiciona palavras novas (evita duplicar)
-        if (wordsConfirmed.length > wordsInZone) {
-            const newWords = wordsConfirmed.slice(wordsInZone);
-    
-            newWords.forEach(word => {
-                // Busca a tag no banco pelo texto
-                const tag = Array.from(wordBank.querySelectorAll('.word-tag'))
-                    .find(w => w.innerText === word);
-    
-                if (tag) {
-                    answerZone.appendChild(tag);
-                }
-            });
-        }
-    
-        // 2. Libera ou bloqueia palavras conforme a vez
-        document.querySelectorAll('#multi-word-bank .word-tag').forEach(w => {
-            if (isMyTurn) {
-                w.classList.remove('disabled-word');
-            } else {
-                w.classList.add('disabled-word');
-            }
-        });
-    
-        // 3. Atualiza feedback visual
-        document.getElementById('multi-video-feedback').innerHTML = isMyTurn
-            ? `<span style="color: var(--success-color);">Sua vez! Envie uma palavra.</span>`
-            : `<span style="color: var(--text-secondary);">Aguarde o rival...</span>`;
-    
-        // 4. Verifica se o OPONENTE completou a frase (evento chegou via Realtime)
-        if (!isMyTurn && window.multiCurrentSentence) {
-            const isSentenceComplete = checkMultiSentenceComplete(
-                payload,
-                window.multiCurrentSentence.en
-            );
-    
-            if (isSentenceComplete) {
-                console.log('🎉 [Multi/Realtime] FRASE COMPLETADA pelo rival! Avançando...');
-            } else {
-                console.log(`⏳ [Multi/Realtime] Rival enviou palavra. Acumulado: "${payload.currentSentenceWords}"`);
-            }
+    // Verifica se a palavra já não está na zona (para evitar duplicidade no Realtime)
+    const alreadyInZone = Array.from(zone.querySelectorAll('.word-tag'))
+        .some(el => normalizeWord(el.innerText) === normalizeWord(wordText));
+
+    if (!alreadyInZone) {
+        // Busca a palavra disponível no banco
+        const wordEl = Array.from(bank.querySelectorAll('.word-tag'))
+            .find(el => normalizeWord(el.innerText) === normalizeWord(wordText));
+
+        if (wordEl) {
+            wordEl.classList.add('matched'); // Estilo visual de "usada"
+            zone.appendChild(wordEl);
+            console.log(`📡 [Sync] Palavra do rival sincronizada: ${wordText}`);
         }
     }
+}
+/**
+ * Verifica de forma isolada se a frase atual do Duelo foi totalmente montada.
+ * Apenas imprime o resultado no console para testes.
+ */
+function checkDuelSentenceCompleted() {
+    if (!activeDuelDoc || !currentLesson) return;
+
+    const phaseIdx = activeDuelDoc.phaseIndex ?? 0;
+    const { start: pStart, end: pEnd } = getPhaseIndices(phaseIdx, currentLesson.data.length);
+    const phaseData = currentLesson.data.slice(pStart, pEnd);
+
+    const currentSentence = phaseData[activeDuelDoc.currentSentenceIndex];
+    if (!currentSentence) return;
+
+    const expectedWordsArray = currentSentence.en.trim().split(/\s+/).filter(w => w.length > 0);
+    const totalWords = expectedWordsArray.length;
+    const currentWordCount = activeDuelDoc.wordIndex ?? 0;
+
+    if (currentWordCount >= totalWords) {
+        console.log(`🏆 [Duelo] FRASE COMPLETADA! (${currentWordCount}/${totalWords})`);
+        
+        // 🔥 FEEDBACK VISUAL DE SUCESSO IMEDIATO
+        const zone = document.getElementById('multi-answer-zone');
+        if (zone) zone.style.borderColor = "var(--success-color)";
+        document.getElementById('multi-video-feedback').innerHTML = `<span style="color:var(--success-color)">Excelente! Preparando a próxima...</span>`;
+
+        // 🔥 CHAMA A PRÓXIMA FRASE APÓS 2 SEGUNDOS
+        setTimeout(() => {
+            loadNextDuelSentence();
+        }, 1000);
+
+    } else {
+        console.log(`⏳ [Duelo] Em andamento... (${currentWordCount}/${totalWords})`);
+    }
+}
+
+/**
+ * Carrega a próxima frase da fase. Somente o Host atualiza o banco.
+ */
+async function loadNextDuelSentence() {
+    const user = await checkAuthStatus();
+    if (!user) return;
+
+    // 🛡️ PROTEÇÃO: Apenas o HOST altera o banco para evitar comandos duplicados (Race Condition)
+    if (activeDuelDoc.hostId !== user.$id) {
+        console.log("⏳ [Oponente] Aguardando o Host puxar a próxima frase...");
+        return;
+    }
+
+    console.log("🔄 [Host] Preparando a próxima frase...");
+
+    // 1. Isola as frases da fase atual
+    const phaseIdx = activeDuelDoc.phaseIndex ?? 0;
+    const { start: pStart, end: pEnd } = getPhaseIndices(phaseIdx, currentLesson.data.length);
+    const phaseData = currentLesson.data.slice(pStart, pEnd);
+
+    // 2. Calcula o índice da próxima
+    const nextIndex = activeDuelDoc.currentSentenceIndex + 1;
+
+    // 3. Verifica se a fase acabou
+    if (nextIndex >= phaseData.length) {
+        console.log("🎉 [Duelo] FASE CONCLUÍDA!");
+        
+        // Atualiza status para finalizado
+        await duelsManager.update(activeDuelDoc.$id, {
+            status: 'finished',
+            lastActivity: new Date().toISOString()
+        });
+        return;
+    }
+
+    // 4. Pega a nova frase
+    const nextSentence = phaseData[nextIndex];
+
+    // 5. Faz o Update no Banco (Limpando a mesa para o próximo round)
+    await duelsManager.update(activeDuelDoc.$id, {
+        currentSentenceIndex: nextIndex,
+        currentSentenceWords: nextSentence.en, // Passa a nova frase
+        wordIndex: 0,                          // Zera o progresso
+        lastWordSent: "",                      // Apaga a última palavra movida
+        currentPlayerId: activeDuelDoc.hostId, // O Host sempre começa a nova frase
+        lastActivity: new Date().toISOString()
+    });
+}   
     
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
