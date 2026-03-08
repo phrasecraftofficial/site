@@ -1,6 +1,6 @@
-<!-- 103
+<!-- 107
     IMPLEMENTADO:
-Se Oponente ou Host abandonar partida.
+finaliza a fase avançando todas a frases ok
     FUTURO
 Essa parte é crucial para vc entender.
 
@@ -5902,6 +5902,10 @@ async function startDuelMode() {
      * Renderiza a interface de jogo dentro da View de Duelos
      * Prepara o vídeo, placar e os containers de palavras.
      */
+    /**
+     * Renderiza a interface de jogo dentro da View de Duelos
+     * Prepara o vídeo, placar e os containers de palavras.
+     */
     async function renderDuelSection(duelDoc) {
         if (!duelDoc) return;
         console.log("🎨 [Multi] Renderizando seção de duelo para o documento:", duelDoc.$id);
@@ -5914,7 +5918,18 @@ async function startDuelMode() {
         document.getElementById('duel-match-title').innerText = duelDoc.lessonName;
         document.getElementById('duel-match-status').innerText = `Partida: ${duelDoc.$id}`;
     
-        // 3. Preparação do Player
+        // 3. Pega os dados da frase ATUAL
+        const phaseIdx = duelDoc.phaseIndex ?? 0;
+        const { start: pStart, end: pEnd } = getPhaseIndices(phaseIdx, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(pStart, pEnd);
+        const currentSentenceData = phaseData[duelDoc.currentSentenceIndex];
+
+        if (!currentSentenceData) {
+             console.error("❌ Frase não encontrada na fase.");
+             return;
+        }
+
+        // 4. Preparação do Player
         const videoId = getYoutubeId(currentLesson.video);
         const userQuality = localStorage.getItem('phrasecraft_quality') || 'default';
     
@@ -5930,36 +5945,27 @@ async function startDuelMode() {
                 events: {
                     'onReady': (e) => {
                         e.target.setPlaybackQuality(userQuality);
+                        // 🔥 Quando o player nasce, ele já toca a frase atual
+                        playDuelSegment(currentSentenceData.start, currentSentenceData.end);
                     }
                 }
             });
         } else {
+            // 🔥 Se o player já existe (no avanço da frase), apenas atualiza o tempo
             window.ytPlayerMulti.loadVideoById({
                 videoId: videoId,
-                suggestedQuality: userQuality
+                suggestedQuality: userQuality,
+                startSeconds: currentSentenceData.start
             });
+            // O delay é necessário para o YouTube processar o loadVideoById antes do seekTo
+            setTimeout(() => {
+                playDuelSegment(currentSentenceData.start, currentSentenceData.end);
+            }, 500);
         }
     
-        // 4. 🔥 RENDERIZAÇÃO DE PALAVRAS (Fora do onReady para garantir execução imediata)
+        // 5. Renderização de Palavras (Visual)
         if (duelDoc.currentSentenceWords) {
-            console.log("📝 Injetando palavras na interface:", duelDoc.currentSentenceWords);
             renderMultiWords(duelDoc.currentSentenceWords);
-            
-            // Calcula os limites da fase para achar a frase correta no array geral
-            const phaseIdx = duelDoc.phaseIndex ?? 0;
-            const { start: pStart, end: pEnd } = getPhaseIndices(phaseIdx, currentLesson.data.length);
-            const phaseData = currentLesson.data.slice(pStart, pEnd);
-            
-            // Pega a frase atual DENTRO da fase selecionada
-            const sentenceData = phaseData[duelDoc.currentSentenceIndex];
-            
-            if (sentenceData) {
-                playDuelSegment(sentenceData.start, sentenceData.end);
-            } else {
-                console.warn('⚠️ Frase não encontrada na fase atual.');
-            }
-        } else {
-            console.warn("⚠️ O documento não possui 'currentSentenceWords'");
         }
     }
 
@@ -6044,15 +6050,16 @@ async function startDuelMode() {
      * Função chamada pelo botão "Tocar" na tela de duelo
      */
     function replayDuelSegment() {
-        if (!activeDuelDoc || !currentLesson) return;
-    
-        // Proteção: verifica se .data foi compilado antes de tentar acessar
-        if (!currentLesson.data || currentLesson.data.length === 0) {
-            console.warn('⚠️ [replayDuelSegment] currentLesson.data não está disponível ainda.');
-            return;
-        }
+        if (!activeDuelDoc || !currentLesson || !currentLesson.data) return;
         
-        const sentenceData = currentLesson.data[activeDuelDoc.currentSentenceIndex];
+        // Isola as frases da fase atual
+        const phaseIdx = activeDuelDoc.phaseIndex ?? 0;
+        const { start: pStart, end: pEnd } = getPhaseIndices(phaseIdx, currentLesson.data.length);
+        const phaseData = currentLesson.data.slice(pStart, pEnd);
+
+        // Pega a frase certa relativa à fase
+        const sentenceData = phaseData[activeDuelDoc.currentSentenceIndex];
+        
         if (sentenceData) {
             playDuelSegment(sentenceData.start, sentenceData.end);
         } else {
@@ -6262,10 +6269,13 @@ function checkDuelSentenceCompleted() {
         if (zone) zone.style.borderColor = "var(--success-color)";
         document.getElementById('multi-video-feedback').innerHTML = `<span style="color:var(--success-color)">Excelente! Preparando a próxima...</span>`;
 
+        // Toca a frase completa UMA ÚLTIMA VEZ para fixar na mente
+        playDuelSegment(currentSentence.start, currentSentence.end);
+
         // 🔥 CHAMA A PRÓXIMA FRASE APÓS 2 SEGUNDOS
         setTimeout(() => {
             loadNextDuelSentence();
-        }, 1000);
+        }, 2000);
 
     } else {
         console.log(`⏳ [Duelo] Em andamento... (${currentWordCount}/${totalWords})`);
