@@ -1,8 +1,6 @@
 <!-- 105
     IMPLEMENTADO:
-
-
-Quando o mdo video inicia ele carrega as frases.
+Host e Oponente fazem o update da palavra enviado ao Aw.
     FUTURO
 
 No modo multi os dois jogadores vao formar a mesma frase, mas cada um envia uma palavra da sequencia, ou seja eles não vao enviar a mesma palavra.
@@ -5468,38 +5466,40 @@ function validateTrainingData() {
             console.log(`📡 [Realtime] Escutando alterações no documento: ${newMatch.$id}`);
             
             duelsManager.subscribe((payload, events) => {
-            console.log("🔄 [Realtime] DISPAROU! Alguém alterou a partida!");
-            console.log("   👉 Novos Dados:", payload);
-            console.log("   👉 Tipo de Evento:", events);
-        
-            const isDeleted = events.some(e => e.includes('.delete'));
-        
-            if (isDeleted) {
-                console.log('🗑️ [Host] Partida deletada. Voltando ao lobby...');
-        
-                if (currentView === 'previewMulti' || currentView === 'duel-match') {
-                    alert('⚔️ A partida foi encerrada.');
-                    navigateTo('duels');
+                console.log("🔄 [Realtime] DISPAROU! Alguém alterou a partida!");
+            
+                const isDeleted = events.some(e => e.includes('.delete'));
+            
+                if (isDeleted) {
+                    console.log('🗑️ [Host] Partida deletada. Voltando ao lobby...');
+                    if (currentView === 'previewMulti' || currentView === 'duel-match') {
+                        alert('⚔️ A partida foi encerrada.');
+                        navigateTo('duels');
+                    }
+                    return;
                 }
-                return;
-            }
-        
-            // ✅ Oponente entrou: host navega para a partida
-            if (payload.status === 'playing' && payload.opponentId) {
-                console.log('⚔️ [Host] Oponente encontrado! Entrando na partida...');
-                activeDuelDoc = payload;
             
-                navigateTo('duel-match');
-                toggleCloseExit('show');
-                setLayoutMode('training');
+                // Oponente entrou: host inicia o jogo
+                if (payload.status === 'playing' && payload.opponentId && currentView !== 'duel-match') {
+                    console.log('⚔️ [Host] Oponente encontrado! Entrando na partida...');
+                    activeDuelDoc = payload;
             
-                document.getElementById('duel-match-title').innerText = payload.lessonName;
-                document.getElementById('duel-match-status').innerText = `Partida: ${payload.$id}`;
+                    navigateTo('duel-match');
+                    toggleCloseExit('show');
+                    setLayoutMode('training');
             
-                // Inicia a tela do jogo para o host também
-                initDuelMatch(payload);
-            }
-        }, newMatch.$id);
+                    document.getElementById('duel-match-title').innerText = payload.lessonName;
+                    document.getElementById('duel-match-status').innerText = `Partida: ${payload.$id}`;
+            
+                    initDuelMatch(payload);
+                    return;
+                }
+            
+                // 🔥 Partida em andamento: reage à troca de vez
+                if (payload.status === 'playing' && currentView === 'duel-match') {
+                    handleDuelUpdate(payload);
+                }
+            }, newMatch.$id);
 
         } catch (error) {
             console.error("❌ Erro ao criar ou escutar a partida:", error);
@@ -5804,17 +5804,19 @@ function validateTrainingData() {
         // 2. NOVA INSCRIÇÃO COM PROTEÇÃO DE DELEÇÃO
         duelsManager.subscribe((payload, events) => {
             console.log('🔄 [Opponent] Partida atualizada:', payload);
-            
-            // Verifica se o Host deletou/encerrou a partida
+        
             const isDeleted = events.some(e => e.includes('.delete'));
             if (isDeleted) {
                 console.log('🗑️ [Opponent] O Host encerrou a partida.');
                 alert('⚔️ O Host encerrou a partida.');
-                navigateTo('duels'); // Expulsa o oponente de volta para o lobby
+                navigateTo('duels');
                 return;
             }
-
-            activeDuelDoc = payload;
+        
+            // 🔥 Partida em andamento: reage à troca de vez
+            if (payload.status === 'playing' && currentView === 'duel-match') {
+                handleDuelUpdate(payload);
+            }
         }, duel.$id);
     
         navigateTo('duel-match');
@@ -6000,6 +6002,55 @@ function validateTrainingData() {
         }, 100);
     }
 
+    async function handleDuelUpdate(payload) {
+        console.log('🔄 [handleDuelUpdate] Payload recebido:', payload);
+    
+        // Atualiza o documento local
+        activeDuelDoc = payload;
+    
+        const user = await checkAuthStatus();
+        const isMyTurn = payload.currentPlayerId === user.$id;
+    
+        const wordBank = document.getElementById('multi-word-bank');
+        const answerZone = document.getElementById('multi-answer-zone');
+    
+        // 1. Sincroniza o answerZone com as palavras já enviadas
+        const wordsConfirmed = payload.currentSentenceWords
+            ? payload.currentSentenceWords.trim().split(' ')
+            : [];
+    
+        // Conta quantas palavras já estão no answerZone
+        const wordsInZone = answerZone.children.length;
+    
+        // Só adiciona palavras novas (evita duplicar)
+        if (wordsConfirmed.length > wordsInZone) {
+            const newWords = wordsConfirmed.slice(wordsInZone);
+    
+            newWords.forEach(word => {
+                // Busca a tag no banco pelo texto
+                const tag = Array.from(wordBank.querySelectorAll('.word-tag'))
+                    .find(w => w.innerText === word);
+    
+                if (tag) {
+                    answerZone.appendChild(tag);
+                }
+            });
+        }
+    
+        // 2. Libera ou bloqueia palavras conforme a vez
+        document.querySelectorAll('#multi-word-bank .word-tag').forEach(w => {
+            if (isMyTurn) {
+                w.classList.remove('disabled-word');
+            } else {
+                w.classList.add('disabled-word');
+            }
+        });
+    
+        // 3. Atualiza feedback visual
+        document.getElementById('multi-video-feedback').innerHTML = isMyTurn
+            ? `<span style="color: var(--success-color);">Sua vez! Envie uma palavra.</span>`
+            : `<span style="color: var(--text-secondary);">Aguarde o rival...</span>`;
+    }
     
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
