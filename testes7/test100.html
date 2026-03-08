@@ -1,5 +1,6 @@
-<!-- 99
-navegação para preview multi
+<!-- 100
+mostrar a lista de frases do card que o host esta propondo e a thumb,
+campo phaseIndex criado no Aw
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -664,7 +665,7 @@ navegação para preview multi
             <span class="material-symbols-outlined">
             owl
             </span> 
-            PhraseCraft v99
+            PhraseCraft v100
         </div>
         <div id="training-exit" class="hidden" style="margin-left: auto; cursor: pointer;" onclick="toggleCloseExit('goback')">
             <i class="fa-solid fa-xmark" style="font-size: 1.5rem;"></i>
@@ -820,8 +821,16 @@ navegação para preview multi
             </section>
 
             <section id="view-previewMulti" class="view-section">
-                <div style="text-align: center; padding: 40px 20px;">
-                    <p style="color: var(--text-secondary);">Preview do Duelo</p>
+                <div class="preview-header">
+                    <img id="previewMulti-thumb" src="" alt="Thumbnail" style="width:100%; height:250px; background-color:#000; object-fit:contain; border-radius:12px; margin-bottom:15px; display:block;">
+                    <h2 id="previewMulti-title" style="display:block; color:var(--accent-color); margin-bottom:20px;"></h2>
+                </div>
+                <ul id="previewMulti-sentences" class="preview-list"></ul>
+                <div class="train-btn-container">
+                    <button class="btn-train" title="Entrar no Duelo">
+                        <span class="material-symbols-outlined">swords</span>
+                        Entrar no Duelo
+                    </button>
                 </div>
             </section>
             
@@ -5339,7 +5348,8 @@ function validateTrainingData() {
             currentPlayerId: myUserId,
             currentSentenceIndex: 0,
             currentSentenceWords: firstSentence,
-            opponentPerformance: 0, // Appwrite pode exigir que passe como int ou string dependendo de como vc configurou lá
+            phaseIndex: currentPhase,
+            opponentPerformance: 0,
             hostPerformance: 0,
             winnerId: "",
             lastActivity: new Date().toISOString()
@@ -5427,7 +5437,7 @@ function validateTrainingData() {
             // Por enquanto, apenas loga o ID da partida ao clicar (como pedido)
             card.onclick = () => {
                 console.log('➡️ Clicou para entrar na partida:', duel.$id);
-                navigateTo('previewMulti');
+                openPreviewMulti(duel);
             };
 
             card.innerHTML = `
@@ -5467,23 +5477,6 @@ function validateTrainingData() {
             return null;
         }
     }
-    
-    // --- 5. INICIALIZA O APP ---
-    // Chame isso no final do script em vez de chamar renderLessonList() direto
-    // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
-    window.addEventListener('load', async () => {
-        const hash = location.hash;
-        if (!hash.startsWith('#lesson-')) return;
-    
-        while (!window.allLessons || allLessons.length === 0) {
-            await new Promise(r => setTimeout(r, 50));
-        }
-    
-        const id = hash.replace('#lesson-', '');
-    
-        navigateTo('home', { resetStack: true });
-        openPreview(id, true);
-    });
 
     // ============================================================
     // GERENCIADOR DE ESTADO DO DUELO
@@ -5558,6 +5551,80 @@ function validateTrainingData() {
             console.error('❌ [Duel] Erro ao atualizar lista:', error);
         }
     }
+
+    async function openPreviewMulti(duel) {
+        console.log('🎯 openPreviewMulti chamado:', JSON.stringify(duel));
+        console.log('⚔️ [previewMulti] Abrindo duelo:', duel.$id);
+    
+        navigateTo('previewMulti');
+    
+        // 1. Preenche thumb e título imediatamente (dados já no doc)
+        document.getElementById('previewMulti-thumb').src = duel.thumbFileId || '';
+        document.getElementById('previewMulti-title').innerText = 'Carregando...';
+        document.getElementById('previewMulti-sentences').innerHTML = `
+            <li class="preview-item" style="text-align:center; padding:20px;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Baixando conteúdo...
+            </li>
+        `;
+    
+        // 2. Busca a lição pelo nome
+        const rawLesson = allLessons.find(l => l.title === duel.lessonName);
+        if (!rawLesson) {
+            document.getElementById('previewMulti-title').innerText = duel.lessonName;
+            document.getElementById('previewMulti-sentences').innerHTML =
+                '<li class="preview-item" style="color:var(--error-color)">Lição não encontrada localmente.</li>';
+            return;
+        }
+    
+        document.getElementById('previewMulti-title').innerText = rawLesson.title;
+    
+        // 3. Carrega os dados da lição
+        const loadedData = await fetchLessonData(rawLesson);
+        if (!loadedData) {
+            document.getElementById('previewMulti-sentences').innerHTML =
+                '<li class="preview-item" style="color:var(--error-color)">Falha ao carregar conteúdo.</li>';
+            return;
+        }
+    
+        const compiled = compileLessonData(
+            loadedData.srtEn,
+            loadedData.srtPt,
+            loadedData.vocabData,
+            rawLesson.video
+        );
+    
+        // 4. Fatia apenas as frases do card que o host selecionou
+        const phaseIndex = duel.phaseIndex ?? 0;
+        const { start, end } = getPhaseIndices(phaseIndex, compiled.length);
+        const phaseData = compiled.slice(start, end);
+    
+        // 5. Renderiza
+        const listEl = document.getElementById('previewMulti-sentences');
+        listEl.innerHTML = '';
+        phaseData.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = 'preview-item';
+            li.innerText = `${start + index + 1}. ${item.en}`;
+            listEl.appendChild(li);
+        });
+    }
+    
+    // --- 5. INICIALIZA O APP ---
+    // Chame isso no final do script em vez de chamar renderLessonList() direto
+    // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
+    window.addEventListener('load', async () => {
+        const hash = location.hash;
+        if (!hash.startsWith('#lesson-')) return;
+    
+        while (!window.allLessons || allLessons.length === 0) {
+            await new Promise(r => setTimeout(r, 50));
+        }
+    
+        const id = hash.replace('#lesson-', '');
+    
+        navigateTo('home', { resetStack: true });
+        openPreview(id, true);
+    });
     
     document.addEventListener('DOMContentLoaded', () => {
         initMobileNavigation();
