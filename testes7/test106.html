@@ -5968,19 +5968,30 @@ function validateTrainingData() {
                 currentSentenceWords: updatedWords.trim(),
                 currentPlayerId: nextPlayerId
             });
-            
-            // ✅ NOVA VERIFICAÇÃO: Frase completada?
-            const isSentenceComplete = checkMultiSentenceComplete(
-                activeDuelDoc, 
-                window.multiCurrentSentence.en
-            );
-            
-            if (isSentenceComplete) {
-                console.log('🎉 [Multi] FRASE COMPLETADA! Avançando...');
-                // Opcional: avançar automaticamente para próxima frase
-                // await advanceToNextSentence();
+        
+            // Atualiza o doc local com os dados enviados ANTES de verificar
+            activeDuelDoc = {
+                ...activeDuelDoc,
+                currentSentenceWords: updatedWords.trim(),
+                currentPlayerId: nextPlayerId
+            };
+        
+            // ✅ VERIFICAÇÃO: Usa activeDuelDoc já atualizado
+            if (!window.multiCurrentSentence) {
+                console.warn('⚠️ [Multi] multiCurrentSentence não definido ainda.');
+            } else {
+                const isSentenceComplete = checkMultiSentenceComplete(
+                    activeDuelDoc,
+                    window.multiCurrentSentence.en
+                );
+        
+                if (isSentenceComplete) {
+                    console.log('🎉 [Multi] FRASE COMPLETADA! Avançando...');
+                } else {
+                    console.log(`⏳ [Multi] Frase incompleta. Palavras até agora: "${updatedWords.trim()}"`);
+                }
             }
-            
+        
         } catch (error) {
             console.error('❌ [Multi] Erro ao enviar palavra:', error);
             // Reverte visualmente se falhar
@@ -6146,6 +6157,20 @@ function validateTrainingData() {
         document.getElementById('multi-video-feedback').innerHTML = isMyTurn
             ? `<span style="color: var(--success-color);">Sua vez! Envie uma palavra.</span>`
             : `<span style="color: var(--text-secondary);">Aguarde o rival...</span>`;
+    
+        // 4. Verifica se o OPONENTE completou a frase (evento chegou via Realtime)
+        if (!isMyTurn && window.multiCurrentSentence) {
+            const isSentenceComplete = checkMultiSentenceComplete(
+                payload,
+                window.multiCurrentSentence.en
+            );
+    
+            if (isSentenceComplete) {
+                console.log('🎉 [Multi/Realtime] FRASE COMPLETADA pelo rival! Avançando...');
+            } else {
+                console.log(`⏳ [Multi/Realtime] Rival enviou palavra. Acumulado: "${payload.currentSentenceWords}"`);
+            }
+        }
     }
     
     // --- 5. INICIALIZA O APP ---
