@@ -1,5 +1,7 @@
 <!-- 97
 navegação multiplayer
+crud player 1 no Aw
+login e logout ok
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -1439,6 +1441,7 @@ const projectData = [
     const PROJECT_ID = '68ebe8640000ca7c860b';
     const DATABASE_ID = '68ed87df000874c3e85a';
     const COLLECTION_ID = '693ad57f00239c68398e';
+    const DUELS_COLLECTION_ID = '68fb595d00158868bf7c';
 
     // 2. Inicialize o cliente UMA ÚNICA VEZ com o Endpoint correto
     const client = new Appwrite.Client()
@@ -1743,13 +1746,24 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     // 3. Realiza o Logout
     async function handleLogout() {
         if(!confirm("Deseja realmente sair?")) return;
-
+    
         try {
-            await account.deleteSession('current'); // Deleta sessão atual
+            const user = await account.get();
+            if (!user) {
+                navigateTo('login');
+                return;
+            }
+            await account.deleteSession('current');
             console.log("👋 Logout realizado");
-            navigateTo('login'); // Manda de volta pro login
+            navigateTo('login');
         } catch (error) {
-            console.error("Erro ao sair:", error);
+            // Se o erro for de permissão (guest), apenas redireciona
+            if (error.code === 401 || error.message?.includes('missing scopes')) {
+                console.log("Usuário já era guest, redirecionando...");
+                navigateTo('login');
+            } else {
+                console.error("Erro ao sair:", error);
+            }
         }
     }
 
@@ -1963,6 +1977,17 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             if (allLessons && allLessons.length > 0) {
                 renderLessonList(allLessons);
             }
+        }
+        else if (view === 'you') {
+            checkAuthStatus().then(user => {
+                if (user) {
+                    loadUserProfile(user);
+                } else {
+                    document.getElementById('profile-name').innerText = "Visitante";
+                    document.getElementById('profile-email').innerText = "Não autenticado";
+                    document.getElementById('profile-avatar').innerText = "?";
+                }
+            });
         }
         if (view === 'preview') {
             setLayoutMode('full');
@@ -5240,19 +5265,62 @@ function validateTrainingData() {
     }
     
     // Modo Duelo (Multiplayer)
-    function startDuelMode() {
+    async function startDuelMode() {
         console.log('⚔️ startDuelMode iniciado para a lição:', currentLesson ? currentLesson.id : 'Nenhuma');
+        const duelsManager = collectionManager(DUELS_COLLECTION_ID);
         
         if (!currentLesson || currentLesson.data.length === 0) {
             alert("Nenhuma lição carregada para o duelo.");
             return;
         }
 
-        // Aqui você pode salvar o contexto da lição atual (currentLesson)
-        // em uma variável global de duelo antes de navegar para a tela de lobby/duels
-        
-        // Navega para a seção duels (que já existe no seu código)
+        // Navega para a seção de duelos visualmente e ajusta layout
         navigateTo('duels');
+        toggleCloseExit('show');
+        setLayoutMode('training');
+
+        // Pega a primeira frase para o setup inicial
+        const firstSentence = currentLesson.data[0] ? currentLesson.data[0].en : "";
+        
+        // Simula um ID de usuário (como não integramos auth obrigatório no teste, usamos um aleatório)
+        const myUserId = "player_" + Math.floor(Math.random() * 10000); 
+
+        // 1. Prepara os dados iniciais exigidos
+        const initialDuelData = {
+            lessonName: currentLesson.title,
+            thumbFileId: currentLesson.thumb || "",
+            status: "waiting",
+            hostId: myUserId,
+            opponentId: "",
+            currentPlayerId: myUserId,
+            currentSentenceIndex: 0,
+            currentSentenceWords: firstSentence,
+            opponentPerformance: 0, // Appwrite pode exigir que passe como int ou string dependendo de como vc configurou lá
+            hostPerformance: 0,
+            winnerId: "",
+            lastActivity: new Date().toISOString()
+        };
+
+        try {
+            console.log("⏳ [CRUD] Criando documento da partida no Appwrite...");
+            
+            // 2. CRIA O DOCUMENTO
+            const newMatch = await duelsManager.create(initialDuelData);
+            console.log("✅ [CRUD] Partida criada com sucesso! ID do Doc:", newMatch.$id);
+
+            // 3. INICIA O REALTIME (ESCUTA O DOCUMENTO ESPECÍFICO)
+            console.log(`📡 [Realtime] Escutando alterações no documento: ${newMatch.$id}`);
+            
+            duelsManager.subscribe((payload, events) => {
+                console.log("🔄 [Realtime] DISPAROU! Alguém alterou a partida!");
+                console.log("   👉 Novos Dados:", payload);
+                console.log("   👉 Tipo de Evento:", events);
+            }, newMatch.$id);
+
+        } catch (error) {
+            console.error("❌ Erro ao criar ou escutar a partida:", error);
+            alert("Erro ao iniciar o servidor de duelos. Olhe o console.");
+        }
     }
 
     // --- 5. INICIALIZA O APP ---
