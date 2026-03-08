@@ -1,7 +1,5 @@
 <!-- 98
-navegação multiplayer
-crud player 1 no Aw
-login e logout ok
+cria lista de partidas
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -1936,9 +1934,28 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     // history.state NÃO é usado
     // fromBack controla se empilha ou não
     // --- CORREÇÃO DA NAVEGAÇÃO ---
-    function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
-        // --- Lógica de stack mantida como já está ---
-        // Dentro do navigateTo, onde você trata MENU_VIEWS:
+    // --- CORREÇÃO DA NAVEGAÇÃO ---
+    async function navigateTo(view, { resetStack = false, fromBack = false, lessonId = null } = {}) {
+        
+        // 1. 🔥 PROTEÇÃO DE ROTA (Executa antes de mexer no visual)
+        if (view === 'duels') {
+            const user = await checkAuthStatus();
+            if (!user) {
+                console.log("🔒 Acesso negado aos Duelos. Redirecionando para You...");
+                view = 'you'; // Intercepta e muda a intenção para "you"
+            }
+        }
+        
+        if (view === 'you') {
+            const user = await checkAuthStatus();
+            if (!user) {
+                view = 'login'; // Se ia para "you" e não tá logado, manda pro login
+            } else {
+                loadUserProfile(user);
+            }
+        }
+
+        // --- Lógica de stack mantida ---
         if (MENU_VIEWS.includes(view)) {
             const sidebar = document.querySelector('.app-sidebar');
             const footer = document.querySelector('.app-footer');
@@ -1955,7 +1972,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
     
         console.log(`📍 [Nav] Indo para: ${view} | Stack:`, navigationStack);
     
-        // --- ATUALIZAÇÃO VISUAL BÁSICA ---
+        // --- 2. ATUALIZAÇÃO VISUAL BÁSICA (Agora com a rota certa) ---
         ui.views.forEach(v => v.classList.remove('active'));
         const targetView = document.getElementById(`view-${view}`);
         if (targetView) targetView.classList.add('active');
@@ -1967,28 +1984,20 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         );
         if (activeFooter) activeFooter.classList.add('active');
     
-        // --- LAYOUT: Só configuramos explicitamente para views especiais ---
+        // --- 3. LAYOUT E DADOS ESPECÍFICOS DE CADA VIEW ---
         if (view === 'ears') {
             renderEarsList();
         }
-        // 🔥 ADICIONE ESTE BLOCO:
         else if (view === 'home') {
-            // Re-renderiza a lista se já estiver carregada
             if (allLessons && allLessons.length > 0) {
                 renderLessonList(allLessons);
             }
         }
-        else if (view === 'you') {
-            checkAuthStatus().then(user => {
-                if (user) {
-                    loadUserProfile(user);
-                } else {
-                    document.getElementById('profile-name').innerText = "Visitante";
-                    document.getElementById('profile-email').innerText = "Não autenticado";
-                    document.getElementById('profile-avatar').innerText = "?";
-                }
-            });
+        else if (view === 'duels') {
+            // Se chegou aqui, já está validado!
+            loadDuelsLobby();
         }
+
         if (view === 'preview') {
             setLayoutMode('full');
             toggleCloseExit('hide'); // Garante que o X suma ao voltar para a tela de lição
@@ -2000,12 +2009,9 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
             const footer = document.querySelector('.app-footer');
             const sidebar = document.querySelector('.app-sidebar');
             
-            // Garante header visível
             header.style.display = 'flex';
             document.querySelector('.app-body').style.marginTop = 'var(--header-height)';
             
-            // CRÍTICO: Remove inline styles do footer e sidebar
-            // para que as media queries do CSS voltem a funcionar
             footer.style.display = '';
             sidebar.style.display = '';
         }
@@ -5256,6 +5262,7 @@ function validateTrainingData() {
     };
 
     // --- 4.1 INICIAR MODO DUELS ---
+    const duelsManager = collectionManager(DUELS_COLLECTION_ID);
     
     // Abre a tela de seleção de modo de jogo e exibe o botão X
     function openGameMode() {
@@ -5265,13 +5272,21 @@ function validateTrainingData() {
     }
     
     // Modo Duelo (Multiplayer)
+    // Modo Duelo (Multiplayer)
     async function startDuelMode() {
         console.log('⚔️ startDuelMode iniciado para a lição:', currentLesson ? currentLesson.id : 'Nenhuma');
-        const duelsManager = collectionManager(DUELS_COLLECTION_ID);
         
         if (!currentLesson || currentLesson.data.length === 0) {
             alert("Nenhuma lição carregada para o duelo.");
             return;
+        }
+
+        // 🔥 NOVO: Bloqueio de acesso
+        const user = await checkAuthStatus();
+        if (!user) {
+            console.log("🔒 Acesso negado ao Multi. Redirecionando para You...");
+            navigateTo('you');
+            return; // Interrompe a execução aqui
         }
 
         // Navega para a seção de duelos visualmente e ajusta layout
@@ -5282,8 +5297,8 @@ function validateTrainingData() {
         // Pega a primeira frase para o setup inicial
         const firstSentence = currentLesson.data[0] ? currentLesson.data[0].en : "";
         
-        // Simula um ID de usuário (como não integramos auth obrigatório no teste, usamos um aleatório)
-        const myUserId = "player_" + Math.floor(Math.random() * 10000); 
+        // 🔥 NOVO: Usa o ID real do usuário logado
+        const myUserId = user.$id;
 
         // 1. Prepara os dados iniciais exigidos
         const initialDuelData = {
@@ -5323,6 +5338,68 @@ function validateTrainingData() {
         }
     }
 
+    // --- LÓGICA DO LOBBY DE DUELOS (Player 2) ---
+
+    // 1. Busca as partidas no servidor
+    async function loadDuelsLobby() {
+        const duelsContainer = document.getElementById('duels');
+        if (!duelsContainer) return;
+
+        // Feedback visual de carregamento
+        duelsContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #888;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color); margin-bottom: 10px;"></i>
+                <p>Buscando partidas abertas...</p>
+            </div>
+        `;
+
+        try {
+            // Busca na coleção apenas documentos onde status é 'waiting'
+            const response = await duelsManager.read(null, [
+                Appwrite.Query.equal('status', 'waiting'),
+                Appwrite.Query.orderDesc('$createdAt')
+            ]);
+            
+            renderDuelsList(response.documents);
+            
+        } catch (error) {
+            console.error("❌ Erro ao buscar duelos:", error);
+            duelsContainer.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar as partidas.</p>';
+        }
+    }
+
+    // 2. Renderiza os cards usando o mesmo layout da Home
+    function renderDuelsList(duels) {
+        const duelsContainer = document.getElementById('duels');
+        duelsContainer.innerHTML = '';
+
+        if (!duels || duels.length === 0) {
+            duelsContainer.innerHTML = '<p style="color: var(--text-secondary);">Nenhuma partida disponível no momento. Seja o primeiro a criar um duelo!</p>';
+            return;
+        }
+
+        duels.forEach(duel => {
+            const card = document.createElement('div');
+            card.className = 'lesson-card'; // Reaproveita o CSS da Home
+            
+            // Por enquanto, apenas loga o ID da partida ao clicar (como pedido)
+            card.onclick = () => console.log('➡️ Clicou para entrar na partida:', duel.$id);
+
+            card.innerHTML = `
+                <img src="${duel.thumbFileId || 'https://placehold.co/200x150?text=No+Image'}" class="lesson-thumb" alt="${duel.lessonName}" loading="lazy" onerror="this.src='https://placehold.co/200x150?text=No+Image'">
+                
+                <div class="lesson-info">
+                    <div class="lesson-title">${duel.lessonName}</div>
+                    <div class="lesson-subtitle" style="font-size: 0.85em; color: var(--success-color);">
+                        <i class="fa-solid fa-user-clock"></i> Aguardando oponente...
+                    </div>
+                </div>
+            `;
+            
+            duelsContainer.appendChild(card);
+        });
+    }
+    
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
     // Adicione a chamada de loadUserPreferences() dentro do seu initApp() ou DOMContentLoaded
