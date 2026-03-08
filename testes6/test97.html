@@ -1,5 +1,5 @@
 <!-- 97
-botao pause
+navegação multiplayer
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -804,7 +804,7 @@ botao pause
 
                 <div class="train-btn-container">
     
-                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="startVideoPratice()">
+                    <button class="btn-train" style=";" title="Vídeo Aula" onclick="openGameMode()">
                         <i class="fa-solid fa-video"></i>
                     </button>
                 
@@ -816,6 +816,34 @@ botao pause
                         <i class="fa-solid fa-microphone"></i>
                     </button>
                 
+                </div>
+            </section>
+
+            <section id="view-game-mode" class="view-section">
+                <div style="text-align: center; padding: 40px 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 4rem; color: var(--accent-color); margin-bottom: 20px;">
+                        stadia_controller
+                    </span>
+                    <h2 style="margin-bottom: 10px;">Modo de Jogo</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 40px;">Escolha como você quer jogar com este vídeo.</p>
+            
+                    <div style="display: flex; flex-direction: column; gap: 20px; max-width: 300px; margin: 0 auto;">
+                        
+                        <button class="option-btn" onclick="startVideoPratice()" style="display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 1.2rem; text-align: center;">
+                            <span class="material-symbols-outlined" style="font-size: 1.8rem; color: var(--success-color);">
+                                sports_esports
+                            </span>
+                            Solo
+                        </button>
+            
+                        <button class="option-btn" onclick="startDuelMode()" style="display: flex; align-items: center; justify-content: center; gap: 15px; font-size: 1.2rem; text-align: center; border-color: var(--accent-color);">
+                            <span class="material-symbols-outlined" style="font-size: 1.8rem; color: var(--accent-color);">
+                                swords
+                            </span>
+                            Duelo
+                        </button>
+                        
+                    </div>
                 </div>
             </section>
 
@@ -1938,6 +1966,7 @@ function handleTopicClick(topicId, topicTitle, topicContent) {
         }
         if (view === 'preview') {
             setLayoutMode('full');
+            toggleCloseExit('hide'); // Garante que o X suma ao voltar para a tela de lição
         } else if (view === 'training' && !currentTaskMode) {
             setLayoutMode('training');
         } else if (MENU_VIEWS.includes(view)) {
@@ -5200,6 +5229,31 @@ function validateTrainingData() {
             }
         };
     };
+
+    // --- 4.1 INICIAR MODO DUELS ---
+    
+    // Abre a tela de seleção de modo de jogo e exibe o botão X
+    function openGameMode() {
+        navigateTo('game-mode');
+        toggleCloseExit('show'); // Mostra o botão X no header
+        setLayoutMode('training'); // Esconde o menu inferior (footer)
+    }
+    
+    // Modo Duelo (Multiplayer)
+    function startDuelMode() {
+        console.log('⚔️ startDuelMode iniciado para a lição:', currentLesson ? currentLesson.id : 'Nenhuma');
+        
+        if (!currentLesson || currentLesson.data.length === 0) {
+            alert("Nenhuma lição carregada para o duelo.");
+            return;
+        }
+
+        // Aqui você pode salvar o contexto da lição atual (currentLesson)
+        // em uma variável global de duelo antes de navegar para a tela de lobby/duels
+        
+        // Navega para a seção duels (que já existe no seu código)
+        navigateTo('duels');
+    }
 
     // --- 5. INICIALIZA O APP ---
     // Chame isso no final do script em vez de chamar renderLessonList() direto
