@@ -1,33 +1,35 @@
 export default async ({ req, res, log, error }) => {
   log("--- INÍCIO DA EXECUÇÃO ---");
   
-  // No Appwrite, req.query contém os parâmetros da URL ?param=valor
-  const proxyUrl = req.query.proxyUrl;
-  
-  log(`📋 URL via Query: ${proxyUrl || 'NÃO ENCONTRADA'}`);
+  let proxyUrl = "";
+
+  // No Appwrite, dados de execução via API (POST /executions) chegam aqui:
+  const payloadRaw = req.payload || req.body; 
+  log("Conteúdo do Payload/Body: " + JSON.stringify(payloadRaw));
+
+  try {
+    const data = typeof payloadRaw === 'string' ? JSON.parse(payloadRaw || '{}') : payloadRaw;
+    proxyUrl = data.proxyUrl;
+  } catch (e) {
+    error("Erro ao parsear payload: " + e.message);
+  }
+
+  log("URL para processar: " + (proxyUrl || "NÃO ENCONTRADA"));
 
   if (proxyUrl && proxyUrl.startsWith('http')) {
     try {
-      log(`🌐 Buscando áudio: ${proxyUrl}`);
+      log("Buscando áudio...");
+      const response = await fetch(proxyUrl);
+      const buffer = await response.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
       
-      const audioRes = await fetch(proxyUrl);
-      if (!audioRes.ok) throw new Error(`Status ${audioRes.status}`);
-
-      const audioBuffer = await audioRes.arrayBuffer();
-      const base64Audio = Buffer.from(audioBuffer).toString('base64');
-      
-      log(`✅ Sucesso: ${audioBuffer.byteLength} bytes`);
-
-      return res.json({
-        audio: base64Audio,
-        success: true
-      });
+      log("Sucesso. Tamanho Base64: " + base64.length);
+      return res.json({ audio: base64 });
     } catch (err) {
-      error("❌ Erro: " + err.message);
+      error("Erro no fetch: " + err.message);
       return res.json({ error: err.message }, 500);
     }
   }
 
-  error("❌ Nenhuma URL encontrada na query string.");
-  return res.json({ error: "Parâmetro proxyUrl é obrigatório na URL" }, 400);
+  return res.json({ error: "proxyUrl ausente no payload" }, 400);
 };
